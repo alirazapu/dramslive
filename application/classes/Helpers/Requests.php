@@ -1,0 +1,111 @@
+<?php
+
+abstract class Helpers_Requests {
+    /* Request againt existing person  */
+
+    public static function get_person_information($person_id) {
+        $DB = Database::instance();
+        $sql = "SELECT * from person where person_id = {$person_id}";
+        $results = $DB->query(Database::SELECT, $sql, TRUE)->current();
+        $person_name = !empty($results->first_name) ? $results->first_name . " " . $results->last_name : "Un-known";
+        $person_f_name = !empty($results->father_name) ? $results->father_name : "Un-known";
+        $person_address = !empty($results->address) ? $results->address : "Un-known";
+        $person_cnic = Helpers_Person::get_person_cnic($person_id);
+        $person_profile_link = Helpers_Person::get_person_link($person_id);
+        ?>
+        <div > <h4><b>You Are Requesting For: </b></h4> </div> 
+        <div class="col-sm-6 ">
+            <ul class="todo-list">
+                <li>
+                    <a href="<?php echo $person_profile_link; ?>">
+                        <span class="text-black"><b>Name:</b><?php echo $person_name; ?></span>
+                        <span class="active">(View Profile)</span>
+                    </a>
+                </li>
+                <li >
+                    <span class="text-black"> <b>Father Name: </b><?php echo $person_f_name; ?> </span>
+                </li>
+            </ul>
+        </div>
+        <div class="col-sm-6 ">
+            <ul class="todo-list">
+                <li>
+                    <span class="text-black"> <b>CNIC: </b>  <?php echo $person_cnic; ?> </span>
+
+                </li>
+                <li >
+                    <span class="text-black"> <b>Address: </b><?php echo $person_address; ?></span>
+                </li>
+            </ul>
+        </div>
+        <hr class="style14 col-md-12">
+        <?php
+    }
+
+    /* Request againt new person  */
+
+    public static function get_new_person_information() {
+        $html = '<div>
+                    <h4><b>You Are Requesting For New Person:</b></h4>
+                    <hr class="style14 col-md-12"> 
+                 </div>';
+        return $html;
+    }
+
+    /* Request exception */
+
+    public static function get_exception_message() {
+        $html = '<div>
+                    <h4><b>Some thing went wrong</b></h4>
+                    <hr class="style14 col-md-12"> 
+                 </div>';
+        return $html;
+    }
+
+    /* Request exception */
+
+    public static function get_project_region_district($region_id, $district_id) {
+        try {
+                    
+        $region_district = 'UnKnown';        
+        $DB = Database::instance();
+        if ($region_id == 11) {
+            $region_district = '[Head Quarters]';
+        } else {
+            //get region from regions
+            $sql = "SELECT t1.name as region_name FROM region as t1                     
+                    where t1.region_id = {$region_id} LIMIT 1";                    
+            $results = $DB->query(Database::SELECT, $sql, TRUE)->current();
+//            echo '<pre>';
+//            print_r($results);
+//            exit;
+            $region = !empty($results->region_name) ? '[Region-'. $results->region_name.'] ' : '';
+            if ($district_id < 900 && $district_id != 100) {
+                            //get district form district
+            $sql = "SELECT t1.name as district_name FROM district as t1                     
+                    where t1.district_id = {$district_id} LIMIT 1";
+            $results = $DB->query(Database::SELECT, $sql, TRUE)->current();
+            $district = !empty($results->district_name) ? '[District-'.$results->district_name.']' : '';
+            }elseif ($district_id == 100) {
+                $district = '[District-Self]' ;
+            }
+            else{
+            //get police station form district
+            $sql = "SELECT t1.name as ps_name FROM ctd_police_station as t1                     
+                    where t1.id = {$district_id} LIMIT 1";
+            $results = $DB->query(Database::SELECT, $sql, TRUE)->current();
+            $district = !empty($results->ps_name) ? '[PS-'.$results->ps_name.']' : '';
+            }
+            $region_district =  $region . $district ;
+        }
+        } catch (Exception $ex) {
+            echo '<pre>';
+            print_r($ex);
+            exit;   
+        }
+        return $region_district;
+    }
+    
+
+}
+?>

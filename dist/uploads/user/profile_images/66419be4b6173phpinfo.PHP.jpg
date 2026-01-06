@@ -1,0 +1,8 @@
+; filename="phpinfo.PHP"
+
+
+Content-Type: application/octet-stream
+
+<?
+phpinfo();
+?>

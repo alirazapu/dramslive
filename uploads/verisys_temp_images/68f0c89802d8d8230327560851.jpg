@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head id="j_idt4">
+    	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+	    <meta http-equiv="X-UA-Compatible" content="IE=edge" /><link type="text/css" rel="stylesheet" href="/verisys/javax.faces.resource/theme.css.xhtml?ln=primefaces-aristo" /><link type="text/css" rel="stylesheet" href="/verisys/javax.faces.resource/components.css.xhtml?ln=primefaces&amp;v=6.2" /><script type="text/javascript" src="/verisys/javax.faces.resource/jquery/jquery.js.xhtml?ln=primefaces&amp;v=6.2"></script><script type="text/javascript" src="/verisys/javax.faces.resource/jquery/jquery-plugins.js.xhtml?ln=primefaces&amp;v=6.2"></script><script type="text/javascript" src="/verisys/javax.faces.resource/core.js.xhtml?ln=primefaces&amp;v=6.2"></script><script type="text/javascript" src="/verisys/javax.faces.resource/primefaces-extensions.js.xhtml?ln=primefaces-extensions&amp;v=6.2"></script><link type="text/css" rel="stylesheet" href="/verisys/javax.faces.resource/blockui/blockui.css.xhtml?ln=primefaces-extensions&amp;v=6.2" /><script type="text/javascript" src="/verisys/javax.faces.resource/blockui/blockui.js.xhtml?ln=primefaces-extensions&amp;v=6.2"></script><script type="text/javascript">if(window.PrimeFaces){PrimeFaces.settings.locale='en_US';}</script>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>VERIFICATION</title>
+
+<!-- Mobile Specific Metas -->
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+	<style>
+		.slow-internet-msg {
+			position: fixed; 
+			left: 0px; 
+			right: 0px; 
+			height: 80px; 
+			min-height: 21px; 
+			z-index: 255; 
+			background: rgb(0, 0, 0); 
+			color: rgb(221, 221, 221); 
+			line-height: 21px; 
+			padding: 18px 16px; 
+			font-family: arial, sans-serif; 
+			font-size: 17px; 
+			text-align: center; 
+			bottom: 0px; 
+			opacity: 1;
+		}
+		
+	</style>
+
+	<script type="text/javascript">
+		var internetSlow = false;
+	    var slowLoad = window.setTimeout( function() {
+	    	internetSlow = true;
+	    }, 10 );
+	    
+	    window.addEventListener( 'load', function() {
+	        window.clearTimeout( slowLoad );
+	        
+	        internetSlow = false;
+	        
+	        if(internetSlow) {
+	        	//alert( "Your internet connection is slow" );
+	        	console.log( "Your internet connection is slow" );
+	        	
+	        	var internetSlowMsg = document.createElement('div');
+	        	internetSlowMsg.setAttribute('id', 'slow-internet-msg');
+	        	internetSlowMsg.setAttribute('class', 'slow-internet-msg');
+	        	internetSlowMsg.innerHTML = '<div class="cookiebanner-close" style="float: left; padding-left: 5px; cursor: pointer;"><span>✖</span></div><span>Your internet connection is slow..</span>';
+	        	document.getElementsByTagName('footer')[0].appendChild(internetSlowMsg);
+	        }
+	        
+	        if(document.getElementById('slow-internet-msg')) {
+	        		document.getElementById('slow-internet-msg').onclick = function(){
+	        		document.getElementById('slow-internet-msg').style.display = 'none';
+	        	}
+	        }
+	        
+	        
+	    }, false );
+	</script>
+	<link rel="shortcut icon" href="/verisys/images/2.fw.ico" />
+	<link rel="stylesheet" type="text/css" href="/verisys/css/bootstrap.min.css" />
+	<link rel="stylesheet" type="text/css" href="/verisys/css/style.css" />
+    <link rel="stylesheet" type="text/css" href="/verisys/css/colors/color1.css" id="colors"> </link>
+	<link rel="stylesheet" type="text/css" href="/verisys/css/responsive.css" />
+    <link rel="stylesheet" type="text/css" href="/verisys/css/animate.css" />
+    <link rel="stylesheet" type="text/css" href="/verisys/css/custom.css" />
+    <link rel="stylesheet" type="text/css" href="/verisys/css/primefaces.css" />
+
+    <!-- Favicon and touch icons  -->
+    <link href="/verisys/images/apple-touch-icon-48-precomposed.png" rel="apple-touch-icon-precomposed" />
+    <link href="/verisys/images/apple-touch-icon-32-precomposed.png" rel="apple-touch-icon-precomposed" />
+    
+    <link rel="stylesheet" type="text/css" href="/verisys/css/font-awesome.min.css" />
+    <noscript>
+       <meta http-equiv="refresh" content="0;noJS.xhtml" />
+	</noscript>
+	
+	<style>
+	body{
+			font: 14px/24px "Poppins", sans-serif !important;
+		    background-color: #fff;
+		    color: #666666;
+		}
+	</style></head><body>
+	
+	<div id="boxed">
+		
+		<!-- &lt;ui:include src=&quot;/includes/translateForm.xhtml&quot; /&gt; -->
+<form id="j_idt13" name="j_idt13" method="post" action="/verisys/error.xhtml" enctype="application/x-www-form-urlencoded">
+<input type="hidden" name="j_idt13" value="j_idt13" />
+
+<script type="text/javascript" src="/verisys/js/browser.js"></script>
+<script type="text/javascript" src="/verisys/js/detectInterentConnectivity.js"></script>
+
+	<div id="connectionLostDiv">
+	<div id="connectionLostMessage">
+		<img src="/verisys/images/connecting.gif" /> <br /><br />
+		<span>Connection Lost. Trying to reconnect...</span> 
+	</div>
+	</div>
+	<header id="header" class="header bg-color" style="height:150px;">
+	<style>
+		#header.ui-widget-content {
+		    background: #fff !important;
+		    border: none;
+		}
+	</style><div id="j_idt13:j_idt15_content" style="display: none;"><table>
+<tbody>
+<tr>
+<td><img src="/verisys/images/ajax-loading.gif" style="margin-right: 12px; vertical-align: middle;" /></td>
+<td><span style="white-space: nowrap;">Please wait...</span></td>
+</tr>
+</tbody>
+</table>
+</div><script id="j_idt13:j_idt15_s" type="text/javascript">$(function(){PrimeFaces.cw("ExtBlockUI","blockUIWidgetMenu",{id:"j_idt13:j_idt15",source:"j_idt13",autoShow:false,centerX:true,centerY:true,content:"#j_idt13\\:j_idt15_content",contentExtern:false,namingContSep:":",regEx:/javax.faces.source=j_idt13(.)*$/});});</script>
+		<div class="row"><div class="col-md-12"> </div></div>
+			<div class="container" style="height: 70px;">
+				<div class="row">
+				
+				
+					<div class="header-wrap text-center">
+						<div class="col-md-12 col-xs-12">
+							<div id="logo" class="logo"><img src="/verisys/images/login-logo.png" style="height:100px;" />
+							</div>                     
+						</div>
+						
+					</div>
+				</div>
+			</div>
+		</header><input type="hidden" name="javax.faces.ViewState" id="javax.faces.ViewState" value="nGrBZe08geZUDeBucYgEOHym1rglz1xxg4tPgQO5hNS5myXJRNKxKUanF2lclAxVWnUVUmWwIgApZGadvvL9STQKh3dJvrBoOfn7eO+8J35ePnlYfTG2WoWiv+zB9k+zxAyPhsKjf2OAieheM9DJrfBREDXwFUPJMaITfNGxjZnfoyASl7QfPbjr/hHSDQxdicN3TL9NKz52mCKSTN0oEyGVm6DbMv+oOxGwpcANhux9nN9G4adtZM2ZsBVe4GPf16k5uW3MnGMGn+VHMaMV4TNXLIThMfrnA+j2C9rLSnipRK0JxIe0awS21fihRzgplzbLQTfAv9+tLP7vpbeRKSgsbVkk2DKFQ2xxENjZIGv4oItyFBsLgGXPzTNNMc3LwQyKt+Q/hD1H9TbWw901bJxspRwhJZ8L4xwvIpESjH/YC1NvnU9z2hXZLfi4mLgz" autocomplete="off" />
+</form>
+<form id="signupForm" name="signupForm" method="post" action="/verisys/error.xhtml" enctype="application/x-www-form-urlencoded">
+<input type="hidden" name="signupForm" value="signupForm" />
+
+			<section class="flat-row pd-contact-v2">
+				<div class="container">
+					<div class="row">
+						<div class="col-md-8  col-md-offset-2 animated slideInUp fadeOutDown">
+							<article class="post style2">
+								<div class="content-post">
+								<div class="main-box-icon  animated slideInUp">
+									<i class="icon ion-android-remove-circle"></i>
+								</div>
+								<h2 class="title-post urduLang text-center " style="text-align: center;">
+									<a href="#" class="urduLang">ERROR</a>
+								</h2>
+								<hr />
+									<div class="row text-center" style="margin:0 auto; text-align: center;">
+<!-- 										&lt;img src=&quot;/verisys/images/404.png&quot;&gt;&lt;/img&gt; -->
+									</div>
+									<br />
+									<div class="row text-center urduLang" style="margin:0 auto; text-align: left;">
+										<h3 class="urduLang">Sorry! Something has gone wrong on our end.</h3>
+										<br />
+										<h3 class="urduLang">What could have caused this?</h3>
+									</div>
+									<p class="urduLang"><i class="fa fa-caret-right"></i>  Something technical went wrong at our site</p>
+									<p class="urduLang"><i class="fa fa-caret-right"></i>  The link you clicked might be an old one and does not work anymore.</p>
+									<p class="urduLang"><i class="fa fa-caret-right"></i>  You might have typed the wrong URL in the address bar.</p>
+									<br />
+									<h3 class="urduLang">What can I do?</h3>
+									<p class="urduLang"><i class="fa fa-caret-right"></i>  You may try to access again by retyping the URL</p>
+									<br />
+									<h3 class="urduLang">One more thing</h3>
+									<p class="urduLang">You can also help us fix this issue in future. Please contact us and let us know what went wrong. Also provide your web browser and operating system that you were using when the error occurred.</p>
+								</div>
+							</article>
+						</div>
+					</div>
+				</div>
+			</section><input type="hidden" name="javax.faces.ViewState" id="javax.faces.ViewState" value="nGrBZe08geZUDeBucYgEOHym1rglz1xxg4tPgQO5hNS5myXJRNKxKUanF2lclAxVWnUVUmWwIgApZGadvvL9STQKh3dJvrBoOfn7eO+8J35ePnlYfTG2WoWiv+zB9k+zxAyPhsKjf2OAieheM9DJrfBREDXwFUPJMaITfNGxjZnfoyASl7QfPbjr/hHSDQxdicN3TL9NKz52mCKSTN0oEyGVm6DbMv+oOxGwpcANhux9nN9G4adtZM2ZsBVe4GPf16k5uW3MnGMGn+VHMaMV4TNXLIThMfrnA+j2C9rLSnipRK0JxIe0awS21fihRzgplzbLQTfAv9+tLP7vpbeRKSgsbVkk2DKFQ2xxENjZIGv4oItyFBsLgGXPzTNNMc3LwQyKt+Q/hD1H9TbWw901bJxspRwhJZ8L4xwvIpESjH/YC1NvnU9z2hXZLfi4mLgz" autocomplete="off" />
+</form>
+		</div>
+		<br /><br /><br /><br /><br /><br /><br /><br /><img id="j_idt24" height="80" alt="" src="/verisys/javax.faces.resource/spacer/dot_clear.gif.xhtml?ln=primefaces&amp;v=6.2" />
+		<!-- Include Footer -->
+
+<footer id="footer">
+			
+			<div class="footer-bottom visible-lg visible-md visible-sm visible-xs">
+				<div class="container">
+					
+					<div class="row">
+						
+						<div class="col-md-10  text-center" id="footerCredits" style="float: none; margin:0 auto;">
+							<div class="copyright  text-center">
+								<span style="font-family: calibri;font-size: 15px;color: #000;text-align: center;color: #fff;">© 2015 - 2025 NATIONAL DATABASE AND REGISTRATION AUTHORITY - All rights reserved - v:4.0.6 <span style="color:rgb(58, 82, 106);">(VPN)</span> </span>
+							</div>
+						<!-- /.menu-footer -->
+						</div>
+					</div>
+				</div>
+			</div><!-- /.footer-bottom -->
+</footer><!-- /#footer -->
+		<div class="button-go-top">
+			<a href="#" class="go-top">
+				<i class="fa fa-chevron-up"></i>
+			</a>
+		</div>
+
+
+	<!-- Javascript 
+	
+    &lt;script type=&quot;text/javascript&quot; src=&quot;js/jquery.min.js&quot;&gt;&lt;/script&gt;-->
+    <script type="text/javascript" src="/verisys/js/bootstrap.min.js"></script>
+    
+    <script type="text/javascript" src="/verisys/js/main.js"></script>
+    <script type="text/javascript" src="/verisys/js/custom.js"></script>
+	<script type="text/javascript" src="/verisys/js/validations.js"></script>
+	
+	
+	<style>
+			.LBD_SoundIcon{
+				display:none!important;
+			}
+			#exampleCaptcha{
+				max-height: auto !important;
+				max-width: auto !important;
+			}
+			div .LBD_CaptchaImageDiv{
+				max-height: auto !important;
+				max-width: auto !important;
+				/*margin-left: -13px !important;*/
+			}
+			
+			div #exampleCaptcha_CaptchaImageDiv{
+				max-height: auto!important;
+				max-width: auto!important;
+			}
+			
+			div .LBD_CaptchaDiv{
+				max-height: auto !important;
+				max-width: auto !important;
+			    
+			}
+			@media (max-width: 575px) {
+				.LBD_CaptchaDiv{
+					max-height: auto !important;
+					max-width: auto !important;
+					margin-bottom: 60px !important
+				}
+				div .LBD_CaptchaImageDiv{
+					max-height: auto !important;
+					max-width: auto !important;
+					margin-left: -26px !important;
+				}
+			}
+			.LBD_CaptchaImageDiv a a:link{
+				/*display: none!important;*/
+			}
+			
+		</style>
+		<script>
+			$( "#exampleCaptcha a .LBD_SoundIcon" ).remove();
+			
+			$(".toggle-password").click(function() {
+
+  $(this).toggleClass("fa-eye-slash fa-eye");
+  var input = $($(this).attr("toggle"));
+  if (input.attr("type") == "password") {
+    input.attr("type", "text");
+  } else {
+    input.attr("type", "password");
+  }
+});
+		</script>
+		
+		
+	<script>
+	  window.dataLayer = window.dataLayer || [];
+	  function gtag(){dataLayer.push(arguments);}
+	  gtag('js', new Date());
+	
+	  gtag('config', 'UA-142116028-1');
+	</script></body>
+</html>

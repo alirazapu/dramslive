@@ -1,0 +1,350 @@
+<?php
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+?>
+<!-- Content Header (Page header) -->
+    <section class="content-header">
+      <h1>
+       <i class="fa fa-circle-o"></i> Watch List
+        <small>Tracer</small>
+      </h1>
+      <ol class="breadcrumb">
+        <li><a href="<?php echo URL::site('Userdashboard/dashboard'); ?>"><i class="fa fa-dashboard"></i> Home</a></li>	
+        <li><a href="#"> Watch List</a></li>
+        <li class="active">Add Watch List</li>
+      </ol>
+    </section>
+<!-- Main content -->
+<section class="content">
+
+    <div class="container-fluid">
+        <div class="">
+            <div class="box box-primary">
+                <form role="form" name="search_form" id="search_form" class="ipf-form" method="POST" action="<?php echo URL::site('watchlist/add_watch_list'); ?>" >
+                    <div class="box box-default collapsed-box">
+                        <div class="box-header with-border">
+                            <h3 class="box-title">Advance Search</h3>
+
+                            <div class="box-tools pull-right">
+                                <button type="button" title="Show/Hide Advance Search" class="btn btn-box-tool" data-widget="collapse"><i class="fa <?php echo (!empty($search_post)) ? 'fa-minus' : 'fa-plus'; ?>"></i></button>
+                                <button type="button" title="Close Advance Search" class="btn btn-box-tool" data-widget="remove"><i class="fa fa-remove"></i></button>
+                            </div>
+                        </div>
+                        <!-- /.box-header -->
+                        <div class="box-body" style="<?php echo (!empty($search_post)) ? 'display:block;' : ''; ?>">                            
+                              <div class="col-md-12">
+                                  <div class="col-md-8">
+                                      <div class="form-group">
+                                          <label>Person Category</label>
+                                          <div class="checkbox" style="margin-left: 20px">                                          
+                                              <?php try{
+                                              $tags = Helpers_Watchlist::get_tags_data(); 
+                                              foreach ($tags as $tag) {
+                                                  ?>
+                                                  <div class="form-group col-md-3 watchlistadvancesearch"> 
+                                                      <div class="col-md-12">
+                                                          <input type="checkbox" <?php echo (isset($search_post['category_type'][$tag->id]) && ($search_post['category_type'][$tag->id]== 'on')) ? 'checked' : ''; ?> name="category_type[<?php echo $tag->id; ?>]" id="personcategory">
+                                                          <label for="personcategory" style="padding-left: 12px;"> <?php echo $tag->tag_name; ?> </label>
+                                                      </div>
+                                                  </div>
+                                               <?php                                               
+                                              }
+                                              }  catch (Exception $ex){   }?>
+                                          </div>
+                                      </div>          
+                                  </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Watch List Status</label>
+                                        <div class="radio radio-primary" style="margin-left: 20px">                                            
+                                            <input type="radio" <?php echo ((isset($search_post['watchlist_status']) && ($search_post['watchlist_status']==2))|| !isset($search_post['watchlist_status'])) ? 'checked' : ''; ?> name="watchlist_status" id="watchlist_status_1" value="2">
+                                            <label for="watchlist_status_1" style="padding-left: 2px; margin-right: 25px">
+                                                Both
+                                            </label>
+                                            <input type="radio" <?php echo (isset($search_post['watchlist_status']) && ($search_post['watchlist_status']==1)) ? 'checked' : ''; ?>  name="watchlist_status" id="watchlist_status_2" value="1">
+                                            <label for="watchlist_status_2" style="padding-left: 2px; margin-right: 25px">
+                                                Yes
+                                            </label>
+                                            <input type="radio" <?php echo (isset($search_post['watchlist_status']) && ($search_post['watchlist_status']==0)) ? 'checked' : ''; ?>  name="watchlist_status" id="watchlist_status_3" value="0">
+                                            <label for="watchlist_status_3" style="padding-left: 2px; margin-right: 25px">
+                                                No
+                                            </label>
+                                        </div>
+                                    </div>          
+                                </div>                                 
+                              </div>    
+                            <!-- /.col -->
+                            <div class="col-md-12">
+                                <div class="form-group pull-right">
+                                    <button type="submit" class="btn btn-primary">Search</button>
+                                    <input type="button" value="Clear Search" onclick="clearSearch()" class="btn btn-danger" />
+                                </div>
+                            </div>
+
+                            <!-- /.col -->
+                            <!-- /.row -->
+                        </div>        
+                    </div>
+                </form>
+            </div>
+        </div>        
+        <div class="row">
+            <div class="col-xs-12">
+            <div class="box">
+                <div class="box-header">
+                    <h3 class="box-title"><i class="fa fa-search"></i> Watch List Configuration</h3>
+                </div>
+                <?php
+                if (!empty($message)) {
+                    ?>
+                    <div class="alert alert-success alert-dismissible">
+                        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                        <h4><i class="icon fa fa-check"></i> <?php echo $message; ?></h4>
+                    </div>
+                <?php } ?>
+                <!-- /.box-header -->
+                <div class="box-body">
+                    <div class="table-responsive">
+                        <table id="personlist" class="table table-bordered table-striped">
+                            <thead>
+                                <tr>                                   
+                                    <th class="no-sort" style="width: 15%">Person Name</th>                                                                                                          
+                                    <th class="no-sort" style="width: 15%">Father/Husband Name</th>                                    
+                                    <th class="no-sort" style="width: 15%">CNIC Number</th>
+                                    <th class="no-sort" style="width: 30%">Address</th>
+                                    <th class="no-sort" style="width: 30%">Category</th>
+                                    <th class="no-sort" >Action</th>
+                                    
+                                </tr>
+                            </thead>
+                            <tbody>
+
+                            </tbody>
+                            <tfoot>
+                                <tr>                                     
+                                    <th>Person Name</th>                                                                                                          
+                                    <th>Father/Husband Name</th>                                    
+                                    <th>CNIC Number</th>
+                                    <th>Address</th>
+                                    <th>Category</th>
+                                    <th>Action</th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+                <!-- /.box-body -->
+            </div>
+            <!-- /.box --> 
+            </div>
+        </div>
+    </div>
+
+</section>
+<!-- /.content --> 
+<script>
+    $(function () {
+        //Initialize Select2 Elements
+        $(".select2").select2();
+    });
+</script>
+<script type="text/javascript">
+    /* For nadra verisis request processing */
+    function findphonenumber(cnic,requestid) {
+
+        $("#cnic_number").val(cnic);
+        $("#process_request_id").val(requestid);
+        $("#process_nadra_verysis").modal("show");
+        //appending modal background inside the blue div
+        $('.modal-backdrop').appendTo('.blue');
+
+        //remove the padding right and modal-open class from the body tag which bootstrap adds when a modal is shown
+        $('body').removeClass("modal-open");
+        $('body').css("padding-right", "");
+        setTimeout(function () {
+            // Do something after 1 second     
+            $(".modal-backdrop.fade.in").remove();
+        }, 300);
+
+    }
+
+    //table 
+    var objDT;
+
+    function refreshGrid() {
+        // objDT.fnDraw();
+        objDT.fnStandingRedraw();
+        if ($("#msg_to_show").val() != "") {
+            $("#msg_" + $("#msg_to_show").val()).show();
+        }
+    }
+
+    $(document).ready(function () {
+        //validate Person Verisis
+        
+        $("#veriysispics").validate({
+                  rules:{
+                        personverysis:{
+                            required: true,
+                            accept: "jpg,jpeg,gif,png",
+                            filesize: 900000,
+                                   },
+                        },
+                    messages: {
+                        personverysis:{
+                                required:"File Required",  
+                              },
+                        }                       
+                   
+                });
+
+$.validator.addMethod('filesize', function (value, element, param) {
+    return this.optional(element) || (element.files[0].size <= param)
+}, 'File size must be less than {0} Kb');
+    
+    //table data
+        $.fn.dataTableExt.oApi.fnStandingRedraw = function (oSettings) {
+            if (oSettings.oFeatures.bServerSide === false) {
+                var before = oSettings._iDisplayStart;
+                oSettings.oApi._fnReDraw(oSettings);
+                // iDisplayStart has been reset to zero - so lets change it back
+                oSettings._iDisplayStart = before;
+                oSettings.oApi._fnCalculateEnd(oSettings);
+            }
+
+            // draw the 'current' page
+            oSettings.oApi._fnDraw(oSettings);
+        };
+        objDT = $('#personlist').dataTable(
+                {"aaSorting": [],
+                    "bPaginate": true,
+                    "bProcessing": true,
+                    //"bStateSave": true,
+                    "bServerSide": true,
+                    "sAjaxSource": "<?php echo URL::site('watchlist/ajaxtagpersonlist', TRUE); ?>",
+                    "sPaginationType": "full_numbers",
+                    "bFilter": true,
+                    "bLengthChange": true,
+                    "oLanguage": {
+                        "sProcessing": "Loading...",
+                        "sSearch": "Search By Person Name:",
+                        "sEmptyTable": "No Data Found, only taged persons of your district will be shown here, first tag a peson then add from here"
+                    },
+                    "columnDefs": [{
+                            "targets": 'no-sort',
+                            "orderable": false,
+                        }]
+                }
+        );
+      //  $('.dataTables_empty').html("Information not found");
+
+    });
+// request update
+$(document).ready(function (e) {
+    $('#veriysispics').on('submit',(function(e) {
+        e.preventDefault();
+        var formData = new FormData(this);
+ if($('#veriysispics').valid())
+        {
+        $.ajax({
+            type:'POST',
+            url: $(this).attr('action'),
+            data:formData,
+            cache:false,
+            contentType: false,
+            processData: false,
+            success:function(data){
+                $("#process_nadra_verysis").modal("hide");
+                $("#notification_msg_divreports").html('Successfully Updated');
+                            $("#notification_msgreports").show();
+                            $("#notification_msgreports").addClass('alert');
+                            $("#notification_msgreports").addClass('alert-success');
+                            var elem = $(".notificationclosereports");
+                            elem.slideUp(10000);
+                            refreshGrid();
+            },
+            error: function(data){
+                console.log("error");
+                console.log(data);
+            }
+        });
+    }
+    }));
+
+//    $("#ImageBrowse").on("change", function() {
+//        $("#imageUploadForm").submit();
+//    });
+});
+    function clearSearch() {
+        window.location.href = '<?php echo URL::site('watchlist/add_watch_list', TRUE); ?>';
+    }
+    
+    function ConfirmChoice(id) 
+    { 
+        $(".odd").addClass('actiontd');
+        $(".even").addClass('actiontd');
+       //var elem = $(this).parent().parent();// .closest('.action');
+       // var elem = $(this).closest('tr[class^="action"]');       
+        //var elem = $(".item-" + id).closest('.actiontd');
+        $.confirm({
+            'title'     : 'Add to watchlist confirmation',
+            'message'   : 'Do you really want to Add this person to your watchlist?' ,
+            'buttons'   : {
+                'Yes'   : {
+                    'class' : 'gray',
+                    'action': function(msg){        
+                        $.ajax({url: '<?php echo URL::base() . "Watchlist/addtowatchlist/"; ?>'  + id , success: function(result){                                 
+                                if (msg == '2') { 
+                                    swal("System Error", "Contact Support Team.", "error");
+                                }
+                                else{
+                            refreshGrid();
+                                    }
+                        }});
+                        
+                    }
+                 },
+                'No'    : {
+                    'class' : 'blue',
+                    'action': function(){}  // Nothing to do in this case. You can as well omit the action property.
+                }
+            }
+        });
+   }
+    function removewatchlist(id) 
+    { 
+        $(".odd").addClass('actiontd');
+        $(".even").addClass('actiontd');
+       //var elem = $(this).parent().parent();// .closest('.action');
+       // var elem = $(this).closest('tr[class^="action"]');       
+        //var elem = $(".item-" + id).closest('.actiontd');
+        $.confirm({
+            'title'     : 'Remove watchlist confirmation',
+            'message'   : 'Do you really want to Remove this person from your watchlist?' ,
+            'buttons'   : {
+                'Yes'   : {
+                    'class' : 'gray',
+                    'action': function(msg){        
+                        $.ajax({url: '<?php echo URL::base() . "Watchlist/removefromwatchlist/"; ?>'  + id , success: function(result){                                 
+                                if (msg == '2') { 
+                                    swal("System Error", "Contact Support Team.", "error");
+                                }
+                                else{
+                            refreshGrid();
+                                    }
+                        }});
+                        
+                    }
+                 },
+                'No'    : {
+                    'class' : 'blue',
+                    'action': function(){}  // Nothing to do in this case. You can as well omit the action property.
+                }
+            }
+        });
+   }
+
+</script>
