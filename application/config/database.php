@@ -5,11 +5,11 @@ return array
     (
         'type'       => 'MySQLi',
         'connection' => array(
-              'hostname'   => '192.168.1.100',           
-            'username'   => 'ims',           
-           'password'   => '123456789',
+              'hostname'   => 'localhost',           
+            'username'   => 'root',           
+           'password'   => '',
             'persistent' => FALSE,
-            'database'   => 'aies',
+            'database'   => 'aiesplus',
         ),
         'table_prefix' => '',
         'charset'      => 'utf8',

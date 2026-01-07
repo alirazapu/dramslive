@@ -108,7 +108,7 @@ if (isset($_SERVER['KOHANA_ENV']))
  */
 
 Kohana::init(array(
-	'base_url'   => 'http://tracer.test/',
+	'base_url'   => 'http://ctd.aiesplus.kpk/',
 	'index_file' => FALSE,
          'errors'     => TRUE,
 		 'profile' => FALSE,
