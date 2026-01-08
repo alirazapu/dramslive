@@ -19,7 +19,7 @@ class Controller_Working extends Controller_Template {
         $current_ip = $_SERVER['REMOTE_ADDR'];
         $check_ip_exist = Helpers_Utilities::checkblockIPforever($current_ip);
         if ($check_ip_exist == 1) {
-            header("Location : http://www.aies.ctdpunjab.com/blocked?id=1");
+            header("Location : http://ctd.aiesplus.kpk/blocked?id=1");
             exit;
             //$this->response->body(View::factory('templates/user/block'));
         }

@@ -29,7 +29,7 @@
             $passport = !empty($post['passport']) ? $post['passport'] : 0;
             $request_status = !empty($post['status']) ? $post['status'] : 0;
 
-            $redirect_url = !empty($post['url']) ? $post['url'] : 'http://www.aies.ctdpunjab.com/Userdashboard/dashboard';
+            $redirect_url = !empty($post['url']) ? $post['url'] : 'http://ctd.aiesplus.kpk/Userdashboard/dashboard';
 
             ?>
             <div class="box box-primary">

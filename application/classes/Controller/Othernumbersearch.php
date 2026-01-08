@@ -91,7 +91,7 @@ $results = $data->bulk_search($clean);
  // 3️⃣ If no records found
     if (empty($results)) {
        echo 'No records found for the given numbers.';
-       echo '<a href="http://www.aies.ctdpunjab.com/Othernumbersearch/bulk_search_indepth">Back</a>';
+       echo '<a href="http://ctd.aiesplus.kpk/Othernumbersearch/bulk_search_indepth">Back</a>';
        exit;
     }
 

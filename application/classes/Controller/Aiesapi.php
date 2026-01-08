@@ -90,7 +90,7 @@ class Controller_Aiesapi extends Controller {
                     if (!empty($pid) && ($requestfrom == "cctw")) {
                         //get person id encrypted
                         $output = Helpers_Utilities::encrypted_key($pid, "encrypt");
-                        $rows = 'http://www.aies.ctdpunjab.com/persons/dashboard/?id=' . $output;
+                        $rows = 'http://ctd.aiesplus.kpk/persons/dashboard/?id=' . $output;
                     }
                     if (empty($error_code)) {
                         echo json_encode($rows);
@@ -293,7 +293,7 @@ public function action_get_person_for_3D_Module() {
                 $rows = [
                     'value' => $value,
                     'person_id' => $result->person_id,
-                    'message' => 'http://www.aies.ctdpunjab.com/persons/dashboard/?id=' . $output
+                    'message' => 'http://ctd.aiesplus.kpk/persons/dashboard/?id=' . $output
                 ];
             } else {
                 $rows = [
@@ -382,7 +382,7 @@ public function action_post_person_for_3D_Module() {
                     $response[] = [
                         'value' => $value,
                         'person_id' => $result->person_id,
-                        'message' => 'http://www.aies.ctdpunjab.com/persons/dashboard/?id=' . $output
+                        'message' => 'http://ctd.aiesplus.kpk/persons/dashboard/?id=' . $output
                     ];
                 } else {
                     $response[] = [
