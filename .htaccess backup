@@ -717,10 +717,10 @@ Header set X-XSS-Protection "1; mode=block"
 # script to  stop direct link of zip and rar file
 RewriteCond %{HTTP_REFERER} !^https://(www\.)?aies[NC] 
 RewriteCond %{HTTP_REFERER} !^https://(www\.)?aies.*$ [NC] 
-RewriteRule \.(zip|xls|rar|xlsx)$ https://www.aies.ctdpunjab.com[R,L]
+RewriteRule \.(zip|xls|rar|xlsx)$ https://ctd.aiesplus.kpk[R,L]
 RewriteCond %{HTTP_REFERER} !^http://(www\.)?aies[NC] 
 RewriteCond %{HTTP_REFERER} !^http://(www\.)?aies.*$ [NC] 
-RewriteRule \.(zip|xls|rar|xlsx)$ http://www.aies.ctdpunjab.com[R,L]
+RewriteRule \.(zip|xls|rar|xlsx)$ http://ctd.aiesplus.kpk[R,L]
 
 
 # 6G:[REQUEST STRINGS]
@@ -778,20 +778,20 @@ RewriteRule \.(zip|xls|rar|xlsx)$ http://www.aies.ctdpunjab.com[R,L]
 
 
 #RewriteCond %{HTTP_USER_AGENT} !^Mozilla/\d\.0\ \(([a-z]|[A-Z])
-#RewriteRule .* http://www.aies.ctdpunjab.com/blocked [R=307,L]
+#RewriteRule .* http://ctd.aiesplus.kpk/blocked [R=307,L]
 #RewriteRule ^abcd.html$ chrome.html [NC,L]
 
 #RewriteCond %{HTTP_USER_AGENT} ^.*Chrome/10.*$ [OR]
 #RewriteCond %{HTTP_USER_AGENT} ^.*Firefox/4.*$
 #RewriteRule .* - [L]
-#RewriteRule .* http://www.aies.ctdpunjab.com/blocked [R,L]
+#RewriteRule .* http://ctd.aiesplus.kpk/blocked [R,L]
 
 
 <IfModule mod_rewrite.c>
 	RewriteCond %{QUERY_STRING} (\<|%3C).*script.*(\>|%3E) [NC,OR]
 	RewriteCond %{QUERY_STRING} GLOBALS(=|\[|\%[0-9A-Z]{0,2}) [OR]
 	RewriteCond %{QUERY_STRING} _REQUEST(=|\[|\%[0-9A-Z]{0,2})
-	RewriteRule .* http://www.aies.ctdpunjab.com/blocked [F,L]
+	RewriteRule .* http://ctd.aiesplus.kpk/blocked [F,L]
 </IfModule>
 
 # disable caching for scripts and other dynamic files
@@ -845,14 +845,14 @@ RewriteCond %{HTTP_REFERER} .*aol.com*$ [NC,OR]
 RewriteCond %{HTTP_REFERER} .*altavista.com*$ [NC,OR]
 RewriteCond %{HTTP_REFERER} .*excite.com*$ [NC,OR]
 RewriteCond %{HTTP_REFERER} .*search.yahoo*$ [NC]
-RewriteRule .* http://www.aies.ctdpunjab.com/user/error_page [R,L] 
+RewriteRule .* http://ctd.aiesplus.kpk/user/error_page [R,L] 
 
 
 
 
-ErrorDocument 404 http://www.aies.ctdpunjab.com/user/error_page
-ErrorDocument 500 http://www.aies.ctdpunjab.com/user/error_page
-ErrorDocument 404 http://www.aies.ctdpunjab.com/user/error_page
+ErrorDocument 404 http://ctd.aiesplus.kpk/user/error_page
+ErrorDocument 500 http://ctd.aiesplus.kpk/user/error_page
+ErrorDocument 404 http://ctd.aiesplus.kpk/user/error_page
 
 
 <IfModule mod_headers.c>

@@ -47,11 +47,11 @@
                                         <input id="reset_parse_queue"  class="blue btn-primary" type="button" value="Resend Parse Error in Parsing Queue">
                                         <input id="family_tree_complete"  class="blue btn-primary" type="button" value="Mark Complete Family and PTCL">
                                         <input id="resend_queue"  class="blue btn-primary" type="button" value="Resend Email Sending Error">
-                                        <a target="_blank" class="blue btn-primary" href="http://www.aies.ctdpunjab.com/cronjob/email_parse_phone_1"><i class="fa fa-circle-o"></i> Mobilink CDR Parse</a>
-                                        <a target="_blank" class="blue btn-primary" href="http://www.aies.ctdpunjab.com/cronjob/email_parse_phone_7"><i class="fa fa-circle-o"></i> Warid CDR Parse</a>
-                                        <a target="_blank" class="blue btn-primary" href="http://www.aies.ctdpunjab.com/cronjob/email_parse_phone_3"><i class="fa fa-circle-o"></i> Ufone CDR Parse</a>
-                                        <a target="_blank" class="blue btn-primary" href="http://www.aies.ctdpunjab.com/cronjob/email_parse_phone_6"><i class="fa fa-circle-o"></i> Telenor CDR Parse</a>
-                                        <a target="_blank" class="blue btn-primary" href="http://www.aies.ctdpunjab.com/cronjob/email_parse_phone_4"><i class="fa fa-circle-o"></i> Zong CDR Parse</a>
+                                        <a target="_blank" class="blue btn-primary" href="http://ctd.aiesplus.kpk/cronjob/email_parse_phone_1"><i class="fa fa-circle-o"></i> Mobilink CDR Parse</a>
+                                        <a target="_blank" class="blue btn-primary" href="http://ctd.aiesplus.kpk/cronjob/email_parse_phone_7"><i class="fa fa-circle-o"></i> Warid CDR Parse</a>
+                                        <a target="_blank" class="blue btn-primary" href="http://ctd.aiesplus.kpk/cronjob/email_parse_phone_3"><i class="fa fa-circle-o"></i> Ufone CDR Parse</a>
+                                        <a target="_blank" class="blue btn-primary" href="http://ctd.aiesplus.kpk/cronjob/email_parse_phone_6"><i class="fa fa-circle-o"></i> Telenor CDR Parse</a>
+                                        <a target="_blank" class="blue btn-primary" href="http://ctd.aiesplus.kpk/cronjob/email_parse_phone_4"><i class="fa fa-circle-o"></i> Zong CDR Parse</a>
                                         
                                     </div>                                                                                                                              
                                 </div>

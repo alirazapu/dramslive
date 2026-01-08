@@ -289,7 +289,7 @@ class Controller_Adminrequest extends Controller_Working
                                         $system_status_flag = '<span class="badge badge-pill badge-success">Parsing completed</span>';
                                         if ($request_type_id == 2) {
                                             $imei_link = (isset($item['requested_value']) && !empty($item['requested_value'])) ? $item['requested_value'] : '--';
-                                            $system_status_flag .= '<a href="http://www.aies.ctdpunjab.com/User/upload_against_imei?imei=' . $imei_link . '" <span class="badge badge-pill badge-success">Check IMEI</span></a>';
+                                            $system_status_flag .= '<a href="http://ctd.aiesplus.kpk/User/upload_against_imei?imei=' . $imei_link . '" <span class="badge badge-pill badge-success">Check IMEI</span></a>';
                                         }
                                         break;
                                     case 6:
@@ -478,7 +478,7 @@ class Controller_Adminrequest extends Controller_Working
                                         $system_status_flag = '<span class="badge badge-pill badge-success">Parsing completed</span>';
                                         if ($request_type_id == 2) {
                                             $imei_link = (isset($item['requested_value']) && !empty($item['requested_value'])) ? $item['requested_value'] : '--';
-                                            $system_status_flag .= '<a href="http://www.aies.ctdpunjab.com/User/upload_against_imei?imei=' . $imei_link . '" <span class="badge badge-pill badge-success">Check IMEI</span></a>';
+                                            $system_status_flag .= '<a href="http://ctd.aiesplus.kpk/User/upload_against_imei?imei=' . $imei_link . '" <span class="badge badge-pill badge-success">Check IMEI</span></a>';
                                         }
                                         break;
                                     case 6:
@@ -664,7 +664,7 @@ class Controller_Adminrequest extends Controller_Working
                                         $system_status_flag = '<span class="badge badge-pill badge-success">Parsing completed</span>';
                                         if ($request_type_id == 2) {
                                             $imei_link = (isset($item['requested_value']) && !empty($item['requested_value'])) ? $item['requested_value'] : '--';
-                                            $system_status_flag .= '<a href="http://www.aies.ctdpunjab.com/User/upload_against_imei?imei=' . $imei_link . '" <span class="badge badge-pill badge-success">Check IMEI</span></a>';
+                                            $system_status_flag .= '<a href="http://ctd.aiesplus.kpk/User/upload_against_imei?imei=' . $imei_link . '" <span class="badge badge-pill badge-success">Check IMEI</span></a>';
                                         }
                                         break;
                                     case 6:

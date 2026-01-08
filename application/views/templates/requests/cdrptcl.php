@@ -25,7 +25,7 @@
             $person_id = !empty($post['pid']) ? $post['pid'] : 0;
             $request = !empty($post['request']) ? $post['request'] : "na";
             $ptclnumber = !empty($post['ptclnumber']) ? $post['ptclnumber'] : 0;
-            $redirect_url = !empty($post['url']) ? $post['url'] : 'http://www.aies.ctdpunjab.com/Userdashboard/dashboard';
+            $redirect_url = !empty($post['url']) ? $post['url'] : 'http://ctd.aiesplus.kpk/Userdashboard/dashboard';
             //  echo $msisdn;
             ?>
             <div class="box box-primary">

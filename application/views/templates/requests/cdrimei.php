@@ -26,7 +26,7 @@
             $request = !empty($post['request']) ? $post['request'] : "";
             $requesttype = !empty($post['requesttype']) ? $post['requesttype'] : 0;
             $imeinumber = !empty($post['imei']) ? $post['imei'] : 0;
-            $redirect_url = !empty($post['url']) ? $post['url'] : 'http://www.aies.ctdpunjab.com/Userdashboard/dashboard';
+            $redirect_url = !empty($post['url']) ? $post['url'] : 'http://ctd.aiesplus.kpk/Userdashboard/dashboard';
             //  echo $msisdn;
             ?>
             <div class="box box-primary">
