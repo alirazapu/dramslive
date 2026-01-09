@@ -15,7 +15,7 @@ $user_name=Helpers_Utilities::get_user_name($user_id);
     <section class="content-header">
       <h1>
        <i class="fa fa-circle-o"></i> Watch List Persons
-        <small>Tracer</small>
+        <small>DRAMS</small>
       </h1>
       <ol class="breadcrumb">
         <li><a href="<?php echo URL::site('Userdashboard/dashboard'); ?>"><i class="fa fa-dashboard"></i> Home</a></li>	

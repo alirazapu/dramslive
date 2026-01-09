@@ -9,7 +9,7 @@
     <section class="content-header">
       <h1>
        <i class="fa fa-list"></i> IP Blocked List
-        <small>Tracer</small>
+        <small>DRAMS</small>
       </h1>
       <ol class="breadcrumb">
         <li><a href="<?php echo URL::site('Userdashboard/dashboard'); ?>"><i class="fa fa-dashboard"></i> Home</a></li>	

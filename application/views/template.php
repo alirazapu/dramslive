@@ -25,7 +25,7 @@
             if(isset($scripts)) foreach ($scripts as $script) echo HTML::script($script). "\n"; 
         ?>
         <!-- Set Titles -->
-        <title>TRACER | <?php echo $current_action; ?> </title>
+        <title>DRAMS | <?php echo $current_action; ?> </title>
         
             <!--  Favicon Icon-->
             <!--<link rel="icon" href="<?php echo URL::base(); ?>dist/img/icon/icon_5.png" type="image/x-icon">--> 

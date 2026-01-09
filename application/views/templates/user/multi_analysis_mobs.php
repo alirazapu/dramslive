@@ -14,7 +14,7 @@ $phone_no= !empty($search_post['phonenumber']) ? $search_post['phonenumber']:'';
     <h1>
         <i class="fa fa-search"></i>
         Multi Analysis Search
-        <small>Tracer</small>
+        <small>DRAMS</small>
     </h1>
     <ol class="breadcrumb">
         <li><a href="<?php echo URL::site('Userdashboard/dashboard'); ?>"><i class="fa fa-dashboard"></i> Home</a></li>
