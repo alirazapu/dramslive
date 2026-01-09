@@ -3270,7 +3270,7 @@ abstract class Helpers_Utilities {
     /* sql injection */
 
     public static function remove_injection($postdata) {
-
+        return $postdata;
         if (is_array($postdata)) {
             //echo 'testd';
             foreach ($postdata as $key => $value) {

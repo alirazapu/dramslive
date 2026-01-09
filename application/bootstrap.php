@@ -106,13 +106,42 @@ if (isset($_SERVER['KOHANA_ENV']))
  * - boolean  caching     enable or disable internal caching                 FALSE
  * - boolean  expose      set the X-Powered-By header                        FALSE
  */
+$base_url='/';
+if ($kohana_env = getenv('KOHANA_ENV')) {
+    switch (strtoupper($kohana_env)) {
+        case 'DEVELOPMENT':
+            $base_url = 'http://dev.ctd.drams.kpk/';
+            Kohana::$environment = Kohana::DEVELOPMENT;
+            break;
+        case 'PRODUCTION':
+            $base_url = 'http://ctd.drams.kpk/';
+            Kohana::$environment = Kohana::PRODUCTION;
+            break;
+        case 'STAGING':
+            $base_url = 'http://stage.ctd.drams.kpk/';
+            Kohana::$environment = Kohana::STAGING;
+            break;
+        case 'TESTING':
+            $base_url = 'http://test.ctd.drams.kpk/';
+            Kohana::$environment = Kohana::TESTING;
+            break;
+        default:
+            $base_url = 'http://ctd.drams.kpk/';
+            Kohana::$environment = Kohana::DEVELOPMENT;
+    }
+} else {
+    // Fallback if not set
+    Kohana::$environment = Kohana::DEVELOPMENT;
+}
 
-Kohana::init(array(
-	'base_url'   => 'http://ctd.aiesplus.kpk/',
-	'index_file' => FALSE,
-	'errors'     => TRUE,
-	'profile' => FALSE,
-));
+$init=array(
+    'base_url'   => $base_url,
+    'index_file' => FALSE,
+    'errors'     => TRUE,
+    'profile'    => (Kohana::$environment !== Kohana::PRODUCTION),
+    'caching'    => (Kohana::$environment === Kohana::PRODUCTION),
+);
+Kohana::init($init);
 
 /**
  * Attach the file write to logging. Multiple writers are supported.
