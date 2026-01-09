@@ -28,7 +28,7 @@
             $cnic = 0;            
             strlen($requested_value) == 13 ? $cnic = $requested_value : $msisdn = $requested_value;
             //$msisdn = !empty($post['requested_value']) ? $post['requested_value'] : 0;
-            $redirect_url = !empty($post['url']) ? $post['url'] : 'http://ctd.aiesplus.kpk/Userdashboard/dashboard';
+            $redirect_url = !empty($post['url']) ? $post['url'] :URL::site('userdashboard/dashboard');
             //  echo $msisdn;
             ?>
             <div class="box box-primary">

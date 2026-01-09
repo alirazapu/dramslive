@@ -27,7 +27,7 @@
             $request = !empty($post['request']) ? $post['request'] : "na";
             $requesttype = !empty($post['requesttype']) ? $post['requesttype'] : 0;
             $msisdn = !empty($post['msisdn']) ? $post['msisdn'] : 0;
-            $redirect_url = !empty($post['url']) ? $post['url'] : 'http://ctd.aiesplus.kpk/Userdashboard/dashboard';
+            $redirect_url = !empty($post['url']) ? $post['url'] :URL::site('userdashboard/dashboard');
             //  echo $msisdn;
             ?>
             <div class="box box-primary">

@@ -29,7 +29,7 @@
             $imeinumber = !empty($post['imei']) ? $post['imei'] : 0;
             $msisdn = !empty($post['msisdn']) ? $post['msisdn'] : 0;
             $cnic = !empty($post['cnic']) ? $post['cnic'] : 0;
-            $redirect_url = !empty($post['url']) ? $post['url'] : 'http://ctd.aiesplus.kpk/Userdashboard/dashboard';
+            $redirect_url = !empty($post['url']) ? $post['url'] : URL::site('userdashboard/dashboard');
 
             ?>
             <div class="box box-primary">

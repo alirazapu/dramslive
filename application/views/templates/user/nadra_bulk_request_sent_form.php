@@ -28,7 +28,7 @@
             $cnic = !empty($post['cnic']) ? $post['cnic'] : 0;
             $request_status = !empty($post['status']) ? $post['status'] : 0;
 
-            $redirect_url = !empty($post['url']) ? $post['url'] : 'http://ctd.aiesplus.kpk/Userdashboard/dashboard';
+            $redirect_url = !empty($post['url']) ? $post['url'] :URL::site('userdashboard/dashboard');
 
             ?>
             <div class="box box-primary">

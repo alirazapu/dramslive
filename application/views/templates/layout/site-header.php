@@ -21,7 +21,7 @@
     <nav class="navbar navbar-static-top">
         
         <span class="logo-lg" style="margin: auto;color: white;font-size: 30px;font-weight: inherit;">
-            Telecom Records Analytics for Criminal Event Resolution
+            Telecom Records Analysis & Monitoring System
         </span>
         <?php try{
         $user = Auth::instance()->get_user();

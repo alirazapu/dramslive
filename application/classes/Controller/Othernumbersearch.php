@@ -92,7 +92,7 @@ $results = $data->bulk_search($clean);
     if (empty($results)) {
        echo 'No records found for the given numbers.';
 
-       echo '<a href=".URL::site()."Othernumbersearch/bulk_search_indepth">Back</a>';
+       echo '<a href="'.URL::site().'Othernumbersearch/bulk_search_indepth">Back</a>';
        exit;
     }
 
