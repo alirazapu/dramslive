@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>TRACER | Log in</title>
+    <title>DRAMS | Log in</title>
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -26,9 +26,9 @@
 </div>
 
 <div class="login-box">
-    <div class="login-logo">
-        <img src="<?= URL::base(); ?>dist/img/Logo.png" style="width:300px;">
-    </div>
+    <!--<div class="login-logo">
+        <img src="<?= URL::base(); ?>dist/img/logo.png" style="width:300px;">
+    </div>-->
 
     <div class="login-box-body">
 
@@ -41,7 +41,7 @@
         <?php endif; ?>
 
         <h3>Sign in</h3>
-        <b style="color:#40a64a"> DRAMS - Telecom Records Analysis & Monitoring System </b>
+        <b style="color:#40a64a"> DRAMS - Digital Records Analysis & Monitoring System </b>
         <br/><br/>
         <p>Enter your username and password</p>
 

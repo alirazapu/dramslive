@@ -11,7 +11,7 @@
     <h1 class="col-md-4">
         <i class="fa fa-dashboard"></i>
         Dashboard
-        <small>Tracer</small>
+        <small>DRAMS</small>
     </h1>
     <?php
     try {

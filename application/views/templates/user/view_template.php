@@ -13,7 +13,7 @@
                     <h1>
                         <i class="fa fa-files-o"></i>
                         Request Status
-                        <small>Tracer</small>
+                        <small>DRAMS</small>
                     </h1>
                     <ol class="breadcrumb">
                         <li><a href="<?php echo URL::site('userrequest/dashboard'); ?>"><i class="fa fa-dashboard"></i> Home</a></li>

@@ -511,7 +511,7 @@ $current_url = request::current()->controller();
                 <li class="treeview <?php echo (($current_url == 'Adminrequest' && ($menu_name == 'admin_request_sent_form' || $menu_name == 'admin_custom_request_form' || $menu_name == 'admin_sent_request_status'|| $menu_name == 'admin_sent_request_count'|| $menu_name == 'travel_request_sent_form'|| $menu_name == 'nadra_request_sent_form'|| $menu_name == 'user_request_count'||  $menu_name == 'familytree_request_sent_form' || $menu_name == 'nadra_bulk_request_sent_form'))) ? 'active' : ''; ?>">
                     <a href="#">
                         <i class="fa  fa-plus"></i>
-                        <span>Tracer Plus</span>
+                        <span>DRAMS Plus</span>
                         <span class="pull-right-container">
                             <i class="fa fa-angle-left pull-right"></i>
                         </span>
@@ -552,7 +552,7 @@ $current_url = request::current()->controller();
                 <li class="treeview <?php echo (($current_url == 'Admindatabank' && ($menu_name == 'bulk_nadra_requests_databank' || $menu_name == 'nadra_requests_reports_databank'|| $menu_name == 'breakup_report'|| $menu_name == 'data_upload_against_msisdn'|| $menu_name == 'msisdn_requests_reports_databank'|| $menu_name == 'msisdn_breakup_report' ||$menu_name == 'msisdn_breakup_report_individual'|| $menu_name == 'msisdn_no_request_send_reports_detail'))) ? 'active' : ''; ?>">
                     <a href="#">
                         <i class="fa  fa-database"></i>
-                        <span>Tracer Databank</span>
+                        <span>DRAMS Databank</span>
                         <span class="pull-right-container">
                             <i class="fa fa-angle-left pull-right"></i>
                         </span>
