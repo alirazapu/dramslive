@@ -135,8 +135,8 @@ class Controller_Login extends Controller {
 
     /* User Login */
 
-    public function action_check() {        
-        $_POST = Helpers_Utilities::remove_injection($_POST); 
+    public function action_check() {
+        $_POST = Helpers_Utilities::remove_injection($_POST);
         $result = Helpers_Utilities::setwetcookies();
         if ($result == 1)
             $this->redirect('errors');
@@ -274,13 +274,13 @@ class Controller_Login extends Controller {
         if ($size >= 150) {
             //header("Location : https://www.aiesdfdfdfmail.com/");
             //$this->response->body(View::factory('templates/user/block'));             
-            header("Location : http://ctd.aiesplus.kpk/blocked?id=2");
+            header("Location : ".URL::site('blocked/')."?id=2");
             exit;
         }
         if ($check_ip_exist == 1) {
             //header("Location : https://www.aiesdfdfdfmail.com/");
             //$this->response->body(View::factory('templates/user/block'));             
-            header("Location : http://ctd.aiesplus.kpk/blocked?id=1");
+            header("Location : ".URL::site('blocked/')."?id=1");
             exit;
         }
 

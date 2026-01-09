@@ -41,7 +41,7 @@
         <?php endif; ?>
 
         <h3>Sign in</h3>
-        <b style="color:#40a64a"> TRACER - Telecom Records Analytics for Criminal Event Resolution </b>
+        <b style="color:#40a64a"> DRAMS - Telecom Records Analysis & Monitoring System </b>
         <br/><br/>
         <p>Enter your username and password</p>
 

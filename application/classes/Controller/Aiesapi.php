@@ -90,7 +90,7 @@ class Controller_Aiesapi extends Controller {
                     if (!empty($pid) && ($requestfrom == "cctw")) {
                         //get person id encrypted
                         $output = Helpers_Utilities::encrypted_key($pid, "encrypt");
-                        $rows = 'http://ctd.aiesplus.kpk/persons/dashboard/?id=' . $output;
+                        $rows = URL::site('persons/dashboard/').'?id='.$output ;
                     }
                     if (empty($error_code)) {
                         echo json_encode($rows);
@@ -225,7 +225,7 @@ class Controller_Aiesapi extends Controller {
 
                             //get person id encrypted
                             $output = Helpers_Utilities::encrypted_key($rows->person_id, "encrypt");
-                            $rows->cis_person_profile_url = 'http://www.cis.ctdpunjab.com/persons/dashboard/?id=' . $output;
+                            $rows->cis_person_profile_url = URL::site('persons/dashboard/').'?id=' . $output;
                         }
                         if (empty($error_code)) {
                             echo json_encode($rows);
@@ -293,7 +293,7 @@ public function action_get_person_for_3D_Module() {
                 $rows = [
                     'value' => $value,
                     'person_id' => $result->person_id,
-                    'message' => 'http://ctd.aiesplus.kpk/persons/dashboard/?id=' . $output
+                    'message' => URL::site('persons/dashboard/').'?id=' . $output
                 ];
             } else {
                 $rows = [
@@ -382,7 +382,7 @@ public function action_post_person_for_3D_Module() {
                     $response[] = [
                         'value' => $value,
                         'person_id' => $result->person_id,
-                        'message' => 'http://ctd.aiesplus.kpk/persons/dashboard/?id=' . $output
+                        'message' => URL::site('persons/dashboard/').'?id=' . $output
                     ];
                 } else {
                     $response[] = [
@@ -445,7 +445,7 @@ public function action_post_person_for_3D_Module() {
                     if (!empty($pid) && ($requestfrom == "cis")) {
                         //get person id encrypted
                         $output = Helpers_Utilities::encrypted_key($pid, "encrypt");
-                        $rows = 'http://www.cis.ctdpunjab.com/persons/dashboard/?id=' . $output;
+                        $rows = URL::site('persons/dashboard/').'?id=' . $output;
                     }
                     if (empty($error_code)) {
                         echo json_encode($rows);
