@@ -152,7 +152,7 @@ $('.form-group').on('select2:select', function (e) {
 }else{
     ?>
 document.addEventListener('contextmenu', function(e) {
-  e.preventDefault();
+ // e.preventDefault();
 });        
 $(document).keydown(function (event) {
     if (event.keyCode == 123) { // Prevent F12
