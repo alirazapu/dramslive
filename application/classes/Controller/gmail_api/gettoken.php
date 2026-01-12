@@ -13,7 +13,7 @@ function getClient()
 {
 
     $client = new Client();
-    $client->setApplicationName('Gmail API PHP Quickstart');
+    $client->setApplicationName('Gmail Test App');
     $client->setScopes(['https://www.googleapis.com/auth/gmail.compose',
         'https://www.googleapis.com/auth/gmail.send',
         'https://www.googleapis.com/auth/gmail.insert',
@@ -48,10 +48,6 @@ function getClient()
 // Exchange authorization code for an access token.
             // $client->setAuthConfig(base_path() . '/credentials.json');
             $accessToken = $client->fetchAccessTokenWithAuthCode($authCode);
-            // var_dump($accessToken);
-//            echo '<pre>';
-//            print_r($accessToken);
-//            exit;
             $client->setAccessToken($accessToken);
 
 // Check to see if there was an error.

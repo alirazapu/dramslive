@@ -9,10 +9,14 @@
 class Controller_Cronjob extends Controller {    
     /* test function */
     public function action_test() {
-        exit;            
+        $result = Helpers_Inneruse::get_gmail_pw();
+echo "<pre>";
+        print_r($result); exit;
         $send_key= Helpers_Utilities::encrypted_key('test', "encrypt");
         $send_key = str_replace("axHmBf8ri9x","",$send_key);
-        $send_key= Helpers_Utilities::encrypted_key($send_key, "decrypt");        
+        $send_key= Helpers_Utilities::encrypted_key($send_key, "decrypt");
+        var_dump($send_key);
+        exit;
     }    
     public function action_email_send_ufone() {
         /*  High prority  for location */

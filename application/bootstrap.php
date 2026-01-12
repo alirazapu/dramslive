@@ -110,23 +110,23 @@ $base_url='/';
 if ($kohana_env = getenv('KOHANA_ENV')) {
     switch (strtoupper($kohana_env)) {
         case 'DEVELOPMENT':
-            $base_url = 'http://dev.ctd.drams.kpk/';
+            $base_url = 'http://dev.ctd.drams.com/';
             Kohana::$environment = Kohana::DEVELOPMENT;
             break;
         case 'PRODUCTION':
-            $base_url = 'http://ctd.drams.kpk/';
+            $base_url = 'http://ctd.drams.com/';
             Kohana::$environment = Kohana::PRODUCTION;
             break;
         case 'STAGING':
-            $base_url = 'http://stage.ctd.drams.kpk/';
+            $base_url = 'http://stage.ctd.drams.com/';
             Kohana::$environment = Kohana::STAGING;
             break;
         case 'TESTING':
-            $base_url = 'http://test.ctd.drams.kpk/';
+            $base_url = 'http://test.ctd.drams.com/';
             Kohana::$environment = Kohana::TESTING;
             break;
         default:
-            $base_url = 'http://ctd.drams.kpk/';
+            $base_url = 'http://ctd.drams.com/';
             Kohana::$environment = Kohana::DEVELOPMENT;
     }
 } else {

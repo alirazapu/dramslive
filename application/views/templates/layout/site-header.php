@@ -34,7 +34,7 @@
             <ul class="nav navbar-nav"> 
                 <!-- Notifications: style can be found in dropdown.less -->
                 <li class="dropdown notifications-menu">
-                    <a href="<?php echo URL::site('Adminreports/password_reset'); ?>"> <!-- class="dropdown-toggle" data-toggle="dropdown">-->
+                    <a href="<?php echo URL::base(TRUE) .('Adminreports/password_reset'); ?>"> <!-- class="dropdown-toggle" data-toggle="dropdown">-->
                         <i class="fa fa-bell-o"></i>
                         <span class="label label-warning"><?php echo $cpr; ?></span>
                     </a>
