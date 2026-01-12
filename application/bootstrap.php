@@ -106,39 +106,44 @@ if (isset($_SERVER['KOHANA_ENV']))
  * - boolean  caching     enable or disable internal caching                 FALSE
  * - boolean  expose      set the X-Powered-By header                        FALSE
  */
+$is_https = (
+    (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+    || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443)
+);
+$scheme = $is_https ? 'https://' : 'http://';
 $base_url='/';
 if ($kohana_env = getenv('KOHANA_ENV')) {
     switch (strtoupper($kohana_env)) {
         case 'DEVELOPMENT':
-            $base_url = 'http://dev.ctd.drams.com/';
+            $base_url = $scheme . 'dev.ctd.drams.com/';
             Kohana::$environment = Kohana::DEVELOPMENT;
             break;
-        case 'PRODUCTION':
-            $base_url = 'http://ctd.drams.com/';
-            Kohana::$environment = Kohana::PRODUCTION;
-            break;
+
         case 'STAGING':
-            $base_url = 'http://stage.ctd.drams.com/';
+            $base_url = $scheme . 'stage.ctd.drams.com/';
             Kohana::$environment = Kohana::STAGING;
             break;
+
         case 'TESTING':
-            $base_url = 'http://test.ctd.drams.com/';
+            $base_url = $scheme . 'test.ctd.drams.com/';
             Kohana::$environment = Kohana::TESTING;
             break;
+
+        case 'PRODUCTION':
         default:
-            $base_url = 'http://ctd.drams.com/';
-            Kohana::$environment = Kohana::DEVELOPMENT;
+            $base_url = $scheme . 'ctd.drams.com/';
+            Kohana::$environment = Kohana::PRODUCTION;
+            break;
     }
 } else {
-    // Fallback if not set
-    Kohana::$environment = Kohana::DEVELOPMENT;
+    Kohana::$environment = Kohana::PRODUCTION;
+    $base_url = $scheme . 'ctd.drams.com/';
 }
-
 $init=array(
     'base_url'   => $base_url,
     'index_file' => FALSE,
     'errors'     => TRUE,
-    'profile'    => (Kohana::$environment !== Kohana::PRODUCTION),
+    'profile'    => FALSE,
     'caching'    => (Kohana::$environment === Kohana::PRODUCTION),
 );
 Kohana::init($init);
@@ -161,7 +166,7 @@ Kohana::modules(array(
 	// 'cache'      => MODPATH.'cache',      // Caching with multiple backends
 	// 'codebench'  => MODPATH.'codebench',  // Benchmarking tool
 	'database'   => MODPATH.'database',   // Database access
-	
+   // 'profiler' => MODPATH.'profiler',
         'image'      => MODPATH.'image',      // Image manipulation        
 	// 'minion'     => MODPATH.'minion',     // CLI Tasks
 	'orm'        => MODPATH.'orm',        // Object Relationship Mapping
