@@ -85,6 +85,7 @@ class Controller_Adminrequest extends Controller_Working
                 ->bind('exception', $ex);
         }
     }
+
     /* Admin Request Status (users requests count) */
 
     public function action_user_request_count()
@@ -289,7 +290,7 @@ class Controller_Adminrequest extends Controller_Working
                                         $system_status_flag = '<span class="badge badge-pill badge-success">Parsing completed</span>';
                                         if ($request_type_id == 2) {
                                             $imei_link = (isset($item['requested_value']) && !empty($item['requested_value'])) ? $item['requested_value'] : '--';
-                                            $system_status_flag .= '<a href="'.URL::site('User/upload_against_imei').'?imei=' . $imei_link . '" <span class="badge badge-pill badge-success">Check IMEI</span></a>';
+                                            $system_status_flag .= '<a href="' . URL::site('User/upload_against_imei') . '?imei=' . $imei_link . '" <span class="badge badge-pill badge-success">Check IMEI</span></a>';
                                         }
                                         break;
                                     case 6:
@@ -313,7 +314,7 @@ class Controller_Adminrequest extends Controller_Working
                         $userslist = [842, 137, 2031, 1761, 2597, 2603];
                         if (($permission == 1 || $permission == 5) && (in_array($login_user->id, $userslist))) {
 //                            $member_name_link .= '<a class="btn btn-block btn-primary btn-xs"  href="#" onclick="UpdateRequestStatus(' . $item['request_id'] . ',' . $request_reference_id . ',' . $item['status'] . ',' . $item['processing_index'] . ')"> Update Status  </a>';
-                            $enc_request_id="'".$enc_request_id."'";
+                            $enc_request_id = "'" . $enc_request_id . "'";
                             $member_name_link .= '<a  style="display: none;" class="btn btn-block btn-danger btn-xs"  href="#" onclick="deleteuserrequest(' . $enc_request_id . ')"> Delete Request  </a>';
                         }
                         $row = array(
@@ -478,7 +479,7 @@ class Controller_Adminrequest extends Controller_Working
                                         $system_status_flag = '<span class="badge badge-pill badge-success">Parsing completed</span>';
                                         if ($request_type_id == 2) {
                                             $imei_link = (isset($item['requested_value']) && !empty($item['requested_value'])) ? $item['requested_value'] : '--';
-                                            $system_status_flag .= '<a href="'.URL::site('User/upload_against_imei').'?imei=' . $imei_link . '" <span class="badge badge-pill badge-success">Check IMEI</span></a>';
+                                            $system_status_flag .= '<a href="' . URL::site('User/upload_against_imei') . '?imei=' . $imei_link . '" <span class="badge badge-pill badge-success">Check IMEI</span></a>';
                                         }
                                         break;
                                     case 6:
@@ -527,6 +528,7 @@ class Controller_Adminrequest extends Controller_Working
         } catch (Exception $ex) {
         }
     } //ajax call for data requests
+
     public function action_ajaxusersentrequests()
     {
         try {
@@ -664,7 +666,7 @@ class Controller_Adminrequest extends Controller_Working
                                         $system_status_flag = '<span class="badge badge-pill badge-success">Parsing completed</span>';
                                         if ($request_type_id == 2) {
                                             $imei_link = (isset($item['requested_value']) && !empty($item['requested_value'])) ? $item['requested_value'] : '--';
-                                            $system_status_flag .= '<a href="'.URL::site('User/upload_against_imei').'?imei=' . $imei_link . '" <span class="badge badge-pill badge-success">Check IMEI</span></a>';
+                                            $system_status_flag .= '<a href="' . URL::site('User/upload_against_imei') . '?imei=' . $imei_link . '" <span class="badge badge-pill badge-success">Check IMEI</span></a>';
                                         }
                                         break;
                                     case 6:
@@ -685,7 +687,7 @@ class Controller_Adminrequest extends Controller_Working
                           $member_name_link .= '<a class="btn btn-block btn-warning btn-xs" style="background-color:#ff82b6" href="' . URL::site('userrequest/request_reread_status_detail/' . $enc_request_id) . '" > Req.Reread </a>';
                           } */
                         //Add user ID of Iqra and Neelam
-                        $userslist = [842, 137, 2031,1761, 2603];
+                        $userslist = [842, 137, 2031, 1761, 2603];
                         if (($permission == 1 || $permission == 5) && (in_array($login_user->id, $userslist))) {
 //                            $member_name_link .= '<a class="btn btn-block btn-primary btn-xs"  href="#" onclick="UpdateRequestStatus(' . $item['request_id'] . ',' . $request_reference_id . ',' . $item['status'] . ',' . $item['processing_index'] . ')"> Update Status  </a>';
                             $member_name_link .= '<a  style="display: none;" class="btn btn-block btn-danger btn-xs"  href="#" onclick="deleteuserrequest(' . $enc_request_id . ',' . $enc_request_id . ')"> Delete Request  </a>';
@@ -761,12 +763,12 @@ class Controller_Adminrequest extends Controller_Working
                             $end_date = date("Y-m-d", strtotime($post['enddate']));
                             $dquery .= '&to=' . $end_date;
                         }
-                      //  $req_id='';
-                        if(!empty($user_request_type_id)) {
+                        //  $req_id='';
+                        if (!empty($user_request_type_id)) {
                             $dquery .= '/&req=' . $user_request_type_id;
                         }
 
-                        $html = '<a class="btn btn-small action" href="' . URL::site('adminrequest/requests/' . $name_encrypted  . $dquery  ) . '"><i class="fa fa-folder-open-o"></i> View Requests</a>';
+                        $html = '<a class="btn btn-small action" href="' . URL::site('adminrequest/requests/' . $name_encrypted . $dquery) . '"><i class="fa fa-folder-open-o"></i> View Requests</a>';
 
 
                         $row = array(
@@ -787,6 +789,7 @@ class Controller_Adminrequest extends Controller_Working
         } catch (Exception $ex) {
         }
     }
+
     //ajax call for data
     public function action_ajaxuserrequestcount()
     {
@@ -823,9 +826,9 @@ class Controller_Adminrequest extends Controller_Working
 //                        exit();
 
                         $count = (isset($item['count'])) ? $item['count'] : 0;
-                        $user_id= (isset($item['user_id'])) ? $item['user_id'] : 0;
+                        $user_id = (isset($item['user_id'])) ? $item['user_id'] : 0;
 
-                        $u_name= Helpers_Utilities::get_user_name($user_id);
+                        $u_name = Helpers_Utilities::get_user_name($user_id);
                         $date = (isset($item['created_at'])) ? $item['created_at'] : 0;
                         $request_by = (isset($item['rqtbyname'])) ? $item['rqtbyname'] : 'NA';
                         $user_request_type_id = (isset($item['user_request_type_id'])) ? $item['user_request_type_id'] : 0;
@@ -840,12 +843,12 @@ class Controller_Adminrequest extends Controller_Working
                             $end_date = date("Y-m-d", strtotime($post['enddate']));
                             $dquery .= '&to=' . $end_date;
                         }
-                      //  $req_id='';
-                        if(!empty($user_request_type_id)) {
+                        //  $req_id='';
+                        if (!empty($user_request_type_id)) {
                             $dquery .= '/&req=' . $user_request_type_id;
                         }
 
-                        $html = '<a class="btn btn-small action" href="' . URL::site('adminrequest/u_requests/' . $uid_encrypted  . $dquery  ) . '"><i class="fa fa-folder-open-o"></i> View Requests</a>';
+                        $html = '<a class="btn btn-small action" href="' . URL::site('adminrequest/u_requests/' . $uid_encrypted . $dquery) . '"><i class="fa fa-folder-open-o"></i> View Requests</a>';
 
 
                         $row = array(
@@ -866,9 +869,11 @@ class Controller_Adminrequest extends Controller_Working
         } catch (Exception $ex) {
         }
     }
-/* Delete record form blocked number */
 
-    public function action_deleteuserrequest() {
+    /* Delete record form blocked number */
+
+    public function action_deleteuserrequest()
+    {
         try {
             if (Auth::instance()->logged_in()) {
                 $user_obj = Auth::instance()->get_user();
@@ -879,7 +884,7 @@ class Controller_Adminrequest extends Controller_Working
                     $request_id_encrypted = Helpers_Utilities::remove_injection($request_id_encrypted);
                     $request_id = Helpers_Utilities::encrypted_key($request_id_encrypted, 'decrypt');
                     // print_r($blocked_id); exit;
-                    $user = New Model_AdminRequest();
+                    $user = new Model_AdminRequest();
 
                     $result = !empty($request_id) ? $user->delete_user_request($request_id, $login_user_id) : '';
                     //print_r($result); exit;
@@ -894,10 +899,11 @@ class Controller_Adminrequest extends Controller_Working
             echo json_encode(-2);
         }
     }
+
     public function action_requests()
     {
         try {
- $DB = Database::instance();
+            $DB = Database::instance();
             $login_user = Auth::instance()->get_user();
             $permission = Helpers_Utilities::get_user_permission($login_user->id);
 
@@ -911,14 +917,14 @@ class Controller_Adminrequest extends Controller_Working
             $name = Helpers_Utilities::encrypted_key($name, "decrypt");
 
             //if (!empty($name)) {
-                $data['name'] = $name;
-                $data['to'] = $edate;
-                $data['fr'] = $sdate;
+            $data['name'] = $name;
+            $data['to'] = $edate;
+            $data['fr'] = $sdate;
 
-                $this->template->content = View::factory('templates/user/requests')
-                    ->bind('data', $_GET)
-                    ->bind('name', $name)
-                    ->bind('reqtype', $u_req_id);
+            $this->template->content = View::factory('templates/user/requests')
+                ->bind('data', $_GET)
+                ->bind('name', $name)
+                ->bind('reqtype', $u_req_id);
             /*} else {
                 $this->template->content = View::factory('templates/user/access_denied');
             }*/
@@ -927,10 +933,11 @@ class Controller_Adminrequest extends Controller_Working
                 ->bind('exception', $ex);
         }
     }
+
     public function action_u_requests()
     {
         try {
- $DB = Database::instance();
+            $DB = Database::instance();
             $login_user = Auth::instance()->get_user();
             $permission = Helpers_Utilities::get_user_permission($login_user->id);
 
@@ -943,14 +950,14 @@ class Controller_Adminrequest extends Controller_Working
             $name = Helpers_Utilities::encrypted_key($name, "decrypt");
 
             //if (!empty($name)) {
-                $data['name'] = $name;
-                $data['to'] = $edate;
-                $data['fr'] = $sdate;
+            $data['name'] = $name;
+            $data['to'] = $edate;
+            $data['fr'] = $sdate;
 
-                $this->template->content = View::factory('templates/user/u_requests')
-                    ->bind('data', $_GET)
-                    ->bind('id', $name)
-                    ->bind('reqtype', $u_req_id);
+            $this->template->content = View::factory('templates/user/u_requests')
+                ->bind('data', $_GET)
+                ->bind('id', $name)
+                ->bind('reqtype', $u_req_id);
             /*} else {
                 $this->template->content = View::factory('templates/user/access_denied');
             }*/
@@ -1032,6 +1039,7 @@ class Controller_Adminrequest extends Controller_Working
         } catch (Exception $ex) {
         }
     }
+
     public function action_ajax_familytree_request_status()
     {
         try {
@@ -1103,6 +1111,7 @@ class Controller_Adminrequest extends Controller_Working
         } catch (Exception $ex) {
         }
     }
+
     //ajax call for nadra request data
     public function action_ajax_travel_request_status()
     {
@@ -1154,9 +1163,9 @@ class Controller_Adminrequest extends Controller_Working
 
                         $member_name_link = '<a class="btn btn-block btn-primary btn-xs"  href="#" onclick="UpdateRequestStatus(' . $item['request_id'] . ',' . $item['status'] . ')"> Update Status  </a>';
                         // $member_name_link = '<a class="btn btn-block btn-primary btn-xs"  href="#" onclick="UpdateRequestStatus('. $item['request_id'] .',' . $cnic . ',' . $status . ')"> Update Status  </a>';
-                        $file_name = (!empty($item['file_name'])) ? 
-                                '<a target="_blank" style="margin-top: 25px" target="" href=" ' . URL::base() .  '/' . $item['file_name'] . '" class="btn btn-danger pull-right" >Download File</a>'
-                                : '';
+                        $file_name = (!empty($item['file_name'])) ?
+                            '<a target="_blank" style="margin-top: 25px" target="" href=" ' . URL::base() . '/' . $item['file_name'] . '" class="btn btn-danger pull-right" >Download File</a>'
+                            : '';
                         $row = array(
                             $user_name,
                             $requested_by,
@@ -1209,6 +1218,7 @@ class Controller_Adminrequest extends Controller_Working
 //            echo json_encode(-2);
 //        }
     }
+
     public function action_update_familytree_request_status()
     {
         //
@@ -1236,6 +1246,7 @@ class Controller_Adminrequest extends Controller_Working
 //            echo json_encode(-2);
 //        }
     }
+
     //update user request status
     public function action_update_travel_request_status()
     {
@@ -1332,8 +1343,8 @@ class Controller_Adminrequest extends Controller_Working
     {
         if (Auth::instance()->logged_in()) {
             $user_obj = Auth::instance()->get_user();
-           $email_file_name= $file_name = '';
-            
+            $email_file_name = $file_name = '';
+
             if (!empty($_FILES['emailfile'])) {
                 $directory = 'dist/uploads/user/request_approve/';
                 $file_name = "emailfile";
@@ -1341,9 +1352,9 @@ class Controller_Adminrequest extends Controller_Working
                 $ext = pathinfo($_FILES['emailfile']['name'], PATHINFO_EXTENSION);
                 $filename = $file_name . $date . "." . $ext;
                 $file = Upload::save($_FILES['emailfile'], $filename, $directory);
-                $email_file_name = getcwd() .DIRECTORY_SEPARATOR . $directory . $filename;
+                $email_file_name = getcwd() . DIRECTORY_SEPARATOR . $directory . $filename;
             }
-            
+
             if (!empty($_FILES['file'])) {
                 $directory = 'dist/uploads/user/request_approve/';
                 $file_name = "rqtaprvd";
@@ -1383,56 +1394,64 @@ class Controller_Adminrequest extends Controller_Working
                     if ($total_count['total'] <= 1450) {
                         //// limit check end
                         switch ($company_name) {
-                            case 1: // Mobilink                                
-                                $to = 'leasupportteam@jazz.com.pk';
+                            case 1: // Mobilink
+                                //$to = 'leasupportteam@jazz.com.pk';
+                                $to = 'ali.razapu+mobilink@gmail.com';
                                 $to_name = '';
                                 break;
-                            case 3: // Ufone                                
+                            case 3: // Ufone
                                 //$to = 'racentral@ufone.com';
                                 //$to_name = '';
                                 if (($request_type == 6 || $request_type == 1 || $request_type == 2)) {
-                                        $to = 'cdr.requests@ptclgroup.com';
-//                                        $to = 'cdr.requests@ufone.com';
-                                        $to_name = ''; //ufone auto for cdr msisdn/imei
-                                    } else {
-                                        //$to = 'racentral@ufone.com';
-                                        //$to = 'ufone.location@ufone.com';
-                                        $to = 'ufone.location@ptclgroup.com';
-                                        $to_name = '';
-                                    }
+                                    //$to = 'cdr.requests@ptclgroup.com';
+                                    $to = 'ali.razapu+cdrptcl@gmail.com';
+                                    $to_name = ''; //ufone auto for cdr msisdn/imei
+                                } else {
+                                    //$to = 'ufone.location@ptclgroup.com';
+                                    $to = 'ali.razapu+locatoinptcl@gmail.com';
+                                    $to_name = '';
+                                }
                                 break;
-                            case 4: // Zong                                
-                                $to = 'reg@zong.com.pk';
+                            case 4: // Zong
+                                //$to = 'reg@zong.com.pk';
+                                $to = 'ali.razapu+regzong@gmail.com';
                                 $to_name = '';
                                 break;
                             case 6: // Telenor   $request_type
-                                if ($request_type == 1 || $request_type == 2)
-                                    //$to = 'lea2@newsystem123.com';
-                                    $to = 'lea.2@telenor.com.pk';
-                                else
-                                    $to = 'lea@newsystem123.com';
+                                if ($request_type == 1 || $request_type == 2) {
+                                    // $to = 'lea.2@telenor.com.pk';
+                                    $to = 'ali.razapu+lea2telenor@gmail.com';
+                                } else {
+                                    //  $to = 'lea@newsystem123.com';
+                                    $to = 'ali.razapu+leanewsystem123@gmail.com';
+                                }
                                 $to_name = '';
                                 break;
-                            case 7: // Warid                                
-                                $to = 'waridlea@jazz.com.pk';
+                            case 7: // Warid
+                                //$to = 'waridlea@jazz.com.pk';
+                                $to = 'ali.razapu+waridlea@gmail.com';
                                 $to_name = '';
                                 break;
                             //added by shoaib
-                            case 8: // SCOM                                
-                                $to = 'reg@zong.com.pk';
+                            case 8: // SCOM
+                                //  $to = 'reg@zong.com.pk';
+                                $to = 'ali.razapu+regzong@gmail.com';
                                 $to_name = 'scom';
                                 break;
                             //shoaib changes ended
-                            case 11: // PTCL                                                                
-                                $to = 'mega.radata@ptcl.net.pk';
+                            case 11: // PTCL
+                                //  $to = 'mega.radata@ptcl.net.pk';
+                                $to = 'ali.razapu+megaradata11@gmail.com';
                                 $to_name = 'MegaRAdata/PTCL';
                                 break;
-                            case 12: // International                                
-                                $to = 'mega.radata@ptcl.net.pk';
+                            case 12: // International
+                                //  $to = 'mega.radata@ptcl.net.pk';
+                                $to = 'ali.razapu+megaradata12@gmail.com';
                                 $to_name = 'MegaRAdata/PTCL';
                                 break;
-                            case 13: // family request                                
-                                $to = 'naumana.manzoor@nadra.gov.pk';
+                            case 13: // family request
+                                // $to = 'naumana.manzoor@nadra.gov.pk';
+                                $to = 'ali.razapu+nmanzoornadra@gmail.com';
                                 $to_name = 'Nadra';
                                 break;
                         }
@@ -1451,18 +1470,17 @@ class Controller_Adminrequest extends Controller_Working
 
 
                         /*if ($request_type != 18) {*/
-                            $reference_number = Model_AdminRequest::admin_request($reference_id, $user_id, $request_type, $company_name, $status, $requested_value, $startDate, $endDate, $reason, $file_name, $rqtby);
-                            if(empty($_POST['esubject']))
-                            {    
-                                $template_data = Model_Email::get_email_tempalte($request_type, $company_name);
-                                $template = !empty($template_data) ? $template_data['subject']: '';
-                            }else{
-                               $template=  $_POST['esubject'];
-                            }    
-                            //    echo $template_data['subject'];    exit;
-                            $subject = str_replace("[case_number]", 'ADM-' . $reference_id, htmlspecialchars_decode($template));
+                        $reference_number = Model_AdminRequest::admin_request($reference_id, $user_id, $request_type, $company_name, $status, $requested_value, $startDate, $endDate, $reason, $file_name, $rqtby);
+                        if (empty($_POST['esubject'])) {
+                            $template_data = Model_Email::get_email_tempalte($request_type, $company_name);
+                            $template = !empty($template_data) ? $template_data['subject'] : '';
+                        } else {
+                            $template = $_POST['esubject'];
+                        }
+                        //    echo $template_data['subject'];    exit;
+                        $subject = str_replace("[case_number]", 'ADM-' . $reference_id, htmlspecialchars_decode($template));
 
-                            //    echo $subject;    exit;
+                        //    echo $subject;    exit;
                         /*} else {
                             $reference_number = Model_AdminRequest::admin_request($reference_id, $user_id, 4, $company_name, $status, $requested_value, $startDate, $endDate, $reason, $file_name, $rqtby);
                             $subject = 'loc&Subs';
@@ -1483,7 +1501,7 @@ class Controller_Adminrequest extends Controller_Working
                             unlink($email_file_name);
                         }
                         $reference_number = Model_AdminRequest::admin_email_sended($cust_email, $subject, $body, $reference_number, 7, 1, $startDate, $endDate);
-                        // 
+                        //
                         //}
                         // print_r($request_type);
                         // print_r($reference_number); exit;
@@ -1549,7 +1567,6 @@ class Controller_Adminrequest extends Controller_Working
                 $date_current = date('d/M/Y'); //$date;
                 $date_current_dot = date('d.m.Y'); //$date;
 
-                
 
                 $concerned_person_id = (!empty($_POST['person_id']) ? $_POST['person_id'] : '');
                 $endDate = (!empty($_POST['endDate']) ? $_POST['endDate'] : '');
@@ -1557,13 +1574,13 @@ class Controller_Adminrequest extends Controller_Working
                 $to_name = '';
                 foreach ($company_names as $company_name) {
                     try {
-                        
+
                         $requested_value = (isset($_POST['inputSubNO']) && !empty($_POST['inputSubNO']) ? $_POST['inputSubNO'] :
-                    ((isset($_POST['inputCNIC']) && !empty($_POST['inputCNIC'])) ? $_POST['inputCNIC'] :
-                        (isset($_POST['inputPTCLNO']) && !empty($_POST['inputPTCLNO']) ? $_POST['inputPTCLNO'] :
-                            (isset($_POST['inputInternationalNo']) && !empty($_POST['inputInternationalNo']) ? $_POST['inputInternationalNo'] :
-                                (isset($_POST['inputIMEI']) && !empty($_POST['inputIMEI']) ? $_POST['inputIMEI'] : '')))));
-                    
+                            ((isset($_POST['inputCNIC']) && !empty($_POST['inputCNIC'])) ? $_POST['inputCNIC'] :
+                                (isset($_POST['inputPTCLNO']) && !empty($_POST['inputPTCLNO']) ? $_POST['inputPTCLNO'] :
+                                    (isset($_POST['inputInternationalNo']) && !empty($_POST['inputInternationalNo']) ? $_POST['inputInternationalNo'] :
+                                        (isset($_POST['inputIMEI']) && !empty($_POST['inputIMEI']) ? $_POST['inputIMEI'] : '')))));
+
                         //// limit check start
                         $query = "SELECT sum(total)as total FROM request_send_today where request_priority = 1";
                         $sql = DB::query(Database::SELECT, $query);
@@ -1586,7 +1603,8 @@ class Controller_Adminrequest extends Controller_Working
                                     $start_date_slash_mdy = date('m/d/Y', strtotime($startDate));
                                     $end_date_slash_mdy = date('m/d/Y', strtotime($endDate));
 
-                                    $to = 'leasupportteam@jazz.com.pk';
+                                    //$to = 'leasupportteam@jazz.com.pk';
+                                    $to = 'ali.razapu+adminleasupportteam@gmail.com';
                                     $to_name = '';
                                     break;
                                 case 3: // Ufone
@@ -1599,17 +1617,17 @@ class Controller_Adminrequest extends Controller_Working
                                     $start_date_hyphen = date('d-m-Y', strtotime($startDate));
                                     $end_date_hyphen = date('d-m-Y', strtotime($endDate));
 
-                                    if(strlen($requested_value)==15){
-                                        $requested_value= substr($requested_value,0,14).'0';
+                                    if (strlen($requested_value) == 15) {
+                                        $requested_value = substr($requested_value, 0, 14) . '0';
                                     }
                                     if (($request_type == 6 || $request_type == 1 || $request_type == 2)) {
-                                        $to = 'cdr.requests@ptclgroup.com';
-//                                        $to = 'cdr.requests@ufone.com';
+
+                                        // $to = 'cdr.requests@ptclgroup.com';
+                                        $to = 'ali.razapu+admincdrptcl@gmail.com';
                                         $to_name = ''; //ufone auto for cdr msisdn/imei
                                     } else {
-                                        //$to = 'racentral@ufone.com';
-                                       // $to = 'ufone.location@ufone.com';
-                                        $to = 'ufone.location@ptclgroup.com';
+                                        //$to = 'ufone.location@ptclgroup.com';
+                                        $to = 'ali.razapu+adminufoneloc@gmail.com';
                                         $to_name = '';
                                     }
                                     break;
@@ -1624,7 +1642,8 @@ class Controller_Adminrequest extends Controller_Working
                                     $start_date_slash_mdy = date('m/d/Y', strtotime($startDate));
                                     $end_date_slash_mdy = date('m/d/Y', strtotime($endDate));
 
-                                    $to = 'reg@zong.com.pk';
+                                    //$to = 'reg@zong.com.pk';
+                                    $to = 'ali.razapu+adminregzong@gmail.com';
                                     $to_name = '';
                                     break;
 
@@ -1644,18 +1663,17 @@ class Controller_Adminrequest extends Controller_Working
 
                                     $start_date_slash_mdy = date('m/d/Y', strtotime($startDate));
                                     $end_date_slash_mdy = date('m/d/Y', strtotime($endDate));
-
-
                                     if (($request_type == 1 || $request_type == 2 || $request_type == 3 || $request_type == 5)) {
-                                        //$to = 'lea2@newsystem123.com';
-                                         $to = 'lea.2@telenor.com.pk';
+                                        // $to = 'lea.2@telenor.com.pk';
+                                        $to = 'ali.razapu+adminlea2telenor@gmail.com';
                                         $to_name = ''; //Law Enforcement Agency
                                     } elseif ($request_type == 4) {
-                                      //  $to = 'lea1@newsystem123.com';
-                                        $to = 'lea.1@telenor.com.pk';
+                                        //$to = 'lea.1@telenor.com.pk';
+                                        $to = 'ali.razapu+adminlea1telenor@gmail.com';
                                         $to_name = '';
                                     } else {
-                                        $to = 'lea@newsystem123.com';
+                                        // $to = 'lea@newsystem123.com';
+                                        $to = 'ali.razapu+adminleanewsystem123@gmail.com';
                                         $to_name = '';
                                     }
 
@@ -1670,11 +1688,12 @@ class Controller_Adminrequest extends Controller_Working
                                     $start_date_slash_mdy = date('m/d/Y', strtotime($startDate));
                                     $end_date_slash_mdy = date('m/d/Y', strtotime($endDate));
                                     if (($request_type == 5 || $request_type == 3 || $request_type == 4)) {
-                                        $to = 'leasupportteam@jazz.com.pk';
+                                        //$to = 'leasupportteam@jazz.com.pk';
+                                        $to = 'ali.razapu+adminleasupportteamjazz@gmail.com';
                                         $to_name = '';
                                     } else {
-                                        // $to = 'waridlea@jazz.com.pk';
-                                        $to = 'leasupportteam@jazz.com.pk';
+                                        // $to = 'leasupportteam@jazz.com.pk';
+                                        $to = 'ali.razapu+adminleasupportteamjazz@gmail.com';
                                         $to_name = '';
                                     }
                                     break;
@@ -1689,7 +1708,8 @@ class Controller_Adminrequest extends Controller_Working
 
                                     $start_date_slash_mdy = date('m/d/Y', strtotime($startDate));
                                     $end_date_slash_mdy = date('m/d/Y', strtotime($endDate));
-                                    $to = 'info.lea@sco.gov.pk';
+                                    // $to = 'info.lea@sco.gov.pk';
+                                    $to = 'ali.razapu+admininfoleasco@gmail.com';
                                     $to_name = 'scom';
                                     break;
                                 //shoaib changes ended
@@ -1706,7 +1726,8 @@ class Controller_Adminrequest extends Controller_Working
 //                                    //model call to update data in table 'Other numbers'
 //                                    $model = Model_Othernumber::update_other_numbers($_POST);
 //                                }
-                                    $to = 'mega.radata@ptcl.net.pk';
+                                    // $to = 'mega.radata@ptcl.net.pk';
+                                    $to = 'ali.razapu+adminmegaradataptcl@gmail.com';
                                     $to_name = 'MegaRAdata/PTCL';
                                     break;
                                 case 12: // International
@@ -1720,7 +1741,8 @@ class Controller_Adminrequest extends Controller_Working
                                     $end_date_slash_mdy = date('m/d/Y', strtotime($endDate));
                                     //model call to update data in table 'Other numbers'
 //                                $model = Model_Othernumber::update_other_numbers($_POST);
-                                    $to = 'mega.radata@ptcl.net.pk';
+                                    //$to = 'mega.radata@ptcl.net.pk';
+                                    $to = 'ali.razapu+adminmegaradataptclInte@gmail.com';
                                     $to_name = 'MegaRAdata/PTCL';
                                     break;
                                 case 13: // family request
@@ -1733,7 +1755,8 @@ class Controller_Adminrequest extends Controller_Working
                                     $start_date_slash_mdy = date('m/d/Y', strtotime($startDate));
                                     $end_date_slash_mdy = date('m/d/Y', strtotime($endDate));
                                     //model call to update data in table 'Other numbers'
-                                    $to = 'naumana.manzoor@nadra.gov.pk';
+                                    //$to = 'naumana.manzoor@nadra.gov.pk';
+                                    $to = 'ali.razapu+naumanamanzoornadra@gmail.com';
                                     $to_name = 'Nadra';
                                     break;
                             }
@@ -1752,10 +1775,13 @@ class Controller_Adminrequest extends Controller_Working
                             $reference_number = Model_AdminRequest::admin_request($reference_id, $user_id, $request_type, $company_name, $status, $requested_value, $startDate, $endDate, $reason, $file_name, $rqtby);
 
                             $template_data = Model_Email::get_email_tempalte($request_type, $company_name);
+                            if (!$template_data) {
+                                throw new Exception("Email template not found for request_type {$request_type} and company_name {$company_name}");
+                            }
 
                             $subject = str_replace("[case_number]", 'ADM-' . $reference_id, htmlspecialchars_decode($template_data['subject']));
-                            if(!empty($_POST['inputSubNO']))
-                            {
+
+                            if (!empty($_POST['inputSubNO'])) {
                                 $subject = str_replace("[mobile_number]", $_POST['inputSubNO'], $subject);
                             }
 
@@ -1839,7 +1865,12 @@ class Controller_Adminrequest extends Controller_Working
 
                     } catch (Exception $e) {
 
-                        echo json_encode(2);
+                        echo json_encode([
+                            'status' => 0,
+                            'message' => $e->getMessage(),
+                            'file' => $e->getFile(),
+                            'line' => $e->getLine()
+                        ]);
                         exit;
                     }
                 }
@@ -1885,6 +1916,7 @@ class Controller_Adminrequest extends Controller_Working
             echo json_encode(-2);
         }
     }
+
     public function action_admin_familytree_send()
     {
         if (Auth::instance()->logged_in()) {
@@ -1921,6 +1953,7 @@ class Controller_Adminrequest extends Controller_Working
             echo json_encode(-2);
         }
     }
+
     public function action_admin_travel_send()
     {
         if (Auth::instance()->logged_in()) {
@@ -2001,7 +2034,7 @@ class Controller_Adminrequest extends Controller_Working
             $login_user = Auth::instance()->get_user();
             $permission = Helpers_Utilities::get_user_permission($login_user->id);
             $access_message = 'Access denied, Contact your technical support team';
-            if (Helpers_Utilities::chek_role_access($this->role_id, 34) == 1 ||  $login_user->id ==719) {
+            if (Helpers_Utilities::chek_role_access($this->role_id, 34) == 1 || $login_user->id == 719) {
                 /* File Included */
                 $this->template->content = View::factory('templates/user/nadra_request_sent_form');
             } else {
@@ -2012,6 +2045,7 @@ class Controller_Adminrequest extends Controller_Working
                 ->bind('exception', $ex);
         }
     }
+
     public function action_familytree_request_sent_form()
     {
         try {
@@ -2019,7 +2053,7 @@ class Controller_Adminrequest extends Controller_Working
             $login_user = Auth::instance()->get_user();
             $permission = Helpers_Utilities::get_user_permission($login_user->id);
             $access_message = 'Access denied, Contact your technical support team';
-            if (Helpers_Utilities::chek_role_access($this->role_id, 34) == 1 ||  $login_user->id ==719) {
+            if (Helpers_Utilities::chek_role_access($this->role_id, 34) == 1 || $login_user->id == 719) {
                 /* File Included */
                 $this->template->content = View::factory('templates/user/familytree_request_sent_form');
             } else {
@@ -2030,7 +2064,8 @@ class Controller_Adminrequest extends Controller_Working
                 ->bind('exception', $ex);
         }
     }
-     /*     * Admin Request*/
+
+    /*     * Admin Request*/
 
     public function action_travel_request_sent_form()
     {
@@ -2039,7 +2074,7 @@ class Controller_Adminrequest extends Controller_Working
             $login_user = Auth::instance()->get_user();
             $permission = Helpers_Utilities::get_user_permission($login_user->id);
             $access_message = 'Access denied, Contact your technical support team';
-            if (Helpers_Utilities::chek_role_access($this->role_id, 34) == 1 ||  $login_user->id ==719) {
+            if (Helpers_Utilities::chek_role_access($this->role_id, 34) == 1 || $login_user->id == 719) {
                 /* File Included */
                 $this->template->content = View::factory('templates/user/travel_request_sent_form');
             } else {
@@ -2050,6 +2085,7 @@ class Controller_Adminrequest extends Controller_Working
                 ->bind('exception', $ex);
         }
     }
+
     //bulk requests
     public function action_nadra_bulk_request_sent_form()
     {
@@ -2058,7 +2094,7 @@ class Controller_Adminrequest extends Controller_Working
             $login_user = Auth::instance()->get_user();
             $permission = Helpers_Utilities::get_user_permission($login_user->id);
             $access_message = 'Access denied, Contact your technical support team';
-            if (Helpers_Utilities::chek_role_access($this->role_id, 34) == 1 ||  $login_user->id ==719) {
+            if (Helpers_Utilities::chek_role_access($this->role_id, 34) == 1 || $login_user->id == 719) {
                 /* File Included */
                 $this->template->content = View::factory('templates/user/nadra_bulk_request_sent_form');
             } else {

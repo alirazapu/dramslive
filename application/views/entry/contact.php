@@ -3,8 +3,8 @@
 require('recaptcha-master/src/autoload.php');
 
 // configure
-$from = 'Demo contact form <demo@domain.com>';
-$sendTo = 'Demo contact form <demo@domain.com>';
+$from = 'Demo contact form <reg745964+democontact@gmail.com>';
+$sendTo = 'Demo contact form <reg74596+democontact4@gmail.com>';
 $subject = 'New message from contact form';
 $fields = array('name' => 'Name', 'surname' => 'Surname', 'phone' => 'Phone', 'email' => 'Email', 'message' => 'Message'); // array variable name => Text to appear in the email
 $okMessage = 'Contact form successfully submitted. Thank you, I will get back to you soon!';
@@ -15,33 +15,33 @@ $recaptchaSecret = 'alhamdullilah';
 
 try
 {
-	print_r($_POST);
-	exit;
+    print_r($_POST);
+    exit;
     if (!empty($_POST)) {
 
         // validate the ReCaptcha, if something is wrong, we throw an Exception, 
         // i.e. code stops executing and goes to catch() block
-        
+
         if (!isset($_POST['g-recaptcha-response'])) {
             throw new \Exception('ReCaptcha is not set.');
         }
 
         // do not forget to enter your secret key in the config above 
         // from https://www.google.com/recaptcha/admin
-        
+
         $recaptcha = new \ReCaptcha\ReCaptcha($recaptchaSecret, new \ReCaptcha\RequestMethod\CurlPost());
-        
+
         // we validate the ReCaptcha field together with the user's IP address
-        
+
         $response = $recaptcha->verify($_POST['g-recaptcha-response'], $_SERVER['REMOTE_ADDR']);
 
 
         if (!$response->isSuccess()) {
             throw new \Exception('ReCaptcha was not validated.');
         }
-        
+
         // everything went well, we can compose the message, as usually
-        
+
         $emailText = "You have new message from contact form\n=============================\n";
 
         foreach ($_POST as $key => $value) {
@@ -50,7 +50,7 @@ try
                 $emailText .= "$fields[$key]: $value\n";
             }
         }
-        
+
 
         $headers = array('Content-Type: text/plain; charset="UTF-8";',
             'From: ' . $from,

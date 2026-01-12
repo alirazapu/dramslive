@@ -23,32 +23,35 @@ class Model_AdminRequest
         $DB = Database::instance();
 
         $sql = "INSERT INTO admin_request (reference_id, user_id, user_request_type_id, company_name,  status, requested_value, startDate, endDate, reason, request_priority, file_name, rqtbyname) 
-        VALUES({$reference_id}, '{$user_id}', '{$request_type}' , '{$company_name}', '{$status}', '{$requested_value}', '{$startDate}', '{$endDate}', '{$reason}', '{$request_priority}', '{$file_name}', '{$rqtby}')" ;
+        VALUES({$reference_id}, '{$user_id}', '{$request_type}' , '{$company_name}', '{$status}', '{$requested_value}', '{$startDate}', '{$endDate}', '{$reason}', '{$request_priority}', '{$file_name}', '{$rqtby}')";
 
         $members = $DB->query(Database::INSERT, $sql, FALSE);
         return $members[0];
     }
+
     //nadra request insertion
-    public static function admin_nadra_request($user_id, $cnic, $date, $status, $rqtby,   $rqtby_region_id, $rqtby_district_id, $reason,$file_name )
+    public static function admin_nadra_request($user_id, $cnic, $date, $status, $rqtby, $rqtby_region_id, $rqtby_district_id, $reason, $file_name)
     {
 
-        $query = DB::insert('admin_nadra_request', array('user_id', 'cnic', 'request_date', 'reason', 'file_name', 'region_id','district_id','status','rqtbyname'))
+        $query = DB::insert('admin_nadra_request', array('user_id', 'cnic', 'request_date', 'reason', 'file_name', 'region_id', 'district_id', 'status', 'rqtbyname'))
             ->values(array($user_id, $cnic, $date, $reason, $file_name, $rqtby_region_id, $rqtby_district_id, $status, $rqtby))
             ->execute();
         return $query;
     }
-    public static function admin_family_tree_request($user_id, $cnic, $date, $status, $rqtby,   $rqtby_region_id, $rqtby_district_id, $reason,$file_name )
+
+    public static function admin_family_tree_request($user_id, $cnic, $date, $status, $rqtby, $rqtby_region_id, $rqtby_district_id, $reason, $file_name)
     {
 
-        $query = DB::insert('admin_familytree_request', array('user_id', 'cnic', 'request_date', 'reason', 'file_name', 'region_id','district_id','status','rqtbyname'))
+        $query = DB::insert('admin_familytree_request', array('user_id', 'cnic', 'request_date', 'reason', 'file_name', 'region_id', 'district_id', 'status', 'rqtbyname'))
             ->values(array($user_id, $cnic, $date, $reason, $file_name, $rqtby_region_id, $rqtby_district_id, $status, $rqtby))
             ->execute();
         return $query;
     }
-    public static function admin_travel_request($user_id, $cnic, $passport, $date, $status, $rqtby,   $rqtby_region_id, $rqtby_district_id, $reason,$file_name )
+
+    public static function admin_travel_request($user_id, $cnic, $passport, $date, $status, $rqtby, $rqtby_region_id, $rqtby_district_id, $reason, $file_name)
     {
 
-        $query = DB::insert('admin_travel_request', array('user_id', 'cnic', 'passport' , 'request_date', 'reason', 'file_name', 'region_id','district_id','status','rqtbyname'))
+        $query = DB::insert('admin_travel_request', array('user_id', 'cnic', 'passport', 'request_date', 'reason', 'file_name', 'region_id', 'district_id', 'status', 'rqtbyname'))
             ->values(array($user_id, $cnic, $passport, $date, $reason, $file_name, $rqtby_region_id, $rqtby_district_id, $status, $rqtby))
             ->execute();
         return $query;
@@ -56,7 +59,8 @@ class Model_AdminRequest
 
     /* email sended  */
 
-    public static function admin_email_sended($to, $subject, $body, $reference_number, $process_status, $status, $startDate = NULL, $enddate = NULL) {
+    public static function admin_email_sended($to, $subject, $body, $reference_number, $process_status, $status, $startDate = NULL, $enddate = NULL)
+    {
         $startDate = !empty($startDate) ? (date('Y-m-d', strtotime($startDate))) : $startDate;
         $enddate = !empty($enddate) ? (date('Y-m-d', strtotime($enddate))) : $enddate;
 
@@ -77,7 +81,8 @@ class Model_AdminRequest
 
     /* Admin request status Ajax Call */
 
-    public static function admin_sent_request_status($data, $count) {
+    public static function admin_sent_request_status($data, $count)
+    {
 //        echo '<pre>';
 //        print_r($data);
 //        exit;
@@ -181,13 +186,13 @@ class Model_AdminRequest
         /* Group By */
         $groupby = "group by u1.user_id";
 
-    //    $where_clause = "where 1";
-         if(!empty($login_user->id) && in_array($login_user->id,[842, 137, 2031, 2603])){
-             $where_clause = "where 1";
-             
-         }else{
-        $where_clause = "where t1.user_id not IN (842, 137, 2031, 2603)";
-         }
+        //    $where_clause = "where 1";
+        if (!empty($login_user->id) && in_array($login_user->id, [842, 137, 2031, 2603])) {
+            $where_clause = "where 1";
+
+        } else {
+            $where_clause = "where t1.user_id not IN (842, 137, 2031, 2603)";
+        }
 //        $where_clause = "where t1.user_id not IN (182,137,136)";
 
         $and_status = '';
@@ -265,19 +270,17 @@ class Model_AdminRequest
 //            else
             $where_clause = "where t1.user_id = $login_user->id";
         }
-        if(!empty($data['txtbd']))
-        {
+        if (!empty($data['txtbd'])) {
             $where_body = " and em.received_body like '%{$data['txtbd']}%'  ";
-        }else{
+        } else {
             $where_body = " ";
         }
-        if(!empty($data['rqtbyname']))
-        {
+        if (!empty($data['rqtbyname'])) {
             $where_rqt = " and t1.rqtbyname like '%{$data['rqtbyname']}%'  ";
-        }else{
+        } else {
             $where_rqt = " ";
         }
-        
+
         $DB = Database::instance();
 
         /* For Total Record Count */
@@ -300,8 +303,7 @@ class Model_AdminRequest
                                 {$data['mnc']}";
             $members = DB::query(Database::SELECT, $sql)->execute()->current();
             return $members['count'];
-        }
-        /*  Fetch all Records */ else {
+        } /*  Fetch all Records */ else {
             $sql = "SELECT t1.reference_id, t1.reply,t1.company_name, t1.reason, request_id,user_request_type_id, user_id, email_type_name, requested_value,
                     created_at, status, processing_index,t1.request_priority, em.message_id,em.received_file_path,em.received_body, em.message_subject, em.sender_id FROM 
                                 admin_request as t1 
@@ -321,7 +323,7 @@ class Model_AdminRequest
                                 {$search}
                                 {$order_by}    
                                 {$limit}";
-           // print_r($sql); exit;
+            // print_r($sql); exit;
 
             $members = $DB->query(Database::SELECT, $sql, FALSE);
             return $members;
@@ -330,7 +332,8 @@ class Model_AdminRequest
 
     /* Admin request status Ajax Call */
 
-    public static function admin_sent_request_single_user($data, $count) {
+    public static function admin_sent_request_single_user($data, $count)
+    {
 
         $name = Helpers_Utilities::encrypted_key($data['name'], "decrypt");
 
@@ -345,11 +348,10 @@ class Model_AdminRequest
 //        if(!empty($data['request_type'])){
 //            $where_clause .= " where t1.user_request_type_id = {$data['request_type']}";
 //        }
-        
-       
 
-        $search_req_id='';
-        if(!empty($data['request_type'])){
+
+        $search_req_id = '';
+        if (!empty($data['request_type'])) {
             $search_req_id .= " and t1.user_request_type_id = {$data['request_type']}";
         }
         //dates filter
@@ -447,18 +449,18 @@ class Model_AdminRequest
         /* Group By */
         $groupby = "group by u1.user_id";
 
-    //    $where_clause = "where 1";
+        //    $where_clause = "where 1";
         $where_clause = "where t1.user_id not IN (842, 137, 2031, 2603)";
-        if(($name=='NA'))
+        if (($name == 'NA'))
             $where_clause .= " and t1.rqtbyname is null ";
-        elseif(empty($name))
-            $where_clause .= " and t1.rqtbyname = '' " ;
-         else
+        elseif (empty($name))
+            $where_clause .= " and t1.rqtbyname = '' ";
+        else
             $where_clause .= " and t1.rqtbyname ='$name' ";
 
 
         //$where_clause .=" and where t1.rqtbyname IS NULL";
-       // $where_clause .= "where t1.rqtbyname =''";
+        // $where_clause .= "where t1.rqtbyname =''";
 
 
 //        $where_clause = "where t1.user_id not IN (182,137,136)";
@@ -538,16 +540,14 @@ class Model_AdminRequest
 //            else
             $where_clause .= " and t1.user_id = $login_user->id";
         }
-        if(!empty($data['txtbd']))
-        {
+        if (!empty($data['txtbd'])) {
             $where_body = " and em.received_body like '%{$data['txtbd']}%'  ";
-        }else{
+        } else {
             $where_body = " ";
         }
-        if(!empty($data['rqtbyname']))
-        {
+        if (!empty($data['rqtbyname'])) {
             $where_rqt = " and t1.rqtbyname like '%{$data['rqtbyname']}%'  ";
-        }else{
+        } else {
             $where_rqt = " ";
         }
 
@@ -572,12 +572,11 @@ class Model_AdminRequest
                                 {$data['field']}
                                 {$data['r_category']}
                                 {$data['mnc']}";
-           // print_r($sql); exit;
+            // print_r($sql); exit;
             $members = DB::query(Database::SELECT, $sql)->execute()->current();
 
             return $members['count'];
-        }
-        /*  Fetch all Records */ else {
+        } /*  Fetch all Records */ else {
             $sql = "SELECT t1.user_request_type_id, t1.reference_id, t1.reply,t1.company_name, t1.reason, request_id,user_request_type_id, user_id, email_type_name, requested_value,
                     created_at, status, processing_index,t1.request_priority, em.message_id,em.received_file_path,em.received_body, em.message_subject, em.sender_id FROM 
                                 admin_request as t1 
@@ -598,15 +597,17 @@ class Model_AdminRequest
                                 {$search}
                                 {$order_by}    
                                 {$limit}";
-           // print_r($sql); exit;
+            // print_r($sql); exit;
 
             $members = $DB->query(Database::SELECT, $sql, FALSE);
             return $members;
         }
     }
-     /* Delete user request  */
 
-    public static function delete_user_request($request_id, $loginid) {
+    /* Delete user request  */
+
+    public static function delete_user_request($request_id, $loginid)
+    {
         $sql = "DELETE t1, t2 
                 FROM admin_request as t1 
                 INNER JOIN admin_email_messages as t2 ON (t2.message_id=t1.message_id)
@@ -615,10 +616,11 @@ class Model_AdminRequest
         //Helpers_Profile::user_activity_log($uid, 4 ,NULL ,NULL ,NULL ,NULL ,$id);
         return $results;
     }
-    
+
     /* User request status Ajax Call */
 
-    public static function user_sent_request_single_user($data, $count) {
+    public static function user_sent_request_single_user($data, $count)
+    {
 
         $id = Helpers_Utilities::encrypted_key($data['id'], "decrypt");
 
@@ -634,8 +636,8 @@ class Model_AdminRequest
 //            $where_clause .= " where t1.user_request_type_id = {$data['request_type']}";
 //        }
 
-        $search_req_id='';
-        if(!empty($data['request_type'])){
+        $search_req_id = '';
+        if (!empty($data['request_type'])) {
             $search_req_id .= " and t1.user_request_type_id = {$data['request_type']}";
         }
         //dates filter
@@ -733,7 +735,7 @@ class Model_AdminRequest
         /* Group By */
         $groupby = "group by u1.user_id";
 
-    //    $where_clause = "where 1";
+        //    $where_clause = "where 1";
 //        $where_clause = "where t1.user_id not IN (419)";
 //        if(($name=='NA'))
 //            $where_clause = "where t1.rqtbyname is null";
@@ -741,11 +743,11 @@ class Model_AdminRequest
 //            $where_clause = "where t1.rqtbyname = ''" ;
 //         else
 //            $where_clause = "where t1.rqtbyname ='$name'";
-            $where_clause = "where t1.user_id ='$id'";
+        $where_clause = "where t1.user_id ='$id'";
 
 
         //$where_clause .=" and where t1.rqtbyname IS NULL";
-       // $where_clause .= "where t1.rqtbyname =''";
+        // $where_clause .= "where t1.rqtbyname =''";
 
 
 //        $where_clause = "where t1.user_id not IN (182,137,136)";
@@ -825,16 +827,14 @@ class Model_AdminRequest
 //            else
             $where_clause = "where t1.user_id = $login_user->id";
         }
-        if(!empty($data['txtbd']))
-        {
+        if (!empty($data['txtbd'])) {
             $where_body = " and em.received_body like '%{$data['txtbd']}%'  ";
-        }else{
+        } else {
             $where_body = " ";
         }
-        if(!empty($data['rqtbyname']))
-        {
+        if (!empty($data['rqtbyname'])) {
             $where_rqt = " and t1.rqtbyname like '%{$data['rqtbyname']}%'  ";
-        }else{
+        } else {
             $where_rqt = " ";
         }
 
@@ -863,8 +863,7 @@ class Model_AdminRequest
             $members = DB::query(Database::SELECT, $sql)->execute()->current();
 
             return $members['count'];
-        }
-        /*  Fetch all Records */ else {
+        } /*  Fetch all Records */ else {
             $sql = "SELECT t1.user_request_type_id, t1.reference_id, t1.reply,t1.company_name, t1.reason, request_id,user_request_type_id, user_id, email_type_name, requested_value,
                     created_at, status, processing_index,t1.request_priority, em.message_id,em.received_file_path,em.received_body, em.message_subject, em.sender_id FROM 
                                 admin_request as t1 
@@ -885,7 +884,7 @@ class Model_AdminRequest
                                 {$search}
                                 {$order_by}    
                                 {$limit}";
-           // print_r($sql); exit;
+            // print_r($sql); exit;
 
             $members = $DB->query(Database::SELECT, $sql, FALSE);
             return $members;
@@ -894,13 +893,14 @@ class Model_AdminRequest
 
     /* Admin request count Ajax Call */
 
-    public static function admin_sent_request_count($data, $count) {
+    public static function admin_sent_request_count($data, $count)
+    {
 
         $login_user = Auth::instance()->get_user();
 
-        $where_clause =  "where 1 and t1.user_id not IN (842, 137, 2031, 2603)";
+        $where_clause = "where 1 and t1.user_id not IN (842, 137, 2031, 2603)";
         // request type
-        if(!empty($data['request_type'])){
+        if (!empty($data['request_type'])) {
             $where_clause .= " and t1.user_request_type_id = {$data['request_type']}";
         }
 
@@ -924,11 +924,9 @@ class Model_AdminRequest
         /* Search via table */
         if (isset($data['sSearch']) && !empty($data['sSearch'])) {
             $data['sSearch'] = preg_replace('/[^A-Za-z0-9\-\.\ ]/', '', $data['sSearch']);
-         
+
             $search = " and t1.rqtbyname like '%{$data['sSearch']}%'";
         }
-
-      
 
 
         /* Sorted Data */
@@ -950,7 +948,7 @@ class Model_AdminRequest
         } else {
             $order_by_type = 'desc';
         }
-        $group_by='group by t1.rqtbyname';
+        $group_by = 'group by t1.rqtbyname';
         // if(!$need_for_count){
         $order_by = " order by " . $order_by_param . " " . $order_by_type . " ";
 
@@ -959,14 +957,13 @@ class Model_AdminRequest
             $limit = " limit " . $data['iDisplayStart'] . ", " . $data['iDisplayLength'];
             // $limit= " limit 10";
         }
-        if(!empty($data['txtbd']))
-        {
+        if (!empty($data['txtbd'])) {
             $where_body = " and em.received_body like '%{$data['txtbd']}%'  ";
-        }else{
+        } else {
             $where_body = " ";
         }
 
-        
+
         /* For Total Record Count */
         if ($count == 'true') {
             $sql = "Select  count( DISTINCT(t1.rqtbyname)) AS count
@@ -975,8 +972,7 @@ class Model_AdminRequest
                            ";
             $members = DB::query(Database::SELECT, $sql)->execute()->current();
             return $members['count'];
-        }
-        else {
+        } else {
 
             $DB = Database::instance();
             $sql = "Select  COUNT(request_id) as count, rqtbyname , created_at, user_request_type_id 
@@ -990,8 +986,8 @@ class Model_AdminRequest
                     {$order_by}
                     {$limit}
                       ";
-         //    print_r($sql); exit;
-                    
+            //    print_r($sql); exit;
+
 //                      if($login_user->id==138){
 //            echo '<pre>';
 //            print_r($sql); exit;
@@ -1003,13 +999,14 @@ class Model_AdminRequest
 
     } /* User request count Ajax Call */
 
-    public static function user_request_count($data, $count) {
+    public static function user_request_count($data, $count)
+    {
 
         $login_user = Auth::instance()->get_user();
 
-        $where_clause =  "where 1 and t1.user_id not IN (842, 137, 2031, 2603)";
+        $where_clause = "where 1 and t1.user_id not IN (842, 137, 2031, 2603)";
         // request type
-        if(!empty($data['request_type'])){
+        if (!empty($data['request_type'])) {
             $where_clause .= " and t1.user_request_type_id = {$data['request_type']}";
         }
 
@@ -1038,7 +1035,6 @@ class Model_AdminRequest
         }
 
 
-
         /* Sorted Data */
         $order_by_param = "count";
         if (isset($data['iSortCol_0'])) {
@@ -1058,7 +1054,7 @@ class Model_AdminRequest
         } else {
             $order_by_type = 'desc';
         }
-        $group_by='group by user_id';
+        $group_by = 'group by user_id';
         // if(!$need_for_count){
         $order_by = " order by " . $order_by_param . " " . $order_by_type . " ";
 
@@ -1067,10 +1063,9 @@ class Model_AdminRequest
             $limit = " limit " . $data['iDisplayStart'] . ", " . $data['iDisplayLength'];
             // $limit= " limit 10";
         }
-        if(!empty($data['txtbd']))
-        {
+        if (!empty($data['txtbd'])) {
             $where_body = " and em.received_body like '%{$data['txtbd']}%'  ";
-        }else{
+        } else {
             $where_body = " ";
         }
 
@@ -1084,8 +1079,7 @@ class Model_AdminRequest
             //print_r($sql); exit();
             $members = DB::query(Database::SELECT, $sql)->execute()->current();
             return $members['count'];
-        }
-        else {
+        } else {
 
             $DB = Database::instance();
             $sql = "Select  COUNT(request_id) as count, user_id , created_at, user_request_type_id 
@@ -1098,16 +1092,18 @@ class Model_AdminRequest
                     {$group_by}
                     {$order_by}
                       ";
-         //    print_r($sql); exit;
+            //    print_r($sql); exit;
 
             $members = $DB->query(Database::SELECT, $sql, FALSE);
             return $members;
         }
 
     }
+
     /* Admin nadra request status Ajax Call */
 
-    public static function admin_nadra_request_sent_status($data, $count) {
+    public static function admin_nadra_request_sent_status($data, $count)
+    {
 
         /* Sorted Data */
         $order_by_param = "created_at";
@@ -1136,13 +1132,12 @@ class Model_AdminRequest
         }
 
         /* Search via table */
-        if(isset($data['sSearch']) && !empty($data['sSearch'])){
+        if (isset($data['sSearch']) && !empty($data['sSearch'])) {
 
             $data['sSearch'] = preg_replace('/[^A-Za-z0-9\ ]/', '', $data['sSearch']);
             $search = "and (t1.cnic_number like '%{$data['sSearch']}%') ";
 
-        }
-        else {
+        } else {
             $search = "";
         }
 
@@ -1164,21 +1159,22 @@ class Model_AdminRequest
                                ";
             $members = DB::query(Database::SELECT, $sql)->execute()->current();
             return $members['count'];
-        }
-        /*  Fetch all Records */ else {
+        } /*  Fetch all Records */ else {
             $sql = "SELECT *
                                 FROM  admin_nadra_request as t1 
                                 {$where_clause}  
                                 {$search}
                                 {$order_by}    
                                 {$limit}";
-           // print_r($sql); exit;
+            // print_r($sql); exit;
 
             $members = $DB->query(Database::SELECT, $sql, FALSE);
             return $members;
         }
     }
-    public static function admin_familtytree_request_sent_status($data, $count) {
+
+    public static function admin_familtytree_request_sent_status($data, $count)
+    {
 
         /* Sorted Data */
         $order_by_param = "created_at";
@@ -1207,13 +1203,12 @@ class Model_AdminRequest
         }
 
         /* Search via table */
-        if(isset($data['sSearch']) && !empty($data['sSearch'])){
+        if (isset($data['sSearch']) && !empty($data['sSearch'])) {
 
             $data['sSearch'] = preg_replace('/[^A-Za-z0-9\ ]/', '', $data['sSearch']);
             $search = "and (t1.cnic_number like '%{$data['sSearch']}%') ";
 
-        }
-        else {
+        } else {
             $search = "";
         }
 
@@ -1235,22 +1230,22 @@ class Model_AdminRequest
                                ";
             $members = DB::query(Database::SELECT, $sql)->execute()->current();
             return $members['count'];
-        }
-        /*  Fetch all Records */ else {
+        } /*  Fetch all Records */ else {
             $sql = "SELECT *
                                 FROM  admin_familytree_request as t1 
                                 {$where_clause}  
                                 {$search}
                                 {$order_by}    
                                 {$limit}";
-           // print_r($sql); exit;
+            // print_r($sql); exit;
 
             $members = $DB->query(Database::SELECT, $sql, FALSE);
             return $members;
         }
     }
-    
-     public static function admin_travel_request_sent_status($data, $count) {
+
+    public static function admin_travel_request_sent_status($data, $count)
+    {
 
         /* Sorted Data */
         $order_by_param = "created_at";
@@ -1279,13 +1274,12 @@ class Model_AdminRequest
         }
 
         /* Search via table */
-        if(isset($data['sSearch']) && !empty($data['sSearch'])){
+        if (isset($data['sSearch']) && !empty($data['sSearch'])) {
 
             $data['sSearch'] = preg_replace('/[^A-Za-z0-9\ ]/', '', $data['sSearch']);
             $search = "and (t1.cnic_number like '%{$data['sSearch']}%') ";
 
-        }
-        else {
+        } else {
             $search = "";
         }
 
@@ -1307,15 +1301,14 @@ class Model_AdminRequest
                                ";
             $members = DB::query(Database::SELECT, $sql)->execute()->current();
             return $members['count'];
-        }
-        /*  Fetch all Records */ else {
+        } /*  Fetch all Records */ else {
             $sql = "SELECT *
                                 FROM  admin_travel_request as t1 
                                 {$where_clause}  
                                 {$search}
                                 {$order_by}    
                                 {$limit}";
-           // print_r($sql); exit;
+            // print_r($sql); exit;
 
             $members = $DB->query(Database::SELECT, $sql, FALSE);
             return $members;
@@ -1323,20 +1316,25 @@ class Model_AdminRequest
     }
 
 
-    public static function update_nadra_request_status($request_id, $processing_index) {
-        $query = DB::update('admin_nadra_request')->set(array( 'status' => $processing_index))
+    public static function update_nadra_request_status($request_id, $processing_index)
+    {
+        $query = DB::update('admin_nadra_request')->set(array('status' => $processing_index))
             ->where('request_id', '=', $request_id)
             ->execute();
         return $query;
     }
-    public static function update_familytree_request_status($request_id, $processing_index) {
-        $query = DB::update('admin_familytree_request')->set(array( 'status' => $processing_index))
+
+    public static function update_familytree_request_status($request_id, $processing_index)
+    {
+        $query = DB::update('admin_familytree_request')->set(array('status' => $processing_index))
             ->where('request_id', '=', $request_id)
             ->execute();
         return $query;
     }
-    public static function update_travel_request_status($request_id, $processing_index) {
-        $query = DB::update('admin_travel_request')->set(array( 'status' => $processing_index))
+
+    public static function update_travel_request_status($request_id, $processing_index)
+    {
+        $query = DB::update('admin_travel_request')->set(array('status' => $processing_index))
             ->where('request_id', '=', $request_id)
             ->execute();
         return $query;

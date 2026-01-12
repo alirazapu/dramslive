@@ -12,3 +12,4 @@ composer.lock
 composer.phar
 vendor/*
 .idea/
+dist/uploads/user/request_approve/
