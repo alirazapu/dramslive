@@ -86,7 +86,7 @@ abstract class Helpers_Inneruse {
         //cmRCZmlGbXd0aCttNnFxaGJzaxHmBf8ri9xazIxdmlHSGdLR2lVUFk4K3ZjdEp1WU1HRT0=
         //'ltnu oujt kaxp njqr';//
         $send_email = Model_Inneruse::get_inner_value_2(5);
-        $email['aies']['send']['name']="CTD Punjab";
+        $email['aies']['send']['name']="CTD KPK";
         $email['aies']['send']['user'] = (string)$send_email;        
         $email['aies']['send']['password'] = (string)$send_key;
        // exit; //'wkkmsfdaraplpzkn';
@@ -104,9 +104,9 @@ abstract class Helpers_Inneruse {
         $irfan_key = Model_Inneruse::get_inner_tokens(7);
         $irfan_key = str_replace("axHmBf8ri9x","",$irfan_key);
         $irfan_key = unserialize(base64_decode($irfan_key));
-        
-        $email['irfan']['send']['user'] = "mirfan15ms@gmail.com";
-        $email['irfan']['send']['password'] = $irfan_key ;         
+        $email['ali']['send']['name']="CTD KPK";
+        $email['ali']['send']['user'] = "reg745964@gmail.com";//"mirfan15ms@gmail.com";
+        $email['ali']['send']['password'] = 'bfcihehizxazlphk';//$irfan_key bfci hehi zxaz lphk;
         return $email;
     }   
 

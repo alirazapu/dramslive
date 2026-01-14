@@ -115,29 +115,29 @@ $base_url='/';
 if ($kohana_env = getenv('KOHANA_ENV')) {
     switch (strtoupper($kohana_env)) {
         case 'DEVELOPMENT':
-            $base_url = $scheme . 'dev.ctd.drams.com/';
+            $base_url = $scheme . 'dev.ctd.drams.com';
             Kohana::$environment = Kohana::DEVELOPMENT;
             break;
 
         case 'STAGING':
-            $base_url = $scheme . 'stage.ctd.drams.com/';
+            $base_url = $scheme . 'stage.ctd.drams.com';
             Kohana::$environment = Kohana::STAGING;
             break;
 
         case 'TESTING':
-            $base_url = $scheme . 'test.ctd.drams.com/';
+            $base_url = $scheme . 'test.ctd.drams.com';
             Kohana::$environment = Kohana::TESTING;
             break;
 
         case 'PRODUCTION':
         default:
-            $base_url = $scheme . 'ctd.drams.com/';
+            $base_url = $scheme . 'ctd.drams.com';
             Kohana::$environment = Kohana::PRODUCTION;
             break;
     }
 } else {
     Kohana::$environment = Kohana::PRODUCTION;
-    $base_url = $scheme . 'ctd.drams.com/';
+    $base_url = $scheme . 'ctd.drams.com';
 }
 $init=array(
     'base_url'   => $base_url,

@@ -2207,11 +2207,11 @@ class Model_Generic {
                     ->execute();
         
     }
-    public static function resend_error_in_queue() {        
-         DB::update('user_request')->set(array('processing_index' => 0, 'status'=> 0))
+    public static function resend_error_in_queue() {
+        $query=DB::update('user_request')->set(array('processing_index' => 0, 'status'=> 0))
                     ->where('status', '=', 3)
-                    ->and_where('processing_index', '=', 1)
-                    ->execute();
+                    ->and_where('processing_index', '=', 1);
+        $query->execute();
         
     }
     public static function resend_error_id_queue($id) {        

@@ -16,6 +16,7 @@ class Controller_Adminrequest extends Controller_Working
 
     public function action_admin_request_sent_form()
     {
+
         try {
             $DB = Database::instance();
             $login_user = Auth::instance()->get_user();

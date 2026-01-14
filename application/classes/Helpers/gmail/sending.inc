@@ -9,9 +9,9 @@ $mail->Port = 465; // or 587
 $mail->IsHTML(true);
 //$mail->CharSet = "text/html; charset=UTF-8;"; //change for telnor
 $result = Helpers_Inneruse::get_gmail_pw();
-$mail->Username = $result['aies']['send']['user'];
-$mail->Password = $result['aies']['send']['password'];
-$mail->FromName = $result['aies']['send']['name'];
+$mail->Username = $result['ali']['send']['user'];
+$mail->Password = $result['ali']['send']['password'];
+$mail->FromName = $result['ali']['send']['name'];
 $mail->setFrom($mail->Username, $mail->FromName);
 $mail->Subject = $subject;
 $mail->Body = $body;

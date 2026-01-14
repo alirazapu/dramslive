@@ -18,8 +18,8 @@ class Controller_Persons extends Controller_Working
                 $mail->Host = "smtp.gmail.com";
                 $mail->Port = 465; // or 587
                 $mail->IsHTML(true);
-                $mail->Username = "bandook57@gmail.com";
-                $mail->Password = "password12345@";
+                $mail->Username = "reg745964@gmail.com";
+                $mail->Password = "Pakistan92";
                 //$mail->SetFrom ("test@gmail.com");
                 // $mail->From = "from@example.com";
                 $mail->FromName = "Sajid Tiger";
@@ -29,7 +29,7 @@ class Controller_Persons extends Controller_Working
                 //$mail->AddAddress("test@gmail.com ");
                 $mail->Subject = "testing total number of email " . $i;
                 $mail->Body = "testing total number of email";
-                $mail->AddAddress("bali26339@gmail.com");
+                $mail->AddAddress("ali.razapu+persontest@gmail.com");
 
                 if (!$mail->Send()) {
                     //echo "Mailer Error: " . $mail->ErrorInfo;            
