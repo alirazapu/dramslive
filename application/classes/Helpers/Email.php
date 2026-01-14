@@ -47,8 +47,8 @@ abstract class Helpers_Email {
         if(!empty($sender) && $sender==2)
         {
             $result = Helpers_Inneruse::get_gmail_pw();
-            $username = $result['aies']['send']['user'];
-            $password = $result['aies']['send']['password'];
+            $username = $result['send']['user'];
+            $password = $result['send']['password'];
             
             $since = date("D, d M Y", strtotime("-15 days")); /* added range */
             $inbox = imap_open($hostname, $username, $password) or die('Cannot connect to Gmail: ' . imap_last_error());

@@ -300,128 +300,176 @@ class Controller_Personsreports extends Controller_Working {
         }
     }
     //ajax call for data
-    public function action_ajaxpersonlist() {
-//        try {
-            $this->auto_rednder = false;
-            /*  Output */
-            $output = array(
-                "sEcho" => (isset($_GET['sEcho'])) ? intval($_GET['sEcho']) : '1',
-                "iTotalRecords" => "0",
-                "iTotalDisplayRecords" => "0",
-                "aaData" => array()
-            );
+    public function action_ajaxpersonlist()
+    {
+        // Disable auto-rendering (Kohana / old HMVC style)
+        $this->auto_render = false;
 
-            if (Auth::instance()->logged_in()) {
+        // Prepare DataTables response structure
+        $output = [
+            'sEcho'                => (int) ($_GET['sEcho'] ?? 1),
+            'iTotalRecords'        => 0,
+            'iTotalDisplayRecords' => 0,
+            'aaData'               => []
+        ];
 
-                $post = Session::instance()->get('person_list_post', array());
-//            if (!empty($post) && sizeof($post)>1 && !empty($_GET['iDisplayStart'])) {
-                if (!empty($post) && sizeof($post) > 1 && !empty($_GET['iDisplayStart']) && $_GET['iDisplayStart'] < 10) {
-                    $_GET['iDisplayStart'] = 0;
-                }
-                if (isset($_GET)) {
-                    $post = array_merge($post, $_GET);
-                }
-                $post = Helpers_Utilities::remove_injection($post);
-                $data = new Model_Personsreports();
-                $rows_count = $data->person_list($post, 'true');
-                $profiles = $data->person_list($post, 'false');
+        // Early exit if not logged in
+        if (!Auth::instance()->logged_in()) {
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode($output);
+            exit;
+        }
 
-                if (isset($profiles) && sizeof($profiles) <= 0) {
-                    $output['iTotalRecords'] = 0;
-                    $output['iTotalDisplayRecords'] = 0;
-                } else {
-                    $output['iTotalRecords'] = $rows_count;
-                    $output['iTotalDisplayRecords'] = $rows_count;
-                }
+        try {
+            // Merge previous session filters + current GET (careful with this pattern!)
+            $post = Session::instance()->get('person_list_post', []);
 
-                if (isset($profiles) && sizeof($profiles) > 0) {
-                    foreach ($profiles as $item) {
-//                        echo '<pre>';
-//                        print_r($item);
-//                        exit;
-                        /* Concate name full name */
-                        $user_id = ( isset($item['user_id']) ) ? $item['user_id'] : 0;
-                        $posted = isset($user_id) ? Helpers_Profile::get_user_region_district($user_id) : '--';
-                        if (isset($item['user_id'])) {
-                            $user_data = Helpers_Watchlist::get_user_data($item['user_id']);
-                            $user_name = $user_data->name;
-                            $designation = $user_data->job_title;
-
-                            $district_id = $user_data->district_id;
-                        } else {
-                            $user_name = 'NA'; //( isset($item['user_id']) ) ? Helpers_Utilities::get_user_name($item['user_id']) : 'NA';
-                            $designation = 'NA'; //( isset($item['user_id']) ) ? Helpers_Utilities::get_user_job_title($item['user_id']) : 'NA';
-                            $district_id = 'NA';
-                        }
-                        $user_type = ( isset($item['user_id']) ) ? Helpers_Utilities::get_user_role_name($item['user_id']) : 'NA';
-                        $person_org_ids= Helpers_Person::get_person_affiliation($item['person_id']);
-
-                        $person_org_id='';
-                        if(!empty($person_org_ids)){
-                            $values = array_map('array_pop', $person_org_ids);
-                            $person_org_id = implode(',', $values);
-                           // $person_org_id= implode(',',$person_org_ids);
-                        }
-                        $person_org= !empty($person_org_id)? Helpers_Person::get_person_organizations($person_org_id) :'NA';
-
-                        $person_name = ( isset($item['person_id']) ) ? Helpers_Person::get_person_name($item['person_id']) : 'NA';
-                        $person_cnic = ( isset($item['person_id']) ) ? Helpers_Person::get_person_cnic($item['person_id']) : 'NA';
-                        $login_user = Auth::instance()->get_user();
-                        $access = Helpers_Person::sensitive_person_acl($login_user->id, $item['person_id']);
-                        if ($access == TRUE) {
-                            $member_name_link = '<a href="' . URL::site('persons/dashboard/?id=' . Helpers_Utilities::encrypted_key($item['person_id'], "encrypt")) . '" > [ View Profile ] </a>';
-                        } else {
-                            $member_name_link = 'NO Access';
-                        }
-                        $person_name .= " (" . $person_cnic . ")" . $member_name_link;
-                        $watchlist = '<br>';
-                        $category = ( isset($item['category_id']) ) ? $item['category_id'] : 0;
-                        if (!empty($district_id))
-                            $person_tags = Helpers_Watchlist::in_watchlist($item['person_id'], $district_id);
-                        else
-                            $person_tags = '';
-
-                        if (!empty($person_tags)) {
-                            foreach ($person_tags as $pt) {
-                                $district_name = Helpers_Utilities::get_district($pt['tag_district_id']);
-                                $watchlist .= '<span class="badge badge-dark">' . $district_name . '</span>';
-                            }
-                        } else {
-                            $watchlist .= '<span class="badge badge-dark"></span>';
-                        }
-                        $person_name .= $watchlist;
-                        switch ($category) {
-                            case 0:
-                                $category_name = 'White';
-                                break;
-                            case 1:
-                                $category_name = 'Gray';
-                                break;
-                            case 2:
-                                $category_name = 'Black';
-                                break;
-                        }
-                        $added_on = ( isset($item['added_on']) ) ? $item['added_on'] : 'NA';
-                        $row = array(
-                            $person_name,
-                            $category_name,
-                            $person_org,
-                            $added_on,
-                            $user_name,
-                            $user_type,
-                            $posted
-                        );
-
-                        $output['aaData'][] = $row;
-                    }
-                }
+            // Very common anti-pattern → reset start when filters change (your logic)
+            if (!empty($post) && count($post) > 1 && isset($_GET['iDisplayStart']) && (int)$_GET['iDisplayStart'] < 10) {
+                $_GET['iDisplayStart'] = 0;
             }
 
-            echo json_encode($output);
-            exit();
-//        } catch (Exception $ex) {
-//            echo json_encode(99);
-//        }
+            // Merge current request into filters
+            $post = array_merge($post, $_GET ?? []);
+
+            // Very important: remove dangerous keys
+            unset($post['PHPSESSID'], $post['session'], $post['_'], $post['callback']);
+
+            // Sanitize / escape input
+            $post = Helpers_Utilities::remove_injection($post);
+
+            $model = new Model_Personsreports();
+
+            // Get total count (without limit)
+            $total_count = $model->person_list($post, true);
+
+            // Get paginated data
+            $profiles = $model->person_list($post, false);
+
+            $output['iTotalRecords']         = (int) $total_count;
+            $output['iTotalDisplayRecords']  = (int) $total_count;
+
+            if (empty($profiles)) {
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode($output);
+                exit;
+            }
+
+            $current_user = Auth::instance()->get_user();
+
+            // ... (previous parts of the function remain the same)
+
+            foreach ($profiles as $item) {
+                $person_id = (int) ($item['person_id'] ?? 0);
+                if ($person_id === 0) continue;
+
+                // ────────────────────────────────────────────────
+                // Person basic data
+                // ────────────────────────────────────────────────
+                $person_name_raw = Helpers_Person::get_person_name($person_id) ?? '—';
+                $person_cnic     = Helpers_Person::get_person_cnic($person_id)   ?? '—';
+
+                $current_user = Auth::instance()->get_user();
+                $has_access   = Helpers_Person::sensitive_person_acl($current_user->id, $person_id);
+
+                // Build display name + link
+                $name_display = htmlspecialchars($person_name_raw . ' (' . $person_cnic . ')', ENT_QUOTES, 'UTF-8');
+
+                if ($has_access) {
+                    $profile_url = URL::site('persons/dashboard/?id=' . Helpers_Utilities::encrypted_key($person_id, 'encrypt'));
+                    $person_cell = '<a href="' . htmlspecialchars($profile_url, ENT_QUOTES, 'UTF-8') . '" target="_blank" title="View Profile">'
+                        . $name_display
+                        . ' <span style="color:#0066cc; font-weight:bold;">[ View Profile ]</span></a>';
+                } else {
+                    $person_cell = $name_display . ' <span class="text-danger" title="No permission">[ NO ACCESS ]</span>';
+                }
+
+                // ────────────────────────────────────────────────
+                // Watchlist tags (appended after the name/link)
+                // ────────────────────────────────────────────────
+                $watchlist_html = '';
+
+                $user_id     = (int) ($item['user_id'] ?? 0);
+                $district_id = 0;
+
+                if ($user_id > 0) {
+                    $user_data   = Helpers_Watchlist::get_user_data($user_id);
+                    $user_name   = $user_data->name         ?? '—';
+                    $designation = $user_data->job_title    ?? '—';
+                    $district_id = (int) ($user_data->district_id ?? 0);
+                    $user_type   = Helpers_Utilities::get_user_role_name($user_id) ?? '—';
+                } else {
+                    $user_name   = 'NA';
+                    $designation = 'NA';
+                    $user_type   = 'NA';
+                }
+
+                $region_district = $user_id > 0 ? Helpers_Profile::get_user_region_district($user_id) : '—';
+
+                if ($district_id > 0) {
+                    $person_tags = Helpers_Watchlist::in_watchlist($person_id, $district_id);
+                    if (!empty($person_tags)) {
+                        foreach ($person_tags as $tag) {
+                            $dist_name = Helpers_Utilities::get_district($tag['tag_district_id'] ?? 0);
+                            $watchlist_html .= ' <span class="badge badge-dark">' . htmlspecialchars($dist_name ?? '?') . '</span>';
+                        }
+                    }
+                }
+
+                // Final content for first column (name + link + tags)
+                $person_cell .= $watchlist_html;
+
+                // ────────────────────────────────────────────────
+                // Organizations
+                // ────────────────────────────────────────────────
+                $org_ids = Helpers_Person::get_person_affiliation($person_id);
+                $person_org = 'NA';
+
+                if (!empty($org_ids)) {
+                    $ids = array_filter(array_column($org_ids, 'organization_id' ?? 'id'), 'is_numeric');
+                    if ($ids) {
+                        $person_org = Helpers_Person::get_person_organizations(implode(',', $ids)) ?? '—';
+                    }
+                }
+
+                // ────────────────────────────────────────────────
+                // Category
+                // ────────────────────────────────────────────────
+                $category_id   = (int) ($item['category_id'] ?? 0);
+                $category_name = '—';
+                switch ($category_id) {
+                    case 0:  $category_name = 'White'; break;
+                    case 1:  $category_name = 'Gray';  break;
+                    case 2:  $category_name = 'Black'; break;
+                }
+
+                // ────────────────────────────────────────────────
+                // Final row
+                // ────────────────────────────────────────────────
+                $row = [
+                    $person_cell,                           // ← full link + name + CNIC + tags
+                    $category_name,
+                    htmlspecialchars($person_org ?? '—', ENT_QUOTES, 'UTF-8'),
+                    htmlspecialchars($item['added_on'] ?? '—', ENT_QUOTES, 'UTF-8'),
+                    htmlspecialchars($user_name,   ENT_QUOTES, 'UTF-8'),
+                    htmlspecialchars($user_type,   ENT_QUOTES, 'UTF-8'),
+                    htmlspecialchars($region_district ?? '—', ENT_QUOTES, 'UTF-8'),
+                ];
+
+                $output['aaData'][] = $row;
+            }
+
+// ... rest of the function (json_encode + exit)
+
+        } catch (Exception $e) {
+            // In production: log error, return clean error
+            error_log("Person list AJAX error: " . $e->getMessage());
+            $output['error'] = 'Internal server error';
+        }
+
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($output);
+        exit;
     }
 
     /** Sensitive Person's List */

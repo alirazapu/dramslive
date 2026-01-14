@@ -1809,28 +1809,53 @@ class Controller_Adminrequest extends Controller_Working
 
                             /* change in 10 23 2017 */
 
-                            if ($company_name == 3 && ($request_type == 1 || $request_type == 2 || $request_type == 6)) {  //ufone
+                            if ($company_name == 3 && in_array($request_type, [1, 2, 6])) {  // Ufone specific handling
 
+                                // Clean body text (strip HTML tags properly)
                                 $body = strip_tags($body);
-                                $text = str_ireplace('&lt;p&gt;', '', $body);
-                                $body = str_ireplace('&lt;/p&gt;', '', $text);
-                                /*if($request_type==2)
-                                {
-                                    $body= substr_replace( $body, 0, strlen($body)-1);
-                                }*/
-                                //create attachment start
-                                $file_name = "/root/serverfiles/aies-home/aiesfiles/ufone_tem_files/" . $reference_id . ".txt";
-                                $myfile = fopen($file_name, "w") or die("Unable to open file!");
-                                fwrite($myfile, $body);
-                                fclose($myfile);
-                                $body = $reference_id . ".txt";
-                                /* email send */
-                                $email_staus = Helpers_Email::send_email($to, $to_name, $subject, $body, $file_name);
-                                if (file_exists($file_name)) {
-                                    unlink($file_name);
+                                $body = str_ireplace(['&lt;p&gt;', '&lt;/p&gt;'], '', $body);  // remove leftover <p> entities
+
+                                // Optional: uncomment if you still need this for request_type 2
+                                // if ($request_type == 2) {
+                                //     $body = rtrim($body, "\r\n");  // safer than substr_replace
+                                // }
+
+                                // Create temporary text file as attachment
+                                $filename   = $reference_id . ".txt";
+                                $target_dir = UFONE_FILES;  // already ends with \ from bootstrap
+                                $full_path  = $target_dir . $filename;
+
+                                // Ensure the directory exists (critical fix!)
+                                if (!is_dir($target_dir)) {
+                                    if (!mkdir($target_dir, 0755, true)) {
+                                        // Log error instead of crashing
+                                        error_log("Failed to create directory: $target_dir");
+                                        // You can set a fallback or return error here
+                                        $email_status = false;  // or handle gracefully
+                                        // continue to next block or return early
+                                    }
+                                }
+
+                                // Write the file
+                                $myfile = fopen($full_path, "w");
+                                if ($myfile === false) {
+                                    error_log("Failed to create temp file: $full_path");
+                                    $email_status = false;
+                                } else {
+                                    fwrite($myfile, $body);
+                                    fclose($myfile);
+
+                                    // Send email with attachment
+                                    $email_status = Helpers_Email::send_email($to, $to_name, $subject, $body, $full_path);
+
+                                    // Clean up temp file
+                                    if (file_exists($full_path)) {
+                                        unlink($full_path);
+                                    }
                                 }
                             } else {
-                                $email_staus = Helpers_Email::send_email($to, $to_name, $subject, $body);
+                                // Normal email without attachment
+                                $email_status = Helpers_Email::send_email($to, $to_name, $subject, $body);
                             }
 
                             //$email_staus = Helpers_Email::send_email($to, $to_name, $subject, $body);

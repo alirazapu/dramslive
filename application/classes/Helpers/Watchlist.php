@@ -36,7 +36,7 @@ abstract class Helpers_Watchlist {
         $DB = Database::instance('default');
         $sql = "SELECT CONCAT_WS(' ',first_name, last_name) as name, job_title, district_id, posted
                          from users_profile
-                         where user_id = {$user_ud} ";
+                         where user_id = '".$user_ud."'";
         $results = $DB->query(Database::SELECT, $sql, TRUE)->current();
         if(!empty($results))
         {    
@@ -54,9 +54,8 @@ abstract class Helpers_Watchlist {
     //    get person tags data
     public static function in_watchlist($person_id, $district_id) {
         $DB = Database::instance();
-        $sql = "SELECT * FROM person_tags where person_id = {$person_id} and tag_district_id ={$district_id} and in_watchlist=1 Group By tag_district_id";
-        $results = $DB->query(Database::SELECT, $sql, FALSE)->as_array();        
-        //print_r($results); exit;
+        $sql = "SELECT * FROM person_tags where person_id = '".$person_id."' and tag_district_id ='".$district_id."' and in_watchlist=1 Group By tag_district_id";
+        $results = $DB->query(Database::SELECT, $sql, FALSE)->as_array();
         return $results;
     }
     //    get tag name by id

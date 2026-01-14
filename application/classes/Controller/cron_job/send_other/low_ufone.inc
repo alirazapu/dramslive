@@ -33,7 +33,7 @@ $query = "select *
                     $reference_number = $res['request_id'];
                     $reference_idd = $res['reference_id'];
                     //create attachment start
-                    $file_name = "/root/serverfiles/aies-home/aiesfiles/ufone_tem_files/". $reference_idd .".txt";
+                    $file_name =Helper_Path::upload($reference_idd . ".txt");
                     $myfile = fopen($file_name, "w") or die("Unable to open file!");
                     fwrite($myfile, $body);
                     fclose($myfile);                    
@@ -78,7 +78,7 @@ $query = "select *
                     $reference_number = $res['request_id'];
                     $reference_idd = $res['reference_id'];
                     //create attachment start
-                    $file_name = "/root/serverfiles/aies-home/aiesfiles/ufone_tem_files/". $reference_idd .".txt";
+                    $file_name = Helper_Path::upload($reference_idd . ".txt");;
                     $myfile = fopen($file_name, "w") or die("Unable to open file!");
                     fwrite($myfile, $body);
                     fclose($myfile);                    

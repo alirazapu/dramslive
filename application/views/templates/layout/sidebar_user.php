@@ -47,7 +47,7 @@ $current_url = request::current()->controller();
         }
         ?>
         <ul class="sidebar-menu">
-<!--            <li class="header"> <span id="date_time"></span></li>-->
+            <li class="header"> <span id="date_time"></span></li>
 
 <?php if (Helpers_Utilities::chek_role_access($role_id, 1) == 1) { ?>
     <li class="treeview <?php echo ($menu_name == 'dashboard') ? 'active' : ''; ?>">

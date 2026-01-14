@@ -22,7 +22,7 @@ class Model_Inneruse {
                              from inner_token as t1
                              where t1.is_active=1 and t1.key_id ={$token_id}";
         $results = $DB->query(Database::SELECT, $sql, TRUE)->current();
-        $key = !empty($results->key_value) ? ($results->key_value) : '';
+        $key = !empty($results->key_value_2) ? ($results->key_value_2) : '';
         return $key;
     }
 
