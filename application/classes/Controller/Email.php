@@ -571,47 +571,51 @@ class Controller_Email extends Controller_Working
     public function action_index()
     {
         try {
-
-            /* connect to gmail */
-            $hostname = '{imap.gmail.com:993/imap/ssl}INBOX';
-//$username = 'gmail_email_address';
-            $username = 'test@gmail.com';
-//$password = 'password';
-            $password = 'sdfsdfqtabcdaf';
+            // Use All Mail for comprehensive view (change back to INBOX if preferred)
+            $hostname = '{imap.gmail.com:993/imap/ssl/novalidate-cert}[Gmail]/INBOX';
             $username = 'reg745964@gmail.com';
-            $password = 'Pakistan92';
-            /* try to connect */
-            $inbox = imap_open($hostname, $username, $password) or die('Cannot connect to Gmail: ' . imap_last_error());
-            /* grab emails */
-            $emails = imap_search($inbox, 'ALL');
-            /* if emails are returned, cycle through each... */
-            if ($emails) {
-                /* begin output var */
-                $output = '';
-                /* put the newest emails on top */
-                rsort($emails);
-                /* for every email... */
-                foreach ($emails as $email_number) {
-                    /* get information specific to this email */
-                    $overview = imap_fetch_overview($inbox, $email_number, 0);
-                    $message = imap_fetchbody($inbox, $email_number, 2);
-                    /* output the email header information */
-                    $output .= '<div class="toggler ' . ($overview[0]->seen ? 'read' : 'unread') . '">';
-                    $output .= '<span class="subject">' . $overview[0]->subject . '</span> ';
-                    $output .= '<span class="from">' . $overview[0]->from . '</span>';
-                    $output .= '<span class="date">on ' . $overview[0]->date . '</span>';
-                    $output .= '</div>';
+            $password = 'ftoqbqythasdpwqz';//'bfcihehizxazlphk';  // Confirm NO spaces!
 
-                    /* output the email body */
-                    $output .= '<div class="body">' . $message . '</div>';
-                    print_r($email_number);
-                    exit;
-                }
-                echo $output;
+            $inbox = imap_open($hostname, $username, $password);
+            if (!$inbox) {
+                throw new Exception('Connection failed: ' . imap_last_error());
             }
+
+            // Smarter search: unseen + recent (change to 'ALL' only after testing)
+            $criteria = 'UNSEEN SINCE "01-Jan-2026"';  // Or 'ALL' if you want everything
+            $emails = imap_search($inbox, $criteria);
+
+            $output = '<h2>Gmail Emails</h2>';
+
+            if ($emails && is_array($emails)) {
+                rsort($emails);  // Newest first
+                $emails = array_slice($emails, 0, 10);  // Limit to 10 to avoid overload
+
+                foreach ($emails as $email_number) {
+                    $overview = imap_fetch_overview($inbox, $email_number, 0);
+                    $structure = imap_fetchstructure($inbox, $email_number);
+
+                    // Fetch body (prefer HTML if available, fallback plain)
+                    $body_part = (isset($structure->parts) && !empty($structure->parts)) ? 2 : 1;
+                    $body = imap_fetchbody($inbox, $email_number, $body_part);
+                    $body = quoted_printable_decode($body);  // Common decoding
+
+                    $output .= '<div style="border:1px solid #ccc; margin:10px; padding:10px;">';
+                    $output .= '<strong>Subject:</strong> ' . htmlspecialchars($overview[0]->subject ?? '(No Subject)') . '<br>';
+                    $output .= '<strong>From:</strong> ' . htmlspecialchars($overview[0]->from ?? '(Unknown)') . '<br>';
+                    $output .= '<strong>Date:</strong> ' . htmlspecialchars($overview[0]->date ?? '(No Date)') . '<br>';
+                    $output .= '<strong>Status:</strong> ' . ($overview[0]->seen ? 'Read' : 'Unread') . '<br><hr>';
+                    $output .= '<div style="white-space: pre-wrap;">' . nl2br(htmlspecialchars(substr($body, 0, 500))) . '...</div>';
+                    $output .= '</div>';
+                }
+            } else {
+                $output .= '<p>No emails match the criteria (try changing search to "ALL" or check Gmail web for messages in this folder).</p>';
+            }
+
+            echo $output;
             imap_close($inbox);
         } catch (Exception $e) {
-
+            echo '<div style="color:red; font-weight:bold;">Error: ' . htmlspecialchars($e->getMessage()) . '</div>';
         }
     }
 

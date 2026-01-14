@@ -4,6 +4,7 @@ class Controller_Cache extends Controller {
 
     public function action_clear()
     {
+
         // Security check - only allow from localhost or with secret key
         $secret = $this->request->query('key');
         $allowed_ip = ['127.0.0.1', '::1'];
@@ -61,6 +62,16 @@ class Controller_Cache extends Controller {
     }
     public function action_adminsend()
     {
+
+        $hostname = '{imap.gmail.com:993/imap/ssl/novalidate-cert}[Gmail]/All Mail';  // Use All Mail to see archived emails too
+        $username = 'reg745964@gmail.com';
+        $password = 'ftoqbqythasdpwqz';  // ← Fresh App Password, NO SPACES, fresh one!
+
+        $inbox = imap_open($hostname, $username, $password)
+        or throw new Exception('IMAP connection failed: ' . imap_last_error());
+        echo $inbox ? 'Connected OK!' : 'Failed: ' . imap_last_error();
+
+        /*
         $file_name = Helpers_Path::upload(69 . ".txt");
 
         echo "<pre style='background:#111;color:#0f0;padding:16px;font-family:consolas;'>";
@@ -73,7 +84,7 @@ class Controller_Cache extends Controller {
         echo "Helpers_Path::upload()  = " . $file_name . "\n";
         echo "dirname(file)           = " . dirname($file_name) . "\n";
         echo "Directory exists?       = " . (is_dir(dirname($file_name)) ? 'YES' : 'NO') . "\n";
-        echo "</pre>";
+        echo "</pre>";*/
         exit;
     }
 }

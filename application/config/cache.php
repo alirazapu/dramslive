@@ -25,8 +25,8 @@
  */
 $config['default'] = array
 (
-	'driver'   => 'file',
-	'params'   => array('directory' => APPPATH.'cache'),
-	'lifetime' => 1800,
-	'requests' => 1000
+    'driver'   => 'dummy',
+    'params'   => array(),
+    'lifetime' => 0,
+    'requests' => 0
 );

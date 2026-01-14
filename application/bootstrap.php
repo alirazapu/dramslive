@@ -126,7 +126,7 @@ Kohana::init([
     'index_file' => false,
     'errors'     => true,
     'profile'    => false,
-    'caching'    => (Kohana::$environment === Kohana::PRODUCTION),
+    'caching'    => false,
 ]);
 
 // Logging & Config

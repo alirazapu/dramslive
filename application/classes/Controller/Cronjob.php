@@ -10,10 +10,10 @@ class Controller_Cronjob extends Controller {
     /* test function */
     public function action_test() {
 
-            print_r( Helpers_Inneruse::get_gmail_pw());exit;
-        $send_key= Helpers_Utilities::encrypted_key('test', "encrypt");
+       // print_r( Helpers_Inneruse::get_gmail_pw());exit;
+        $send_key= Helpers_Utilities::encrypted_key('ftoqbqythasdpwqz', "encrypt");
         echo $send_key;echo "<br>";
-        $send_key = str_replace("axHmBf8ri9x","",'bWZVREVBaGY4TWpCZGphT1Jtd2hROVNkOXlRSlpWWjdUeUFud0FwSkR6az0==');
+        $send_key = str_replace("axHmBf8ri9x","",'c3AxdXcveDNqUjlaMVdyYXpsUCswaVk1OTdWL2oyK3dWMFE1OER3N0QvUT0==');
         $send_key= Helpers_Utilities::encrypted_key($send_key, "decrypt");
         echo $send_key;
         exit;
