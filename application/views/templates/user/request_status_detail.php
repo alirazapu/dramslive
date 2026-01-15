@@ -285,12 +285,39 @@ $permission = Helpers_Utilities::get_user_permission($login_user->id);
 </section>
 <script src="https://cdn.ckeditor.com/4.5.7/standard/ckeditor.js"></script>
 <script>
-$(function () {
-    //bootstrap WYSIHTML5 - text editor
-    //$(".textarea").wysihtml5();
-    CKEDITOR.replace('body_txt');
-    CKEDITOR.disableAutoInline = false;
-});
+    $(function () {
+        // Optional: If you still have any old WYSIHTML5 code commented out, you can remove it.
+        // $(".textarea").wysihtml5();  // ← safe to delete if not used
+
+        CKEDITOR.replace('body_txt', {
+            versionCheck: false,  // This ensures it's disabled for this instance (extra safety)
+
+            // If you want, you can move some/all of your toolbar/custom settings here instead of config.js
+            // (but since you already have them in config.js, no need unless overriding per-instance)
+            toolbarGroups: [
+                { name: 'clipboard',   groups: [ 'clipboard', 'undo' ] },
+                { name: 'editing',     groups: [ 'find', 'selection', 'spellchecker' ] },
+                { name: 'links' },
+                { name: 'insert' },
+                { name: 'forms' },
+                { name: 'tools' },
+                { name: 'document',       groups: [ 'mode', 'document', 'doctools' ] },
+                { name: 'others' },
+                '/',
+                { name: 'basicstyles', groups: [ 'basicstyles', 'cleanup' ] },
+                { name: 'paragraph',   groups: [ 'list', 'indent', 'blocks', 'align', 'bidi' ] },
+                { name: 'styles' },
+                { name: 'colors' },
+                { name: 'about' }
+            ],
+            removeButtons: 'Underline,Subscript,Superscript',
+            format_tags: 'p;h1;h2;h3;pre',
+            removeDialogTabs: 'image:advanced;link:advanced'
+            // Add any other per-instance overrides if needed
+        });
+
+        CKEDITOR.disableAutoInline = false;
+    });
 </script>
 
 <script type="text/javascript">

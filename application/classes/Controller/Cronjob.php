@@ -54,11 +54,13 @@ class Controller_Cronjob extends Controller {
     /* email receive */
     public function action_email_receive() {        
         Helpers_Email::get_email_status();
+        exit;
     }
 
     /* email receive */
     public function action_email_receive2() {
         $email_sender = Helpers_Email::receive_email('', 2);
+        exit;
     }
 
     public function action_email_parse_sub() {

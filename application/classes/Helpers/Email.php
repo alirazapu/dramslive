@@ -50,22 +50,16 @@ abstract class Helpers_Email
 
             $since = date("D, d M Y", strtotime("-15 days")); /* added range */
             $inbox = imap_open($hostname, $username, $password) or die('Cannot connect to Gmail: ' . imap_last_error());
-            // $date = date ( "d M Y", strtotime ( "-45 days" ) );
-            $search_criteria = 'UNSEEN SINCE "' . $since . ' 00:00:00 -0700 (PDT)"';
-            // echo $search_criteria; exit;
-            //$emails = imap_search($inbox, 'UNSEEN SINCE "'.$since.' 00:00:00 -0700 (PDT)"');
-            //$emails = imap_search($inbox, $search_criteria, SE_UID);
             $emails = imap_search($inbox, 'UNSEEN'); //updated 23 april 2025 against above line
 
-            // echo '<pre>';
-            // print_r($emails); exit;
 
         } else {
             include 'gmail/receiving.inc';
             //echo $username; exit;
             $since = date("D, d M Y", strtotime("-12 days")); /* added range */
             $inbox = imap_open($hostname, $username, $password) or die('Cannot connect to Gmail: ' . imap_last_error());
-            $emails = imap_search($inbox, 'UNSEEN SINCE "' . $since . ' 00:00:00 -0700 (PDT)"');
+            $search_criteria= 'UNSEEN SINCE "' . $since . ' 00:00:00 -0700 (PDT)"';
+            $emails = imap_search($inbox,$search_criteria);
 
             //$inbox = imap_open($hostname, $username, $password) or die('Cannot connect to Gmail: ' . imap_last_error());
             //$emails = imap_search($inbox, 'UNSEEN');
@@ -78,27 +72,16 @@ abstract class Helpers_Email
 
         /* newest first */
         rsort($emails);
-
         /* For each email... */
         foreach ($emails as $email_number) {
             $is_file_exist = 0;
             /* 🔴 CRITICAL VALIDATION */
-            echo $email_number."<br>";
             if (!is_numeric($email_number) || $email_number < 1) {
                 continue;
             }
-            //  echo '<br>' . $email_number . '<br>';
 
-            /*
-             * Email read or not */
-            /* $e_status= Helpers_Email::emailreadstatuscheck($email_number);
-             if(!empty($e_status))
-                 continue;
-            */
-            /* */
-
-            $headerInfo = imap_headerinfo($inbox, $email_number);
-            $structure = '';
+         //   $headerInfo = imap_headerinfo($inbox, $email_number);
+           // $structure = '';
             $structure = imap_fetchstructure($inbox, $email_number);
 
             /* get information specific to this email */
@@ -113,49 +96,17 @@ abstract class Helpers_Email
             if (empty($message))
                 $message = imap_fetchbody($inbox, $email_number, 2);
 
-            /*$message_raw = quoted_printable_decode(imap_fetchbody($inbox,$email_number,1));
-            if(empty($message_raw))*/
-            /*
-        if (strpos($overview[0]->subject, 'Hi') !== false) {
-             echo $overview[0]->subject;
-             exit;
-         }
-         */
-            $check_match = trim(str_replace("Re:", "", $overview[0]->subject));
-
             /* explode subject */
             $string_replace = str_replace("/", " /", $overview[0]->subject);
-//                $string_replace = str_replace(" - Hi", "", $string_replace);
-//                $string_replace = str_replace("- Hi", "", $string_replace);
-//                $string_replace = str_replace("-", "", $string_replace);
-//                $string_replace = str_replace("Hi", "", $string_replace);
             $string_replace = str_replace(",", " ,", $string_replace);
             $string_replace = str_replace(".", " . ", $string_replace);
             $query_subject = explode(' ', $string_replace);
             $query_subject_final = '';
-            //echo '<pre>';
-            /*$array_val= array_values(array_filter($query_subject));
-            foreach ($array_val as $key => $value) {
-                if(is_numeric(trim($value)))
-                {
-                    $query_subject_final = trim($array_val[$key]);
-                }
-            }*/
+
             preg_match_all('/\b\d+\b/', $string_replace, $matches);
             $query_subject_final = $matches[0][0] ?? '';
-
             if (empty($query_subject_final))
                 continue;
-
-
-            //echo '<br>' . $query_subject_final . '<br>';
-            // echo $query_subject_final;
-
-            //$query_subject_final = $query_subject[sizeof($query_subject)-2] . ' ' . $query_subject[sizeof($query_subject)-1];
-
-            //echo $query_subject_final;
-            /*new code with new logic start **/
-            // echo '<br>' . $query_subject_final . '<br>';
 
             if (!empty($query_subject_final)) {
                 //$e_status= Helpers_Email::emailreadstatuscheckUpdate($email_number, $query_subject_final);
@@ -212,8 +163,6 @@ abstract class Helpers_Email
 // If attachment found use this one
 // $message = imap_qprint(imap_fetchbody($inbox,$email_number,"1.2"));
 */
-//echo '<br>';
-//print_r($members);
             if (!empty($members)) {
                 $part = !empty($structure->parts[1]) ? $structure->parts[1] : '';
                 if ($members['company_name'] == 13 || $members['company_name'] == 12 || $members['company_name'] == 11 || $members['company_name'] == 4 || $members['company_name'] == 3) {
@@ -310,7 +259,6 @@ abstract class Helpers_Email
                     }
                 }
                 $filename = '';
-
                 foreach ($attachments as $attachment) {
                     if ($attachment['is_attachment'] == 1) {
                         $filename = !empty($attachment['name']) ? $attachment['name'] : $attachment['filename'];
@@ -335,7 +283,6 @@ abstract class Helpers_Email
                             $file_id = Helpers_Utilities::id_generator("file_id");
                         }
                         $file_path = !empty($file_id) ? Helpers_Upload::get_request_data_path($file_id, 'save') : '';
-
                         $new_file_info = PATHINFO($attachment['filename']);
                         if (!empty($filename) && !empty($new_file_info) && !empty($new_file_info['extension'])) {
                             if (!empty($filename)) {
@@ -406,7 +353,7 @@ abstract class Helpers_Email
                    }*/
                 //  exit;
 //imap_close($inbox);
-//exit;                       
+//exit;
             } else {
                 //imap_setflag_full($mbox, "2,5", "\\Seen \\Flagged");
                 //imap_clearflag_full($inbox,$overview[0]->msgno,'\\Seen');  //Seen
@@ -419,7 +366,7 @@ abstract class Helpers_Email
             }
         }
 
-        imap_close($inbox);
+       imap_close($inbox);
         return 1;
 
     }
@@ -492,7 +439,7 @@ imap_close($inbox);
                 */
                 /* */
 
-                $headerInfo = imap_headerinfo($inbox, $email_number);
+               // $headerInfo = imap_headerinfo($inbox, $email_number);
                 $structure = '';
                 $structure = imap_fetchstructure($inbox, $email_number);
 
@@ -1153,7 +1100,7 @@ imap_close($inbox);
         if (substr($request_id, 0, 2) === "92" && strlen($request_id) == 12) {
             $DB = Database::instance();
             $str2 = substr($request_id, 2);
-            $sql = "select reference_id from user_request ur 
+            echo $sql = "select reference_id from user_request ur 
                     where requested_value = {$str2} and status = 1 and ur.user_request_type_id IN (3,4)";
             // and request_type in (1,2,3);
             $results = $DB->query(Database::SELECT, $sql, TRUE)->current();
@@ -1200,7 +1147,7 @@ imap_close($inbox);
             include 'gmail/receiving.inc';
             $inbox = imap_open($hostname, $username, $password) or die('Cannot connect to Gmail: ' . imap_last_error());
             $output = '';
-            $headerInfo = imap_headerinfo($inbox, $email_number);
+           // $headerInfo = imap_headerinfo($inbox, $email_number);
             $structure = '';
             $structure = imap_fetchstructure($inbox, $email_number);
             $overview = imap_fetch_overview($inbox, $email_number, 0);

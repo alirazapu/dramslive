@@ -6,11 +6,11 @@ return array(
         'development' => array(
             'send' => array(
                 'encrypted_user' => 'ZnRWM2hVYStYczBicnJ0ekhPT2hCQTJ1Vk1CZkFtTVNlUXdHejVXQkdOOD0=',  // ← real test Gmail address
-                'encrypted_password' => 'bWZVREVBaGY4TWpCZGphT1Jtd2hROVNkOXlRSlpWWjdUeUFud0FwSkR6az0==',
+                'encrypted_password' => 'c3AxdXcveDNqUjlaMVdyYXpsUCswaVk1OTdWL2oyK3dWMFE1OER3N0QvUT0=',
             ),
             'receive' => array(
                 'encrypted_user' => 'ZnRWM2hVYStYczBicnJ0ekhPT2hCQTJ1Vk1CZkFtTVNlUXdHejVXQkdOOD0=',  // ← real test Gmail address
-                'encrypted_password' => 'bWZVREVBaGY4TWpCZGphT1Jtd2hROVNkOXlRSlpWWjdUeUFud0FwSkR6az0==',
+                'encrypted_password' => 'c3AxdXcveDNqUjlaMVdyYXpsUCswaVk1OTdWL2oyK3dWMFE1OER3N0QvUT0=',
             ),
         ),
 
