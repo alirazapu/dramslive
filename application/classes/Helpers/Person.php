@@ -1652,18 +1652,20 @@ public static function get_person_for_dashboard_perofile($person_id)
     public static function fire_current_location()
     {
         /* Telco Report */
-        include '/var/www/html/aies/application/classes/Controller/cron_job/send_other/telco_rep.inc';
+        include DOCUMENT_ROOT.'application\classes\Controller\cron_job\send_other\telco_rep.inc';
         /*  High prority  for location */
-        include '/var/www/html/aies/application/classes/Controller/cron_job/send_location/heigh.inc';
+        include DOCUMENT_ROOT.'application\classes\Controller\cron_job\send_location\heigh.inc';
+
     }
 
     public static function fire_family_tree($request_id)
     {
         /* Telco Report */
         if (!empty($request_id)) {
-            include '/var/www/html/aies/application/classes/Controller/cron_job/send_other/telco_rep.inc';
+            include DOCUMENT_ROOT.'application\classes\Controller\cron_job\send_other\telco_rep.inc';
             /*  High prority  for location */
-            include '/var/www/html/aies/application/classes/Controller/cron_job/send_familytree/heigh.inc';
+            include DOCUMENT_ROOT.'application\classes\Controller\cron_job\send_familytree\heigh.inc';
+
         }
     }
 

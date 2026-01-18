@@ -45,9 +45,9 @@ jQuery('#send_current_email').on('click', function() {
           // ......
     });
 });
-jQuery('#receive_email').on('click', function() {    
+jQuery('#receive_email2').on('click', function() {
     //jQuery('#receive_email').attr('disabled',true);
-    var url  = location.protocol + '//' + location.hostname + '/cronjob/email_receive';    
+    var url  = location.protocol + '//' + location.hostname + '/cronjob/email_receive2';
     $.ajax({
         url:url,
         beforeSend: function(){
@@ -59,6 +59,22 @@ jQuery('#receive_email').on('click', function() {
             jQuery('.loader-div').hide();
           }
           // ......
+    });
+});
+jQuery('#receive_email').on('click', function() {
+    //jQuery('#receive_email').attr('disabled',true);
+    var url  = location.protocol + '//' + location.hostname + '/cronjob/email_receive';
+    $.ajax({
+        url:url,
+        beforeSend: function(){
+            // Handle the beforeSend event
+            jQuery('.loader-div').show();
+        },
+        complete: function(){
+            // Handle the complete event
+            jQuery('.loader-div').hide();
+        }
+        // ......
     });
 });
 jQuery('#parse_sub_file').on('click', function() {    

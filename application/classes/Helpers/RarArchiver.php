@@ -318,7 +318,7 @@ class RarArchiver
      * @access private
      * @final
      */
-    final private function writeHeader($type, $flags, $data = array())
+     private function writeHeader($type, $flags, $data = array())
     {
         if (in_array($type, array(0x72, 0x73, 0x74)) == false) {
             return false;
@@ -966,7 +966,7 @@ class RarArchiver
      * @access private
      * @final
      */
-    final private function skipHead()
+     private function skipHead()
     {
         if ($this->fileObject->getSize() < 0) {
             return false;
@@ -995,7 +995,7 @@ class RarArchiver
      * @access private
      * @final
      */
-    final private function getCRC($string)
+     private function getCRC($string)
     {
         $crc = crc32($string);
 
@@ -1011,7 +1011,7 @@ class RarArchiver
      * @access private
      * @final
      */
-    final private function getBytes($data, $bytes = 0, $count = 0)
+     private function getBytes($data, $bytes = 0, $count = 0)
     {
         $result = "";
 
@@ -1046,7 +1046,7 @@ class RarArchiver
      * @access private
      * @final
      */
-    final private function setBits($bits)
+     private function setBits($bits)
     {
         $result = 0;
 
@@ -1070,7 +1070,7 @@ class RarArchiver
      * @access private
      * @final
      */
-    final private function clearSeparator($path)
+     private function clearSeparator($path)
     {
         if (substr($path, -1) == '/') {
             $path = substr($path, 0, -1);
@@ -1090,7 +1090,7 @@ class RarArchiver
      * @access private
      * @final
      */
-    final private function getDateTime($time = null)
+     private function getDateTime($time = null)
     {
         if (is_null($time)) {
             $time = time();

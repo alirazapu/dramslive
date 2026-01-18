@@ -9,13 +9,55 @@
 class Controller_Cronjob extends Controller {    
     /* test function */
     public function action_test() {
+        var_dump(shell_exec('unrar'));
+        // Original code
+        $send_key = Helpers_Utilities::encrypted_key('ftoqbqythasdpwqz', "encrypt");
+        echo $send_key . "<br>";
+        $send_key = str_replace("axHmBf8ri9x", "", 'c3AxdXcveDNqUjlaMVdyYXpsUCswaVk1OTdWL2oyK3dWMFE1OER3N0QvUT0==');
+        $send_key = Helpers_Utilities::encrypted_key($send_key, "decrypt");
+        echo $send_key . "<br><br>";
 
-       // print_r( Helpers_Inneruse::get_gmail_pw());exit;
-        $send_key= Helpers_Utilities::encrypted_key('ftoqbqythasdpwqz', "encrypt");
-        echo $send_key;echo "<br>";
-        $send_key = str_replace("axHmBf8ri9x","",'c3AxdXcveDNqUjlaMVdyYXpsUCswaVk1OTdWL2oyK3dWMFE1OER3N0QvUT0==');
-        $send_key= Helpers_Utilities::encrypted_key($send_key, "decrypt");
-        echo $send_key;
+        // ────────────────────────────────────────────────
+        // Test logging with Model_ErrorLog
+        // ────────────────────────────────────────────────
+
+      /*  try {
+            // Simulate a success log (no error)
+            Model_ErrorLog::log(
+                'test_cron',
+                'This is a test info message (not an error)',
+                [
+                    'test_param1' => 'value1',
+                    'test_param2' => 123
+                ],
+                null,
+                'info',
+                'test_stage'
+            );
+            echo "Success info logged.<br>";
+
+            // Simulate an error
+            throw new Exception("Simulated test error for logging");
+
+        } catch (Exception $e) {
+            Model_ErrorLog::log(
+                'test_cron',
+                $e->getMessage(),
+                [
+                    'extra_context' => 'This is test context',
+                    'user_id'       => Auth::instance()->get_user()->id ?? 'unknown',
+                    'timestamp'     => date('c')
+                ],
+                $e->getTraceAsString(),
+                'test_error',
+                'simulation'
+            );
+            echo "Error logged successfully: " . htmlspecialchars($e->getMessage()) . "<br>";
+        }*/
+
+        // Check logs manually in DB or tail error_log
+        echo "Check system_error_log table or error_log file for entries with error_source='test_cron'";
+
         exit;
     }    
     public function action_email_send_ufone() {
@@ -53,18 +95,53 @@ class Controller_Cronjob extends Controller {
 
     /* email receive */
     public function action_email_receive() {        
-        Helpers_Email::get_email_status();
-        exit;
+      Helpers_Email::get_email_status();
     }
 
     /* email receive */
-    public function action_email_receive2() {
-        $email_sender = Helpers_Email::receive_email('', 2);
-        exit;
+    public function action_email_receive2()
+    {
+        /*$lockFile = DOCROOT . 'application/logs/email_receive2.lock';
+
+        // Cleanup stale lock (older than 1 hour)
+        if (file_exists($lockFile) && (time() - filemtime($lockFile)) > 3600) {
+            @unlink($lockFile);
+            error_log("[" . date('c') . "] Removed stale lock file: $lockFile");
+        }
+
+        $lock = @fopen($lockFile, 'w');
+        if (!$lock) {
+            error_log("[" . date('c') . "] Cannot create lock file: $lockFile");
+            return;
+        }
+
+        if (!flock($lock, LOCK_EX | LOCK_NB)) {
+            error_log("[" . date('c') . "] email_receive2 already running - skipping");
+            fclose($lock);
+            return;
+        }*/
+
+        try {
+            $result = Helpers_Email::receive_email('', 2);
+            error_log("[" . date('c') . "] email_receive2 completed - processed: $result");
+        } catch (Exception $e) {
+            Model_ErrorLog::log(
+                'action_email_receive2',
+                $e->getMessage(), [],
+                $e->getTraceAsString(),
+                'processing_failure',
+                'email_receive2'
+            );
+            error_log("[" . date('c') . "] email_receive2 failed: " . $e->getMessage());
+        } finally {
+          //  flock($lock, LOCK_UN);
+            //fclose($lock);
+            //@unlink($lockFile);
+        }
     }
 
     public function action_email_parse_sub() {
-         //echo 'Current Location';        
+        //echo 'Current Location';
         $sql = "select *
                 FROM `user_request` as ur
                 join email_messages as em on ur.message_id = em.message_id
@@ -72,13 +149,13 @@ class Controller_Cronjob extends Controller {
                and ur.request_id NOT IN(select os.request_id from user_os_req as os where os.request_id IS NOT NULL)
                 and ur.user_request_type_id = 3               
                 ORDER BY ur.request_id  ASC
-            ";                              //Where t1.user_id = {$user_id}  
-            // and ur.request_id=459688
+            ";                              //Where t1.user_id = {$user_id}
+        // and ur.request_id=459688
         $parse_data = DB::query(Database::SELECT, $sql)->execute()->as_array();
 
-                $login_user = Auth::instance()->get_user();
-   if(!empty($login_user->id) && $login_user->id==138){
-        $sql = "select *
+        $login_user = Auth::instance()->get_user();
+        if(!empty($login_user->id) && $login_user->id==138){
+            $sql = "select *
                 FROM `user_request` as ur
                 join email_messages as em on ur.message_id = em.message_id
                 where ur.status = 2 and ur.processing_index = 3
@@ -86,14 +163,14 @@ class Controller_Cronjob extends Controller {
                 and ur.user_request_type_id = 3
                and company_name=1
                 ORDER BY ur.request_id  DESC
-            ";                              //Where t1.user_id = {$user_id}  
+            ";                              //Where t1.user_id = {$user_id}
 // and ur.request_id = 1140862
-        $parse_data = DB::query(Database::SELECT, $sql)->execute()->as_array();
+            $parse_data = DB::query(Database::SELECT, $sql)->execute()->as_array();
 
 //        echo '<pre>';
 //        print_r(count($parse_data));
 //        exit;
-          }
+        }
         foreach ($parse_data as $data) {
             try {
                 $mobile_number = '';
@@ -106,103 +183,96 @@ class Controller_Cronjob extends Controller {
                 $date = '';
                 $status = '';
                 $not_fount = 0;
-                 $reference_number = $data['request_id'];
-//echo '<br>';
+                $reference_number = $data['request_id'];
                 $data['file_id'] = Helpers_Upload::get_fileid_aginst_requestid($data['request_id']);
-
-                //print_r($data);
-$login_user = Auth::instance()->get_user();
-//   if($login_user->id==138){
-       
-   //echo "<pre>"; print_r($data); exit;
-//   }
-   echo 'Company: '.$data['company_name'].'<br>';
-   echo 'Request ID: '.$data['request_id'].'<br><br>';
-   
+                $login_user = Auth::instance()->get_user();
+                echo 'Company: '.$data['company_name'].'<br>';
+                echo 'Request ID: '.$data['request_id'].'<br><br>';
                 switch ($data['company_name']) {
-                    case 1: // mobilink  
-                    case 7: // mobilink  
-                        // echo '<br>' . 'Mobilink' .'<br>';     
+                    case 1: // mobilink
+                    case 7: // mobilink
                         include 'cron_job/parse_sub/mobilink.inc';
-
+                        $company    = 'mobilink';
                         break;
-                    //case 7: // warid
-                    //echo '<br>' . 'Warid' .'<br>';                        
-                    //print_r($data['received_file_path']);
-                    /* include 'cron_job/parse_sub/warid.inc';
-
-                      break; */
                     case 3: // Ufone
-                        // echo '<br>' . 'Ufone' .'<br>';                                                
                         include 'cron_job/parse_sub/ufone.inc';
-
+                        $company    = 'ufone';
                         break;
                     case 6: // Telenor
-                        //echo '<br>' . 'Telenor' .'<br>';                        
                         include 'cron_job/parse_sub/telenor.inc';
-
+                        $company    = 'telenor';
                         break;
                     case 4: // Zong
-                        //echo '<br>' . 'Zong' .'<br>';
                         include 'cron_job/parse_sub/zong.inc';
-
+                        $company    = 'zong';
                         break;
                 }
 
                 //echo $mobile_number;
                 if ($not_fount == 0) {
-                    /* Insertion Code */
 
-                   $mobile_number = trim($mobile_number);
-                 
+                    /* -------- Normalize Inputs -------- */
+                    $mobile_number = trim($mobile_number);
+                    /* Remove everything except digits */
+                    $mobile_number = preg_replace('/\D/', '', $mobile_number);
+
+                    /* Normalize Pakistan formats to 10-digit (3XXXXXXXXX) */
+                    if (strlen($mobile_number) === 12 && substr($mobile_number, 0, 2) === '92') {
+                        $mobile_number = substr($mobile_number, 2);
+                    }
+                    elseif (strlen($mobile_number) === 13 && substr($mobile_number, 0, 3) === '0092') {
+                        $mobile_number = substr($mobile_number, 4);
+                    }
+                    elseif (strlen($mobile_number) === 11 && $mobile_number[0] === '0') {
+                        $mobile_number = substr($mobile_number, 1);
+                    }
+                    $cnic_original = trim($cnic);
+                    $cnic = preg_replace('/\D/', '', $cnic); // remove dashes
                     $name = trim($name);
-                 
-                    $cnic = trim($cnic);
-                 
                     $address = trim($address);
-                 
                     $active = trim($active);
 
-                    if ((strlen($mobile_number) == 10 && ctype_digit($mobile_number) && ctype_digit($cnic)) || ( strlen($mobile_number) == 10 && strlen($cnic) == 13 && ctype_digit($mobile_number))) {
+                    /* -------- Validation Helpers -------- */
+                    $isValidMobile = (
+                        strlen($mobile_number) === 10 &&
+                        ctype_digit($mobile_number) &&
+                        preg_match('/^[3]\d{9}$/', $mobile_number)
+                    );
 
-                        $name = $parse_val = array_filter(explode(' ', trim(strip_tags($name))));
-                        if (empty($active) || $active == 'Active')
-                            $active = 1;
-                        else
-                            $active = 0;
-                        if (!empty($date))
-                            $date = date("Y-m-d H:i:s", strtotime($date));
-                        else
-                            $date = '';
-                        if (!empty($status) && $status == 'Postpaid') {
-                            $status = '0';
-                        } else {
-                            $status = '1';
-                        }
-/*
-                        if (!empty($is_foreigner) && $is_foreigner == 1) {
-                            $reference_number_1 = Model_Email::email_status($reference_number, 2, 3);
+                    $isValidCnic = (
+                        strlen($cnic) === 13 &&
+                        ctype_digit($cnic)
+                    );
 
-                            break;
-                            exit;
-                        }*/
+                    if ($isValidMobile && $isValidCnic) {
 
-                        $sub_data = array();
+                        /* -------- Name Handling -------- */
+                        $nameParts = array_values(array_filter(explode(' ', strip_tags($name))));
+
+                        /* -------- Status Handling -------- */
+                        $active = (empty($active) || $active === 'Active') ? 1 : 0;
+                        $status = (!empty($status) && $status === 'Postpaid') ? '0' : '1';
+
+                        /* -------- Date Handling -------- */
+                        $date = !empty($date) ? date("Y-m-d H:i:s", strtotime($date)) : '';
+
+                        /* -------- Build Insert Data -------- */
+                        $sub_data = [];
                         $sub_data['act_date'] = $date;
-                        $sub_data['mobile_number'] = trim($mobile_number);
-                        $sub_data['cnic_number'] = trim($cnic);
-                        $sub_data['cnic_number_original'] = trim($cnic_original);
+                        $sub_data['mobile_number'] = $mobile_number;
+                        $sub_data['cnic_number'] = $cnic;                  // normalized
+                        $sub_data['cnic_number_original'] = $cnic_original; // keep original
                         $sub_data['is_foreigner'] = trim($is_foreigner);
-                        if (sizeof($name) == 3) {
-                            $name = array_values($name);
-                            $sub_data['person_name'] = trim($name[0]) . ' ' . trim($name[1]);
-                            $sub_data['person_name1'] = trim($name[2]);
+
+                        if (count($nameParts) >= 3) {
+                            $sub_data['person_name']  = $nameParts[0] . ' ' . $nameParts[1];
+                            $sub_data['person_name1'] = $nameParts[2];
                         } else {
-                            $sub_data['person_name'] = !empty($name[0]) ? trim($name[0]) : '';
-                            $sub_data['person_name1'] = !empty($name[1]) ? trim($name[1]) : '';
+                            $sub_data['person_name']  = $nameParts[0] ?? '';
+                            $sub_data['person_name1'] = $nameParts[1] ?? '';
                         }
 
-                        $sub_data['address'] = trim($address);
+                        $sub_data['address'] = $address;
                         $sub_data['user_id'] = $data['user_id'];
                         $sub_data['imsi'] = '';
                         $sub_data['StatusRadios'] = $active;
@@ -211,35 +281,42 @@ $login_user = Auth::instance()->get_user();
                         $sub_data['imei'] = '';
                         $sub_data['phone_name'] = '';
                         $sub_data['requestid'] = $reference_number;
-                        
-                        //extra check
-                        $phone_helper = $sub_data['mobile_number'];
-                        if(strlen($phone_helper)===10 && $phone_helper[0]==='3')
-                        {
-                            $sub_model = new Model_Generic();                        
-                            $sub_model_result = $sub_model->ManualSubInfoinsert($sub_data);
+
+                        /* -------- Final Extra Check (unchanged logic) -------- */
+                        if ($mobile_number[0] === '3') {
+                            $sub_model = new Model_Generic();
+                            $sub_model->ManualSubInfoinsert($sub_data);
                             $reference_number_1 = Model_Email::email_status($reference_number, 2, 5);
-                        }else{
-                          $reference_number_1 = Model_Email::email_status($reference_number, 2, 3);
-                        } 
+                        } else {
+                            $reference_number_1 = Model_Email::email_status($reference_number, 2, 3);
+                        }
+
                     } else {
+                        // Invalid CNIC or Mobile
                         $reference_number_1 = Model_Email::email_status($reference_number, 2, 3);
-                        //break;
-                       // exit;
                     }
                 }
+
             } catch (Exception $e) {
-                //re-throw exception
-                //throw new customException($email);
-                //echo $reference_number; 
-              // echo '<pre>';
-              // print_r($e);
-                //      echo 'error exception';
-               
+                $error_msg   = $e->getMessage();
+                $error_trace = $e->getTraceAsString();
+                $body_sample = substr($data['received_body'] ?? $data['received_body_raw'] ?? '', 0, 800);
+                Model_ErrorLog::log(
+                    'cron_parse_sub',
+                    $error_msg,
+                    [
+                        'request_id'       => $reference_number,
+                        'company_name'     => $company,
+                        'mobile_requested' => $data['requested_value'] ?? 'unknown',
+                        'email_body_sample'=> $body_sample,
+                        'file_id'          => $data['file_id'] ?? null
+                    ],
+                    $error_trace,
+                    'parsing_failure',
+                    'after_include'
+                );
                 $reference_number = $data['request_id'];
                 $reference_number_1 = Model_Email::email_status($reference_number, 2, 3);
-                //break;
-               // exit;
             }
         }
         //exit;
@@ -534,7 +611,7 @@ $login_user = Auth::instance()->get_user();
                         $data['received_body'] = base64_decode($data['received_body']); 
                     }
                     $data['received_body'] = array_filter(explode('From:',strip_tags($data['received_body'])));                                 
-                    include '/var/www/html/aies/application/classes/Controller/cron_job/parse_sub/notfound.inc';
+                    include DOCUMENT_ROOT.'application/classes/Controller/cron_job/parse_sub/notfound.inc';
                     exit;
                 }    
                 $data['received_file_path'] = !empty($cdrfile_name['file'])?$cdrfile_name['file']:'';
@@ -636,8 +713,8 @@ $login_user = Auth::instance()->get_user();
                     if($encode_str=='ASCII'){
                         $data['received_body'] = base64_decode($data['received_body']); 
                     }
-                    $data['received_body'] = array_filter(explode('From:',strip_tags($data['received_body'])));                                 
-                    include '/var/www/html/aies/application/classes/Controller/cron_job/parse_sub/notfound.inc';
+                    $data['received_body'] = array_filter(explode('From:',strip_tags($data['received_body'])));
+                    include DOCUMENT_ROOT.'application\classes\Controller\cron_job\parse_sub\notfound.inc';
                     exit;
                 }    
                 $data['received_file_path'] = !empty($cdrfile_name['file'])?$cdrfile_name['file']:'';
@@ -730,7 +807,7 @@ $login_user = Auth::instance()->get_user();
                 $data['id'] = $data['file_id'] = $phone_data['file_id'];
                 $cdrfile_name = Helpers_Upload::get_file_info_with_request_id($data['request_id']);
                        
-                  
+
                 
                 if(empty($cdrfile_name['file']))
                 {
@@ -739,8 +816,8 @@ $login_user = Auth::instance()->get_user();
                         $data['received_body'] = base64_decode($data['received_body']); 
                     }
 
-                    $data['received_body'] = array_filter(explode('From:',strip_tags($data['received_body'])));                                 
-                    include '/var/www/html/aies/application/classes/Controller/cron_job/parse_sub/notfound.inc';
+                    $data['received_body'] = array_filter(explode('From:',strip_tags($data['received_body'])));
+                    include DOCUMENT_ROOT.'application\classes\Controller\cron_job\parse_sub\notfound.inc';
                     exit;
                 }    
                 $data['received_file_path'] = !empty($cdrfile_name['file'])?$cdrfile_name['file']:'';
@@ -790,7 +867,7 @@ $login_user = Auth::instance()->get_user();
                       { */
                     $sub_model = new Model_Generic();
                     //  $sub_model_result = $sub_model->Manualcnicsimsinsert($loc_data);
-                }
+                }die;
                 /* }else{                    
                   $reference_number = Model_Email::email_status($reference_number, 2, 3);
                   } */
@@ -839,8 +916,8 @@ $login_user = Auth::instance()->get_user();
                     if($encode_str=='ASCII' || $encode_str=='UTF-8'){
                         $data['received_body'] = base64_decode($data['received_body']); 
                     }
-                    $data['received_body'] = array_filter(explode('From:',strip_tags($data['received_body'])));                                 
-                    include '/var/www/html/aies/application/classes/Controller/cron_job/parse_sub/notfound.inc';
+                    $data['received_body'] = array_filter(explode('From:',strip_tags($data['received_body'])));
+                    include DOCUMENT_ROOT.'application\classes\Controller\cron_job\parse_sub\notfound.inc';
                     exit;
                 }    
                 $data['received_file_path'] = !empty($cdrfile_name['file'])?$cdrfile_name['file']:'';
@@ -941,8 +1018,8 @@ $login_user = Auth::instance()->get_user();
                     if($encode_str=='ASCII' || $encode_str=='UTF-8'){
                         $data['received_body'] = base64_decode($data['received_body']); 
                     }
-                    $data['received_body'] = array_filter(explode('From:',strip_tags($data['received_body'])));                                 
-                    include '/var/www/html/aies/application/classes/Controller/cron_job/parse_sub/notfound.inc';
+                    $data['received_body'] = array_filter(explode('From:',strip_tags($data['received_body'])));
+                    include DOCUMENT_ROOT.'application\classes\Controller\cron_job\parse_sub\notfound.inc';
                     if($not_fount != 1)
                     {    
                         $reference_number = $data['request_id'];
@@ -1050,8 +1127,8 @@ $login_user = Auth::instance()->get_user();
                     if($encode_str=='ASCII' || $encode_str=='UTF-8'){
                         $data['received_body'] = base64_decode($data['received_body']); 
                     }
-                    $data['received_body'] = array_filter(explode('From:',strip_tags($data['received_body'])));                                 
-                    include '/var/www/html/aies/application/classes/Controller/cron_job/parse_sub/notfound.inc';
+                    $data['received_body'] = array_filter(explode('From:',strip_tags($data['received_body'])));
+                    include DOCUMENT_ROOT.'application\classes\Controller\cron_job\parse_sub\notfound.inc';
                     exit;
                 }    
                 $data['received_file_path'] = !empty($cdrfile_name['file'])?$cdrfile_name['file']:'';
@@ -1150,9 +1227,8 @@ $login_user = Auth::instance()->get_user();
                     if($encode_str=='ASCII' || $encode_str=='UTF-8'){
                         $data['received_body'] = base64_decode($data['received_body']); 
                     }
-                    $data['received_body'] = array_filter(explode('From:',strip_tags($data['received_body'])));                                 
-                    
-                    include '/var/www/html/aies/application/classes/Controller/cron_job/parse_sub/notfound.inc';
+                    $data['received_body'] = array_filter(explode('From:',strip_tags($data['received_body'])));
+                    include DOCUMENT_ROOT.'application\classes\Controller\cron_job\parse_sub\notfound.inc';
                     exit;
                 }    
                 $data['received_file_path'] = !empty($cdrfile_name['file'])?$cdrfile_name['file']:'';

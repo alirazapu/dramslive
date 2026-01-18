@@ -216,11 +216,12 @@ class Controller_Gmailapi extends Controller
 
                 $data = $this->decodeBase64Url($attachment->getData());
                 $filename = $part->getFilename();
-                $path = "/var/www/html/aies/uploads/gmailapi_files/" . $filename;
+
+                $path = DOCUMENT_ROOT."\uploads\gmailapi_files\\" . $filename;
 
                 file_put_contents($path, $data);
 
-                echo "Attachment saved: <a href='/aies/uploads/gmailapi_files/" . urlencode($filename) . "' target='_blank'>" . htmlspecialchars($filename) . "</a><br>";
+                echo "Attachment saved: <a href='/drams/uploads/gmailapi_files/" . urlencode($filename) . "' target='_blank'>" . htmlspecialchars($filename) . "</a><br>";
             }
         }
     }
