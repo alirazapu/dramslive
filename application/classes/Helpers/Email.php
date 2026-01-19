@@ -39,20 +39,14 @@ abstract class Helpers_Email
     {
 
         $filename = '';
-        /* Create gmail connection */
-        //$hostname = '{imap.gmail.com:993/imap/ssl}INBOX';
-        //$hostname = '{imap.gmail.com:995/imap/ssl}INBOX';
         $hostname = '{imap.gmail.com:993/imap/ssl/novalidate-cert}INBOX';
         if (!empty($sender) && $sender == 2) {
             $result = Helpers_Inneruse::get_gmail_pw();
             $username = $result['send']['user'];
             $password = $result['send']['password'];
-
-            $since = date("D, d M Y", strtotime("-15 days")); /* added range */
+            $since = date("D, d M Y", strtotime("-15 days"));
             $inbox = imap_open($hostname, $username, $password) or die('Cannot connect to Gmail: ' . imap_last_error());
-            $emails = imap_search($inbox, 'UNSEEN'); //updated 23 april 2025 against above line
-
-
+            $emails = imap_search($inbox, 'UNSEEN');
         } else {
             include 'gmail/receiving.inc';
             //echo $username; exit;
@@ -60,11 +54,9 @@ abstract class Helpers_Email
             $inbox = imap_open($hostname, $username, $password) or die('Cannot connect to Gmail: ' . imap_last_error());
             $search_criteria= 'UNSEEN SINCE "' . $since . ' 00:00:00 -0700 (PDT)"';
             $emails = imap_search($inbox,$search_criteria);
-
-            //$inbox = imap_open($hostname, $username, $password) or die('Cannot connect to Gmail: ' . imap_last_error());
-            //$emails = imap_search($inbox, 'UNSEEN');
         }
-        /* 🔴 VERY IMPORTANT GUARD */
+        echo "<pre>";
+
         if ($emails === false || empty($emails)) {
             imap_close($inbox);
             return 1; // No emails found
@@ -76,20 +68,17 @@ abstract class Helpers_Email
         foreach ($emails as $email_number) {
             $is_file_exist = 0;
             /* 🔴 CRITICAL VALIDATION */
+
             if (!is_numeric($email_number) || $email_number < 1) {
                 continue;
             }
 
          //   $headerInfo = imap_headerinfo($inbox, $email_number);
-           // $structure = '';
             $structure = imap_fetchstructure($inbox, $email_number);
 
             /* get information specific to this email */
             $overview = imap_fetch_overview($inbox, $email_number, 0);
 
-            /* get mesage body */
-            //  $message = imap_qprint(imap_fetchbody($inbox, $email_number, 0));
-            // print_r($message);
             $message = imap_fetchbody($inbox, $email_number, 1.2);
             if (empty($message))
                 $message = quoted_printable_decode(imap_fetchbody($inbox, $email_number, 1));
@@ -102,17 +91,13 @@ abstract class Helpers_Email
             $string_replace = str_replace(".", " . ", $string_replace);
             $query_subject = explode(' ', $string_replace);
             $query_subject_final = '';
-
             preg_match_all('/\b\d+\b/', $string_replace, $matches);
             $query_subject_final = $matches[0][0] ?? '';
-            if (empty($query_subject_final))
+            if (empty($query_subject_final)){
                 continue;
-
+            }
             if (!empty($query_subject_final)) {
-                //$e_status= Helpers_Email::emailreadstatuscheckUpdate($email_number, $query_subject_final);
                 $query_subject_final = Helpers_Email::emailreadstatuscheckUpdate($email_number, $query_subject_final);
-
-
                 $sql = "SELECT request_id, reason, user_id, user_request_type_id, email_type_name, requested_value, concerned_person_id, t1.company_name,
                    created_at, status, processing_index, em.message_id, em.message_subject, em.sender_id FROM 
                    user_request as t1 
@@ -122,47 +107,12 @@ abstract class Helpers_Email
                    and t1.user_request_type_id != 8
                    and t1.status = 1 and t1.processing_index = 0 
                    and t1.reference_id = {$query_subject_final};
-                   ";                              //Where t1.user_id = {$user_id}  and em.message_subject = {$query_subject_final};
+                   ";
 
                 $members = DB::query(Database::SELECT, $sql)->execute()->current();//->as_array();
             } else {
                 $members = '';
             }
-
-            // print_r($members);
-
-            // exit;
-            /*
-            if(!empty($members))
-            foreach ($members as $item)
-            {
-                  if(!empty($item['status']) && $item['status']==1 && !empty($item['message_subject']) && !empty($item['sender_id']))
-                    {
-
-                        $email_sender = Helpers_Email::receive_email($item['message_subject'], $item['sender_id']);
-
-                        if($email_sender!=1)
-                        {
-                            $file_name = !empty($email_sender['file'])?$email_sender['file']:'na';
-                            $body = !empty($email_sender['body'])?$email_sender['body']:'na';
-                            $body_raw = !empty($email_sender['body_raw'])?$email_sender['body_raw']:'na';
-                            Helpers_Email::change_status_raw($file_name, $body_raw, $body, $item['message_id'], $item['request_id']);
-                        }
-
-                    }
-            }*/
-
-            /* new code with new logic end */
-
-            // try {
-            //if((strpos($overview[0]->subject, $subject) !== false) && (strpos($overview[0]->from, $sender) !== false))
-            //if((strpos($overview[0]->subject, $subject) !== false))
-            /* if(strcmp($check_match,$subject) >= 0)
-             {  */
-            /*
-// If attachment found use this one
-// $message = imap_qprint(imap_fetchbody($inbox,$email_number,"1.2"));
-*/
             if (!empty($members)) {
                 $part = !empty($structure->parts[1]) ? $structure->parts[1] : '';
                 if ($members['company_name'] == 13 || $members['company_name'] == 12 || $members['company_name'] == 11 || $members['company_name'] == 4 || $members['company_name'] == 3) {
@@ -178,7 +128,6 @@ abstract class Helpers_Email
                     $message_raw = imap_base64(imap_fetchbody($inbox, $email_number, 1));
                 else
                     $message_raw = imap_fetchbody($inbox, $email_number, 1);
-
                 /*telco code for received email */
                 $date_for_telco = date('Y-m-d'); //$date;
                 $tel_report = "select * from telco_request_summary where date = '{$date_for_telco}'";
@@ -188,8 +137,8 @@ abstract class Helpers_Email
                 if (!empty($report_telco_result)) {
                     $query = DB::update('telco_request_summary')->set(array('total_received' => DB::expr('total_received + 1')))
                         ->where('date', '=', $date_for_telco)
-                        ->and_where('company_mnc', '=', $members['company_name'])
-                        ->execute();
+                        ->and_where('company_mnc', '=', $members['company_name']);
+                       $query->execute();
                 } else {
                     $tel_co_mnc = array(1, 3, 4, 6, 7, 11, 12, 13);
                     $telco_array = array();
@@ -207,17 +156,11 @@ abstract class Helpers_Email
                     $query = 'INSERT INTO telco_request_summary (`date`, `company_mnc`, `send_high`, `send_medium`, `send_low`, `total_send`) VALUES ' . implode(',', $telco_array);
                     $sql = DB::query(Database::INSERT, $query)->execute();
                 }
-
-                /*telco code for received email */
-                //check issue not reach here
-
-
+                $output='';
                 $output .= 'Subject: ' . $overview[0]->subject . '<br />';
                 $output .= 'Body: ' . $message . '<br />';
                 $output .= 'From: ' . $overview[0]->from . '<br />';
                 $output .= 'Date: ' . $overview[0]->date . '<br />';
-//$output .= 'CC: '.$headerInfo->ccaddress.'<br />';
-//  Attachments
                 $attachments = array();
                 if (isset($structure->parts) && count($structure->parts)) {
                     for ($i = 0; $i < count($structure->parts); $i++) {
@@ -259,61 +202,74 @@ abstract class Helpers_Email
                     }
                 }
                 $filename = '';
+
                 foreach ($attachments as $attachment) {
-                    if ($attachment['is_attachment'] == 1) {
-                        $filename = !empty($attachment['name']) ? $attachment['name'] : $attachment['filename'];
-                        // echo $filename;
-                        /* if($members['company_name']==6)
-                        {
-                            if (empty($filename))
-                            {
-                                    $filename = $attachment['name'];
-                            }else{
-                                    $filename = $query_subject_final. '_'. $attachment['name'];
+                    if ($attachment['is_attachment'] != 1) continue;
 
-                            }
-                        }else{
-                            */
-                        //getting file_id
-                        $file_id = Helpers_Upload::get_fileid_with_requestid($members['request_id']);
-                        if (!empty($file_id)) {
-                            $is_file_exist = 1;
-                        } else {
-                            $is_file_exist = 0;
-                            $file_id = Helpers_Utilities::id_generator("file_id");
-                        }
-                        $file_path = !empty($file_id) ? Helpers_Upload::get_request_data_path($file_id, 'save') : '';
-                        $new_file_info = PATHINFO($attachment['filename']);
-                        if (!empty($filename) && !empty($new_file_info) && !empty($new_file_info['extension'])) {
-                            if (!empty($filename)) {
-                                $filename = 'rqt' . $query_subject_final . 'fid' . $file_id . '.' . $new_file_info['extension'];
-                            } else {
-                                $filename = 'rqt' . $query_subject_final . 'fid' . $file_id . '.' . $new_file_info['extension'];
-                                //$filename = $query_subject_final . '_' . $attachment['filename'];
-                            }
-                        }
-                        //}
-                        //echo $filename;
-                        //$file_path = 'uploads' . DIRECTORY_SEPARATOR . 'cdr' . DIRECTORY_SEPARATOR . 'mail' . DIRECTORY_SEPARATOR; //  Upload folder
-                        $fp = fopen($file_path . $filename, "w+");
-                        /*if($members['company_name']==6)
-                            fwrite($fp, base64_decode($attachment['attachment']));
-                        else */
-                        fwrite($fp, $attachment['attachment']);
+                    $original_name = !empty($attachment['name']) ? $attachment['name'] : ($attachment['filename'] ?? 'no-name');
+                    $file_id = Helpers_Upload::get_fileid_with_requestid($members['request_id'] ?? 0)
+                        ?: Helpers_Utilities::id_generator("file_id");
 
+                    $file_path = Helpers_Upload::get_request_data_path($file_id, 'save');
 
-                        fclose($fp);
+                    $extension = pathinfo($original_name, PATHINFO_EXTENSION) ?: 'bin';
+                    $safe_filename = 'rqt' . $query_subject_final . 'fid' . $file_id . '.' . $extension;
+                    $full_path = rtrim($file_path, '/\\') . DIRECTORY_SEPARATOR . $safe_filename;
+
+                    // ──────────────────────────────────────────────
+                    //          DEBUG OUTPUT – keep until fixed
+                    // ──────────────────────────────────────────────
+                    echo "<pre style='background:#f8f8f8; padding:10px; border:1px solid #ccc;'>";
+                    echo "Attachment data length: " . (isset($attachment['attachment']) ? strlen($attachment['attachment']) : 'MISSING') . " bytes\n";
+                    echo "Target directory:       " . htmlspecialchars($file_path) . "\n";
+                    echo "Final file path:        " . htmlspecialchars($full_path) . "\n";
+                    echo "query_subject_final:    " . htmlspecialchars($query_subject_final ?? '(not set)') . "\n";
+                    echo "is_dir?                 " . (is_dir($file_path) ? 'YES' : 'NO') . "\n";
+                    echo "is_writable?            " . (is_writable($file_path) ? 'YES' : 'NO') . "\n";
+                    echo "</pre>";
+
+                    // ──────────────────────────────────────────────
+                    //          ACTUAL SAVE WITH ERROR CHECKS
+                    // ──────────────────────────────────────────────
+                    if (empty($attachment['attachment'])) {
+                        echo "<div style='color:red; font-weight:bold;'>ERROR: Attachment data is empty / missing</div>";
+                        error_log("Empty attachment data for file_id $file_id");
+                        continue;
                     }
+
+                    if (!is_dir($file_path) || !is_writable($file_path)) {
+                        echo "<div style='color:red; font-weight:bold;'>ERROR: Directory missing or not writable → "
+                            . htmlspecialchars($file_path) . "</div>";
+                        error_log("Cannot save - dir issue: $file_path");
+                        continue;
+                    }
+
+                    $fp = @fopen($full_path, 'wb');
+                    if ($fp === false) {
+                        $err = error_get_last();
+                        echo "<div style='color:red; font-weight:bold;'>ERROR: Cannot open file for writing</div>";
+                        echo "<pre>Error: " . htmlspecialchars($err['message'] ?? 'unknown') . "</pre>";
+                        error_log("fopen failed: $full_path - " . ($err['message'] ?? 'no error info'));
+                        continue;
+                    }
+
+                    $bytes = fwrite($fp, $attachment['attachment']);
+                    fclose($fp);
+
+                    if ($bytes === false || $bytes !== strlen($attachment['attachment'])) {
+                        echo "<div style='color:orange; font-weight:bold;'>WARNING: Only wrote $bytes bytes (should be "
+                            . strlen($attachment['attachment']) . ")</div>";
+                        error_log("Partial write: $full_path - $bytes bytes");
+                    } else {
+                        echo "<div style='color:green; font-weight:bold;'>File written OK → $safe_filename ($bytes bytes)</div>";
+                        // Optionally: chmod($full_path, 0644);
+                    }
+                    $filename=$safe_filename;
                 }
-//  Attachments
-
-                /* change the status */
-                //$status = imap_setflag_full($inbox, $overview[0]->msgno, "\Seen \Flagged"); //i will use later
                 $status = imap_setflag_full($inbox, $email_number, "\Seen \Flagged"); //i will use later
-                //imap_clearflag_full($inbox,$overview[0]->msgno,"//Seen");  //Seen
-
                 $result = array();
-                $result['file'] = $filename;
+                 $result['file'] = $filename;
+
                 try {
                     $extrac = explode("On Sun,", $message);
                     $extrac = explode("On Mon,", $extrac[0]);
@@ -327,46 +283,24 @@ abstract class Helpers_Email
                     $result['body'] = $message_raw;
                 }
                 $result['body_raw'] = $message_raw;
-                //imap_close($inbox);
-
                 $file_name = !empty($result['file']) ? $result['file'] : 'na';
                 $body = !empty($result['body']) ? $result['body'] : 'na';
                 $body_raw = !empty($result['body_raw']) ? $result['body_raw'] : 'na';
-
                 if ($members['company_name'] >= 11 && $members['company_name'] <= 13) {
                     $process_index = 7;
                 } else {
                     $process_index = 4;
                 }
-
-                //Helpers_Email::change_status_raw($file_name, $body_raw, $body, $members['message_id'], $members['request_id'], $process_index);
                 if (!empty($file_id) && $file_name != 'na' && $is_file_exist == 0) {
                     Helpers_Upload::insert_file_record($file_name, $members['user_id'], $members['user_request_type_id'], $members['company_name'], $members['requested_value'], $members['request_id'], $members['reason'], $file_id);
                 }
                 Helpers_Email::change_status_raw($file_name, $body_raw, $body, $members['message_id'], $members['request_id'], $is_file_exist);
-
-
-                //return $result;
-                // }
-                /*   } catch (ORM_Validation_Exception $e) {
-                       return 1;
-                   }*/
-                //  exit;
-//imap_close($inbox);
-//exit;
-            } else {
-                //imap_setflag_full($mbox, "2,5", "\\Seen \\Flagged");
-                //imap_clearflag_full($inbox,$overview[0]->msgno,'\\Seen');  //Seen
+            }
+            else {
                 imap_clearflag_full($inbox, $email_number, '\\Seen');  //Seen
-                //imap_setflag_full($inbox, $overview[0]->msgno, "\\Seen \\Flagged", ST_UID);
-                // echo '<br>  N ' . $overview[0]->msgno;
-                //$message = imap_fetchbody($inbox,$overview[0]->msgno,1, FT_PEEK);
-                //imap_fetchbody($inbox,$overview[0]->msgno,1, FT_PEEK);
-                //$status = imap_setflag_full($inbox, $overview[0]->msgno, "\\Seen"); //i will use later
             }
         }
-
-       imap_close($inbox);
+        imap_close($inbox);
         return 1;
 
     }
@@ -374,9 +308,6 @@ abstract class Helpers_Email
     public static function receive_email_backup($subject, $sender)
     {
         $filename = '';
-        /* Create gmail connection */
-        //$hostname = '{imap.gmail.com:993/imap/ssl}INBOX';
-        //$hostname = '{imap.gmail.com:995/imap/ssl}INBOX';
         $hostname = '{imap.gmail.com:993/imap/ssl/novalidate-cert}INBOX';
         include 'gmail/receiving.inc';
         //echo $username; exit;
@@ -394,95 +325,42 @@ abstract class Helpers_Email
         $since = date('d-M-Y', strtotime('-3 days'));  // e.g. "19-Apr-2025" :contentReference[oaicite:7]{index=7}
         $before = date('d-M-Y', strtotime('today'));    // e.g. "21-Apr-2025"
 
-// 3) Search unseen within that window
+        // 3) Search unseen within that window
         $criteria = sprintf(
             'UNSEEN SINCE "%s" BEFORE "%s"',
             $since,
             $before
         );
-//$emails = imap_search($inbox, $criteria);  // returns messages with internal date ≥ $since and < $before :contentReference[oaicite:8]{index=8}
+        //$emails = imap_search($inbox, $criteria);  // returns messages with internal date ≥ $since and < $before :contentReference[oaicite:8]{index=8}
         $emails = imap_search($inbox, 'UNSEEN');
-
-        /*
-        echo '<pre>';
-        print_r($emails);
-imap_close($inbox);
-        echo 'test'; exit;
-            */
-
-
-        /* If emails are returned, cycle through each... */
         if ($emails) {
 
             $output = '';
 
             /* Make the newest emails on top */
             rsort($emails);
-            /*
-            foreach ($emails as $mail) {
-                //$status = imap_setflag_full($inbox, $mail, "\\Seen", ST_UID);
-                //$status = imap_setflag_full($inbox, $mail, "\\Seen");
-                $status = imap_setflag_full($inbox, $mail, "\Seen \Flagged");
-                //$status = imap_setflag_full($inbox, $overview[0]->msgno, "\Seen \Flagged");
-            }*/
-
             /* For each email... */
             foreach ($emails as $email_number) {
                 $is_file_exist = 0;
-                //  echo '<br>' . $email_number . '<br>';
-
-                /*
-                 * Email read or not */
-                /* $e_status= Helpers_Email::emailreadstatuscheck($email_number);
-                 if(!empty($e_status))
-                     continue;
-                */
-                /* */
-
-               // $headerInfo = imap_headerinfo($inbox, $email_number);
                 $structure = '';
                 $structure = imap_fetchstructure($inbox, $email_number);
 
                 /* get information specific to this email */
                 $overview = imap_fetch_overview($inbox, $email_number, 0);
 
-                /* get mesage body */
-                //  $message = imap_qprint(imap_fetchbody($inbox, $email_number, 0));
-                // print_r($message);
                 $message = imap_fetchbody($inbox, $email_number, 1.2);
                 if (empty($message))
                     $message = quoted_printable_decode(imap_fetchbody($inbox, $email_number, 1));
                 if (empty($message))
                     $message = imap_fetchbody($inbox, $email_number, 2);
-
-                /*$message_raw = quoted_printable_decode(imap_fetchbody($inbox,$email_number,1));    
-                if(empty($message_raw))*/
-                /*
-            if (strpos($overview[0]->subject, 'Hi') !== false) {
-                 echo $overview[0]->subject;
-                 exit;
-             }
-             */
                 $check_match = trim(str_replace("Re:", "", $overview[0]->subject));
-                // echo '<br>';
-                /* explode subject */
+
                 $string_replace = str_replace("/", " /", $overview[0]->subject);
-//                $string_replace = str_replace(" - Hi", "", $string_replace);
-//                $string_replace = str_replace("- Hi", "", $string_replace);
-//                $string_replace = str_replace("-", "", $string_replace);
-//                $string_replace = str_replace("Hi", "", $string_replace);
+
                 $string_replace = str_replace(",", " ,", $string_replace);
                 $string_replace = str_replace(".", " . ", $string_replace);
                 $query_subject_final = '';
-                /* $query_subject = explode(' ', $string_replace);
 
-                 $array_val= array_values(array_filter($query_subject));
-                 foreach ($array_val as $key => $value) {
-                     if(is_numeric(trim($value)))
-                     {
-                         $query_subject_final = trim($array_val[$key]);
-                     }
-                 }*/
                 echo '<br>' . $string_replace;
                 preg_match_all('/\b\d+\b/', $string_replace, $matches);
                 $query_subject_final = $matches[0][0] ?? '';
@@ -496,20 +374,9 @@ imap_close($inbox);
                 }
                 echo '<br>' . $query_subject_final;
 
-
-//                echo '<br>' . $query_subject_final . '<br>';
-//                exit;
-                //echo $query_subject_final;
-
-                //$query_subject_final = $query_subject[sizeof($query_subject)-2] . ' ' . $query_subject[sizeof($query_subject)-1];
-
-                //echo $query_subject_final;
-                /*new code with new logic start **/
-                // echo '<br>' . $query_subject_final . '<br>';
-
                 if (!empty($query_subject_final) && $query_subject_final > 1000) {
                     echo $query_subject_final . ' <br> ';
-                    //$e_status= Helpers_Email::emailreadstatuscheckUpdate($email_number, $query_subject_final);
+
                     $query_subject_final = Helpers_Email::emailreadstatuscheckUpdate($email_number, $query_subject_final);
 
 
@@ -522,49 +389,13 @@ imap_close($inbox);
                        and t1.user_request_type_id != 8
                        and t1.status = 1 and t1.processing_index = 0 
                        and t1.reference_id = {$query_subject_final};
-                       ";                              //Where t1.user_id = {$user_id}  and em.message_subject = {$query_subject_final};
-                    //echo $sql;
+                       ";
+
                     $members = DB::query(Database::SELECT, $sql)->execute()->current();//->as_array();
                 } else {
                     $members = '';
                 }
 
-                // print_r($members);
-
-                // exit;
-                /*
-                if(!empty($members))
-                foreach ($members as $item)
-                {
-                      if(!empty($item['status']) && $item['status']==1 && !empty($item['message_subject']) && !empty($item['sender_id']))
-                        {
-
-                            $email_sender = Helpers_Email::receive_email($item['message_subject'], $item['sender_id']);
-
-                            if($email_sender!=1)
-                            {
-                                $file_name = !empty($email_sender['file'])?$email_sender['file']:'na';
-                                $body = !empty($email_sender['body'])?$email_sender['body']:'na';
-                                $body_raw = !empty($email_sender['body_raw'])?$email_sender['body_raw']:'na';
-                                Helpers_Email::change_status_raw($file_name, $body_raw, $body, $item['message_id'], $item['request_id']);
-                            }
-
-                        }
-                }*/
-
-                /* new code with new logic end */
-
-                // try {
-                //if((strpos($overview[0]->subject, $subject) !== false) && (strpos($overview[0]->from, $sender) !== false))
-                //if((strpos($overview[0]->subject, $subject) !== false))
-                /* if(strcmp($check_match,$subject) >= 0)
-                 {  */
-                /*
-  // If attachment found use this one
-  // $message = imap_qprint(imap_fetchbody($inbox,$email_number,"1.2"));
- */
-//echo '<br>';
-//print_r($members); //  exit;
                 if (!empty($members)) {
                     $part = !empty($structure->parts[1]) ? $structure->parts[1] : '';
                     if ($members['company_name'] == 13 || $members['company_name'] == 12 || $members['company_name'] == 11 || $members['company_name'] == 4 || $members['company_name'] == 3) {
@@ -665,18 +496,6 @@ imap_close($inbox);
                     foreach ($attachments as $attachment) {
                         if ($attachment['is_attachment'] == 1) {
                             $filename = !empty($attachment['name']) ? $attachment['name'] : $attachment['filename'];
-                            // echo $filename;
-                            /* if($members['company_name']==6)
-                            {
-                                if (empty($filename))
-                                {
-                                        $filename = $attachment['name'];
-                                }else{
-                                        $filename = $query_subject_final. '_'. $attachment['name'];
-
-                                }
-                            }else{
-                                */
                             //getting file_id
                             $file_id = Helpers_Upload::get_fileid_with_requestid($members['request_id']);
                             if (!empty($file_id)) {
@@ -697,7 +516,7 @@ imap_close($inbox);
                                 }
                             }
                             //}
-                            //echo $filename;                        
+                            //echo $filename;
                             //$file_path = 'uploads' . DIRECTORY_SEPARATOR . 'cdr' . DIRECTORY_SEPARATOR . 'mail' . DIRECTORY_SEPARATOR; //  Upload folder
                             $fp = fopen($file_path . $filename, "w+");
                             /*if($members['company_name']==6)
@@ -743,7 +562,7 @@ imap_close($inbox);
                         $process_index = 4;
                     }
 
-                    //Helpers_Email::change_status_raw($file_name, $body_raw, $body, $members['message_id'], $members['request_id'], $process_index);                   
+                    //Helpers_Email::change_status_raw($file_name, $body_raw, $body, $members['message_id'], $members['request_id'], $process_index);
                     if (!empty($file_id) && $file_name != 'na' && $is_file_exist == 0) {
                         Helpers_Upload::insert_file_record($file_name, $members['user_id'], $members['user_request_type_id'], $members['company_name'], $members['requested_value'], $members['request_id'], $members['reason'], $file_id);
                     }
@@ -757,7 +576,7 @@ imap_close($inbox);
                        }*/
                     //  exit;
 //imap_close($inbox);
-//exit;                       
+//exit;
                 } else {
                     //imap_setflag_full($mbox, "2,5", "\\Seen \\Flagged");
                     //imap_clearflag_full($inbox,$overview[0]->msgno,'\\Seen');  //Seen
@@ -1100,7 +919,7 @@ imap_close($inbox);
         if (substr($request_id, 0, 2) === "92" && strlen($request_id) == 12) {
             $DB = Database::instance();
             $str2 = substr($request_id, 2);
-            echo $sql = "select reference_id from user_request ur 
+            $sql = "select reference_id from user_request ur 
                     where requested_value = {$str2} and status = 1 and ur.user_request_type_id IN (3,4)";
             // and request_type in (1,2,3);
             $results = $DB->query(Database::SELECT, $sql, TRUE)->current();
@@ -1111,8 +930,8 @@ imap_close($inbox);
         }
 
         $query = DB::update('email_read_status')->set(array('is_read' => 1, 'gmail_id' => $email_id))
-            ->where('request_id', '=', $request_id)
-            ->execute();
+            ->where('request_id', '=', $request_id);
+        $query->execute();
 
         return $request_id;
     }

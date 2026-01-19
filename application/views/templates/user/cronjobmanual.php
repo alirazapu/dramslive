@@ -37,8 +37,9 @@
                                        <?php if ($permission==1) { ?>  
                                             <input id="send_email" class="blue btn-primary" type="button" value="Send Emails">
                                             <input id="send_current_email" class="blue btn-primary" type="button" value="Send Current Location Emails">
-                                       <?php } ?>  
-                                        <input id="receive_email"  class="blue btn-primary" type="button" value="Receive Emails">
+                                       <?php } ?>
+                                        <input id="receive_email2"  class="blue btn-primary" type="button" value="Receive Emails 2">
+                                        <!--<input id="receive_email"  class="blue btn-primary" type="button" value="Receive Emails">-->
                                         <input id="parse_cdr_file"  class="blue btn-primary" type="button" value="Parse CDR Against Mobile Number">
                                         <input id="parse_imei_file"  class="blue btn-primary" type="button" value="Parse CDR Against IMEI Number">
                                         <input id="parse_sub_file"  class="blue btn-primary" type="button" value="Parse Subscriber Against Mobile Number">

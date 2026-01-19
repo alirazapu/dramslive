@@ -8,10 +8,10 @@ $encode_str= mb_detect_encoding(base64_decode($data['received_body']));
                     }   
 $data['received_body'] = explode('From:',$data['received_body']); 
 
-                 
-                
+
+          var_dump(DOCUMENT_ROOT);
   //check if no data found exist
- include '/var/www/html/aies/application/classes/Controller/cron_job/parse_sub/notfound.inc';
+ include DOCUMENT_ROOT.'application\classes\Controller\cron_job\parse_sub\notfound.inc';
 
                 
 if (!empty($not_fount)) {
