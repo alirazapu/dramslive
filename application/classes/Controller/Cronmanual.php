@@ -27,19 +27,19 @@ class Controller_Cronmanual extends Controller {
             try {
                 switch ($data['company_name']) {
                     case 1: // mobilink                        
-                        include 'cron_job/parse_phone/mobilink.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'mobilink.inc';
                         break;
                     case 7: // warid                        
-                        include 'cron_job/parse_phone/warid.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'warid.inc';
                         break;
                     case 3: // Ufone                        
-                        include 'cron_job/parse_phone/ufone.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'ufone.inc';
                         break;
                     case 6: // Telenor                        
-                        include 'cron_job/parse_phone/telenor.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'telenor.inc';
                         break;
                     case 4: // Zong                        
-                        include 'cron_job/parse_phone/zong.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'zong.inc';
                         break;
                 }
                 /* Insertion Code */
@@ -59,6 +59,22 @@ class Controller_Cronmanual extends Controller {
                   $reference_number = Model_Email::email_status($reference_number, 2, 3);
                   } */
             } catch (Exception $e) {
+                $error_msg = $e->getMessage();
+                $error_trace = $e->getTraceAsString();
+                
+                Model_ErrorLog::log(
+                    'cronmanual_parse_phone',
+                    $error_msg,
+                    [
+                        'phone_number'     => $data['phone_number'] ?? 'unknown',
+                        'company_name'     => $data['company_name'] ?? 'unknown',
+                        'file_id'          => $phone_data['file_id'] ?? null
+                    ],
+                    $error_trace,
+                    'parsing_failure',
+                    'manual_phone_parsing'
+                );
+                
                 echo $e;
                 if (!empty($data['request_id'])) {
                     $reference_number = $data['request_id'];
@@ -90,28 +106,28 @@ class Controller_Cronmanual extends Controller {
                 switch ($data['company_name']) {
                     case 1: // mobilink  
                         echo '<br>' . 'Mobilink' . '<br>';
-                        include 'cron_job/parse_imei/mobilink.inc';
+                        include 'cron_job' . DS . 'parse_imei' . DS . 'mobilink.inc';
                         break;
                     case 7: // warid
                         echo '<br>' . 'Warid' . '<br>';
                         //print_r($data['received_file_path']);      
-                        include 'cron_job/parse_imei/warid.inc';
+                        include 'cron_job' . DS . 'parse_imei' . DS . 'warid.inc';
 
                         break;
                     case 3: // Ufone
                         echo '<br>' . 'Ufone' . '<br>';
                         // print_r($data['received_file_path']);
-                        include 'cron_job/parse_imei/ufone.inc';
+                        include 'cron_job' . DS . 'parse_imei' . DS . 'ufone.inc';
 
                         break;
                     case 6: // Telenor
                         echo '<br>' . 'Telenor' . '<br>';
                         //print_r($data['received_file_path']);                        
-                        include 'cron_job/parse_imei/telenor.inc';
+                        include 'cron_job' . DS . 'parse_imei' . DS . 'telenor.inc';
                         break;
                     case 4: // Zong
                         // echo '<br>' . 'Zong' .'<br>';                        
-                        include 'cron_job/parse_imei/zong.inc';
+                        include 'cron_job' . DS . 'parse_imei' . DS . 'zong.inc';
 
                         break;
                 }
@@ -133,6 +149,22 @@ class Controller_Cronmanual extends Controller {
                   $reference_number = Model_Email::email_status($reference_number, 2, 3);
                   } */
             } catch (Exception $e) {
+                $error_msg = $e->getMessage();
+                $error_trace = $e->getTraceAsString();
+                
+                Model_ErrorLog::log(
+                    'cronmanual_parse_imei',
+                    $error_msg,
+                    [
+                        'imei'             => $data['imei'] ?? 'unknown',
+                        'company_name'     => $data['company_name'] ?? 'unknown',
+                        'file_id'          => $data['file_id'] ?? null
+                    ],
+                    $error_trace,
+                    'parsing_failure',
+                    'manual_imei_parsing'
+                );
+                
                 //re-throw exception
                 //throw new customException($email);
                 //echo $e;
@@ -222,7 +254,20 @@ class Controller_Cronmanual extends Controller {
                         ->execute();
             }
         } catch (Exception $e) {
-            
+            Model_ErrorLog::log(
+                'cronmanual_flag_change',
+                $e->getMessage(),
+                [
+                    'request_type' => $request_type ?? 'unknown',
+                    'company_name' => $company_name ?? 'unknown',
+                    'request_id'   => $request_id ?? 'unknown',
+                    'company_id'   => $company_id ?? 'unknown'
+                ],
+                $e->getTraceAsString(),
+                'processing_failure',
+                'flag_change'
+            );
+            error_log("[" . date('c') . "] action_flag_change failed: " . $e->getMessage());
         }
     }
 
@@ -257,6 +302,18 @@ class Controller_Cronmanual extends Controller {
             print_r($person_ativity_date);
             exit;
         } catch (Exception $e) {
+            Model_ErrorLog::log(
+                'cronmanual_update_person_created_at',
+                $e->getMessage(),
+                [
+                    'person_count'         => $person_count ?? 0,
+                    'person_ativity_date'  => $person_ativity_date ?? 0
+                ],
+                $e->getTraceAsString(),
+                'processing_failure',
+                'update_person_created_at'
+            );
+            
             echo '<pre>';
             print_r($e);
             exit;

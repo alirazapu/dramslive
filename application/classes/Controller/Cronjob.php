@@ -61,41 +61,113 @@ class Controller_Cronjob extends Controller {
         exit;
     }    
     public function action_email_send_ufone() {
-        /*  High prority  for location */
-        include 'cron_job/send_other/low_ufone.inc';
+        try {
+            /*  High prority  for location */
+            include 'cron_job' . DS . 'send_other' . DS . 'low_ufone.inc';
+        } catch (Exception $e) {
+            Model_ErrorLog::log(
+                'action_email_send_ufone',
+                $e->getMessage(),
+                [],
+                $e->getTraceAsString(),
+                'processing_failure',
+                'email_send_ufone'
+            );
+            error_log("[" . date('c') . "] action_email_send_ufone failed: " . $e->getMessage());
+        }
     }
     public function action_email_send_nadira() {
-        /*  High prority  for location */
-        include 'cron_job/send_nadira/heigh.inc';
+        try {
+            /*  High prority  for location */
+            include 'cron_job' . DS . 'send_nadira' . DS . 'heigh.inc';
+        } catch (Exception $e) {
+            Model_ErrorLog::log(
+                'action_email_send_nadira',
+                $e->getMessage(),
+                [],
+                $e->getTraceAsString(),
+                'processing_failure',
+                'email_send_nadira'
+            );
+            error_log("[" . date('c') . "] action_email_send_nadira failed: " . $e->getMessage());
+        }
     }
     /* ptcl */
     public function action_email_send_ptcl() {
-        /*  High prority  for location */
-        include 'cron_job/send_ptcl/heigh.inc';
+        try {
+            /*  High prority  for location */
+            include 'cron_job' . DS . 'send_ptcl' . DS . 'heigh.inc';
+        } catch (Exception $e) {
+            Model_ErrorLog::log(
+                'action_email_send_ptcl',
+                $e->getMessage(),
+                [],
+                $e->getTraceAsString(),
+                'processing_failure',
+                'email_send_ptcl'
+            );
+            error_log("[" . date('c') . "] action_email_send_ptcl failed: " . $e->getMessage());
+        }
     }
     /* Current Location */
     public function action_email_send_loc() {
-        /* Telco Report */
-        include 'cron_job/send_other/telco_rep.inc';
-        /*  High prority  for location */
-        include 'cron_job/send_location/heigh.inc';
+        try {
+            /* Telco Report */
+            include 'cron_job' . DS . 'send_other' . DS . 'telco_rep.inc';
+            /*  High prority  for location */
+            include 'cron_job' . DS . 'send_location' . DS . 'heigh.inc';
+        } catch (Exception $e) {
+            Model_ErrorLog::log(
+                'action_email_send_loc',
+                $e->getMessage(),
+                [],
+                $e->getTraceAsString(),
+                'processing_failure',
+                'email_send_loc'
+            );
+            error_log("[" . date('c') . "] action_email_send_loc failed: " . $e->getMessage());
+        }
     }
 
     public function action_email_send() {
-        $data = Model_Generic::resend_error_in_queue();
-        /* Telco Report */
-        include 'cron_job/send_other/telco_rep.inc';
-        /*  High prority */
-        include 'cron_job/send_other/heigh.inc';
-        /*  Medium prority */
-        include 'cron_job/send_other/medium.inc';
-        /*  Low prority */
-        include 'cron_job/send_other/low.inc';
+        try {
+            $data = Model_Generic::resend_error_in_queue();
+            /* Telco Report */
+            include 'cron_job' . DS . 'send_other' . DS . 'telco_rep.inc';
+            /*  High prority */
+            include 'cron_job' . DS . 'send_other' . DS . 'heigh.inc';
+            /*  Medium prority */
+            include 'cron_job' . DS . 'send_other' . DS . 'medium.inc';
+            /*  Low prority */
+            include 'cron_job' . DS . 'send_other' . DS . 'low.inc';
+        } catch (Exception $e) {
+            Model_ErrorLog::log(
+                'action_email_send',
+                $e->getMessage(),
+                [],
+                $e->getTraceAsString(),
+                'processing_failure',
+                'email_send'
+            );
+            error_log("[" . date('c') . "] action_email_send failed: " . $e->getMessage());
+        }
     }
 
     /* email receive */
-    public function action_email_receive() {        
-      Helpers_Email::get_email_status();
+    public function action_email_receive() {
+        try {
+            Helpers_Email::get_email_status();
+        } catch (Exception $e) {
+            Model_ErrorLog::log(
+                'action_email_receive',
+                $e->getMessage(),
+                [],
+                $e->getTraceAsString(),
+                'processing_failure',
+                'email_receive'
+            );
+            error_log("[" . date('c') . "] action_email_receive failed: " . $e->getMessage());
+        }
     }
 
     /* email receive */
@@ -191,19 +263,19 @@ class Controller_Cronjob extends Controller {
                 switch ($data['company_name']) {
                     case 1: // mobilink
                     case 7: // mobilink
-                        include 'cron_job/parse_sub/mobilink.inc';
+                        include 'cron_job' . DS . 'parse_sub' . DS . 'mobilink.inc';
                         $company    = 'mobilink';
                         break;
                     case 3: // Ufone
-                        include 'cron_job/parse_sub/ufone.inc';
+                        include 'cron_job' . DS . 'parse_sub' . DS . 'ufone.inc';
                         $company    = 'ufone';
                         break;
                     case 6: // Telenor
-                        include 'cron_job/parse_sub/telenor.inc';
+                        include 'cron_job' . DS . 'parse_sub' . DS . 'telenor.inc';
                         $company    = 'telenor';
                         break;
                     case 4: // Zong
-                        include 'cron_job/parse_sub/zong.inc';
+                        include 'cron_job' . DS . 'parse_sub' . DS . 'zong.inc';
                         $company    = 'zong';
                         break;
                 }
@@ -400,34 +472,34 @@ class Controller_Cronjob extends Controller {
                 switch ($data['company_name']) {
                     case 1: // mobilink                      
                         // echo '<br>' . 'Mobilink' .'<br>';                                                                        
-                        include 'cron_job/parse_location/mobilink.inc';
+                        include 'cron_job' . DS . 'parse_location' . DS . 'mobilink.inc';
 
                         break;
                     case 7: // warid
                         //echo '<br>' . 'Warid' .'<br>';
-                        include 'cron_job/parse_location/warid.inc';
+                        include 'cron_job' . DS . 'parse_location' . DS . 'warid.inc';
 
                         break;
                     case 3: // Ufone
                         //echo '<br>' . 'Ufone' .'<br>';  
                         
-                        include 'cron_job/parse_location/ufone.inc';
+                        include 'cron_job' . DS . 'parse_location' . DS . 'ufone.inc';
 
                         break;
                     case 6: // Telenor
                         //echo '<br>' . 'Telenor' .'<br>';                        
-                        include 'cron_job/parse_location/telenor.inc';
+                        include 'cron_job' . DS . 'parse_location' . DS . 'telenor.inc';
 
                         break;
                     case 4: // Zong
                         //echo '<br>' . 'Zong' .'<br>';                        
-                        include 'cron_job/parse_location/zong.inc';
+                        include 'cron_job' . DS . 'parse_location' . DS . 'zong.inc';
 
                         break;
                     
                          case 8: // scom
                         //echo '<br>' . 'Scom' .'<br>';                                               
-                        include 'cron_job/parse_location/scom.inc';
+                        include 'cron_job' . DS . 'parse_location' . DS . 'scom.inc';
 
                         break;
                 }
@@ -446,16 +518,23 @@ class Controller_Cronjob extends Controller {
                     }
                 }
             } catch (Exception $e) {
+                $error_msg = $e->getMessage();
+                $error_trace = $e->getTraceAsString();
                 
-//                if(!empty($login_user->id) && $login_user->id==138){
-//         echo '<pre>'; print_r($e);         
-//          exit;
-//         
-//          }
-                //re-throw exception
-                //throw new customException($email);
-                //echo $loc_data['requestid']; 
-               // echo $e;
+                Model_ErrorLog::log(
+                    'cron_parse_loc',
+                    $error_msg,
+                    [
+                        'request_id'       => $data['request_id'] ?? 'unknown',
+                        'company_name'     => $data['company_name'] ?? 'unknown',
+                        'mobile_requested' => $data['requested_value'] ?? 'unknown',
+                        'user_id'          => $data['user_id'] ?? null
+                    ],
+                    $error_trace,
+                    'parsing_failure',
+                    'location_parsing'
+                );
+                
                 $reference_number = $data['request_id'];
                 $reference_number = Model_Email::email_status($reference_number, 2, 3);
 
@@ -516,28 +595,28 @@ class Controller_Cronjob extends Controller {
                 switch ($data['company_name']) {
                     case 1: // mobilink  
                         // echo '<br>' . 'Mobilink' .'<br>';
-                        include 'cron_job/parse_nic/mobilink.inc';
+                        include 'cron_job' . DS . 'parse_nic' . DS . 'mobilink.inc';
 
                         break;
                     case 7: // warid
                         //echo '<br>' . 'Warid' .'<br>';
-                        include 'cron_job/parse_nic/warid.inc';
+                        include 'cron_job' . DS . 'parse_nic' . DS . 'warid.inc';
 
                         break;
                     case 3: // Ufone
                         //echo '<br>' . 'Ufone' .'<br>';                                    
-                        include 'cron_job/parse_nic/ufone.inc';
+                        include 'cron_job' . DS . 'parse_nic' . DS . 'ufone.inc';
 
                         break;
                     case 6: // Telenor
                         echo '<br>' . 'Telenor' .'<br>';                        
-                        include 'cron_job/parse_nic/telenor.inc';
+                        include 'cron_job' . DS . 'parse_nic' . DS . 'telenor.inc';
 
 
                         break;
                     case 4: // Zong
                         //echo '<br>' . 'Zong' .'<br>';                                               
-                        include 'cron_job/parse_nic/zong.inc';
+                        include 'cron_job' . DS . 'parse_nic' . DS . 'zong.inc';
 
                         break;
                 }
@@ -556,11 +635,23 @@ class Controller_Cronjob extends Controller {
                     }
                 }
             } catch (Exception $e) {
-                //re-throw exception
-                //echo $loc_data['requestid'];         //throw new customException($email);
-                /*echo '<pre>';
-                echo $e;
-                exit;*/
+                $error_msg = $e->getMessage();
+                $error_trace = $e->getTraceAsString();
+                
+                Model_ErrorLog::log(
+                    'cron_parse_nic',
+                    $error_msg,
+                    [
+                        'request_id'       => $data['request_id'] ?? 'unknown',
+                        'company_name'     => $data['company_name'] ?? 'unknown',
+                        'mobile_requested' => $data['requested_value'] ?? 'unknown',
+                        'file_id'          => $data['file_id'] ?? null
+                    ],
+                    $error_trace,
+                    'parsing_failure',
+                    'nic_parsing'
+                );
+                
                 $reference_number = $data['request_id'];
                 $reference_number = Model_Email::email_status($reference_number, 2, 3);
                 break;
@@ -611,7 +702,7 @@ class Controller_Cronjob extends Controller {
                         $data['received_body'] = base64_decode($data['received_body']); 
                     }
                     $data['received_body'] = array_filter(explode('From:',strip_tags($data['received_body'])));                                 
-                    include DOCUMENT_ROOT.'application/classes/Controller/cron_job/parse_sub/notfound.inc';
+                    include DOCUMENT_ROOT . 'application' . DS . 'classes' . DS . 'Controller' . DS . 'cron_job' . DS . 'parse_sub' . DS . 'notfound.inc';
                     exit;
                 }    
                 $data['received_file_path'] = !empty($cdrfile_name['file'])?$cdrfile_name['file']:'';
@@ -620,18 +711,18 @@ class Controller_Cronjob extends Controller {
                 switch ($data['company_name']) {
                     case 1: // mobilink  
                         echo '<br>' . 'Mobilink' . '<br>';
-                        include 'cron_job/parse_phone/mobilink.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'mobilink.inc';
 
                         break;
                     case 7: // warid
                         echo '<br>' . 'Warid' . '<br>';
-                        include 'cron_job/parse_phone/warid.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'warid.inc';
 
 
                         break;
                     case 3: // Ufone
                         echo '<br>' . 'Ufone' . '<br>';
-                        include 'cron_job/parse_phone/ufone.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'ufone.inc';
                         // echo '<pre>';
                         // print_r($data['received_file_path']);                      
 
@@ -639,7 +730,7 @@ class Controller_Cronjob extends Controller {
                     case 6: // Telenor
                         echo '<br>' . 'Telenor' . '<br>';
                         //print_r($data['received_file_path']);
-                        include 'cron_job/parse_phone/telenor.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'telenor.inc';
 
 
 
@@ -647,7 +738,7 @@ class Controller_Cronjob extends Controller {
                     case 4: // Zong
                         //echo '<br>' . 'Zong' .'<br>';                        
                         //print_r($data['received_file_path']);
-                        include 'cron_job/parse_phone/zong.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'zong.inc';
 
                         break;
                 }
@@ -666,10 +757,23 @@ class Controller_Cronjob extends Controller {
                   $reference_number = Model_Email::email_status($reference_number, 2, 3);
                   } */
             } catch (Exception $e) {
-                //re-throw exception
-                //throw new customException($email);
-//                echo $e;
-//                exit;
+                $error_msg = $e->getMessage();
+                $error_trace = $e->getTraceAsString();
+                
+                Model_ErrorLog::log(
+                    'cron_parse_phone_high',
+                    $error_msg,
+                    [
+                        'request_id'       => $data['request_id'] ?? 'unknown',
+                        'company_name'     => $data['company_name'] ?? 'unknown',
+                        'phone_number'     => $data['requested_value'] ?? 'unknown',
+                        'file_id'          => $phone_data['file_id'] ?? null
+                    ],
+                    $error_trace,
+                    'parsing_failure',
+                    'phone_parsing_high'
+                );
+                
                 $reference_number = $data['request_id'];
                 $reference_number = Model_Email::email_status($reference_number, 2, 3);
             }
@@ -714,7 +818,7 @@ class Controller_Cronjob extends Controller {
                         $data['received_body'] = base64_decode($data['received_body']); 
                     }
                     $data['received_body'] = array_filter(explode('From:',strip_tags($data['received_body'])));
-                    include DOCUMENT_ROOT.'application\classes\Controller\cron_job\parse_sub\notfound.inc';
+                    include DOCUMENT_ROOT . 'application' . DS . 'classes' . DS . 'Controller' . DS . 'cron_job' . DS . 'parse_sub' . DS . 'notfound.inc';
                     exit;
                 }    
                 $data['received_file_path'] = !empty($cdrfile_name['file'])?$cdrfile_name['file']:'';
@@ -723,18 +827,18 @@ class Controller_Cronjob extends Controller {
                 switch ($data['company_name']) {
                     case 1: // mobilink  
                         echo '<br>' . 'Mobilink' . '<br>';
-                        include 'cron_job/parse_phone/mobilink.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'mobilink.inc';
 
                         break;
                     case 7: // warid
                         echo '<br>' . 'Warid' . '<br>';
-                        include 'cron_job/parse_phone/warid.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'warid.inc';
 
 
                         break;
                     case 3: // Ufone
                         echo '<br>' . 'Ufone' . '<br>';
-                        include 'cron_job/parse_phone/ufone.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'ufone.inc';
                         // echo '<pre>';
                         // print_r($data['received_file_path']);                      
 
@@ -742,7 +846,7 @@ class Controller_Cronjob extends Controller {
                     case 6: // Telenor
                         echo '<br>' . 'Telenor' . '<br>';
                         //print_r($data['received_file_path']);
-                        include 'cron_job/parse_phone/telenor.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'telenor.inc';
 
 
 
@@ -750,7 +854,7 @@ class Controller_Cronjob extends Controller {
                     case 4: // Zong
                         //echo '<br>' . 'Zong' .'<br>';                        
                         //print_r($data['received_file_path']);
-                        include 'cron_job/parse_phone/zong.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'zong.inc';
 
                         break;
                 }
@@ -769,10 +873,23 @@ class Controller_Cronjob extends Controller {
                   $reference_number = Model_Email::email_status($reference_number, 2, 3);
                   } */
             } catch (Exception $e) {
-                //re-throw exception
-                //throw new customException($email);
-//                echo $e;
-//                exit;
+                $error_msg = $e->getMessage();
+                $error_trace = $e->getTraceAsString();
+                
+                Model_ErrorLog::log(
+                    'cron_parse_phone',
+                    $error_msg,
+                    [
+                        'request_id'       => $data['request_id'] ?? 'unknown',
+                        'company_name'     => $data['company_name'] ?? 'unknown',
+                        'phone_number'     => $data['requested_value'] ?? 'unknown',
+                        'file_id'          => $phone_data['file_id'] ?? null
+                    ],
+                    $error_trace,
+                    'parsing_failure',
+                    'phone_parsing'
+                );
+                
                 $reference_number = $data['request_id'];
                 $reference_number = Model_Email::email_status($reference_number, 2, 3);
             }
@@ -817,7 +934,7 @@ class Controller_Cronjob extends Controller {
                     }
 
                     $data['received_body'] = array_filter(explode('From:',strip_tags($data['received_body'])));
-                    include DOCUMENT_ROOT.'application\classes\Controller\cron_job\parse_sub\notfound.inc';
+                    include DOCUMENT_ROOT . 'application' . DS . 'classes' . DS . 'Controller' . DS . 'cron_job' . DS . 'parse_sub' . DS . 'notfound.inc';
                     exit;
                 }    
                 $data['received_file_path'] = !empty($cdrfile_name['file'])?$cdrfile_name['file']:'';
@@ -826,18 +943,18 @@ class Controller_Cronjob extends Controller {
                 switch ($data['company_name']) {
                     case 1: // mobilink  
                         echo '<br>' . 'Mobilink' . '<br>';
-                        include 'cron_job/parse_phone/mobilink.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'mobilink.inc';
 
                         break;
                     case 7: // warid
                         echo '<br>' . 'Warid' . '<br>';
-                        include 'cron_job/parse_phone/warid.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'warid.inc';
 
 
                         break;
                     case 3: // Ufone
                         echo '<br>' . 'Ufone' . '<br>';
-                        include 'cron_job/parse_phone/ufone.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'ufone.inc';
                         // echo '<pre>';
                         // print_r($data['received_file_path']);                      
 
@@ -845,7 +962,7 @@ class Controller_Cronjob extends Controller {
                     case 6: // Telenor
                         echo '<br>' . 'Telenor' . '<br>';
                         //print_r($data['received_file_path']);
-                        include 'cron_job/parse_phone/telenor.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'telenor.inc';
 
 
 
@@ -853,7 +970,7 @@ class Controller_Cronjob extends Controller {
                     case 4: // Zong
                         //echo '<br>' . 'Zong' .'<br>';                        
                         //print_r($data['received_file_path']);
-                        include 'cron_job/parse_phone/zong.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'zong.inc';
 
                         break;
                 }
@@ -872,10 +989,23 @@ class Controller_Cronjob extends Controller {
                   $reference_number = Model_Email::email_status($reference_number, 2, 3);
                   } */
             } catch (Exception $e) {
-                //re-throw exception
-                //throw new customException($email);
-              //  echo $e;
-              //  exit;
+                $error_msg = $e->getMessage();
+                $error_trace = $e->getTraceAsString();
+                
+                Model_ErrorLog::log(
+                    'cron_parse_phone_1',
+                    $error_msg,
+                    [
+                        'request_id'       => $data['request_id'] ?? 'unknown',
+                        'company_name'     => $data['company_name'] ?? 'unknown',
+                        'phone_number'     => $data['requested_value'] ?? 'unknown',
+                        'file_id'          => $phone_data['file_id'] ?? null
+                    ],
+                    $error_trace,
+                    'parsing_failure',
+                    'phone_parsing_mobilink'
+                );
+                
                 $reference_number = $data['request_id'];
                 $reference_number = Model_Email::email_status($reference_number, 2, 3);
             }
@@ -917,7 +1047,7 @@ class Controller_Cronjob extends Controller {
                         $data['received_body'] = base64_decode($data['received_body']); 
                     }
                     $data['received_body'] = array_filter(explode('From:',strip_tags($data['received_body'])));
-                    include DOCUMENT_ROOT.'application\classes\Controller\cron_job\parse_sub\notfound.inc';
+                    include DOCUMENT_ROOT . 'application' . DS . 'classes' . DS . 'Controller' . DS . 'cron_job' . DS . 'parse_sub' . DS . 'notfound.inc';
                     exit;
                 }    
                 $data['received_file_path'] = !empty($cdrfile_name['file'])?$cdrfile_name['file']:'';
@@ -926,18 +1056,18 @@ class Controller_Cronjob extends Controller {
                 switch ($data['company_name']) {
                     case 1: // mobilink  
                         echo '<br>' . 'Mobilink' . '<br>';
-                        include 'cron_job/parse_phone/mobilink.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'mobilink.inc';
 
                         break;
                     case 7: // warid
                         echo '<br>' . 'Warid' . '<br>';
-                        //include 'cron_job/parse_phone/warid.inc';
-                        include 'cron_job/parse_phone/mobilink.inc';    
+                        //include 'cron_job' . DS . 'parse_phone' . DS . 'warid.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'mobilink.inc';    
 
                         break;
                     case 3: // Ufone
                         echo '<br>' . 'Ufone' . '<br>';
-                        include 'cron_job/parse_phone/ufone.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'ufone.inc';
                         // echo '<pre>';
                         // print_r($data['received_file_path']);                      
 
@@ -945,7 +1075,7 @@ class Controller_Cronjob extends Controller {
                     case 6: // Telenor
                         echo '<br>' . 'Telenor' . '<br>';
                         //print_r($data['received_file_path']);
-                        include 'cron_job/parse_phone/telenor.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'telenor.inc';
 
 
 
@@ -953,7 +1083,7 @@ class Controller_Cronjob extends Controller {
                     case 4: // Zong
                         //echo '<br>' . 'Zong' .'<br>';                        
                         //print_r($data['received_file_path']);
-                        include 'cron_job/parse_phone/zong.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'zong.inc';
 
                         break;
                 }
@@ -972,10 +1102,23 @@ class Controller_Cronjob extends Controller {
                   $reference_number = Model_Email::email_status($reference_number, 2, 3);
                   } */
             } catch (Exception $e) {
-                //re-throw exception
-                //throw new customException($email);
-//                echo $e;
-//                exit;
+                $error_msg = $e->getMessage();
+                $error_trace = $e->getTraceAsString();
+                
+                Model_ErrorLog::log(
+                    'cron_parse_phone_7',
+                    $error_msg,
+                    [
+                        'request_id'       => $data['request_id'] ?? 'unknown',
+                        'company_name'     => $data['company_name'] ?? 'unknown',
+                        'phone_number'     => $data['requested_value'] ?? 'unknown',
+                        'file_id'          => $phone_data['file_id'] ?? null
+                    ],
+                    $error_trace,
+                    'parsing_failure',
+                    'phone_parsing_warid'
+                );
+                
                 $reference_number = $data['request_id'];
                 $reference_number = Model_Email::email_status($reference_number, 2, 3);
             }
@@ -1019,7 +1162,7 @@ class Controller_Cronjob extends Controller {
                         $data['received_body'] = base64_decode($data['received_body']); 
                     }
                     $data['received_body'] = array_filter(explode('From:',strip_tags($data['received_body'])));
-                    include DOCUMENT_ROOT.'application\classes\Controller\cron_job\parse_sub\notfound.inc';
+                    include DOCUMENT_ROOT . 'application' . DS . 'classes' . DS . 'Controller' . DS . 'cron_job' . DS . 'parse_sub' . DS . 'notfound.inc';
                     if($not_fount != 1)
                     {    
                         $reference_number = $data['request_id'];
@@ -1035,18 +1178,18 @@ class Controller_Cronjob extends Controller {
                 switch ($data['company_name']) {
                     case 1: // mobilink  
                         echo '<br>' . 'Mobilink' . '<br>';
-                        include 'cron_job/parse_phone/mobilink.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'mobilink.inc';
 
                         break;
                     case 7: // warid
                         echo '<br>' . 'Warid' . '<br>';
-                        include 'cron_job/parse_phone/warid.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'warid.inc';
 
 
                         break;
                     case 3: // Ufone
                         echo '<br>' . 'Ufone' . '<br>';
-                        include 'cron_job/parse_phone/ufone.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'ufone.inc';
                         // echo '<pre>';
                         // print_r($data['received_file_path']);                      
 
@@ -1054,7 +1197,7 @@ class Controller_Cronjob extends Controller {
                     case 6: // Telenor
                         echo '<br>' . 'Telenor' . '<br>';
                         //print_r($data['received_file_path']);
-                        include 'cron_job/parse_phone/telenor.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'telenor.inc';
 
 
 
@@ -1062,7 +1205,7 @@ class Controller_Cronjob extends Controller {
                     case 4: // Zong
                         //echo '<br>' . 'Zong' .'<br>';                        
                         //print_r($data['received_file_path']);
-                        include 'cron_job/parse_phone/zong.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'zong.inc';
 
                         break;
                 }
@@ -1083,10 +1226,23 @@ class Controller_Cronjob extends Controller {
                   $reference_number = Model_Email::email_status($reference_number, 2, 3);
                   } */
             } catch (Exception $e) {
-                //re-throw exception
-                //throw new customException($email);
-                echo $e;
-//                exit;
+                $error_msg = $e->getMessage();
+                $error_trace = $e->getTraceAsString();
+                
+                Model_ErrorLog::log(
+                    'cron_parse_phone_3',
+                    $error_msg,
+                    [
+                        'request_id'       => $data['request_id'] ?? 'unknown',
+                        'company_name'     => $data['company_name'] ?? 'unknown',
+                        'phone_number'     => $data['requested_value'] ?? 'unknown',
+                        'file_id'          => $phone_data['file_id'] ?? null
+                    ],
+                    $error_trace,
+                    'parsing_failure',
+                    'phone_parsing_ufone'
+                );
+                
                 $reference_number = $data['request_id'];
                 $reference_number = Model_Email::email_status($reference_number, 2, 3);
             }
@@ -1128,7 +1284,7 @@ class Controller_Cronjob extends Controller {
                         $data['received_body'] = base64_decode($data['received_body']); 
                     }
                     $data['received_body'] = array_filter(explode('From:',strip_tags($data['received_body'])));
-                    include DOCUMENT_ROOT.'application\classes\Controller\cron_job\parse_sub\notfound.inc';
+                    include DOCUMENT_ROOT . 'application' . DS . 'classes' . DS . 'Controller' . DS . 'cron_job' . DS . 'parse_sub' . DS . 'notfound.inc';
                     exit;
                 }    
                 $data['received_file_path'] = !empty($cdrfile_name['file'])?$cdrfile_name['file']:'';
@@ -1137,18 +1293,18 @@ class Controller_Cronjob extends Controller {
                 switch ($data['company_name']) {
                     case 1: // mobilink  
                         echo '<br>' . 'Mobilink' . '<br>';
-                        include 'cron_job/parse_phone/mobilink.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'mobilink.inc';
 
                         break;
                     case 7: // warid
                         echo '<br>' . 'Warid' . '<br>';
-                        include 'cron_job/parse_phone/warid.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'warid.inc';
 
 
                         break;
                     case 3: // Ufone
                         echo '<br>' . 'Ufone' . '<br>';
-                        include 'cron_job/parse_phone/ufone.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'ufone.inc';
                         // echo '<pre>';
                         // print_r($data['received_file_path']);                      
 
@@ -1156,7 +1312,7 @@ class Controller_Cronjob extends Controller {
                     case 6: // Telenor
                         echo '<br>' . 'Telenor' . '<br>';
                         //print_r($data['received_file_path']);
-                        include 'cron_job/parse_phone/telenor.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'telenor.inc';
 
 
 
@@ -1164,7 +1320,7 @@ class Controller_Cronjob extends Controller {
                     case 4: // Zong
                         //echo '<br>' . 'Zong' .'<br>';                        
                         //print_r($data['received_file_path']);
-                        include 'cron_job/parse_phone/zong.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'zong.inc';
 
                         break;
                 }
@@ -1183,10 +1339,23 @@ class Controller_Cronjob extends Controller {
                   $reference_number = Model_Email::email_status($reference_number, 2, 3);
                   } */
             } catch (Exception $e) {
-                //re-throw exception
-                //throw new customException($email);
-                echo $e;
-                exit;
+                $error_msg = $e->getMessage();
+                $error_trace = $e->getTraceAsString();
+                
+                Model_ErrorLog::log(
+                    'cron_parse_phone_6',
+                    $error_msg,
+                    [
+                        'request_id'       => $data['request_id'] ?? 'unknown',
+                        'company_name'     => $data['company_name'] ?? 'unknown',
+                        'phone_number'     => $data['requested_value'] ?? 'unknown',
+                        'file_id'          => $phone_data['file_id'] ?? null
+                    ],
+                    $error_trace,
+                    'parsing_failure',
+                    'phone_parsing_telenor'
+                );
+                
                 $reference_number = $data['request_id'];
                 $reference_number = Model_Email::email_status($reference_number, 2, 3);
             }
@@ -1228,7 +1397,7 @@ class Controller_Cronjob extends Controller {
                         $data['received_body'] = base64_decode($data['received_body']); 
                     }
                     $data['received_body'] = array_filter(explode('From:',strip_tags($data['received_body'])));
-                    include DOCUMENT_ROOT.'application\classes\Controller\cron_job\parse_sub\notfound.inc';
+                    include DOCUMENT_ROOT . 'application' . DS . 'classes' . DS . 'Controller' . DS . 'cron_job' . DS . 'parse_sub' . DS . 'notfound.inc';
                     exit;
                 }    
                 $data['received_file_path'] = !empty($cdrfile_name['file'])?$cdrfile_name['file']:'';
@@ -1237,18 +1406,18 @@ class Controller_Cronjob extends Controller {
                 switch ($data['company_name']) {
                     case 1: // mobilink  
                         echo '<br>' . 'Mobilink' . '<br>';
-                        include 'cron_job/parse_phone/mobilink.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'mobilink.inc';
 
                         break;
                     case 7: // warid
                         echo '<br>' . 'Warid' . '<br>';
-                        include 'cron_job/parse_phone/warid.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'warid.inc';
 
 
                         break;
                     case 3: // Ufone
                         echo '<br>' . 'Ufone' . '<br>';
-                        include 'cron_job/parse_phone/ufone.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'ufone.inc';
                         // echo '<pre>';
                         // print_r($data['received_file_path']);                      
 
@@ -1256,7 +1425,7 @@ class Controller_Cronjob extends Controller {
                     case 6: // Telenor
                         echo '<br>' . 'Telenor' . '<br>';
                         //print_r($data['received_file_path']);
-                        include 'cron_job/parse_phone/telenor.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'telenor.inc';
 
 
 
@@ -1264,7 +1433,7 @@ class Controller_Cronjob extends Controller {
                     case 4: // Zong
                         //echo '<br>' . 'Zong' .'<br>';                        
                         //print_r($data['received_file_path']);
-                        include 'cron_job/parse_phone/zong.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'zong.inc';
 
                         break;
                 }
@@ -1283,10 +1452,23 @@ class Controller_Cronjob extends Controller {
                   $reference_number = Model_Email::email_status($reference_number, 2, 3);
                   } */
             } catch (Exception $e) {
-                //re-throw exception
-                //throw new customException($email);
-               // echo $e;
-               // exit;
+                $error_msg = $e->getMessage();
+                $error_trace = $e->getTraceAsString();
+                
+                Model_ErrorLog::log(
+                    'cron_parse_phone_4',
+                    $error_msg,
+                    [
+                        'request_id'       => $data['request_id'] ?? 'unknown',
+                        'company_name'     => $data['company_name'] ?? 'unknown',
+                        'phone_number'     => $data['requested_value'] ?? 'unknown',
+                        'file_id'          => $phone_data['file_id'] ?? null
+                    ],
+                    $error_trace,
+                    'parsing_failure',
+                    'phone_parsing_zong'
+                );
+                
                 $reference_number = $data['request_id'];
                 $reference_number = Model_Email::email_status($reference_number, 2, 3);
             }
@@ -1326,27 +1508,27 @@ class Controller_Cronjob extends Controller {
                 switch ($data['company_name']) {
                     case 1: // mobilink  
                         echo '<br>' . 'Mobilink' . '<br>';
-                        include 'cron_job/parse_imei/mobilink.inc';
+                        include 'cron_job' . DS . 'parse_imei' . DS . 'mobilink.inc';
                         break;
                     case 7: // warid
                         echo '<br>' . 'Warid' . '<br>';
                         //print_r($data['received_file_path']);      
-                        include 'cron_job/parse_imei/warid.inc';
+                        include 'cron_job' . DS . 'parse_imei' . DS . 'warid.inc';
                         break;
                     case 3: // Ufone
                         echo '<br>' . 'Ufone' . '<br>';
                         // print_r($data['received_file_path']);
-                        include 'cron_job/parse_imei/ufone.inc';
+                        include 'cron_job' . DS . 'parse_imei' . DS . 'ufone.inc';
                         break;
                     case 6: // Telenor
                         // echo '<br>' . 'Telenor' .'<br>';                        
                         //print_r($data['received_file_path']);
-                        include 'cron_job/parse_imei/telenor.inc';
+                        include 'cron_job' . DS . 'parse_imei' . DS . 'telenor.inc';
 
                         break;
                     case 4: // Zong
                         // echo '<br>' . 'Zong' .'<br>';                        
-                        include 'cron_job/parse_imei/zong.inc';
+                        include 'cron_job' . DS . 'parse_imei' . DS . 'zong.inc';
                         break;
                 }
 
@@ -1361,9 +1543,23 @@ class Controller_Cronjob extends Controller {
                   $reference_number = Model_Email::email_status($reference_number, 2, 3);
                   } */
             } catch (Exception $e) {
-                //re-throw exception
-                //throw new customException($email);
-               // echo $e;
+                $error_msg = $e->getMessage();
+                $error_trace = $e->getTraceAsString();
+                
+                Model_ErrorLog::log(
+                    'cron_parse_imei',
+                    $error_msg,
+                    [
+                        'request_id'       => $data['request_id'] ?? 'unknown',
+                        'company_name'     => $data['company_name'] ?? 'unknown',
+                        'imei'             => $data['requested_value'] ?? 'unknown',
+                        'file_id'          => $data['file_id'] ?? null
+                    ],
+                    $error_trace,
+                    'parsing_failure',
+                    'imei_parsing'
+                );
+                
                 $reference_number = $data['request_id'];
                 $reference_number = Model_Email::email_status($reference_number, 2, 3);
             }
@@ -1374,7 +1570,15 @@ class Controller_Cronjob extends Controller {
         try {
             $data = Model_Generic::get_bparty_data();
         } catch (Exception $e) {
-            
+            Model_ErrorLog::log(
+                'action_bparty_table',
+                $e->getMessage(),
+                [],
+                $e->getTraceAsString(),
+                'processing_failure',
+                'bparty_table'
+            );
+            error_log("[" . date('c') . "] action_bparty_table failed: " . $e->getMessage());
         }
     }
 
@@ -1382,7 +1586,15 @@ class Controller_Cronjob extends Controller {
         try {
             $data = Model_Generic::family_tree_complete();
         } catch (Exception $e) {
-            
+            Model_ErrorLog::log(
+                'action_family_tree_complete',
+                $e->getMessage(),
+                [],
+                $e->getTraceAsString(),
+                'processing_failure',
+                'family_tree_complete'
+            );
+            error_log("[" . date('c') . "] action_family_tree_complete failed: " . $e->getMessage());
         }
     }
 
@@ -1392,7 +1604,15 @@ class Controller_Cronjob extends Controller {
         try {
             $data = Model_Generic::resend_parse_queue();
         } catch (Exception $e) {
-            
+            Model_ErrorLog::log(
+                'action_resend_in_parse_queue',
+                $e->getMessage(),
+                [],
+                $e->getTraceAsString(),
+                'processing_failure',
+                'resend_parse_queue'
+            );
+            error_log("[" . date('c') . "] action_resend_in_parse_queue failed: " . $e->getMessage());
         }
     }
 
@@ -1400,7 +1620,15 @@ class Controller_Cronjob extends Controller {
         try {
             $data = Model_Generic::resend_error_in_queue();
         } catch (Exception $e) {
-            
+            Model_ErrorLog::log(
+                'action_resend_error_in_queue',
+                $e->getMessage(),
+                [],
+                $e->getTraceAsString(),
+                'processing_failure',
+                'resend_error_queue'
+            );
+            error_log("[" . date('c') . "] action_resend_error_in_queue failed: " . $e->getMessage());
         }
     }
     

@@ -31,7 +31,7 @@ if($data['received_file_path']!='na')
 
                 
   //check if no data found exist
- include '/var/www/html/aies/application/classes/Controller/cron_job/parse_sub/notfound.inc';
+ include APPPATH . 'classes' . DS . 'Controller' . DS . 'cron_job' . DS . 'parse_sub' . DS . 'notfound.inc';
 
                 
 if (!empty($not_fount)) {
