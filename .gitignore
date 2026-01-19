@@ -10,12 +10,11 @@ nbproject
 build
 composer.lock
 composer.phar
-vendor/*
 .idea/
 dist/uploads/user/request_approve/
 ~$ormats.docx
 formats.docx
 httpd.conf
 user-dtsrc-202601151514.sql
-dramsfiles/desktop.ini
+dramsfiles/*
 uploads/htaccess/index.php

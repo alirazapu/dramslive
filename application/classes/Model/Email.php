@@ -38,8 +38,8 @@ class Model_Email {
 
 
         $query = DB::update('user_request')->set(array('status' => $status, 'processing_index' => $process_status))
-                ->where('request_id', '=', $reference_number)
-                ->execute();
+                ->where('request_id', '=', $reference_number);
+        $query->execute();
     }
 
     /* Update Error Messages */
