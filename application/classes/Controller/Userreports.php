@@ -3243,20 +3243,24 @@ exit();
 
                 //user activity type
                 Helpers_Profile::user_activity_log($uid, 81, $search_type, $search_value);
+                $result = Helpers_Subscriber::search($search_type, $search_value);
 
-                include 'user_functions/subscriber_api_key.inc';
-                $post = $test_array;
-                if (!empty($post['data'])) {
-                    foreach ($post['data'] as $result) {
-                        $cnic = $result['CNIC'];
-                    }
-                    if (!empty($cnic)) {
-                        $data = new Model_Userrequest();
-                        $results = $data->subscriber_external_search_results($post, $uid, 'true');
-                        echo $results;
-                        exit;
-                    }
-                }
+
+               // include 'user_functions/subscriber_api_key.inc';
+                $post = $result;
+
+if (!empty($post['data'])) {
+    // Access the CNIC directly
+    $cnic = $post['data']['cnic'] ?? null;
+
+    if (!empty($cnic)) {
+        $data = new Model_Userrequest();
+        $results = $data->subscriber_external_search_results($post, $uid, 'true');
+        echo $results;
+        exit;
+    }
+}
+
                 echo '<p style="color: red;font-weight: bold">NO RECORD FOUND</p><a class="btn btn-primary pull-right" style="margin-top:-37px;" href="#" onclick="' . $request_function . '">' . $request_function_name . '</a>';
 
                 echo '<hr class="style14 ">';
