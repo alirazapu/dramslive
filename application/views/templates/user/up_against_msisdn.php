@@ -29,8 +29,6 @@ if (
 }
 
 
-
-
     $post_request_id=!empty($post_data['requestid']) ? $post_data['requestid'] : '';
     $post_company_mnc=!empty($post_data['mnc']) ? $post_data['mnc'] : '';
     $post_request_type_id=!empty($post_data['requesttype']) ? $post_data['requesttype'] : '';
@@ -438,8 +436,10 @@ if (
                     </div>
                     <div class="col-sm-6">
                         <div class="form-group">
-                            <label for="inputName" class="control-label">First Name</label>
+                            <label for="inputName" class="control-label">First Name<?php echo $firstName; ?></label>
+
                             <input name="person_name" type="text" class="form-control" id="inputName" placeholder="First Name" value="<?= htmlspecialchars($firstName) ?>">
+                        
                         </div>
                     </div>                                      
                     <div class="col-sm-6">
@@ -1425,6 +1425,7 @@ $(function () {
             data: {number: subnumber},
             success: function (sub)
             {
+               
               //  console.log(sub.mnc);
               //  alert(sub.mnc);              
               if(sub.actdate==0)
@@ -1433,10 +1434,30 @@ $(function () {
               if(sub.imsi_number==0)
                 sub.imsi_number='';
               $("#imsi").val(sub.imsi_number);    
-              $("#inputName").val(sub.first_name);  
-              $("#inputName1").val(sub.last_name);  
-              $("#inputCNIC").val(sub.cnic_number);
-              $("#inputCNIC").attr("readonly",true);
+            //   $("#inputName").val(sub.first_name);  
+            //   $("#inputName1").val(sub.last_name);  
+            //   $("#inputCNIC").val(sub.cnic_number);
+            //   $("#inputCNIC").attr("readonly",true);
+            if (sub) {
+                // Normalize first name
+                let firstName = sub.first_name ? sub.first_name.replace(/\s+/g, '').toLowerCase() : '';
+                if (firstName === '' || firstName === 'unknown') {
+                    $("#inputFirstName").val(sub.first_name);
+                }
+
+                // Normalize last name
+                let lastName = sub.last_name ? sub.last_name.replace(/\s+/g, '').toLowerCase() : '';
+                if (lastName === '' || lastName === 'unknown') {
+                    $("#inputLastName").val(sub.last_name);
+                }
+
+                // Normalize CNIC
+                let cnic = sub.cnic_number ? sub.cnic_number.replace(/\s+/g, '').toLowerCase() : '';
+                if (cnic === '' || cnic === 'unknown') {
+                    $("#inputCNIC").val(sub.cnic_number).prop("readonly", true);
+                }
+            }
+
             //  $("inputCNIC").prop('disabled', true);
               $("#inputAddress").val(sub.address);  
               $("#phone_name").val(sub.phone_name);  
