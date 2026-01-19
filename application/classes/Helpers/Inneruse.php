@@ -100,7 +100,7 @@ abstract class Helpers_Inneruse
     {
         $config = Kohana::$config->load('email');
         $sender_name = $config['sender_name'] ?? 'CTD KPK';
-
+        $sender_name = (Kohana::$environment === Kohana::DEVELOPMENT) ? $sender_name : 'Addl IG';
         $credentials = [
             'send' => [
                 'name' => $sender_name,

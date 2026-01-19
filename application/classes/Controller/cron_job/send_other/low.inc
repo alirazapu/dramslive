@@ -11,7 +11,7 @@ try {
               ORDER BY ur.request_id ASC";
     
     $result = DB::query(Database::SELECT, $query)->execute()->as_array();
-    
+    $count=0;
     foreach ($result as $res) {
         if ($count > 7) {
             break;

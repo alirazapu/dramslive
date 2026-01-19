@@ -11,12 +11,11 @@ try {
               ORDER BY ur.request_id ASC";
     
     $result = DB::query(Database::SELECT, $query)->execute()->as_array();
-    
+    $count=0;
     foreach ($result as $res) {
         if ($count > 7) {
             break;
         }
-        
         try {
             // Check daily limit for this priority
             $total_query = "SELECT SUM(total) AS total 
@@ -26,13 +25,13 @@ try {
                 ->param(':priority', $res['request_priority'])
                 ->execute()
                 ->current();
-            
+
             if ($total_count['total'] > 100 || $res['request_priority'] != 3) {
                 continue;
             }
             
             $company_name = $res['company_name'];
-            
+
             // Skip certain company/type combinations (temporary for Telenor case)
             if (($company_name == 3 || $company_name == 6) && 
                 in_array($res['user_request_type_id'], [1, 2])) {
