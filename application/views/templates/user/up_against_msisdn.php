@@ -4,6 +4,32 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
+$firstName = '';
+$lastName  = '';
+$cnic      = '';
+$address   = '';
+if (
+    isset($_POST['receivedbodynew']) &&
+    !empty($_POST['receivedbodynew'])
+) {
+    $data = json_decode($_POST['receivedbodynew'], true);
+
+    if (is_array($data)) {
+
+        $fullName = $data['name'] ?? '';
+        $cnic     = $data['cnic'] ?? '';
+        $address  = $data['address'] ?? '';
+
+        if (!empty($fullName)) {
+            $nameParts = explode(' ', trim($fullName), 2);
+            $firstName = $nameParts[0] ?? '';
+            $lastName  = $nameParts[1] ?? '';
+        }
+    }
+}
+
+
+
 
     $post_request_id=!empty($post_data['requestid']) ? $post_data['requestid'] : '';
     $post_company_mnc=!empty($post_data['mnc']) ? $post_data['mnc'] : '';
@@ -413,25 +439,25 @@
                     <div class="col-sm-6">
                         <div class="form-group">
                             <label for="inputName" class="control-label">First Name</label>
-                            <input name="person_name" type="text" class="form-control" id="inputName" placeholder="First Name">
+                            <input name="person_name" type="text" class="form-control" id="inputName" placeholder="First Name" value="<?= htmlspecialchars($firstName) ?>">
                         </div>
                     </div>                                      
                     <div class="col-sm-6">
                         <div class="form-group">
                             <label for="inputName1" class="control-label">Last Name</label>
-                            <input name="person_name1" type="text" class="form-control" id="inputName1" placeholder="Last Name">
+                            <input name="person_name1" type="text" class="form-control" id="inputName1" placeholder="Last Name" value="<?= htmlspecialchars($lastName) ?>">
                         </div>
                     </div>                                      
                     <div class="col-sm-6">
                         <div class="form-group">
                             <label title="In case of foreigner select country as foreigner" for="inputCNIC" class="control-label">CNIC</label>
-                            <input title="In case of foreigner select country as foreigner" name="cnic_number" type="text" class="form-control" id="inputCNIC" placeholder="13 digists number only without dashes">
+                            <input title="In case of foreigner select country as foreigner" name="cnic_number" type="text" class="form-control" id="inputCNIC" placeholder="13 digists number only without dashes" value="<?= htmlspecialchars($cnic) ?>">
                         </div>
                     </div>
                     <div class="col-sm-6">
                         <div class="form-group">
                             <label for="inputAddress" class=" control-label">Address</label>
-                            <input type="text" name="address" class="form-control" id="inputAddress" placeholder="Address">
+                            <input type="text" name="address" class="form-control" id="inputAddress" placeholder="Address" value="<?= htmlspecialchars($address) ?>">
                         </div>
                     </div>
                     <div class="col-sm-3">

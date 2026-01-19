@@ -2527,94 +2527,113 @@ class Model_Userrequest {
     }
 
     /* Search Subscriber in local databases  */
+public static function subscriber_external_search_results($data, $uid) {
+    $i = 1;
+    $cnic_body = '';
 
-    public static function subscriber_external_search_results($data, $uid) {
-        $i = 1;
-        $cnic_body = '';
-        foreach ($data['data'] as $result) {
-            if (!empty($result)) {
-                //basic info
-                $cnic = !empty($result['CNIC']) ? $result['CNIC'] : 'NA';
-                $name = !empty($result['FIRSTNAME']) ? $result['FIRSTNAME'] : 'NA';
-                $address1 = !empty($result['ADDRESS1']) ? $result['ADDRESS1'] : '';
-                $address2 = !empty($result['ADDRESS2']) ? $result['ADDRESS2'] : '';
-                $address3 = !empty($result['ADDRESS3']) ? $result['ADDRESS3'] : '';
-                $address4 = !empty($result['ADDRESS4']) ? $result['ADDRESS4'] : '';
-                $resident_contact = !empty($result['RESCONTACT']) ? $result['RESCONTACT'] : '';
-                $phone_office = !empty($result['PHONE_OFFICE']) ? $result['PHONE_OFFICE'] : '';
-                $address = $address1 . " " . $address2 . " " . $address3 . " " . $address4 . ", Home#" . $resident_contact . ", Office#" . $phone_office;
-                //sim detail
-                $msisdn = !empty($result['MSISDN']) ? $result['MSISDN'] : '';
-                $bvs_stat = !empty($result['BVS']) ? $result['BVS'] : 0;
-//                if (!empty($bvs)) {
-//                    $bvs_stat = "Biometic Verified";
-//                } else {
-//                    $bvs_stat = "Biometic Not Verified";
-//                }
-
-                $status = !empty($result['STATUS']) ? $result['STATUS'] : '';
-//                $status = !empty($status_flag) ? Helpers_Utilities::get_subscriber_status($status_flag) : 'Unknown';
-                $imsi = !empty($result['IMSI']) ? $result['IMSI'] : '';
-                $connection_type_name = !empty($result['CONNECTION_TYPE']) ? $result['CONNECTION_TYPE'] : 0;
-//                if (empty($connection_type)) {
-//                    $connection_type_name = "Prepaid";
-//                } else {
-//                    $connection_type_name = "Postpaid";
-//                }
-                $mnc = !empty($result['NETWORK']) ? $result['NETWORK'] : 0;
-                $company_name = Helpers_Utilities::get_companies_data($mnc);
-                $company_name = !empty($company_name->company_name) ? $company_name->company_name:"N/A";
-                $act_date = !empty($result['ACTDATE']) ? $result['ACTDATE'] : '';
-                $save_body = "NAME => $name ,  CNIC => $cnic , ADDRESS => $address , MOBILE => $msisdn , IMSI => $imsi , STATUS => $status , CONNECTION TYPE => $connection_type_name , COMPANY NAME => $company_name , ACTIVATION DATE => $act_date ";
-                $cnic_mobiles = " MOBILE => $msisdn ";
-                ?>
-                <div>
-                    <p style="color: #00a7d0;font-weight: bold"><u>RECORD-<?php echo $i; ?></u></p>
-                    <span><b >NAME: </b><i><?php echo $name ?></i></span><br>
-                    <span><b >CNIC: </b><i><?php echo $cnic ?></i></span><br>
-                    <span><b >ADDRESS: </b><i><?php echo $address; ?></i></span><br>
-
-                    <span><b >MOBILE: </b><i style="color: #3c8dbc;font-weight: bold" ><?php echo $msisdn; ?></i><i><?php echo " (" . $company_name . ")"; ?></i></span><br>
-                    <span><b >IMSI: </b><i><?php echo $imsi . " (" . $connection_type_name . ")" ?></i></span><br>
-                    <span><b >STATUS: </b><i><?php echo $status . " (" . $bvs_stat . ")"; ?></i></span><br>
-                    <span><b >ACT_DATE: </b><i><?php echo $act_date; ?></i></span><br>
-
-                    <form target="_blank" name="fixerror-<?php echo $i ?>" id="fixerror-<?php echo $i ?>" action="<?php echo URL::base() . 'user/upload_against_msisdn'; ?>"  method="post"  >
-                        <input type="hidden" name="requestid" value="<?php echo 0; ?>">
-                        <input type="hidden" name="mnc" value="<?php echo $mnc; ?>">
-                        <input type="hidden" name="receivedfilepath" value="<?php echo 'No Attached File'; ?>">
-                        <input type="hidden" name="receivedbody" value="<?php echo ($save_body); ?>">
-                        <input type="hidden" name="requesttype" value="<?php echo 3; ?>">
-                        <input type="hidden" name="requestvalue" value="<?php echo $msisdn; ?>">
-                        <span><button  style="margin-top: -22px; margin-right: 5px" type="submit" title="Save in AIES" class="pull-right btn-success" >Save Subscriber</button>
-                            <button  style="margin-top: -22px; margin-right: 5px" type="button" title="Request From Company" class="pull-right btn-primary" onclick="requestsub(<?php echo $msisdn; ?>)" >Request Subscriber</button></span>
-
-                    </form>
-
-
-
-                    <hr  class="style14 ">
-
-                </div>
-                <?php
-            }
-            $i++;
-            $cnic_body = $cnic_body . " , " . $save_body;
+    // Normalize data to always be an array of records
+    if (!empty($data['data'])) {
+        if (isset($data['data']['id'])) {
+            $records = array($data['data']); // single record
+        } else {
+            $records = $data['data']; // multiple records
         }
-        ?>
-        <form target="_blank" name="fixerror-<?php echo $i ?>" id="fixerror-<?php echo $i ?>" action="<?php echo URL::base() . 'user/upload_against_cnic'; ?>"  method="post"  >
-            <input type="hidden" name="requestid" value="<?php echo 0; ?>">
-            <input type="hidden" name="mnc" value="<?php echo $mnc; ?>">
-            <input type="hidden" name="receivedfilepath" value="<?php echo 'No Attached File'; ?>">
-            <input type="hidden" name="receivedbody" value="<?php echo ($cnic_body); ?>">
-            <input type="hidden" name="requesttype" value="<?php echo 5; ?>">
-            <input type="hidden" name="requestvalue" value="<?php echo $cnic; ?>">
-            <span><button  style="margin-top: -7px;margin-bottom: 5px; margin-right: 5px" type="submit" title="Save in AIES" class="pull-right btn-success" >Save CNIC SIMs</button>
-                <button style="margin-top: -7px;margin-bottom: 5px; margin-right: 5px" onclick="requestcnicsims(<?php echo $cnic; ?>)"   type="button" title="Request From Company" class="pull-right btn-primary" >Request CNIC SIMs</button></span>
-
-        </form>
-        <?php
+    } else {
+        $records = array();
     }
+
+    $html = '';
+
+    foreach ($records as $result) {
+        if (!empty($result)) {
+            // Extract only the fields we need
+            $cnic = !empty($result['cnic']) ? $result['cnic'] : 'NA';
+            $name = !empty($result['name']) ? $result['name'] : 'NA';
+            $address = !empty($result['address']) ? $result['address'] : '';
+            $msisdn = !empty($result['msisdn']) ? $result['msisdn'] : '';
+
+
+            //$msisdn = !empty($result['msisdn']) ? $result['msisdn'] : '';
+            $msisdn = preg_replace('/\D/', '', $msisdn); // remove any non-digit characters
+            if (substr($msisdn, 0, 3) === '923') {
+                $msisdn = substr($msisdn, 1); // remove leading '9' to get '03100910677'
+                $msisdn = substr($msisdn, 1); // remove leading '0' -> '3100910677'
+            } elseif (substr($msisdn, 0, 2) === '03') {
+                $msisdn = substr($msisdn, 1); // remove leading '0' -> '3100910677'
+            } elseif (substr($msisdn, 0, 1) === '0') {
+                $msisdn = substr($msisdn, 1); // remove leading '0' -> '3100910677'
+            }
+
+            $bvs_stat = !empty($result['bvs_status']) ? $result['bvs_status'] : 'Not Verified';
+            $status = !empty($result['status']) ? $result['status'] : '';
+            //$save_body_array = array('Name'=>$name,'CNIC'=>$cnic,'ADDRESS'=>$address,'MOBILE'=>$msisdn,'STATUS'=> $status,'BVS_STATUS'=>$bvs_stat);
+            //$save_body_new = json_encode($save_body_array);
+            $save_body_array = array(
+                    'name'       => $name,
+                    'cnic'       => $cnic,
+                    'address'    => $address,
+                    'mobile'     => $msisdn,
+                    'status'     => $status,
+                    'bvs_status' => $bvs_stat
+                );
+                //print_r($save_body_array);
+                $save_body_new = json_encode($save_body_array);
+                $save_body_safe = htmlspecialchars($save_body_new, ENT_QUOTES, 'UTF-8');
+
+
+            $save_body = "NAME => $name , CNIC => $cnic , ADDRESS => $address , MOBILE => $msisdn , STATUS => $status , BVS_STATUS => $bvs_stat";
+            //$cnic_body .= " , " . $save_body;
+
+            // Build HTML safely
+            $html .= '<div>';
+            $html .= '<p style="color: #00a7d0;font-weight: bold"><u>RECORD-' . $i . '</u></p>';
+            $html .= '<span><b>NAME: </b><i>' . $name . '</i></span><br>';
+            $html .= '<span><b>CNIC: </b><i>' . $cnic . '</i></span><br>';
+            $html .= '<span><b>ADDRESS: </b><i>' . $address . '</i></span><br>';
+            $html .= '<span><b>MOBILE: </b><i style="color: #3c8dbc;font-weight: bold">' . $msisdn . '</i></span><br>';
+            $html .= '<span><b>STATUS: </b><i>' . $status . ' (' . $bvs_stat . ')</i></span><br>';
+
+            $html .= '<form target="_blank" name="fixerror-' . $i . '" id="fixerror-' . $i . '" action="' . URL::base() . 'user/upload_against_msisdn" method="post">';
+            $html .= '<input type="hidden" name="requestid" value="0">';
+            $html .= '<input type="hidden" name="receivedfilepath" value="No Attached File">';
+            $html .= '<input type="hidden" name="receivedbody" value="' . $save_body . '">';
+            $html .= '<input type="hidden" name="requesttype" value="3">';
+            $html .= '<input type="hidden" name="requestvalue" value="' . $msisdn . '">';
+            $html .= '<span>';
+            $html .= '<button style="margin-top: -22px; margin-right: 5px" type="submit" title="Save in AIES" class="pull-right btn-success">Save Subscriber</button>';
+            $html .= '<button style="margin-top: -22px; margin-right: 5px" type="button" title="Request From Company" class="pull-right btn-primary" onclick="requestsub(' . $msisdn . ')">Request Subscriber</button>';
+            $html .= '</span>';
+            $html .= '<input type="hidden" name="receivedbodynew" value="' . $save_body_safe . '">';
+
+            $html .= '</form>';
+
+            $html .= '<hr class="style14">';
+            $html .= '</div>';
+
+            $i++;
+        }
+    }
+
+    // Single CNIC form at the bottom
+    if (!empty($cnic)) {
+        $html .= '<form target="_blank" name="fixerror-' . $i . '" id="fixerror-' . $i . '" action="' . URL::base() . 'user/upload_against_cnic" method="post">';
+        $html .= '<input type="hidden" name="requestid" value="0">';
+        $html .= '<input type="hidden" name="receivedfilepath" value="No Attached File">';
+        $html .= '<input type="hidden" name="receivedbody" value="' . $save_body . '">';
+        $html .= '<input type="hidden" name="requesttype" value="5">';
+        $html .= '<input type="hidden" name="requestvalue" value="' . $cnic . '">';
+        $html .= '<span>';
+        $html .= '<button style="margin-top: -7px;margin-bottom: 5px; margin-right: 5px" type="submit" title="Save in AIES" class="pull-right btn-success">Save CNIC SIMs</button>';
+        $html .= '<button style="margin-top: -7px;margin-bottom: 5px; margin-right: 5px" onclick="requestcnicsims(' . $cnic . ')" type="button" title="Request From Company" class="pull-right btn-primary">Request CNIC SIMs</button>';
+        $html .= '</span>';
+        $html .= '</form>';
+    }
+
+    return $html; // return HTML as string
+}
+
+
+
 
     /* subscriber results */
 
