@@ -1,0 +1,27 @@
+
+# RewriteEngine On
+
+
+# RewriteBase /
+
+
+# <Files *.*>
+# 	#Order Deny,Allow
+# 	#Deny From All
+# RewriteEngine on 
+# RewriteCond %{HTTP_REFERER} !^http://(www\.)?aies [NC] 
+# RewriteCond %{HTTP_REFERER} !^http://(www\.)?aies.*$ [NC] 
+# RewriteRule \.(css|js)$ - [F]
+
+# </Files>
+
+
+# RewriteRule ^(?:application|modules|system)\b.* index.php/$0 [L]
+
+
+# RewriteCond %{REQUEST_FILENAME} !-f
+# RewriteCond %{REQUEST_FILENAME} !-d
+
+
+# RewriteRule .* index.php/$0 [PT]
+
