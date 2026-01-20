@@ -30,7 +30,7 @@ class Controller_Cronjob extends Controller {
         // ────────────────────────────────────────────────
         // Test SMTP Connection (Send)
         // ────────────────────────────────────────────────
-        echo "── SMTP Connection Test (Send) ──\n";
+      /*  echo "── SMTP Connection Test (Send) ──\n";
         try {
             $result = Helpers_Inneruse::get_gmail_pw();
             $smtp_user = $result['send']['user'];
@@ -105,7 +105,7 @@ class Controller_Cronjob extends Controller {
             );
         }
         echo "\n";
-        
+        */
         // ────────────────────────────────────────────────
         // Test IMAP Connection (Receive)
         // ────────────────────────────────────────────────
@@ -179,7 +179,7 @@ class Controller_Cronjob extends Controller {
             );
         }
         echo "\n";
-        
+       /*
         // ────────────────────────────────────────────────
         // Test Gmail credentials
         // ────────────────────────────────────────────────
@@ -236,7 +236,7 @@ class Controller_Cronjob extends Controller {
         
         echo "========================================\n";
         echo "TEST COMPLETED SUCCESSFULLY\n";
-        echo "========================================\n";
+        echo "========================================\n";*/
         exit;
     }    
     public function action_email_send_ufone() {
