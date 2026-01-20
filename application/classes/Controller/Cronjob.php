@@ -9,6 +9,15 @@
 class Controller_Cronjob extends Controller {    
     /* test function */
     public function action_test() {
+
+        //var_dump(shell_exec('unrar'));
+        // Original code
+       /* $send_key = Helpers_Utilities::encrypted_key('test', "encrypt");
+        echo $send_key . "<br>";
+        $send_key = str_replace("axHmBf8ri9x", "", $send_key);
+        $send_key = Helpers_Utilities::encrypted_key($send_key, "decrypt");
+        echo $send_key . "<br><br>";
+        die;*/
         echo "<pre>";
         echo "========================================\n";
         echo "EMAIL CONFIGURATION TEST\n";
