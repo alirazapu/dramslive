@@ -66,6 +66,24 @@ if (!empty($not_fount)) {
     }    
     elseif (strpos(strtolower($data['received_body']), 'no data found') !== false) {
             $reference_number = $data['request_id'];
+                
+                // Log status update to 5 (Not Found)
+                Model_ErrorLog::log(
+                    'parse_nic_warid',
+                    'No data found in NIC response - marking as status 5 (Not Found)',
+                    [
+                        'request_id' => $reference_number,
+                        'company_name' => $data['company_name'] ?? 'warid',
+                        'user_request_type_id' => $data['user_request_type_id'] ?? null,
+                        'processing_index' => 5,
+                        'reason' => 'Email body contains "no data found"',
+                        'body_sample' => substr($data['received_body'], 0, 200)
+                    ],
+                    null,
+                    'not_found',
+                    'nic_parsing'
+                );
+                
                 $reference_number = Model_Email::email_status($reference_number, 2, 5);
                 $not_fount = 1;                
         }else{            

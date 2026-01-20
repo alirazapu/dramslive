@@ -80,6 +80,20 @@ abstract class Helpers_Upload {
             return '';
 
         } catch (Exception $e) {
+            Model_ErrorLog::log(
+                'upload_unziprar_file',
+                'RAR file extraction failed: ' . $e->getMessage(),
+                array(
+                    'request_id' => $reference_number,
+                    'processing_index' => 3,
+                    'file_id' => null,
+                    'file_path' => $file,
+                    'error_details' => $e->getMessage()
+                ),
+                $e->getTraceAsString(),
+                'parsing_error',
+                'file_upload'
+            );
             Model_Email::email_status($reference_number, 2, 3);
             exit;
         }
@@ -127,6 +141,20 @@ abstract class Helpers_Upload {
             return [];
 
         } catch (Exception $e) {
+            Model_ErrorLog::log(
+                'upload_multiunziprar_file',
+                'Multiple RAR file extraction failed: ' . $e->getMessage(),
+                array(
+                    'request_id' => $reference_number,
+                    'processing_index' => 3,
+                    'file_id' => null,
+                    'file_path' => $file,
+                    'error_details' => $e->getMessage()
+                ),
+                $e->getTraceAsString(),
+                'parsing_error',
+                'file_upload'
+            );
             Model_Email::email_status($reference_number, 2, 3);
             exit;
         }
@@ -153,6 +181,20 @@ abstract class Helpers_Upload {
             return '';
 
         } catch (Exception $e) {
+            Model_ErrorLog::log(
+                'upload_unzip_file',
+                'ZIP file extraction failed: ' . $e->getMessage(),
+                array(
+                    'request_id' => $reference_number,
+                    'processing_index' => 3,
+                    'file_id' => null,
+                    'file_path' => $file,
+                    'error_details' => $e->getMessage()
+                ),
+                $e->getTraceAsString(),
+                'parsing_error',
+                'file_upload'
+            );
             Model_Email::email_status($reference_number, 2, 3);
             exit;
         }
@@ -330,6 +372,21 @@ public static function data_mapping_partially($path, $company, $field_imei_no, $
             $objPHPExcel = $objReader->load($inputfilename);
         } catch (Exception $e) {
             if (!empty($userrequestid)) {
+                Model_ErrorLog::log(
+                    'upload_data_mapping_partially',
+                    'Failed to load Excel file for partially parsing: ' . $e->getMessage(),
+                    array(
+                        'request_id' => $userrequestid,
+                        'processing_index' => 5,
+                        'file_id' => $file_id,
+                        'file_path' => $path,
+                        'company' => $company,
+                        'error_details' => $e->getMessage()
+                    ),
+                    $e->getTraceAsString(),
+                    'not_found',
+                    'file_upload'
+                );
                 $reference_number = Model_Email::email_status($userrequestid, 2, 5);
             }
             if (!empty($file_id))
@@ -395,8 +452,25 @@ public static function data_mapping_partially($path, $company, $field_imei_no, $
                         if ($company != 7) {
                             if (!empty($file_id))
                                 $error_number = Model_Email::file_status($file_id, 6, 3); // 1 company  format not match
-                            if (!empty($userrequestid))
+                            if (!empty($userrequestid)) {
+                                Model_ErrorLog::log(
+                                    'upload_data_mapping_partially',
+                                    'Company mismatch: Warid CDR format detected but company is not Warid (expected 7, got ' . $company . ')',
+                                    array(
+                                        'request_id' => $userrequestid,
+                                        'processing_index' => 3,
+                                        'file_id' => $file_id,
+                                        'file_path' => $path,
+                                        'company' => $company,
+                                        'expected_company' => 7,
+                                        'detected_format' => 'warid_cdr'
+                                    ),
+                                    null,
+                                    'validation_error',
+                                    'file_upload'
+                                );
                                 $reference_number = Model_Email::email_status($userrequestid, 2, 3);
+                            }
                             exit;
                         }
                         try {
@@ -409,8 +483,25 @@ public static function data_mapping_partially($path, $company, $field_imei_no, $
                         if ($company != 4) {
                             if (!empty($file_id))
                                 $error_number = Model_Email::file_status($file_id, 6, 3); // 1 company  format not match
-                            if (!empty($userrequestid))
+                            if (!empty($userrequestid)) {
+                                Model_ErrorLog::log(
+                                    'upload_data_mapping_partially',
+                                    'Company mismatch: Zong CDR format detected but company is not Zong (expected 4, got ' . $company . ')',
+                                    array(
+                                        'request_id' => $userrequestid,
+                                        'processing_index' => 3,
+                                        'file_id' => $file_id,
+                                        'file_path' => $path,
+                                        'company' => $company,
+                                        'expected_company' => 4,
+                                        'detected_format' => 'zong_cdr'
+                                    ),
+                                    null,
+                                    'validation_error',
+                                    'file_upload'
+                                );
                                 $reference_number = Model_Email::email_status($userrequestid, 2, 3);
+                            }
                             exit;
                         }
                         try {
@@ -423,8 +514,25 @@ public static function data_mapping_partially($path, $company, $field_imei_no, $
                         if ($company != 3) {
                             if (!empty($file_id))
                                 $error_number = Model_Email::file_status($file_id, 6, 3); // 1 company  format not match
-                            if (!empty($userrequestid))
+                            if (!empty($userrequestid)) {
+                                Model_ErrorLog::log(
+                                    'upload_data_mapping_partially',
+                                    'Company mismatch: Ufone CDR format detected but company is not Ufone (expected 3, got ' . $company . ')',
+                                    array(
+                                        'request_id' => $userrequestid,
+                                        'processing_index' => 3,
+                                        'file_id' => $file_id,
+                                        'file_path' => $path,
+                                        'company' => $company,
+                                        'expected_company' => 3,
+                                        'detected_format' => 'ufone_cdr'
+                                    ),
+                                    null,
+                                    'validation_error',
+                                    'file_upload'
+                                );
                                 $reference_number = Model_Email::email_status($userrequestid, 2, 3);
+                            }
                             exit;
                         }
                         try {
@@ -437,8 +545,25 @@ public static function data_mapping_partially($path, $company, $field_imei_no, $
                         if ($company != 6) {
                             if (!empty($file_id))
                                 $error_number = Model_Email::file_status($file_id, 6, 3); // 1 company  format not match
-                            if (!empty($userrequestid))
+                            if (!empty($userrequestid)) {
+                                Model_ErrorLog::log(
+                                    'upload_data_mapping_partially',
+                                    'Company mismatch: Telenor CDR format detected but company is not Telenor (expected 6, got ' . $company . ')',
+                                    array(
+                                        'request_id' => $userrequestid,
+                                        'processing_index' => 3,
+                                        'file_id' => $file_id,
+                                        'file_path' => $path,
+                                        'company' => $company,
+                                        'expected_company' => 6,
+                                        'detected_format' => 'telnor_cdr'
+                                    ),
+                                    null,
+                                    'validation_error',
+                                    'file_upload'
+                                );
                                 $reference_number = Model_Email::email_status($userrequestid, 2, 3);
+                            }
                             exit;
                         }
                         try {
@@ -451,8 +576,25 @@ public static function data_mapping_partially($path, $company, $field_imei_no, $
                         if ($company != 1 && $company != 7) {
                             if (!empty($file_id))
                                 $error_number = Model_Email::file_status($file_id, 6, 3); // 1 company  format not match
-                            if (!empty($userrequestid))
+                            if (!empty($userrequestid)) {
+                                Model_ErrorLog::log(
+                                    'upload_data_mapping_partially',
+                                    'Company mismatch: Jazz CDR format detected but company is not Jazz or Warid (expected 1 or 7, got ' . $company . ')',
+                                    array(
+                                        'request_id' => $userrequestid,
+                                        'processing_index' => 3,
+                                        'file_id' => $file_id,
+                                        'file_path' => $path,
+                                        'company' => $company,
+                                        'expected_company' => '1 or 7',
+                                        'detected_format' => 'jazz_cdr'
+                                    ),
+                                    null,
+                                    'validation_error',
+                                    'file_upload'
+                                );
                                 $reference_number = Model_Email::email_status($userrequestid, 2, 3);
+                            }
                             exit;
                         }
                         try {
@@ -474,6 +616,21 @@ public static function data_mapping_partially($path, $company, $field_imei_no, $
                 Helpers_Profile::user_activity_log($uid, 25, NULL, NULL, $person_id);
 
                 if (!empty($userrequestid)) {
+                    Model_ErrorLog::log(
+                        'upload_data_mapping_partially',
+                        'File processing completed successfully - setting status to completed',
+                        array(
+                            'request_id' => $userrequestid,
+                            'processing_index' => 5,
+                            'file_id' => $file_id,
+                            'file_path' => $path,
+                            'company' => $company,
+                            'person_id' => $person_id
+                        ),
+                        null,
+                        'not_found',
+                        'file_upload'
+                    );
                     $reference_number = Model_Email::email_status($userrequestid, 2, 5);
                 }
                 if (!empty($file_id))
@@ -514,8 +671,24 @@ public static function data_mapping_partially($path, $company, $field_imei_no, $
                     if (!empty($file_id))
                         $error_number = Model_Email::file_status($file_id, 1, 3);
 
-                    if (!empty($userrequestid))
+                    if (!empty($userrequestid)) {
+                        Model_ErrorLog::log(
+                            'upload_data_mapping_partially',
+                            'File format not recognized (Zong/Spout path) - company format does not match',
+                            array(
+                                'request_id' => $userrequestid,
+                                'processing_index' => 3,
+                                'file_id' => $file_id,
+                                'file_path' => $path,
+                                'company' => $company,
+                                'flag_status' => 'empty'
+                            ),
+                            null,
+                            'validation_error',
+                            'file_upload'
+                        );
                         $reference_number = Model_Email::email_status($userrequestid, 2, 3);
+                    }
                     exit;
                 }
                 break;
@@ -529,8 +702,25 @@ public static function data_mapping_partially($path, $company, $field_imei_no, $
                     if (!empty($file_id))
                         $error_number = Model_Email::file_status($file_id, 6, 3);
 
-                    if (!empty($userrequestid))
+                    if (!empty($userrequestid)) {
+                        Model_ErrorLog::log(
+                            'upload_data_mapping_partially',
+                            'Company mismatch (Zong path): Warid CDR format detected but company is not Warid (expected 7, got ' . $company . ')',
+                            array(
+                                'request_id' => $userrequestid,
+                                'processing_index' => 3,
+                                'file_id' => $file_id,
+                                'file_path' => $path,
+                                'company' => $company,
+                                'expected_company' => 7,
+                                'detected_format' => 'warid_cdr'
+                            ),
+                            null,
+                            'validation_error',
+                            'file_upload'
+                        );
                         $reference_number = Model_Email::email_status($userrequestid, 2, 3);
+                    }
                     exit;
                 }
                 try {
@@ -544,8 +734,25 @@ public static function data_mapping_partially($path, $company, $field_imei_no, $
                     if (!empty($file_id))
                         $error_number = Model_Email::file_status($file_id, 6, 3);
 
-                    if (!empty($userrequestid))
+                    if (!empty($userrequestid)) {
+                        Model_ErrorLog::log(
+                            'upload_data_mapping_partially',
+                            'Company mismatch (Zong path): Zong CDR format detected but company is not Zong (expected 4, got ' . $company . ')',
+                            array(
+                                'request_id' => $userrequestid,
+                                'processing_index' => 3,
+                                'file_id' => $file_id,
+                                'file_path' => $path,
+                                'company' => $company,
+                                'expected_company' => 4,
+                                'detected_format' => 'zong_cdr'
+                            ),
+                            null,
+                            'validation_error',
+                            'file_upload'
+                        );
                         $reference_number = Model_Email::email_status($userrequestid, 2, 3);
+                    }
                     exit;
                 }
                 try {
@@ -559,8 +766,25 @@ public static function data_mapping_partially($path, $company, $field_imei_no, $
                     if (!empty($file_id))
                         $error_number = Model_Email::file_status($file_id, 6, 3);
 
-                    if (!empty($userrequestid))
+                    if (!empty($userrequestid)) {
+                        Model_ErrorLog::log(
+                            'upload_data_mapping_partially',
+                            'Company mismatch (Zong path): Ufone CDR format detected but company is not Ufone (expected 3, got ' . $company . ')',
+                            array(
+                                'request_id' => $userrequestid,
+                                'processing_index' => 3,
+                                'file_id' => $file_id,
+                                'file_path' => $path,
+                                'company' => $company,
+                                'expected_company' => 3,
+                                'detected_format' => 'ufone_cdr'
+                            ),
+                            null,
+                            'validation_error',
+                            'file_upload'
+                        );
                         $reference_number = Model_Email::email_status($userrequestid, 2, 3);
+                    }
                     exit;
                 }
                 try {
@@ -574,8 +798,25 @@ public static function data_mapping_partially($path, $company, $field_imei_no, $
                     if (!empty($file_id))
                         $error_number = Model_Email::file_status($file_id, 6, 3);
 
-                    if (!empty($userrequestid))
+                    if (!empty($userrequestid)) {
+                        Model_ErrorLog::log(
+                            'upload_data_mapping_partially',
+                            'Company mismatch (Zong path): Telenor CDR format detected but company is not Telenor (expected 6, got ' . $company . ')',
+                            array(
+                                'request_id' => $userrequestid,
+                                'processing_index' => 3,
+                                'file_id' => $file_id,
+                                'file_path' => $path,
+                                'company' => $company,
+                                'expected_company' => 6,
+                                'detected_format' => 'telnor_cdr'
+                            ),
+                            null,
+                            'validation_error',
+                            'file_upload'
+                        );
                         $reference_number = Model_Email::email_status($userrequestid, 2, 3);
+                    }
                     exit;
                 }
                 try {
@@ -589,8 +830,25 @@ public static function data_mapping_partially($path, $company, $field_imei_no, $
                     if (!empty($file_id))
                         $error_number = Model_Email::file_status($file_id, 6, 3);
 
-                    if (!empty($userrequestid))
+                    if (!empty($userrequestid)) {
+                        Model_ErrorLog::log(
+                            'upload_data_mapping_partially',
+                            'Company mismatch (Zong path): Jazz CDR format detected but company is not Jazz (expected 1, got ' . $company . ')',
+                            array(
+                                'request_id' => $userrequestid,
+                                'processing_index' => 3,
+                                'file_id' => $file_id,
+                                'file_path' => $path,
+                                'company' => $company,
+                                'expected_company' => 1,
+                                'detected_format' => 'jazz_cdr'
+                            ),
+                            null,
+                            'validation_error',
+                            'file_upload'
+                        );
                         $reference_number = Model_Email::email_status($userrequestid, 2, 3);
+                    }
                     exit;
                 }
                 try {
@@ -611,6 +869,21 @@ public static function data_mapping_partially($path, $company, $field_imei_no, $
         Helpers_Profile::user_activity_log($uid, 25, NULL, NULL, $person_id);
 
         if (!empty($userrequestid)) {
+            Model_ErrorLog::log(
+                'upload_data_mapping_partially',
+                'File processing completed successfully (Zong path) - setting status to completed',
+                array(
+                    'request_id' => $userrequestid,
+                    'processing_index' => 5,
+                    'file_id' => $file_id,
+                    'file_path' => $path,
+                    'company' => $company,
+                    'person_id' => $person_id
+                ),
+                null,
+                'not_found',
+                'file_upload'
+            );
             $reference_number = Model_Email::email_status($userrequestid, 2, 5);
         }
         if (!empty($file_id))
@@ -833,6 +1106,20 @@ public static function data_mapping_full($path, $company, $file_id, $imei_field 
                 /* Parsing End */
                 Model_Generic::update_file_status($file_id);
                 if (!empty($userrequestid)) {
+                    Model_ErrorLog::log(
+                        'upload_data_mapping_full',
+                        'Full CDR file processing completed successfully - setting status to completed',
+                        array(
+                            'request_id' => $userrequestid,
+                            'processing_index' => 5,
+                            'file_id' => $file_id,
+                            'file_path' => $path,
+                            'imei_field' => $imei_field
+                        ),
+                        null,
+                        'not_found',
+                        'file_upload'
+                    );
                     $reference_number = Model_Email::email_status($userrequestid, 2, 5);
                 }
                 echo '1';
@@ -998,6 +1285,21 @@ public static function data_mapping_full($path, $company, $file_id, $imei_field 
         $uid = $login_id;
         Helpers_Profile::user_activity_log($uid, 25, NULL, NULL, $person_id);
         if (!empty($userrequestid)) {
+            Model_ErrorLog::log(
+                'upload_data_mapping_full',
+                'Full CDR file processing completed successfully (Zong path) - setting status to completed',
+                array(
+                    'request_id' => $userrequestid,
+                    'processing_index' => 5,
+                    'file_id' => $file_id,
+                    'file_path' => $path,
+                    'imei_field' => $imei_field,
+                    'person_id' => $person_id
+                ),
+                null,
+                'not_found',
+                'file_upload'
+            );
             $reference_number = Model_Email::email_status($userrequestid, 2, 5);
         }
         echo '1';
@@ -1059,6 +1361,22 @@ public static function data_mapping($path, $company, $phone_number = NULL, $user
             $objPHPExcel = $objReader->load($inputfilename);
         } catch (Exception $e) {
             if (!empty($userrequestid)) {
+                Model_ErrorLog::log(
+                    'upload_data_mapping',
+                    'Failed to load Excel file for data mapping: ' . $e->getMessage(),
+                    array(
+                        'request_id' => $userrequestid,
+                        'processing_index' => 3,
+                        'file_id' => $file_id,
+                        'file_path' => $path,
+                        'company' => $company,
+                        'phone_number' => $phone_number,
+                        'error_details' => $e->getMessage()
+                    ),
+                    $e->getTraceAsString(),
+                    'parsing_error',
+                    'file_upload'
+                );
                 $reference_number = Model_Email::email_status($userrequestid, 2, 3);
             }
             if (!empty($file_id))
@@ -1115,8 +1433,25 @@ public static function data_mapping($path, $company, $phone_number = NULL, $user
                     if (!empty($file_id))
                         $error_number = Model_Email::file_status($file_id, 1, 3); // 1 company  format not match
 
-                    if (!empty($userrequestid))
+                    if (!empty($userrequestid)) {
+                        Model_ErrorLog::log(
+                            'upload_data_mapping',
+                            'File format not recognized - company format does not match',
+                            array(
+                                'request_id' => $userrequestid,
+                                'processing_index' => 3,
+                                'file_id' => $file_id,
+                                'file_path' => $path,
+                                'company' => $company,
+                                'phone_number' => $phone_number,
+                                'flag_status' => 'empty'
+                            ),
+                            null,
+                            'validation_error',
+                            'file_upload'
+                        );
                         $reference_number = Model_Email::email_status($userrequestid, 2, 3);
+                    }
                     exit;
                 }
 
@@ -1125,8 +1460,26 @@ public static function data_mapping($path, $company, $phone_number = NULL, $user
                         if ($company != 7) {
                             if (!empty($file_id))
                                 $error_number = Model_Email::file_status($file_id, 6, 3); // 1 company  format not match
-                            if (!empty($userrequestid))
+                            if (!empty($userrequestid)) {
+                                Model_ErrorLog::log(
+                                    'upload_data_mapping',
+                                    'Company mismatch: Warid CDR format detected but company is not Warid (expected 7, got ' . $company . ')',
+                                    array(
+                                        'request_id' => $userrequestid,
+                                        'processing_index' => 3,
+                                        'file_id' => $file_id,
+                                        'file_path' => $path,
+                                        'company' => $company,
+                                        'phone_number' => $phone_number,
+                                        'expected_company' => 7,
+                                        'detected_format' => 'warid_cdr'
+                                    ),
+                                    null,
+                                    'validation_error',
+                                    'file_upload'
+                                );
                                 $reference_number = Model_Email::email_status($userrequestid, 2, 3);
+                            }
                             exit;
                         }
                         try {
@@ -1140,8 +1493,26 @@ public static function data_mapping($path, $company, $phone_number = NULL, $user
                         if ($company != 4) {
                             if (!empty($file_id))
                                 $error_number = Model_Email::file_status($file_id, 6, 3); // 1 company  format not match
-                            if (!empty($userrequestid))
+                            if (!empty($userrequestid)) {
+                                Model_ErrorLog::log(
+                                    'upload_data_mapping',
+                                    'Company mismatch: Zong CDR format detected but company is not Zong (expected 4, got ' . $company . ')',
+                                    array(
+                                        'request_id' => $userrequestid,
+                                        'processing_index' => 3,
+                                        'file_id' => $file_id,
+                                        'file_path' => $path,
+                                        'company' => $company,
+                                        'phone_number' => $phone_number,
+                                        'expected_company' => 4,
+                                        'detected_format' => 'zong_cdr'
+                                    ),
+                                    null,
+                                    'validation_error',
+                                    'file_upload'
+                                );
                                 $reference_number = Model_Email::email_status($userrequestid, 2, 3);
+                            }
                             exit;
                         }
                         try {
@@ -1154,8 +1525,26 @@ public static function data_mapping($path, $company, $phone_number = NULL, $user
                         if ($company != 3) {
                             if (!empty($file_id))
                                 $error_number = Model_Email::file_status($file_id, 6, 3); // 1 company  format not match
-                            if (!empty($userrequestid))
+                            if (!empty($userrequestid)) {
+                                Model_ErrorLog::log(
+                                    'upload_data_mapping',
+                                    'Company mismatch: Ufone CDR format detected but company is not Ufone (expected 3, got ' . $company . ')',
+                                    array(
+                                        'request_id' => $userrequestid,
+                                        'processing_index' => 3,
+                                        'file_id' => $file_id,
+                                        'file_path' => $path,
+                                        'company' => $company,
+                                        'phone_number' => $phone_number,
+                                        'expected_company' => 3,
+                                        'detected_format' => 'ufone_cdr'
+                                    ),
+                                    null,
+                                    'validation_error',
+                                    'file_upload'
+                                );
                                 $reference_number = Model_Email::email_status($userrequestid, 2, 3);
+                            }
                             exit;
                         }
                         try {
@@ -1173,8 +1562,26 @@ public static function data_mapping($path, $company, $phone_number = NULL, $user
                         if ($company != 6) {
                             if (!empty($file_id))
                                 $error_number = Model_Email::file_status($file_id, 6, 3); // 1 company  format not match
-                            if (!empty($userrequestid))
+                            if (!empty($userrequestid)) {
+                                Model_ErrorLog::log(
+                                    'upload_data_mapping',
+                                    'Company mismatch: Telenor CDR format detected but company is not Telenor (expected 6, got ' . $company . ')',
+                                    array(
+                                        'request_id' => $userrequestid,
+                                        'processing_index' => 3,
+                                        'file_id' => $file_id,
+                                        'file_path' => $path,
+                                        'company' => $company,
+                                        'phone_number' => $phone_number,
+                                        'expected_company' => 6,
+                                        'detected_format' => 'telnor_cdr'
+                                    ),
+                                    null,
+                                    'validation_error',
+                                    'file_upload'
+                                );
                                 $reference_number = Model_Email::email_status($userrequestid, 2, 3);
+                            }
                             exit;
                         }
                         try {
@@ -1187,8 +1594,26 @@ public static function data_mapping($path, $company, $phone_number = NULL, $user
                         if ($company != 1 && $company != 7) {
                             if (!empty($file_id))
                                 $error_number = Model_Email::file_status($file_id, 6, 3); // 1 company  format not match
-                            if (!empty($userrequestid))
+                            if (!empty($userrequestid)) {
+                                Model_ErrorLog::log(
+                                    'upload_data_mapping',
+                                    'Company mismatch: Jazz CDR format detected but company is not Jazz or Warid (expected 1 or 7, got ' . $company . ')',
+                                    array(
+                                        'request_id' => $userrequestid,
+                                        'processing_index' => 3,
+                                        'file_id' => $file_id,
+                                        'file_path' => $path,
+                                        'company' => $company,
+                                        'phone_number' => $phone_number,
+                                        'expected_company' => '1 or 7',
+                                        'detected_format' => 'jazz_cdr'
+                                    ),
+                                    null,
+                                    'validation_error',
+                                    'file_upload'
+                                );
                                 $reference_number = Model_Email::email_status($userrequestid, 2, 3);
+                            }
                             exit;
                         }
                         try {
@@ -1210,6 +1635,22 @@ public static function data_mapping($path, $company, $phone_number = NULL, $user
                 Helpers_Profile::user_activity_log($uid, 25, NULL, NULL, $person_id);
 
                 if (!empty($userrequestid)) {
+                    Model_ErrorLog::log(
+                        'upload_data_mapping',
+                        'File processing completed successfully - setting status to completed',
+                        array(
+                            'request_id' => $userrequestid,
+                            'processing_index' => 5,
+                            'file_id' => $file_id,
+                            'file_path' => $path,
+                            'company' => $company,
+                            'phone_number' => $phone_number,
+                            'person_id' => $person_id
+                        ),
+                        null,
+                        'not_found',
+                        'file_upload'
+                    );
                     $reference_number = Model_Email::email_status($userrequestid, 2, 5);
                 }
                 if (!empty($file_id)){
@@ -1251,8 +1692,25 @@ public static function data_mapping($path, $company, $phone_number = NULL, $user
                     if (!empty($file_id))
                         $error_number = Model_Email::file_status($file_id, 1, 3);
 
-                    if (!empty($userrequestid))
+                    if (!empty($userrequestid)) {
+                        Model_ErrorLog::log(
+                            'upload_data_mapping',
+                            'File format not recognized (Zong path) - company format does not match',
+                            array(
+                                'request_id' => $userrequestid,
+                                'processing_index' => 3,
+                                'file_id' => $file_id,
+                                'file_path' => $path,
+                                'company' => $company,
+                                'phone_number' => $phone_number,
+                                'flag_status' => 'empty'
+                            ),
+                            null,
+                            'validation_error',
+                            'file_upload'
+                        );
                         $reference_number = Model_Email::email_status($userrequestid, 2, 3);
+                    }
                     exit;
                 }
                 break;
@@ -1265,8 +1723,26 @@ public static function data_mapping($path, $company, $phone_number = NULL, $user
                 if ($company != 7) {
                     if (!empty($file_id))
                         $error_number = Model_Email::file_status($file_id, 6, 3);
-                    if (!empty($userrequestid))
+                    if (!empty($userrequestid)) {
+                        Model_ErrorLog::log(
+                            'upload_data_mapping',
+                            'Company mismatch (Zong path): Warid CDR format detected but company is not Warid (expected 7, got ' . $company . ')',
+                            array(
+                                'request_id' => $userrequestid,
+                                'processing_index' => 3,
+                                'file_id' => $file_id,
+                                'file_path' => $path,
+                                'company' => $company,
+                                'phone_number' => $phone_number,
+                                'expected_company' => 7,
+                                'detected_format' => 'warid_cdr'
+                            ),
+                            null,
+                            'validation_error',
+                            'file_upload'
+                        );
                         $reference_number = Model_Email::email_status($userrequestid, 2, 3);
+                    }
                     exit;
                 }
                 try {
@@ -1279,8 +1755,26 @@ public static function data_mapping($path, $company, $phone_number = NULL, $user
                 if ($company != 4) {
                     if (!empty($file_id))
                         $error_number = Model_Email::file_status($file_id, 6, 3);
-                    if (!empty($userrequestid))
+                    if (!empty($userrequestid)) {
+                        Model_ErrorLog::log(
+                            'upload_data_mapping',
+                            'Company mismatch (Zong path): Zong CDR format detected but company is not Zong (expected 4, got ' . $company . ')',
+                            array(
+                                'request_id' => $userrequestid,
+                                'processing_index' => 3,
+                                'file_id' => $file_id,
+                                'file_path' => $path,
+                                'company' => $company,
+                                'phone_number' => $phone_number,
+                                'expected_company' => 4,
+                                'detected_format' => 'zong_cdr'
+                            ),
+                            null,
+                            'validation_error',
+                            'file_upload'
+                        );
                         $reference_number = Model_Email::email_status($userrequestid, 2, 3);
+                    }
                     exit;
                 }
                 try {
@@ -1293,8 +1787,26 @@ public static function data_mapping($path, $company, $phone_number = NULL, $user
                 if ($company != 3) {
                     if (!empty($file_id))
                         $error_number = Model_Email::file_status($file_id, 6, 3);
-                    if (!empty($userrequestid))
+                    if (!empty($userrequestid)) {
+                        Model_ErrorLog::log(
+                            'upload_data_mapping',
+                            'Company mismatch (Zong path): Ufone CDR format detected but company is not Ufone (expected 3, got ' . $company . ')',
+                            array(
+                                'request_id' => $userrequestid,
+                                'processing_index' => 3,
+                                'file_id' => $file_id,
+                                'file_path' => $path,
+                                'company' => $company,
+                                'phone_number' => $phone_number,
+                                'expected_company' => 3,
+                                'detected_format' => 'ufone_cdr'
+                            ),
+                            null,
+                            'validation_error',
+                            'file_upload'
+                        );
                         $reference_number = Model_Email::email_status($userrequestid, 2, 3);
+                    }
                     exit;
                 }
                 try {
@@ -1307,8 +1819,26 @@ public static function data_mapping($path, $company, $phone_number = NULL, $user
                 if ($company != 6) {
                     if (!empty($file_id))
                         $error_number = Model_Email::file_status($file_id, 6, 3);
-                    if (!empty($userrequestid))
+                    if (!empty($userrequestid)) {
+                        Model_ErrorLog::log(
+                            'upload_data_mapping',
+                            'Company mismatch (Zong path): Telenor CDR format detected but company is not Telenor (expected 6, got ' . $company . ')',
+                            array(
+                                'request_id' => $userrequestid,
+                                'processing_index' => 3,
+                                'file_id' => $file_id,
+                                'file_path' => $path,
+                                'company' => $company,
+                                'phone_number' => $phone_number,
+                                'expected_company' => 6,
+                                'detected_format' => 'telnor_cdr'
+                            ),
+                            null,
+                            'validation_error',
+                            'file_upload'
+                        );
                         $reference_number = Model_Email::email_status($userrequestid, 2, 3);
+                    }
                     exit;
                 }
                 try {
@@ -1321,8 +1851,26 @@ public static function data_mapping($path, $company, $phone_number = NULL, $user
                 if ($company != 1) {
                     if (!empty($file_id))
                         $error_number = Model_Email::file_status($file_id, 6, 3);
-                    if (!empty($userrequestid))
+                    if (!empty($userrequestid)) {
+                        Model_ErrorLog::log(
+                            'upload_data_mapping',
+                            'Company mismatch (Zong path): Jazz CDR format detected but company is not Jazz (expected 1, got ' . $company . ')',
+                            array(
+                                'request_id' => $userrequestid,
+                                'processing_index' => 3,
+                                'file_id' => $file_id,
+                                'file_path' => $path,
+                                'company' => $company,
+                                'phone_number' => $phone_number,
+                                'expected_company' => 1,
+                                'detected_format' => 'jazz_cdr'
+                            ),
+                            null,
+                            'validation_error',
+                            'file_upload'
+                        );
                         $reference_number = Model_Email::email_status($userrequestid, 2, 3);
+                    }
                     exit;
                 }
                 try {
@@ -1345,11 +1893,44 @@ public static function data_mapping($path, $company, $phone_number = NULL, $user
         if(empty($flag)) {
             if (!empty($file_id))
                 $error_number = Model_Email::file_status($file_id, 1, 3);
-            if (!empty($userrequestid))
+            if (!empty($userrequestid)) {
+                Model_ErrorLog::log(
+                    'upload_data_mapping',
+                    'Empty flag detected after processing (Zong path) - format validation failed',
+                    array(
+                        'request_id' => $userrequestid,
+                        'processing_index' => 3,
+                        'file_id' => $file_id,
+                        'file_path' => $path,
+                        'company' => $company,
+                        'phone_number' => $phone_number,
+                        'flag_status' => 'empty'
+                    ),
+                    null,
+                    'validation_error',
+                    'file_upload'
+                );
                 $reference_number = Model_Email::email_status($userrequestid, 2, 3);
+            }
             exit;
         } else {
             if (!empty($userrequestid)) {
+                Model_ErrorLog::log(
+                    'upload_data_mapping',
+                    'File processing completed successfully (Zong path) - setting status to completed',
+                    array(
+                        'request_id' => $userrequestid,
+                        'processing_index' => 5,
+                        'file_id' => $file_id,
+                        'file_path' => $path,
+                        'company' => $company,
+                        'phone_number' => $phone_number,
+                        'person_id' => $person_id
+                    ),
+                    null,
+                    'not_found',
+                    'file_upload'
+                );
                 $reference_number = Model_Email::email_status($userrequestid, 2, 5);
             }
             if (!empty($file_id))
@@ -1902,6 +2483,20 @@ public static function data_mapping($path, $company, $phone_number = NULL, $user
     public static function telenor_cnic_sub($filePath, $reference_number = null) {
 
         if (!file_exists($filePath)) {
+            Model_ErrorLog::log(
+                'upload_telenor_cnic_sub',
+                'File not found for Telenor CNIC subscription data',
+                array(
+                    'request_id' => $reference_number,
+                    'processing_index' => 3,
+                    'file_id' => null,
+                    'file_path' => $filePath,
+                    'error_details' => 'File does not exist'
+                ),
+                null,
+                'not_found',
+                'file_upload'
+            );
             $reference_number = Model_Email::email_status($reference_number, 2, 3);
             return;
         }
@@ -1920,6 +2515,20 @@ public static function data_mapping($path, $company, $phone_number = NULL, $user
 
         } catch (Exception $e) {
             //echo 'Error reading file: ', $e->getMessage();
+            Model_ErrorLog::log(
+                'upload_telenor_cnic_sub',
+                'Error reading Telenor CNIC subscription file: ' . $e->getMessage(),
+                array(
+                    'request_id' => $reference_number,
+                    'processing_index' => 3,
+                    'file_id' => null,
+                    'file_path' => $filePath,
+                    'error_details' => $e->getMessage()
+                ),
+                $e->getTraceAsString(),
+                'parsing_error',
+                'file_upload'
+            );
             $reference_number = Model_Email::email_status($reference_number, 2, 3);
             return;
         }

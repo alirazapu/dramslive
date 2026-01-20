@@ -42,6 +42,24 @@ if ($not_fount != 1) {
         //  $block_phone->add_blocked_number($data, 999);
         $not_fount = 1;
         $reference_number = $data['request_id'];
+        
+        Model_ErrorLog::log(
+            'parse_sub_mobilink',
+            'UAO block reason detected - marking as status 5 (Not Found)',
+            [
+                'request_id' => $reference_number,
+                'company_name' => $data['company_name'] ?? 'mobilink',
+                'user_request_type_id' => $data['user_request_type_id'] ?? null,
+                'processing_index' => 5,
+                'block_reason' => strtoupper($block_reason[0]),
+                'block_details' => $detail,
+                'reason' => 'Number contains UAO (Unauthorized) block reason'
+            ],
+            null,
+            'not_found',
+            'subscriber_parsing'
+        );
+        
         $reference_number = Model_Email::email_status($reference_number, 2, 5);
     } else {
 

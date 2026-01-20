@@ -48,10 +48,43 @@ if (!empty($data['received_file_path']) && $data['received_file_path'] != 'na') 
             strpos(strtolower($data['received_body'][0]), 'no data') !== false ||
             strpos(strtolower($data['received_body'][0]), 'nil') !== false) {
         $reference_number = $data['request_id'];
+        
+        Model_ErrorLog::log(
+            'parse_imei_ufone',
+            'IMEI not found in response - marking as status 5 (Not Found)',
+            [
+                'request_id' => $reference_number,
+                'company_name' => $data['company_name'] ?? null,
+                'user_request_type_id' => $data['user_request_type_id'] ?? null,
+                'processing_index' => 5,
+                'body_sample' => substr($data['received_body'][0] ?? '', 0, 200)
+            ],
+            null,
+            'not_found',
+            'imei_parsing'
+        );
+        
         $reference_number = Model_Email::email_status($reference_number, 2, 5);
         $not_fount = 1;
     } else {
         $reference_number = $data['request_id'];
+        
+        Model_ErrorLog::log(
+            'parse_imei_ufone',
+            'Unable to parse IMEI response - marking as status 3 (Error)',
+            [
+                'request_id' => $reference_number,
+                'company_name' => $data['company_name'] ?? null,
+                'user_request_type_id' => $data['user_request_type_id'] ?? null,
+                'processing_index' => 3,
+                'body_sample' => substr($data['received_body'][0] ?? '', 0, 200),
+                'reason' => 'Unexpected response format for IMEI parsing'
+            ],
+            null,
+            'parsing_error',
+            'imei_parsing'
+        );
+        
         $reference_number = Model_Email::email_status($reference_number, 2, 3);
     }
 }

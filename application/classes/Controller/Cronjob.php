@@ -358,13 +358,61 @@ class Controller_Cronjob extends Controller {
                         if ($mobile_number[0] === '3') {
                             $sub_model = new Model_Generic();
                             $sub_model->ManualSubInfoinsert($sub_data);
+                            
+                            // Log status update to 5 (Not Found) - mobile starts with 3
+                            Model_ErrorLog::log(
+                                'cron_parse_sub_warid',
+                                'Mobile number starts with 3, data inserted - marking as status 5',
+                                [
+                                    'request_id' => $reference_number,
+                                    'company_name' => $data['company_name'],
+                                    'mobile_number' => $mobile_number,
+                                    'processing_index' => 5,
+                                    'reason' => 'Mobile number validation: starts with 3'
+                                ],
+                                null,
+                                'validation_info',
+                                'subscriber_parsing'
+                            );
+                            
                             $reference_number_1 = Model_Email::email_status($reference_number, 2, 5);
                         } else {
+                            // Log status update to 3 (Error) - mobile doesn't start with 3
+                            Model_ErrorLog::log(
+                                'cron_parse_sub_warid',
+                                'Mobile number does not start with 3 - marking as status 3 (Error)',
+                                [
+                                    'request_id' => $reference_number,
+                                    'company_name' => $data['company_name'],
+                                    'mobile_number' => $mobile_number,
+                                    'processing_index' => 3,
+                                    'reason' => 'Mobile number validation failed: does not start with 3'
+                                ],
+                                null,
+                                'validation_error',
+                                'subscriber_parsing'
+                            );
+                            
                             $reference_number_1 = Model_Email::email_status($reference_number, 2, 3);
                         }
 
                     } else {
                         // Invalid CNIC or Mobile
+                        // Log status update to 3 (Error)
+                        Model_ErrorLog::log(
+                            'cron_parse_sub_warid',
+                            'Invalid CNIC or Mobile number - marking as status 3 (Error)',
+                            [
+                                'request_id' => $reference_number,
+                                'company_name' => $data['company_name'],
+                                'processing_index' => 3,
+                                'reason' => 'CNIC or mobile number validation failed'
+                            ],
+                            null,
+                            'validation_error',
+                            'subscriber_parsing'
+                        );
+                        
                         $reference_number_1 = Model_Email::email_status($reference_number, 2, 3);
                     }
                 }
@@ -388,6 +436,22 @@ class Controller_Cronjob extends Controller {
                     'after_include'
                 );
                 $reference_number = $data['request_id'];
+                
+                // Log status update to 3 (Error) - exception occurred
+                Model_ErrorLog::log(
+                    'cron_parse_sub',
+                    'Exception during subscriber parsing - marking as status 3 (Error)',
+                    [
+                        'request_id' => $reference_number,
+                        'company_name' => $company,
+                        'processing_index' => 3,
+                        'error_message' => $error_msg
+                    ],
+                    null,
+                    'exception_error',
+                    'subscriber_parsing'
+                );
+                
                 $reference_number_1 = Model_Email::email_status($reference_number, 2, 3);
             }
         }
@@ -512,6 +576,21 @@ class Controller_Cronjob extends Controller {
                         $sub_model = new Model_Generic();
                         $sub_model_result = $sub_model->ManualLocationinsert($loc_data);
                     } else {
+                        Model_ErrorLog::log(
+                            'cron_parse_location',
+                            'Invalid location MSISDN format - marking as status 3 (Error)',
+                            [
+                                'request_id' => $reference_number,
+                                'company_name' => $data['company_name'] ?? 'unknown',
+                                'processing_index' => 3,
+                                'locationmsisdn' => $loc_data['locationmsisdn'] ?? '',
+                                'reason' => 'Location MSISDN validation failed: invalid length or format'
+                            ],
+                            null,
+                            'validation_error',
+                            'location_parsing'
+                        );
+                        
                         $reference_number = Model_Email::email_status($reference_number, 2, 3);
                       //  break;
                        // exit;
@@ -629,6 +708,21 @@ class Controller_Cronjob extends Controller {
                         $sub_model = new Model_Generic();
                         $sub_model_result = $sub_model->Manualcnicsimsinsert($loc_data);
                     } else {
+                        Model_ErrorLog::log(
+                            'cron_parse_nic',
+                            'Invalid CNIC format - marking as status 3 (Error)',
+                            [
+                                'request_id' => $reference_number,
+                                'company_name' => $data['company_name'] ?? 'unknown',
+                                'processing_index' => 3,
+                                'cnicsims' => $loc_data['cnicsims'] ?? '',
+                                'reason' => 'CNIC validation failed: invalid length or format'
+                            ],
+                            null,
+                            'validation_error',
+                            'nic_parsing'
+                        );
+                        
                         $reference_number = Model_Email::email_status($reference_number, 2, 3);
                         break;
                         exit;
@@ -747,6 +841,21 @@ class Controller_Cronjob extends Controller {
                     /* Insertion Code */
                     $reference_number = $data['request_id'];
 
+                    Model_ErrorLog::log(
+                        'cron_parse_phone_high',
+                        'Phone parsing completed, no records found - marking as status 5 (Not Found)',
+                        [
+                            'request_id' => $reference_number,
+                            'company_name' => $data['company_name'] ?? 'unknown',
+                            'processing_index' => 5,
+                            'phone_number' => $data['requested_value'] ?? 'unknown',
+                            'reason' => 'No phone records found in response'
+                        ],
+                        null,
+                        'not_found',
+                        'phone_parsing_high'
+                    );
+                    
                     $reference_number = Model_Email::email_status($reference_number, 2, 5);
                     /* if(strlen($loc_data['cnicsims'])==13 && ctype_digit($loc_data['cnicsims']))
                       { */
@@ -863,6 +972,21 @@ class Controller_Cronjob extends Controller {
                     /* Insertion Code */
                     $reference_number = $data['request_id'];
 
+                    Model_ErrorLog::log(
+                        'cron_parse_phone',
+                        'Phone parsing completed, no records found - marking as status 5 (Not Found)',
+                        [
+                            'request_id' => $reference_number,
+                            'company_name' => $data['company_name'] ?? 'unknown',
+                            'processing_index' => 5,
+                            'phone_number' => $data['requested_value'] ?? 'unknown',
+                            'reason' => 'No phone records found in response'
+                        ],
+                        null,
+                        'not_found',
+                        'phone_parsing'
+                    );
+                    
                     $reference_number = Model_Email::email_status($reference_number, 2, 5);
                     /* if(strlen($loc_data['cnicsims'])==13 && ctype_digit($loc_data['cnicsims']))
                       { */
@@ -979,6 +1103,21 @@ class Controller_Cronjob extends Controller {
                     /* Insertion Code */
                     $reference_number = $data['request_id'];
 
+                    Model_ErrorLog::log(
+                        'cron_parse_phone_mobilink',
+                        'Mobilink phone parsing completed, no records found - marking as status 5 (Not Found)',
+                        [
+                            'request_id' => $reference_number,
+                            'company_name' => $data['company_name'] ?? 'unknown',
+                            'processing_index' => 5,
+                            'phone_number' => $data['requested_value'] ?? 'unknown',
+                            'reason' => 'No phone records found in Mobilink response'
+                        ],
+                        null,
+                        'not_found',
+                        'phone_parsing_mobilink'
+                    );
+                    
                     $reference_number = Model_Email::email_status($reference_number, 2, 5);
                     /* if(strlen($loc_data['cnicsims'])==13 && ctype_digit($loc_data['cnicsims']))
                       { */
@@ -1092,6 +1231,21 @@ class Controller_Cronjob extends Controller {
                     /* Insertion Code */
                     $reference_number = $data['request_id'];
 
+                    Model_ErrorLog::log(
+                        'cron_parse_phone_warid',
+                        'Warid phone parsing completed, no records found - marking as status 5 (Not Found)',
+                        [
+                            'request_id' => $reference_number,
+                            'company_name' => $data['company_name'] ?? 'unknown',
+                            'processing_index' => 5,
+                            'phone_number' => $data['requested_value'] ?? 'unknown',
+                            'reason' => 'No phone records found in Warid response'
+                        ],
+                        null,
+                        'not_found',
+                        'phone_parsing_warid'
+                    );
+                    
                     $reference_number = Model_Email::email_status($reference_number, 2, 5);
                     /* if(strlen($loc_data['cnicsims'])==13 && ctype_digit($loc_data['cnicsims']))
                       { */
@@ -1166,6 +1320,22 @@ class Controller_Cronjob extends Controller {
                     if($not_fount != 1)
                     {    
                         $reference_number = $data['request_id'];
+                        
+                        Model_ErrorLog::log(
+                            'cron_parse_phone_ufone',
+                            'Ufone phone parsing - no file found, checking notfound.inc - marking as status 5 (Not Found)',
+                            [
+                                'request_id' => $reference_number,
+                                'company_name' => $data['company_name'] ?? 'unknown',
+                                'processing_index' => 5,
+                                'phone_number' => $data['requested_value'] ?? 'unknown',
+                                'reason' => 'No CDR file found, processed notfound.inc'
+                            ],
+                            null,
+                            'not_found',
+                            'phone_parsing_ufone'
+                        );
+                        
                         $reference_number = Model_Email::email_status($reference_number, 2, 5);                        
                     }
                      
@@ -1216,6 +1386,21 @@ class Controller_Cronjob extends Controller {
                     /* Insertion Code */
                     $reference_number = $data['request_id'];
 
+                    Model_ErrorLog::log(
+                        'cron_parse_phone_ufone',
+                        'Ufone phone parsing completed, no records found - marking as status 5 (Not Found)',
+                        [
+                            'request_id' => $reference_number,
+                            'company_name' => $data['company_name'] ?? 'unknown',
+                            'processing_index' => 5,
+                            'phone_number' => $data['requested_value'] ?? 'unknown',
+                            'reason' => 'No phone records found in Ufone response'
+                        ],
+                        null,
+                        'not_found',
+                        'phone_parsing_ufone'
+                    );
+                    
                     $reference_number = Model_Email::email_status($reference_number, 2, 5);
                     /* if(strlen($loc_data['cnicsims'])==13 && ctype_digit($loc_data['cnicsims']))
                       { */
@@ -1329,6 +1514,21 @@ class Controller_Cronjob extends Controller {
                     /* Insertion Code */
                     $reference_number = $data['request_id'];
 
+                    Model_ErrorLog::log(
+                        'cron_parse_phone_telenor',
+                        'Telenor phone parsing completed, no records found - marking as status 5 (Not Found)',
+                        [
+                            'request_id' => $reference_number,
+                            'company_name' => $data['company_name'] ?? 'unknown',
+                            'processing_index' => 5,
+                            'phone_number' => $data['requested_value'] ?? 'unknown',
+                            'reason' => 'No phone records found in Telenor response'
+                        ],
+                        null,
+                        'not_found',
+                        'phone_parsing_telenor'
+                    );
+                    
                     $reference_number = Model_Email::email_status($reference_number, 2, 5);
                     /* if(strlen($loc_data['cnicsims'])==13 && ctype_digit($loc_data['cnicsims']))
                       { */
@@ -1442,6 +1642,21 @@ class Controller_Cronjob extends Controller {
                     /* Insertion Code */
                     $reference_number = $data['request_id'];
 
+                    Model_ErrorLog::log(
+                        'cron_parse_phone_zong',
+                        'Zong phone parsing completed, no records found - marking as status 5 (Not Found)',
+                        [
+                            'request_id' => $reference_number,
+                            'company_name' => $data['company_name'] ?? 'unknown',
+                            'processing_index' => 5,
+                            'phone_number' => $data['requested_value'] ?? 'unknown',
+                            'reason' => 'No phone records found in Zong response'
+                        ],
+                        null,
+                        'not_found',
+                        'phone_parsing_zong'
+                    );
+                    
                     $reference_number = Model_Email::email_status($reference_number, 2, 5);
                     /* if(strlen($loc_data['cnicsims'])==13 && ctype_digit($loc_data['cnicsims']))
                       { */

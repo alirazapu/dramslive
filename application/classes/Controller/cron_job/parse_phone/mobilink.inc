@@ -41,7 +41,26 @@ if(!empty($data['received_file_path']) && $data['received_file_path'] != 'na')
      
 }  catch (Exception $e)
 {
-    $reference_number = $data['request_id'];  
+    $reference_number = $data['request_id'];
+    
+    // Log status update to 3 (Error)
+    Model_ErrorLog::log(
+        'parse_phone_mobilink',
+        'Exception during phone data parsing - marking as status 3 (Error)',
+        [
+            'request_id' => $reference_number,
+            'company_name' => $phone_data['company_name'] ?? 'mobilink',
+            'user_request_type_id' => $phone_data['user_request_type_id'] ?? 2,
+            'processing_index' => 3,
+            'reason' => 'Exception thrown: ' . $e->getMessage(),
+            'exception_file' => $e->getFile(),
+            'exception_line' => $e->getLine()
+        ],
+        $e->getTraceAsString(),
+        'parsing_error',
+        'phone_parsing'
+    );
+    
     $reference_number = Model_Email::email_status($reference_number, 2, 3); 
     exit;
 }

@@ -77,6 +77,21 @@ if ($field_imei_no == $imei) {
             if($imei!=$imei_new)
             {
                 if(!empty($userrequestid)){
+                    Model_ErrorLog::log(
+                        'parse_partially_zong',
+                        'IMEI mismatch detected during CDR parsing - expected IMEI does not match IMEI in row ' . $row,
+                        array(
+                            'request_id' => $userrequestid,
+                            'processing_index' => 3,
+                            'file_id' => $file_id,
+                            'expected_imei' => $imei,
+                            'found_imei' => $imei_new,
+                            'row_number' => $row
+                        ),
+                        null,
+                        'validation_error',
+                        'cdr_partial_parsing'
+                    );
                     $reference_number = Model_Email::email_status($userrequestid, 2, 3);
                 }
                 Model_Generic::update_file_status_val($file_id, 0);
@@ -132,6 +147,20 @@ if ($field_imei_no == $imei) {
     exit;
 } else {
     if(!empty($userrequestid)){
+        Model_ErrorLog::log(
+            'parse_partially_zong',
+            'Initial IMEI validation failed - input IMEI does not match first CDR record IMEI',
+            array(
+                'request_id' => $userrequestid,
+                'processing_index' => 3,
+                'file_id' => $file_id,
+                'input_imei' => $field_imei_no,
+                'cdr_imei' => $imei
+            ),
+            null,
+            'validation_error',
+            'cdr_partial_parsing'
+        );
         $reference_number = Model_Email::email_status($userrequestid, 2, 3);
     }
     Model_Generic::update_file_status_val($file_id, 0);

@@ -45,6 +45,22 @@ class Controller_Cronmanual extends Controller {
                 /* Insertion Code */
                 if (!empty($data['request_id'])) {
                     $reference_number = $data['request_id'];
+                    
+                    Model_ErrorLog::log(
+                        'cronmanual_email_parse_phone',
+                        'Request not found or could not be processed - setting email status to 5',
+                        [
+                            'request_id'        => $reference_number,
+                            'company_name'      => $data['company_name'] ?? 'unknown',
+                            'processing_index'  => 5,
+                            'phone_number'      => $data['phone_number'] ?? null,
+                            'file_id'           => $phone_data['file_id'] ?? null
+                        ],
+                        null,
+                        'not_found',
+                        'manual_phone_parsing_completion'
+                    );
+                    
                     $reference_number = Model_Email::email_status($reference_number, 2, 5);
                 }
                 /*echo $phone_data['file_id']; exit;
@@ -78,6 +94,23 @@ class Controller_Cronmanual extends Controller {
                 echo $e;
                 if (!empty($data['request_id'])) {
                     $reference_number = $data['request_id'];
+                    
+                    Model_ErrorLog::log(
+                        'cronmanual_email_parse_phone',
+                        'Exception caught during phone parsing - setting email status to 3 for validation/parsing error',
+                        [
+                            'request_id'        => $reference_number,
+                            'company_name'      => $data['company_name'] ?? 'unknown',
+                            'processing_index'  => 3,
+                            'phone_number'      => $data['phone_number'] ?? null,
+                            'file_id'           => $phone_data['file_id'] ?? null,
+                            'exception_message' => $error_msg
+                        ],
+                        $error_trace,
+                        'parsing_error',
+                        'manual_phone_parsing_exception'
+                    );
+                    
                     $reference_number = Model_Email::email_status($reference_number, 2, 3);
                 }
                 if (!empty($phone_data['file_id']))
@@ -135,6 +168,23 @@ class Controller_Cronmanual extends Controller {
                 /* Insertion Code */
                 if (!empty($data['request_id'])) {
                     $reference_number = $data['request_id'];
+                    
+                    Model_ErrorLog::log(
+                        'cronmanual_email_parse_imei',
+                        'IMEI request not found or could not be processed - setting email status to 5',
+                        [
+                            'request_id'        => $reference_number,
+                            'company_name'      => $data['company_name'] ?? 'unknown',
+                            'processing_index'  => 5,
+                            'imei'              => $data['imei'] ?? null,
+                            'requested_value'   => $data['requested_value'] ?? null,
+                            'file_id'           => $data['file_id'] ?? null
+                        ],
+                        null,
+                        'not_found',
+                        'manual_imei_parsing_completion'
+                    );
+                    
                     $reference_number = Model_Email::email_status($reference_number, 2, 5);
                 }
                 if (!empty($phone_data['file_id']))
@@ -170,6 +220,24 @@ class Controller_Cronmanual extends Controller {
                 //echo $e;
                 if (!empty($data['request_id'])) {
                     $reference_number = $data['request_id'];
+                    
+                    Model_ErrorLog::log(
+                        'cronmanual_email_parse_imei',
+                        'Exception caught during IMEI parsing - setting email status to 3 for validation/parsing error',
+                        [
+                            'request_id'        => $reference_number,
+                            'company_name'      => $data['company_name'] ?? 'unknown',
+                            'processing_index'  => 3,
+                            'imei'              => $data['imei'] ?? null,
+                            'requested_value'   => $data['requested_value'] ?? null,
+                            'file_id'           => $data['file_id'] ?? null,
+                            'exception_message' => $error_msg
+                        ],
+                        $error_trace,
+                        'parsing_error',
+                        'manual_imei_parsing_exception'
+                    );
+                    
                     $reference_number = Model_Email::email_status($reference_number, 2, 3);
                 }
                 if (!empty($file_id))

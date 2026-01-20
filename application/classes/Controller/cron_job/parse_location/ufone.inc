@@ -11,7 +11,24 @@ $data['received_body'] = array_filter(explode('From:',strip_tags($data['received
  
  
 
+$not_fount_before = $not_fount ?? 0;
 include 'notfound.inc';
+if ($not_fount == 1 && $not_fount_before == 0) {
+    Model_ErrorLog::log(
+        'parse_location_ufone',
+        'No location data detected by notfound.inc - marking as status 5 (Not Found)',
+        [
+            'request_id' => $data['request_id'] ?? null,
+            'company_name' => $data['company_name'] ?? 3,
+            'user_request_type_id' => $data['user_request_type_id'] ?? null,
+            'processing_index' => 5,
+            'body_sample' => isset($data['received_body'][0]) ? substr($data['received_body'][0], 0, 100) : ''
+        ],
+        null,
+        'not_found',
+        'location_parsing'
+    );
+}
 
 $data['received_body'] = $data['received_body'][0];
 
@@ -52,6 +69,23 @@ $count = 1;
 
 if(sizeof($parse_val) < 2){
      $reference_number = $data['request_id'];
+     
+    Model_ErrorLog::log(
+        'parse_location_ufone',
+        'Insufficient location data fields - marking as status 5 (Not Found)',
+        [
+            'request_id' => $reference_number,
+            'company_name' => $data['company_name'] ?? 3,
+            'user_request_type_id' => $data['user_request_type_id'] ?? null,
+            'processing_index' => 5,
+            'fields_count' => sizeof($parse_val),
+            'required_fields' => 2
+        ],
+        null,
+        'not_found',
+        'location_parsing'
+    );
+     
 $reference_number = Model_Email::email_status($reference_number, 2, 5);
                  $not_fount = 1;  
                  

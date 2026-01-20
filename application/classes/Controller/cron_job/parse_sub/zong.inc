@@ -8,8 +8,24 @@ if($encode_str=='ASCII')
 
 if (empty($data['received_body'])) {
     $reference_number = $data['request_id'];
-        $reference_number = Model_Email::email_status($reference_number, 2, 5);
-        $not_fount = 1;
+    
+    Model_ErrorLog::log(
+        'parse_sub_zong',
+        'Empty response body received - marking as status 5 (Not Found)',
+        [
+            'request_id' => $reference_number,
+            'company_name' => $data['company_name'] ?? 'zong',
+            'user_request_type_id' => $data['user_request_type_id'] ?? null,
+            'processing_index' => 5,
+            'reason' => 'received_body is empty after decoding'
+        ],
+        null,
+        'not_found',
+        'subscriber_parsing'
+    );
+    
+    $reference_number = Model_Email::email_status($reference_number, 2, 5);
+    $not_fount = 1;
 }else{
 
 $first_string = $data['received_body'] = array_filter(explode('From:',strip_tags($data['received_body'])));

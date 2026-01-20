@@ -39,10 +39,46 @@ if(!empty($data['received_file_path']) && $data['received_file_path'] != 'na')
           strpos(strtolower($data['received_body'][0]), 'no record found') !== false || 
                strpos(strtolower($data['received_body'][0]), 'error') !== false) {
             $reference_number = $data['request_id'];
+                
+                // Log status update to 5 (Not Found)
+                Model_ErrorLog::log(
+                    'parse_phone_warid',
+                    'No data found in email body - marking as status 5 (Not Found)',
+                    [
+                        'request_id' => $reference_number,
+                        'company_name' => $phone_data['company_name'] ?? 'warid',
+                        'user_request_type_id' => $phone_data['user_request_type_id'] ?? 2,
+                        'processing_index' => 5,
+                        'reason' => 'Email body contains "not found", "no record found", or "error"',
+                        'body_sample' => substr($data['received_body'][0], 0, 200)
+                    ],
+                    null,
+                    'not_found',
+                    'phone_parsing'
+                );
+                
                 $reference_number = Model_Email::email_status($reference_number, 2, 5);
                 $not_fount = 1;                
         }else{
-       $reference_number = $data['request_id'];                         
+       $reference_number = $data['request_id'];
+       
+       // Log status update to 3 (Error)
+       Model_ErrorLog::log(
+           'parse_phone_warid',
+           'Invalid or unparseable phone data format - marking as status 3 (Error)',
+           [
+               'request_id' => $reference_number,
+               'company_name' => $phone_data['company_name'] ?? 'warid',
+               'user_request_type_id' => $phone_data['user_request_type_id'] ?? 2,
+               'processing_index' => 3,
+               'reason' => 'Email body does not contain file attachment and content is not "not found" pattern',
+               'body_sample' => substr($data['received_body'][0], 0, 200)
+           ],
+           null,
+           'parsing_error',
+           'phone_parsing'
+       );
+       
        $reference_number = Model_Email::email_status($reference_number, 2, 3);
        $not_fount = 1; 
         }

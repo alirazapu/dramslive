@@ -31,6 +31,22 @@ if (strpos(strtolower($data['received_body'][0]), 'no data against') !== false |
         ) {
    
              $reference_number = $data['request_id'];
+             
+             Model_ErrorLog::log(
+                'parse_location_notfound',
+                'No location data detected - marking as status 5 (Not Found)',
+                [
+                    'request_id' => $reference_number,
+                    'company_name' => $data['company_name'] ?? null,
+                    'user_request_type_id' => $data['user_request_type_id'] ?? null,
+                    'processing_index' => 5,
+                    'body_sample' => isset($data['received_body'][0]) ? substr($data['received_body'][0], 0, 100) : ''
+                ],
+                null,
+                'not_found',
+                'location_parsing'
+            );
+             
                  $reference_number = Model_Email::email_status($reference_number, 2, 5);
                  $not_fount = 1;                 
 }

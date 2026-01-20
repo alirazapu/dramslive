@@ -86,6 +86,24 @@ try {
         $data['received_body'][0] == null || $data['received_body'][0] == ' ') {
         
         $reference_number = $data['request_id'];
+        
+        // Log status update to 5 (Not Found)
+        Model_ErrorLog::log(
+            'parse_sub_notfound',
+            'No data found in response - marking as status 5 (Not Found)',
+            [
+                'request_id' => $reference_number,
+                'company_name' => $data['company_name'] ?? 'unknown',
+                'user_request_type_id' => $data['user_request_type_id'] ?? null,
+                'processing_index' => 5,
+                'mark_complete' => $mark_complete,
+                'body_sample' => isset($data['received_body'][0]) ? substr($data['received_body'][0], 0, 200) : 'empty'
+            ],
+            null,
+            'not_found',
+            'subscriber_parsing'
+        );
+        
         $reference_number = Model_Email::email_status($reference_number, 2, 5);
         $not_fount = 1;
         
@@ -101,10 +119,44 @@ try {
         
         if ($data['company_name'] == 4) {
             $reference_number = $data['request_id'];
+            
+            // Log status update to 5 (Not Found)
+            Model_ErrorLog::log(
+                'parse_sub_notfound',
+                'Company 4 (Zong) with invalid request type - marking as status 5 (Not Found)',
+                [
+                    'request_id' => $reference_number,
+                    'company_name' => $data['company_name'],
+                    'user_request_type_id' => $data['user_request_type_id'],
+                    'processing_index' => 5,
+                    'reason' => 'Company 4 with non-subscriber request type'
+                ],
+                null,
+                'not_found',
+                'subscriber_parsing'
+            );
+            
             $reference_number = Model_Email::email_status($reference_number, 2, 5);
             $not_fount = 1;
         } else {
             $reference_number = $data['request_id'];
+            
+            // Log status update to 3 (Error)
+            Model_ErrorLog::log(
+                'parse_sub_notfound',
+                'Invalid company/request type combination - marking as status 3 (Error)',
+                [
+                    'request_id' => $reference_number,
+                    'company_name' => $data['company_name'],
+                    'user_request_type_id' => $data['user_request_type_id'],
+                    'processing_index' => 3,
+                    'reason' => 'Non-Ufone company with invalid request type for subscriber parsing'
+                ],
+                null,
+                'validation_error',
+                'subscriber_parsing'
+            );
+            
             $reference_number = Model_Email::email_status($reference_number, 2, 3);
             $not_fount = 1;
         }

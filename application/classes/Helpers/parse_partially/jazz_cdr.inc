@@ -105,6 +105,21 @@ if ($field_imei_no == $imei) {
             {
                 echo '4';
                 if(!empty($userrequestid)){
+                    Model_ErrorLog::log(
+                        'parse_partially_jazz',
+                        'IMEI mismatch detected during CDR parsing - expected IMEI does not match IMEI in row ' . $row,
+                        array(
+                            'request_id' => $userrequestid,
+                            'processing_index' => 3,
+                            'file_id' => $file_id,
+                            'expected_imei' => $imei,
+                            'found_imei' => $imei_new,
+                            'row_number' => $row
+                        ),
+                        null,
+                        'validation_error',
+                        'cdr_partial_parsing'
+                    );
                     $reference_number = Model_Email::email_status($userrequestid, 2, 3);
                 }
                 if(!empty($file_id))
@@ -177,6 +192,20 @@ if ($field_imei_no == $imei) {
         }        
     }
     if(!empty($userrequestid)){
+        Model_ErrorLog::log(
+            'parse_partially_jazz',
+            'CDR parsing completed successfully but no matching records found for processing',
+            array(
+                'request_id' => $userrequestid,
+                'processing_index' => 5,
+                'file_id' => $file_id,
+                'total_records' => $total_record,
+                'imei' => $imei
+            ),
+            null,
+            'not_found',
+            'cdr_partial_parsing'
+        );
         $reference_number = Model_Email::email_status($userrequestid, 2, 5);
     }
     if(!empty($file_id))
@@ -185,6 +214,20 @@ if ($field_imei_no == $imei) {
     exit;
 } else {
     if(!empty($userrequestid)){
+        Model_ErrorLog::log(
+            'parse_partially_jazz',
+            'Initial IMEI validation failed - input IMEI does not match first CDR record IMEI',
+            array(
+                'request_id' => $userrequestid,
+                'processing_index' => 3,
+                'file_id' => $file_id,
+                'input_imei' => $field_imei_no,
+                'cdr_imei' => $imei
+            ),
+            null,
+            'validation_error',
+            'cdr_partial_parsing'
+        );
         $reference_number = Model_Email::email_status($userrequestid, 2, 3);
     }
     if(!empty($file_id))

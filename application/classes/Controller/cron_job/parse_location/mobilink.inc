@@ -47,6 +47,24 @@ try {
         $data['received_body'] == null || $data['received_body'] == ' ') {
         
         $reference_number = $data['request_id'];
+        
+        // Log status update to 5 (Not Found)
+        Model_ErrorLog::log(
+            'parse_location_mobilink',
+            'No location data in response - marking as status 5 (Not Found)',
+            [
+                'request_id' => $reference_number,
+                'company_name' => $data['company_name'] ?? 1,
+                'user_request_type_id' => $data['user_request_type_id'] ?? null,
+                'processing_index' => 5,
+                'mark_complete' => $mark_complete,
+                'body_empty' => empty($data['received_body'])
+            ],
+            null,
+            'not_found',
+            'location_parsing'
+        );
+        
         $reference_number = Model_Email::email_status($reference_number, 2, 5);
         $not_fount = 1;
         
@@ -63,6 +81,24 @@ try {
         // Mark complete if insufficient data
         if (sizeof($parse_val) < 5) {   
             $reference_number = $data['request_id'];
+            
+            // Log status update to 5 (Not Found)
+            Model_ErrorLog::log(
+                'parse_location_mobilink',
+                'Insufficient location data fields - marking as status 5 (Not Found)',
+                [
+                    'request_id' => $reference_number,
+                    'company_name' => $data['company_name'] ?? 1,
+                    'user_request_type_id' => $data['user_request_type_id'] ?? null,
+                    'processing_index' => 5,
+                    'fields_count' => sizeof($parse_val),
+                    'required_fields' => 5
+                ],
+                null,
+                'not_found',
+                'location_parsing'
+            );
+            
             $reference_number = Model_Email::email_status($reference_number, 2, 5);
             $not_fount = 1;
         } else {
