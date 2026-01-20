@@ -4,6 +4,17 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
+function cleanAndUcfirst($text)
+{
+    if (empty($text)) return '';
+
+    $text = trim($text);                  // remove spaces
+    $text = strtolower($text);            // lowercase
+    $text = preg_replace('/[^a-z]/', '', $text); // remove special chars
+    $text = ucfirst($text);               // capitalize first letter
+
+    return $text;
+}
 $firstName = '';
 $lastName  = '';
 $cnic      = '';
@@ -22,8 +33,8 @@ if (
 
         if (!empty($fullName)) {
             $nameParts = explode(' ', trim($fullName), 2);
-            $firstName = $nameParts[0] ?? '';
-            $lastName  = $nameParts[1] ?? '';
+            $firstName = cleanAndUcfirst($nameParts[0]) ?? '';
+            $lastName  = cleanAndUcfirst($nameParts[1]) ?? '';
         }
     }
 }
@@ -1439,24 +1450,30 @@ $(function () {
             //   $("#inputCNIC").val(sub.cnic_number);
             //   $("#inputCNIC").attr("readonly",true);
             if (sub) {
-                // Normalize first name
-                let firstName = sub.first_name ? sub.first_name.replace(/\s+/g, '').toLowerCase() : '';
-                if (firstName === '' || firstName === 'unknown') {
-                    $("#inputFirstName").val(sub.first_name);
+
+                // ===== First Name =====
+                let rawFirstName = sub.first_name ? sub.first_name.trim().toLowerCase() : '';
+                if (rawFirstName && rawFirstName !== 'unknown') {
+                    $("#inputFirstName").val(cleanAndUcfirst(sub.first_name));
+                } else {
+                    $("#inputFirstName").val('');
                 }
 
-                // Normalize last name
-                let lastName = sub.last_name ? sub.last_name.replace(/\s+/g, '').toLowerCase() : '';
-                if (lastName === '' || lastName === 'unknown') {
-                    $("#inputLastName").val(sub.last_name);
+                // ===== Last Name =====
+                let rawLastName = sub.last_name ? sub.last_name.trim().toLowerCase() : '';
+                if (rawLastName && rawLastName !== 'unknown') {
+                    $("#inputLastName").val(cleanAndUcfirst(sub.last_name));
+                } else {
+                    $("#inputLastName").val('');
                 }
 
-                // Normalize CNIC
-                let cnic = sub.cnic_number ? sub.cnic_number.replace(/\s+/g, '').toLowerCase() : '';
-                if (cnic === '' || cnic === 'unknown') {
-                    $("#inputCNIC").val(sub.cnic_number).prop("readonly", true);
+                // ===== CNIC =====
+                let cnic = sub.cnic_number ? sub.cnic_number.replace(/\s+/g, '') : '';
+                if (cnic && cnic !== 'unknown') {
+                    $("#inputCNIC").val(cnic).prop("readonly", true);
                 }
             }
+
 
             //  $("inputCNIC").prop('disabled', true);
               $("#inputAddress").val(sub.address);  
@@ -1617,7 +1634,26 @@ $(function () {
         }
 
     }
-    
+    function cleanAndUcfirst(text) {
+        if (!text) {
+            return '';
+        }
+
+        // 1. Remove spaces before & after
+        text = text.trim();
+
+        // 2. Convert to lowercase
+        text = text.toLowerCase();
+
+        // 3. Remove dots, commas & all special characters (keep alphabets only)
+        text = text.replace(/[^a-z]/g, '');
+
+        // 4. Convert first character to uppercase
+        text = text.charAt(0).toUpperCase() + text.slice(1);
+
+        return text;
+    }
+
 </script>
 <?php
 if(!empty($post_request_type_id) && $post_request_type_id==3 && !empty($post_request_value))
