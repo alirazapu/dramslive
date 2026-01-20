@@ -10,33 +10,71 @@ class Controller_Cronjob extends Controller {
     /* test function */
     public function action_test() {
         echo "<pre>";
-        print_r( $result = Helpers_Inneruse::get_gmail_pw());
-        //var_dump(shell_exec('unrar'));
-        // Original code
-        print_r(Helpers_CompanyEmail::get_email(1 ));
-        print_r( Helpers_CompanyEmail::get_email(3 ));
-        print_r(Helpers_CompanyEmail::get_email(4 ));
-        print_r(Helpers_CompanyEmail::get_email(6 ));
-        print_r(Helpers_CompanyEmail::get_email(7 ));
-        print_r(Helpers_CompanyEmail::get_email(11));
-        print_r(Helpers_CompanyEmail::get_email(12));
-        print_r(Helpers_CompanyEmail::get_email(13));
-
-       /* $send_key = Helpers_Utilities::encrypted_key('bfjpbmxbgxhxablg', "encrypt");
-        echo $send_key . "<br>";
-        $send_key = str_replace("axHmBf8ri9x", "", $send_key);
-        $send_key = Helpers_Utilities::encrypted_key($send_key, "decrypt");
-        echo $send_key . "<br><br>";
-
-
-        $send_key = Helpers_Utilities::encrypted_key('cfuctdkp@gmail.com', "encrypt");
-        echo $send_key . "<br>";
-        $send_key = str_replace("axHmBf8ri9x", "", $send_key);
-        $send_key = Helpers_Utilities::encrypted_key($send_key, "decrypt");
-        echo $send_key . "<br><br>";*/
+        echo "========================================\n";
+        echo "EMAIL CONFIGURATION TEST\n";
+        echo "========================================\n\n";
+        
+        // Display current environment
+        $env_name = (Kohana::$environment === Kohana::DEVELOPMENT) ? 'DEVELOPMENT' : 'PRODUCTION';
+        echo "Current Environment: " . $env_name . "\n\n";
+        
         // ────────────────────────────────────────────────
-        // Test logging with Model_ErrorLog
+        // Test Gmail credentials
         // ────────────────────────────────────────────────
+        echo "── Gmail Credentials Test ──\n";
+        $gmail_creds = Helpers_Inneruse::get_gmail_pw();
+        print_r($gmail_creds);
+        echo "\n";
+        
+        // ────────────────────────────────────────────────
+        // Test Company Emails
+        // ────────────────────────────────────────────────
+        echo "── Company Email Configuration Test ──\n\n";
+        
+        $companies = [
+            1  => 'Mobilink/Jazz',
+            3  => 'Ufone',
+            4  => 'Zong',
+            6  => 'Telenor',
+            7  => 'Warid',
+            8  => 'SCOM',
+            11 => 'PTCL',
+            12 => 'International',
+            13 => 'NADRA'
+        ];
+        
+        foreach ($companies as $company_id => $company_name) {
+            echo "Company ID {$company_id} - {$company_name}:\n";
+            $email_config = Helpers_CompanyEmail::get_email($company_id);
+            print_r($email_config);
+            echo "\n";
+        }
+        
+        // Test company emails with specific request types
+        echo "\n── Company Emails with Request Types ──\n\n";
+        
+        // Ufone with different request types
+        echo "Ufone (Company ID 3) - Request Type 1 (MSISDN CDR):\n";
+        print_r(Helpers_CompanyEmail::get_email(3, 1));
+        echo "\nUfone (Company ID 3) - Request Type 4 (Location):\n";
+        print_r(Helpers_CompanyEmail::get_email(3, 4));
+        echo "\n";
+        
+        // Telenor with different request types
+        echo "Telenor (Company ID 6) - Request Type 1 (MSISDN CDR):\n";
+        print_r(Helpers_CompanyEmail::get_email(6, 1));
+        echo "\nTelenor (Company ID 6) - Request Type 4 (Location):\n";
+        print_r(Helpers_CompanyEmail::get_email(6, 4));
+        echo "\n";
+        
+        // Warid with different request types
+        echo "Warid (Company ID 7) - Request Type 3:\n";
+        print_r(Helpers_CompanyEmail::get_email(7, 3));
+        echo "\n";
+        
+        echo "========================================\n";
+        echo "TEST COMPLETED SUCCESSFULLY\n";
+        echo "========================================\n";
         exit;
     }    
     public function action_email_send_ufone() {
@@ -152,6 +190,26 @@ class Controller_Cronjob extends Controller {
     /* email receive */
     public function action_email_receive2()
     {
+        /*$lockFile = DOCROOT . 'application/logs/email_receive2.lock';
+
+        // Cleanup stale lock (older than 1 hour)
+        if (file_exists($lockFile) && (time() - filemtime($lockFile)) > 3600) {
+            @unlink($lockFile);
+            error_log("[" . date('c') . "] Removed stale lock file: $lockFile");
+        }
+
+        $lock = @fopen($lockFile, 'w');
+        if (!$lock) {
+            error_log("[" . date('c') . "] Cannot create lock file: $lockFile");
+            return;
+        }
+
+        if (!flock($lock, LOCK_EX | LOCK_NB)) {
+            error_log("[" . date('c') . "] email_receive2 already running - skipping");
+            fclose($lock);
+            return;
+        }*/
+
         try {
             $result = Helpers_Email::receive_email('', 2);
             error_log("[" . date('c') . "] email_receive2 completed - processed: $result");

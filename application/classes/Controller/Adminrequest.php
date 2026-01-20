@@ -1394,67 +1394,14 @@ class Controller_Adminrequest extends Controller_Working
 // previous low request 1000
                     if ($total_count['total'] <= 1450) {
                         //// limit check end
-                        switch ($company_name) {
-                            case 1: // Mobilink
-                                //$to = 'leasupportteam@jazz.com.pk';
-                                $to = 'ali.razapu+mobilink@gmail.com';
-                                $to_name = '';
-                                break;
-                            case 3: // Ufone
-                                //$to = 'racentral@ufone.com';
-                                //$to_name = '';
-                                if (($request_type == 6 || $request_type == 1 || $request_type == 2)) {
-                                    //$to = 'cdr.requests@ptclgroup.com';
-                                    $to = 'ali.razapu+cdrptcl@gmail.com';
-                                    $to_name = ''; //ufone auto for cdr msisdn/imei
-                                } else {
-                                    //$to = 'ufone.location@ptclgroup.com';
-                                    $to = 'ali.razapu+locatoinptcl@gmail.com';
-                                    $to_name = '';
-                                }
-                                break;
-                            case 4: // Zong
-                                //$to = 'reg@zong.com.pk';
-                                $to = 'ali.razapu+regzong@gmail.com';
-                                $to_name = '';
-                                break;
-                            case 6: // Telenor   $request_type
-                                if ($request_type == 1 || $request_type == 2) {
-                                    // $to = 'lea.2@telenor.com.pk';
-                                    $to = 'ali.razapu+lea2telenor@gmail.com';
-                                } else {
-                                    //  $to = 'lea@newsystem123.com';
-                                    $to = 'ali.razapu+leanewsystem123@gmail.com';
-                                }
-                                $to_name = '';
-                                break;
-                            case 7: // Warid
-                                //$to = 'waridlea@jazz.com.pk';
-                                $to = 'ali.razapu+waridlea@gmail.com';
-                                $to_name = '';
-                                break;
-                            //added by shoaib
-                            case 8: // SCOM
-                                //  $to = 'reg@zong.com.pk';
-                                $to = 'ali.razapu+regzong@gmail.com';
-                                $to_name = 'scom';
-                                break;
-                            //shoaib changes ended
-                            case 11: // PTCL
-                                //  $to = 'mega.radata@ptcl.net.pk';
-                                $to = 'ali.razapu+megaradata11@gmail.com';
-                                $to_name = 'MegaRAdata/PTCL';
-                                break;
-                            case 12: // International
-                                //  $to = 'mega.radata@ptcl.net.pk';
-                                $to = 'ali.razapu+megaradata12@gmail.com';
-                                $to_name = 'MegaRAdata/PTCL';
-                                break;
-                            case 13: // family request
-                                // $to = 'naumana.manzoor@nadra.gov.pk';
-                                $to = 'ali.razapu+nmanzoornadra@gmail.com';
-                                $to_name = 'Nadra';
-                                break;
+                        // Use centralized email helper
+                        $email_config = Helpers_CompanyEmail::get_email($company_name, $request_type);
+                        $to = $email_config['email'] ?? '';
+                        $to_name = $email_config['name'] ?? '';
+                        
+                        // Validate email configuration
+                        if (empty($to)) {
+                            throw new Exception("Email configuration not found for company_name: {$company_name}, request_type: {$request_type}");
                         }
                         do {
                             if ($GLOBALS['id_generator'] == 0) {
@@ -1590,176 +1537,38 @@ class Controller_Adminrequest extends Controller_Working
                         if ($total_count['total'] <= 1350) {
                             //// limit check end
 
-                            switch ($company_name) {
-                                case 1: // Mobilink
-                                    $start_date_dot = date('d.m.Y', strtotime($startDate));
-                                    $end_date_dot = date('d.m.Y', strtotime($endDate));
+                            // Use centralized email helper
+                            $email_config = Helpers_CompanyEmail::get_email($company_name, $request_type);
+                            $to = $email_config['email'] ?? '';
+                            $to_name = $email_config['name'] ?? '';
+                            
+                            // Validate email configuration
+                            if (empty($to)) {
+                                throw new Exception("Email configuration not found for company_name: {$company_name}, request_type: {$request_type}");
+                            }
+                            
+                            // Format dates for different companies
+                            $start_date_dot = date('d.m.Y', strtotime($startDate));
+                            $end_date_dot = date('d.m.Y', strtotime($endDate));
 
-                                    $start_date_slash = date('d/m/Y', strtotime($startDate));
-                                    $end_date_slash = date('d/m/Y', strtotime($endDate));
+                            $start_date_slash = date('d/m/Y', strtotime($startDate));
+                            $end_date_slash = date('d/m/Y', strtotime($endDate));
 
-                                    $start_date_hyphen = date('d-m-Y', strtotime($startDate));
-                                    $end_date_hyphen = date('d-m-Y', strtotime($endDate));
+                            $start_date_hyphen = date('d-m-Y', strtotime($startDate));
+                            $end_date_hyphen = date('d-m-Y', strtotime($endDate));
 
-                                    $start_date_slash_mdy = date('m/d/Y', strtotime($startDate));
-                                    $end_date_slash_mdy = date('m/d/Y', strtotime($endDate));
-
-                                    //$to = 'leasupportteam@jazz.com.pk';
-                                    $to = 'ali.razapu+adminleasupportteam@gmail.com';
-                                    $to_name = '';
-                                    break;
-                                case 3: // Ufone
-                                    $start_date_dot = date('d.m.Y', strtotime($startDate));
-                                    $end_date_dot = date('d.m.Y', strtotime($endDate));
-                                    $start_date_slash = date('d/m/Y', strtotime($startDate));
-                                    $end_date_slash = date('d/m/Y', strtotime($endDate));
-                                    $start_date_slash_mdy = date('m/d/Y', strtotime($startDate));
-                                    $end_date_slash_mdy = date('m/d/Y', strtotime($endDate));
-                                    $start_date_hyphen = date('d-m-Y', strtotime($startDate));
-                                    $end_date_hyphen = date('d-m-Y', strtotime($endDate));
-
-                                    if (strlen($requested_value) == 15) {
-                                        $requested_value = substr($requested_value, 0, 14) . '0';
-                                    }
-                                    if (($request_type == 6 || $request_type == 1 || $request_type == 2)) {
-
-                                        // $to = 'cdr.requests@ptclgroup.com';
-                                        $to = 'ali.razapu+admincdrptcl@gmail.com';
-                                        $to_name = ''; //ufone auto for cdr msisdn/imei
-                                    } else {
-                                        //$to = 'ufone.location@ptclgroup.com';
-                                        $to = 'ali.razapu+adminufoneloc@gmail.com';
-                                        $to_name = '';
-                                    }
-                                    break;
-                                case 4: // Zong
-                                    $start_date_dot = date('d.m.Y', strtotime($startDate));
-                                    $end_date_dot = date('d.m.Y', strtotime($endDate));
-                                    $start_date_slash = date('d/m/Y', strtotime($startDate));
-                                    $end_date_slash = date('d/m/Y', strtotime($endDate));
-                                    $start_date_hyphen = date('d-m-Y', strtotime($startDate));
-                                    $end_date_hyphen = date('d-m-Y', strtotime($endDate));
-
-                                    $start_date_slash_mdy = date('m/d/Y', strtotime($startDate));
-                                    $end_date_slash_mdy = date('m/d/Y', strtotime($endDate));
-
-                                    //$to = 'reg@zong.com.pk';
-                                    $to = 'ali.razapu+adminregzong@gmail.com';
-                                    $to_name = '';
-                                    break;
-
-
-                                case 6: // Telenor   $request_type
-                                    //print_r($_POST['inputIMEI']);
-                                    //echo '<br>' . substr($_POST['inputIMEI'], 0, -1);
-                                    $_POST['inputIMEI'] = isset($_POST['inputIMEI']) && !empty($_POST['inputIMEI']) ? mb_substr($_POST['inputIMEI'], 0, -1) : '';
-                                    //$_POST['inputIMEI'] = mb_substr($_POST['inputIMEI'], 0, -1);
-
-                                    $start_date_dot = date('d.m.Y', strtotime($startDate));
-                                    $end_date_dot = date('d.m.Y', strtotime($endDate));
-                                    $start_date_slash = date('d/m/Y', strtotime($startDate));
-                                    $end_date_slash = date('d/m/Y', strtotime($endDate));
-                                    $start_date_hyphen = date('d-m-Y', strtotime($startDate));
-                                    $end_date_hyphen = date('d-m-Y', strtotime($endDate));
-
-                                    $start_date_slash_mdy = date('m/d/Y', strtotime($startDate));
-                                    $end_date_slash_mdy = date('m/d/Y', strtotime($endDate));
-                                    if (($request_type == 1 || $request_type == 2 || $request_type == 3 || $request_type == 5)) {
-                                        // $to = 'lea.2@telenor.com.pk';
-                                        $to = 'ali.razapu+adminlea2telenor@gmail.com';
-                                        $to_name = ''; //Law Enforcement Agency
-                                    } elseif ($request_type == 4) {
-                                        //$to = 'lea.1@telenor.com.pk';
-                                        $to = 'ali.razapu+adminlea1telenor@gmail.com';
-                                        $to_name = '';
-                                    } else {
-                                        // $to = 'lea@newsystem123.com';
-                                        $to = 'ali.razapu+adminleanewsystem123@gmail.com';
-                                        $to_name = '';
-                                    }
-
-                                    break;
-                                case 7: // Warid
-                                    $start_date_dot = date('d.m.Y', strtotime($startDate));
-                                    $end_date_dot = date('d.m.Y', strtotime($endDate));
-                                    $start_date_slash = date('d/m/Y', strtotime($startDate));
-                                    $end_date_slash = date('d/m/Y', strtotime($endDate));
-                                    $start_date_hyphen = date('d-m-Y', strtotime($startDate));
-                                    $end_date_hyphen = date('d-m-Y', strtotime($endDate));
-                                    $start_date_slash_mdy = date('m/d/Y', strtotime($startDate));
-                                    $end_date_slash_mdy = date('m/d/Y', strtotime($endDate));
-                                    if (($request_type == 5 || $request_type == 3 || $request_type == 4)) {
-                                        //$to = 'leasupportteam@jazz.com.pk';
-                                        $to = 'ali.razapu+adminleasupportteamjazz@gmail.com';
-                                        $to_name = '';
-                                    } else {
-                                        // $to = 'leasupportteam@jazz.com.pk';
-                                        $to = 'ali.razapu+adminleasupportteamjazz@gmail.com';
-                                        $to_name = '';
-                                    }
-                                    break;
-                                //added by shoaib
-                                case 8: // SCOM
-                                    $start_date_dot = date('d.m.Y', strtotime($startDate));
-                                    $end_date_dot = date('d.m.Y', strtotime($endDate));
-                                    $start_date_slash = date('d/m/Y', strtotime($startDate));
-                                    $end_date_slash = date('d/m/Y', strtotime($endDate));
-                                    $start_date_hyphen = date('d-m-Y', strtotime($startDate));
-                                    $end_date_hyphen = date('d-m-Y', strtotime($endDate));
-
-                                    $start_date_slash_mdy = date('m/d/Y', strtotime($startDate));
-                                    $end_date_slash_mdy = date('m/d/Y', strtotime($endDate));
-                                    // $to = 'info.lea@sco.gov.pk';
-                                    $to = 'ali.razapu+admininfoleasco@gmail.com';
-                                    $to_name = 'scom';
-                                    break;
-                                //shoaib changes ended
-                                case 11: // PTCL
-                                    $start_date_dot = date('d.m.Y', strtotime($startDate));
-                                    $end_date_dot = date('d.m.Y', strtotime($endDate));
-                                    $start_date_slash = date('d/m/Y', strtotime($startDate));
-                                    $end_date_slash = date('d/m/Y', strtotime($endDate));
-                                    $start_date_hyphen = date('d-m-Y', strtotime($startDate));
-                                    $end_date_hyphen = date('d-m-Y', strtotime($endDate));
-                                    $start_date_slash_mdy = date('m/d/Y', strtotime($startDate));
-                                    $end_date_slash_mdy = date('m/d/Y', strtotime($endDate));
-//                                if ($request_type != 11) {
-//                                    //model call to update data in table 'Other numbers'
-//                                    $model = Model_Othernumber::update_other_numbers($_POST);
-//                                }
-                                    // $to = 'mega.radata@ptcl.net.pk';
-                                    $to = 'ali.razapu+adminmegaradataptcl@gmail.com';
-                                    $to_name = 'MegaRAdata/PTCL';
-                                    break;
-                                case 12: // International
-                                    $start_date_dot = date('d.m.Y', strtotime($startDate));
-                                    $end_date_dot = date('d.m.Y', strtotime($endDate));
-                                    $start_date_slash = date('d/m/Y', strtotime($startDate));
-                                    $end_date_slash = date('d/m/Y', strtotime($endDate));
-                                    $start_date_hyphen = date('d-m-Y', strtotime($startDate));
-                                    $end_date_hyphen = date('d-m-Y', strtotime($endDate));
-                                    $start_date_slash_mdy = date('m/d/Y', strtotime($startDate));
-                                    $end_date_slash_mdy = date('m/d/Y', strtotime($endDate));
-                                    //model call to update data in table 'Other numbers'
-//                                $model = Model_Othernumber::update_other_numbers($_POST);
-                                    //$to = 'mega.radata@ptcl.net.pk';
-                                    $to = 'ali.razapu+adminmegaradataptclInte@gmail.com';
-                                    $to_name = 'MegaRAdata/PTCL';
-                                    break;
-                                case 13: // family request
-                                    $start_date_dot = date('d.m.Y', strtotime($startDate));
-                                    $end_date_dot = date('d.m.Y', strtotime($endDate));
-                                    $start_date_slash = date('d/m/Y', strtotime($startDate));
-                                    $end_date_slash = date('d/m/Y', strtotime($endDate));
-                                    $start_date_hyphen = date('d-m-Y', strtotime($startDate));
-                                    $end_date_hyphen = date('d-m-Y', strtotime($endDate));
-                                    $start_date_slash_mdy = date('m/d/Y', strtotime($startDate));
-                                    $end_date_slash_mdy = date('m/d/Y', strtotime($endDate));
-                                    //model call to update data in table 'Other numbers'
-                                    //$to = 'naumana.manzoor@nadra.gov.pk';
-                                    $to = 'ali.razapu+naumanamanzoornadra@gmail.com';
-                                    $to_name = 'Nadra';
-                                    break;
+                            $start_date_slash_mdy = date('m/d/Y', strtotime($startDate));
+                            $end_date_slash_mdy = date('m/d/Y', strtotime($endDate));
+                            
+                            // Special handling for specific companies
+                            if ($company_name == 3 && strlen($requested_value) == 15) {
+                                // Ufone specific: truncate IMEI
+                                $requested_value = substr($requested_value, 0, 14) . '0';
+                            }
+                            
+                            if ($company_name == 6 && isset($_POST['inputIMEI']) && !empty($_POST['inputIMEI'])) {
+                                // Telenor specific: trim last character from IMEI
+                                $_POST['inputIMEI'] = mb_substr($_POST['inputIMEI'], 0, -1);
                             }
 
 
