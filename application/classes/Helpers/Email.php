@@ -42,8 +42,8 @@ abstract class Helpers_Email
         $hostname = '{imap.gmail.com:993/imap/ssl/novalidate-cert}INBOX';
         if (!empty($sender) && $sender == 2) {
             $result = Helpers_Inneruse::get_gmail_pw();
-            $username = $result['send']['user'];
-            $password = $result['send']['password'];
+            $username = $result['receive']['user'];
+            $password = $result['receive']['password'];
             $since = date("D, d M Y", strtotime("-15 days"));
             $inbox = imap_open($hostname, $username, $password) or die('Cannot connect to Gmail: ' . imap_last_error());
             $emails = imap_search($inbox, 'UNSEEN');

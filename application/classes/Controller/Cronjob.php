@@ -9,55 +9,34 @@
 class Controller_Cronjob extends Controller {    
     /* test function */
     public function action_test() {
-        var_dump(shell_exec('unrar'));
+        echo "<pre>";
+        print_r( $result = Helpers_Inneruse::get_gmail_pw());
+        //var_dump(shell_exec('unrar'));
         // Original code
-        $send_key = Helpers_Utilities::encrypted_key('ftoqbqythasdpwqz', "encrypt");
+        print_r(Helpers_CompanyEmail::get_email(1 ));
+        print_r( Helpers_CompanyEmail::get_email(3 ));
+        print_r(Helpers_CompanyEmail::get_email(4 ));
+        print_r(Helpers_CompanyEmail::get_email(6 ));
+        print_r(Helpers_CompanyEmail::get_email(7 ));
+        print_r(Helpers_CompanyEmail::get_email(11));
+        print_r(Helpers_CompanyEmail::get_email(12));
+        print_r(Helpers_CompanyEmail::get_email(13));
+
+       /* $send_key = Helpers_Utilities::encrypted_key('bfjpbmxbgxhxablg', "encrypt");
         echo $send_key . "<br>";
-        $send_key = str_replace("axHmBf8ri9x", "", 'c3AxdXcveDNqUjlaMVdyYXpsUCswaVk1OTdWL2oyK3dWMFE1OER3N0QvUT0==');
+        $send_key = str_replace("axHmBf8ri9x", "", $send_key);
         $send_key = Helpers_Utilities::encrypted_key($send_key, "decrypt");
         echo $send_key . "<br><br>";
 
+
+        $send_key = Helpers_Utilities::encrypted_key('cfuctdkp@gmail.com', "encrypt");
+        echo $send_key . "<br>";
+        $send_key = str_replace("axHmBf8ri9x", "", $send_key);
+        $send_key = Helpers_Utilities::encrypted_key($send_key, "decrypt");
+        echo $send_key . "<br><br>";*/
         // ────────────────────────────────────────────────
         // Test logging with Model_ErrorLog
         // ────────────────────────────────────────────────
-
-      /*  try {
-            // Simulate a success log (no error)
-            Model_ErrorLog::log(
-                'test_cron',
-                'This is a test info message (not an error)',
-                [
-                    'test_param1' => 'value1',
-                    'test_param2' => 123
-                ],
-                null,
-                'info',
-                'test_stage'
-            );
-            echo "Success info logged.<br>";
-
-            // Simulate an error
-            throw new Exception("Simulated test error for logging");
-
-        } catch (Exception $e) {
-            Model_ErrorLog::log(
-                'test_cron',
-                $e->getMessage(),
-                [
-                    'extra_context' => 'This is test context',
-                    'user_id'       => Auth::instance()->get_user()->id ?? 'unknown',
-                    'timestamp'     => date('c')
-                ],
-                $e->getTraceAsString(),
-                'test_error',
-                'simulation'
-            );
-            echo "Error logged successfully: " . htmlspecialchars($e->getMessage()) . "<br>";
-        }*/
-
-        // Check logs manually in DB or tail error_log
-        echo "Check system_error_log table or error_log file for entries with error_source='test_cron'";
-
         exit;
     }    
     public function action_email_send_ufone() {
@@ -173,26 +152,6 @@ class Controller_Cronjob extends Controller {
     /* email receive */
     public function action_email_receive2()
     {
-        /*$lockFile = DOCROOT . 'application/logs/email_receive2.lock';
-
-        // Cleanup stale lock (older than 1 hour)
-        if (file_exists($lockFile) && (time() - filemtime($lockFile)) > 3600) {
-            @unlink($lockFile);
-            error_log("[" . date('c') . "] Removed stale lock file: $lockFile");
-        }
-
-        $lock = @fopen($lockFile, 'w');
-        if (!$lock) {
-            error_log("[" . date('c') . "] Cannot create lock file: $lockFile");
-            return;
-        }
-
-        if (!flock($lock, LOCK_EX | LOCK_NB)) {
-            error_log("[" . date('c') . "] email_receive2 already running - skipping");
-            fclose($lock);
-            return;
-        }*/
-
         try {
             $result = Helpers_Email::receive_email('', 2);
             error_log("[" . date('c') . "] email_receive2 completed - processed: $result");
