@@ -29,6 +29,15 @@ class Controller_Adminrequest extends Controller_Working
                 $this->template->content = View::factory('templates/user/access_denied');
             }
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_admin_request_sent_form',
+                $ex->getMessage(),
+                [],
+                $ex->getTraceAsString(),
+                'exception',
+                'page_load'
+            );
+            error_log("[" . date('c') . "] action_admin_request_sent_form exception: " . $ex->getMessage());
             $this->template->content = View::factory('templates/user/exception_error_page')
                 ->bind('exception', $ex);
         }
@@ -50,6 +59,15 @@ class Controller_Adminrequest extends Controller_Working
                 $this->template->content = View::factory('templates/user/access_denied');
             }
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_admin_custom_request_form',
+                $ex->getMessage(),
+                [],
+                $ex->getTraceAsString(),
+                'exception',
+                'page_load'
+            );
+            error_log("[" . date('c') . "] action_admin_custom_request_form exception: " . $ex->getMessage());
             $this->template->content = View::factory('templates/user/exception_error_page')
                 ->bind('exception', $ex);
         }
@@ -82,6 +100,15 @@ class Controller_Adminrequest extends Controller_Working
                 $this->template->content = View::factory('templates/user/access_denied');
             }
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_admin_sent_request_count',
+                $ex->getMessage(),
+                [],
+                $ex->getTraceAsString(),
+                'exception',
+                'page_load'
+            );
+            error_log("[" . date('c') . "] action_admin_sent_request_count exception: " . $ex->getMessage());
             $this->template->content = View::factory('templates/user/exception_error_page')
                 ->bind('exception', $ex);
         }
@@ -115,6 +142,15 @@ class Controller_Adminrequest extends Controller_Working
                 $this->template->content = View::factory('templates/user/access_denied');
             }
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_user_request_count',
+                $ex->getMessage(),
+                [],
+                $ex->getTraceAsString(),
+                'exception',
+                'page_load'
+            );
+            error_log("[" . date('c') . "] action_user_request_count exception: " . $ex->getMessage());
             $this->template->content = View::factory('templates/user/exception_error_page')
                 ->bind('exception', $ex);
         }
@@ -147,6 +183,15 @@ class Controller_Adminrequest extends Controller_Working
                 $this->template->content = View::factory('templates/user/access_denied');
             }
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_admin_sent_request_status',
+                $ex->getMessage(),
+                [],
+                $ex->getTraceAsString(),
+                'exception',
+                'page_load'
+            );
+            error_log("[" . date('c') . "] action_admin_sent_request_status exception: " . $ex->getMessage());
             $this->template->content = View::factory('templates/user/exception_error_page')
                 ->bind('exception', $ex);
         }
@@ -339,6 +384,15 @@ class Controller_Adminrequest extends Controller_Working
             echo json_encode($output);
             exit();
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_ajaxadminsentrequeststatus',
+                $ex->getMessage(),
+                [],
+                $ex->getTraceAsString(),
+                'exception',
+                'ajax_request'
+            );
+            error_log("[" . date('c') . "] action_ajaxadminsentrequeststatus exception: " . $ex->getMessage());
         }
     }
 
@@ -527,6 +581,15 @@ class Controller_Adminrequest extends Controller_Working
             echo json_encode($output);
             exit();
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_ajaxadminsentrequests',
+                $ex->getMessage(),
+                [],
+                $ex->getTraceAsString(),
+                'exception',
+                'ajax_request'
+            );
+            error_log("[" . date('c') . "] action_ajaxadminsentrequests exception: " . $ex->getMessage());
         }
     } //ajax call for data requests
 
@@ -714,6 +777,15 @@ class Controller_Adminrequest extends Controller_Working
             echo json_encode($output);
             exit();
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_ajaxusersentrequests',
+                $ex->getMessage(),
+                [],
+                $ex->getTraceAsString(),
+                'exception',
+                'ajax_request'
+            );
+            error_log("[" . date('c') . "] action_ajaxusersentrequests exception: " . $ex->getMessage());
         }
     }
 
@@ -788,6 +860,15 @@ class Controller_Adminrequest extends Controller_Working
             echo json_encode($output);
             exit();
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_ajaxadminsentrequestcount',
+                $ex->getMessage(),
+                [],
+                $ex->getTraceAsString(),
+                'exception',
+                'ajax_request'
+            );
+            error_log("[" . date('c') . "] action_ajaxadminsentrequestcount exception: " . $ex->getMessage());
         }
     }
 
@@ -868,6 +949,15 @@ class Controller_Adminrequest extends Controller_Working
             echo json_encode($output);
             exit();
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_ajaxuserrequestcount',
+                $ex->getMessage(),
+                [],
+                $ex->getTraceAsString(),
+                'exception',
+                'ajax_request'
+            );
+            error_log("[" . date('c') . "] action_ajaxuserrequestcount exception: " . $ex->getMessage());
         }
     }
 
@@ -897,6 +987,18 @@ class Controller_Adminrequest extends Controller_Working
                 return 0;
             }
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_deleteuserrequest',
+                $ex->getMessage(),
+                [
+                    'request_id_encrypted' => $request_id_encrypted ?? 'N/A',
+                    'login_user_id' => $login_user_id ?? 'N/A'
+                ],
+                $ex->getTraceAsString(),
+                'exception',
+                'delete_request'
+            );
+            error_log("[" . date('c') . "] action_deleteuserrequest exception: " . $ex->getMessage());
             echo json_encode(-2);
         }
     }
@@ -930,6 +1032,18 @@ class Controller_Adminrequest extends Controller_Working
                 $this->template->content = View::factory('templates/user/access_denied');
             }*/
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_requests',
+                $ex->getMessage(),
+                [
+                    'name' => $name ?? 'N/A',
+                    'request_type' => $u_req_id ?? 'N/A'
+                ],
+                $ex->getTraceAsString(),
+                'exception',
+                'page_load'
+            );
+            error_log("[" . date('c') . "] action_requests exception: " . $ex->getMessage());
             $this->template->content = View::factory('templates/user/exception_error_page')
                 ->bind('exception', $ex);
         }
@@ -963,6 +1077,18 @@ class Controller_Adminrequest extends Controller_Working
                 $this->template->content = View::factory('templates/user/access_denied');
             }*/
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_u_requests',
+                $ex->getMessage(),
+                [
+                    'user_id' => $name ?? 'N/A',
+                    'request_type' => $u_req_id ?? 'N/A'
+                ],
+                $ex->getTraceAsString(),
+                'exception',
+                'page_load'
+            );
+            error_log("[" . date('c') . "] action_u_requests exception: " . $ex->getMessage());
             $this->template->content = View::factory('templates/user/exception_error_page')
                 ->bind('exception', $ex);
         }
@@ -1038,6 +1164,15 @@ class Controller_Adminrequest extends Controller_Working
             echo json_encode($output);
             exit();
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_ajax_nadra_request_status',
+                $ex->getMessage(),
+                [],
+                $ex->getTraceAsString(),
+                'exception',
+                'ajax_request'
+            );
+            error_log("[" . date('c') . "] action_ajax_nadra_request_status exception: " . $ex->getMessage());
         }
     }
 
@@ -1110,6 +1245,15 @@ class Controller_Adminrequest extends Controller_Working
             echo json_encode($output);
             exit();
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_ajax_familytree_request_status',
+                $ex->getMessage(),
+                [],
+                $ex->getTraceAsString(),
+                'exception',
+                'ajax_request'
+            );
+            error_log("[" . date('c') . "] action_ajax_familytree_request_status exception: " . $ex->getMessage());
         }
     }
 
@@ -1188,6 +1332,15 @@ class Controller_Adminrequest extends Controller_Working
             echo json_encode($output);
             exit();
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_ajax_travel_request_status',
+                $ex->getMessage(),
+                [],
+                $ex->getTraceAsString(),
+                'exception',
+                'ajax_request'
+            );
+            error_log("[" . date('c') . "] action_ajax_travel_request_status exception: " . $ex->getMessage());
         }
     }
 
@@ -1474,7 +1627,19 @@ class Controller_Adminrequest extends Controller_Working
                     //limit end
 
                 } catch (Exception $e) {
-
+                    Model_ErrorLog::log(
+                        'action_admincustomsend',
+                        $e->getMessage(),
+                        [
+                            'request_type' => $request_type ?? 'N/A',
+                            'company_name' => $company_name ?? 'N/A',
+                            'cust_email' => $cust_email ?? 'N/A'
+                        ],
+                        $e->getTraceAsString(),
+                        'email_send_failure',
+                        'admin_custom_send'
+                    );
+                    error_log("[" . date('c') . "] action_admincustomsend exception: " . $e->getMessage());
                     echo json_encode(2);
                     exit;
                 }
@@ -1699,7 +1864,19 @@ class Controller_Adminrequest extends Controller_Working
                         //limit end
 
                     } catch (Exception $e) {
-
+                        Model_ErrorLog::log(
+                            'action_adminsend',
+                            $e->getMessage(),
+                            [
+                                'request_type' => $request_type ?? 'N/A',
+                                'company_name' => $company_name ?? 'N/A',
+                                'requested_value' => $requested_value ?? 'N/A'
+                            ],
+                            $e->getTraceAsString(),
+                            'email_send_failure',
+                            'admin_send'
+                        );
+                        error_log("[" . date('c') . "] action_adminsend exception: " . $e->getMessage());
                         echo json_encode([
                             'status' => 0,
                             'message' => $e->getMessage(),
@@ -1855,6 +2032,15 @@ class Controller_Adminrequest extends Controller_Working
                 $this->template->content = View::factory('templates/user/access_denied');
             }
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_admin_request_status',
+                $ex->getMessage(),
+                [],
+                $ex->getTraceAsString(),
+                'exception',
+                'page_load'
+            );
+            error_log("[" . date('c') . "] action_admin_request_status exception: " . $ex->getMessage());
             $this->template->content = View::factory('templates/user/exception_error_page')
                 ->bind('exception', $ex);
         }
@@ -1876,6 +2062,15 @@ class Controller_Adminrequest extends Controller_Working
                 $this->template->content = View::factory('templates/user/access_denied');
             }
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_nadra_request_sent_form',
+                $ex->getMessage(),
+                [],
+                $ex->getTraceAsString(),
+                'exception',
+                'page_load'
+            );
+            error_log("[" . date('c') . "] action_nadra_request_sent_form exception: " . $ex->getMessage());
             $this->template->content = View::factory('templates/user/exception_error_page')
                 ->bind('exception', $ex);
         }
@@ -1895,6 +2090,15 @@ class Controller_Adminrequest extends Controller_Working
                 $this->template->content = View::factory('templates/user/access_denied');
             }
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_familytree_request_sent_form',
+                $ex->getMessage(),
+                [],
+                $ex->getTraceAsString(),
+                'exception',
+                'page_load'
+            );
+            error_log("[" . date('c') . "] action_familytree_request_sent_form exception: " . $ex->getMessage());
             $this->template->content = View::factory('templates/user/exception_error_page')
                 ->bind('exception', $ex);
         }
@@ -1916,6 +2120,15 @@ class Controller_Adminrequest extends Controller_Working
                 $this->template->content = View::factory('templates/user/access_denied');
             }
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_travel_request_sent_form',
+                $ex->getMessage(),
+                [],
+                $ex->getTraceAsString(),
+                'exception',
+                'page_load'
+            );
+            error_log("[" . date('c') . "] action_travel_request_sent_form exception: " . $ex->getMessage());
             $this->template->content = View::factory('templates/user/exception_error_page')
                 ->bind('exception', $ex);
         }
@@ -1936,6 +2149,15 @@ class Controller_Adminrequest extends Controller_Working
                 $this->template->content = View::factory('templates/user/access_denied');
             }
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_nadra_bulk_request_sent_form',
+                $ex->getMessage(),
+                [],
+                $ex->getTraceAsString(),
+                'exception',
+                'page_load'
+            );
+            error_log("[" . date('c') . "] action_nadra_bulk_request_sent_form exception: " . $ex->getMessage());
             $this->template->content = View::factory('templates/user/exception_error_page')
                 ->bind('exception', $ex);
         }

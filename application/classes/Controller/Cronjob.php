@@ -19,6 +19,159 @@ class Controller_Cronjob extends Controller {
         echo "Current Environment: " . $env_name . "\n\n";
         
         // ────────────────────────────────────────────────
+        // Test SMTP Connection (Send)
+        // ────────────────────────────────────────────────
+        echo "── SMTP Connection Test (Send) ──\n";
+        try {
+            $result = Helpers_Inneruse::get_gmail_pw();
+            $smtp_user = $result['send']['user'];
+            $smtp_pass = $result['send']['password'];
+            
+            echo "SMTP Username: " . $smtp_user . "\n";
+            echo "SMTP Host: smtp.gmail.com\n";
+            echo "SMTP Port: 465 (SSL)\n";
+            
+            // Try to connect to SMTP
+            $mail = new PHPMailer();
+            $mail->IsSMTP();
+            $mail->SMTPAuth = true;
+            $mail->SMTPSecure = 'ssl';
+            $mail->Host = "smtp.gmail.com";
+            $mail->Port = 465;
+            $mail->Username = $smtp_user;
+            $mail->Password = $smtp_pass;
+            
+            // Test connection by sending a test email to self
+            $mail->setFrom($smtp_user, 'SMTP Test');
+            $mail->addAddress($smtp_user);
+            $mail->Subject = 'SMTP Connection Test - ' . date('Y-m-d H:i:s');
+            $mail->Body = 'This is a test email to verify SMTP connection is working.';
+            $mail->IsHTML(true);
+            
+            if ($mail->Send()) {
+                echo "✓ SMTP Connection: SUCCESS\n";
+                echo "✓ Test email sent successfully\n";
+                
+                Model_ErrorLog::log(
+                    'action_test_smtp',
+                    'SMTP connection test successful',
+                    [
+                        'smtp_user' => $smtp_user,
+                        'smtp_host' => 'smtp.gmail.com',
+                        'smtp_port' => 465
+                    ],
+                    null,
+                    'smtp_test_success',
+                    'connection_test'
+                );
+            } else {
+                echo "✗ SMTP Connection: FAILED\n";
+                echo "Error: " . $mail->ErrorInfo . "\n";
+                
+                Model_ErrorLog::log(
+                    'action_test_smtp',
+                    'SMTP connection test failed: ' . $mail->ErrorInfo,
+                    [
+                        'smtp_user' => $smtp_user,
+                        'smtp_host' => 'smtp.gmail.com',
+                        'smtp_port' => 465,
+                        'error' => $mail->ErrorInfo
+                    ],
+                    null,
+                    'smtp_test_failure',
+                    'connection_test'
+                );
+            }
+        } catch (Exception $e) {
+            echo "✗ SMTP Connection: EXCEPTION\n";
+            echo "Error: " . $e->getMessage() . "\n";
+            
+            Model_ErrorLog::log(
+                'action_test_smtp',
+                'SMTP connection test exception: ' . $e->getMessage(),
+                [],
+                $e->getTraceAsString(),
+                'smtp_test_exception',
+                'connection_test'
+            );
+        }
+        echo "\n";
+        
+        // ────────────────────────────────────────────────
+        // Test IMAP Connection (Receive)
+        // ────────────────────────────────────────────────
+        echo "── IMAP Connection Test (Receive) ──\n";
+        try {
+            $result = Helpers_Inneruse::get_gmail_pw();
+            $imap_user = $result['receive']['user'];
+            $imap_pass = $result['receive']['password'];
+            
+            echo "IMAP Username: " . $imap_user . "\n";
+            echo "IMAP Host: imap.gmail.com\n";
+            echo "IMAP Port: 993 (SSL)\n";
+            
+            // Try to connect to IMAP
+            $hostname = '{imap.gmail.com:993/imap/ssl/novalidate-cert}INBOX';
+            $inbox = imap_open($hostname, $imap_user, $imap_pass);
+            
+            if ($inbox) {
+                echo "✓ IMAP Connection: SUCCESS\n";
+                
+                // Get mailbox info
+                $check = imap_mailboxmsginfo($inbox);
+                echo "✓ Mailbox Messages: " . $check->Nmsgs . "\n";
+                echo "✓ Unread Messages: " . $check->Unread . "\n";
+                
+                imap_close($inbox);
+                
+                Model_ErrorLog::log(
+                    'action_test_imap',
+                    'IMAP connection test successful',
+                    [
+                        'imap_user' => $imap_user,
+                        'imap_host' => 'imap.gmail.com',
+                        'imap_port' => 993,
+                        'total_messages' => $check->Nmsgs,
+                        'unread_messages' => $check->Unread
+                    ],
+                    null,
+                    'imap_test_success',
+                    'connection_test'
+                );
+            } else {
+                echo "✗ IMAP Connection: FAILED\n";
+                echo "Error: " . imap_last_error() . "\n";
+                
+                Model_ErrorLog::log(
+                    'action_test_imap',
+                    'IMAP connection test failed: ' . imap_last_error(),
+                    [
+                        'imap_user' => $imap_user,
+                        'imap_host' => 'imap.gmail.com',
+                        'imap_port' => 993,
+                        'error' => imap_last_error()
+                    ],
+                    null,
+                    'imap_test_failure',
+                    'connection_test'
+                );
+            }
+        } catch (Exception $e) {
+            echo "✗ IMAP Connection: EXCEPTION\n";
+            echo "Error: " . $e->getMessage() . "\n";
+            
+            Model_ErrorLog::log(
+                'action_test_imap',
+                'IMAP connection test exception: ' . $e->getMessage(),
+                [],
+                $e->getTraceAsString(),
+                'imap_test_exception',
+                'connection_test'
+            );
+        }
+        echo "\n";
+        
+        // ────────────────────────────────────────────────
         // Test Gmail credentials
         // ────────────────────────────────────────────────
         echo "── Gmail Credentials Test ──\n";

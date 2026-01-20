@@ -16,6 +16,23 @@ abstract class Helpers_Email
             }
             $body = '<p></p> ';
         }
+        
+        // Log SMTP connection attempt
+        Model_ErrorLog::log(
+            'send_email',
+            'Attempting SMTP connection',
+            [
+                'to' => $to,
+                'to_name' => $to_name,
+                'subject' => substr($subject, 0, 100),
+                'has_attachment' => !empty($attachment) ? 'yes' : 'no'
+            ],
+            null,
+            'smtp_connection_attempt',
+            'email_sending'
+        );
+        error_log("[" . date('c') . "] send_email: Attempting SMTP connection for $to");
+        
         include 'gmail/sending.inc';
         if (!empty($attachment)) {
             //$mail->addAttachment($attachment,'application/octet-stream');
@@ -24,11 +41,44 @@ abstract class Helpers_Email
         if (!$mail->Send()) {
             //  echo '<pre>';
             // echo "Mailer Error: " . $mail->ErrorInfo;
+            
+            // Log SMTP send failure
+            Model_ErrorLog::log(
+                'send_email',
+                'SMTP send failed: ' . $mail->ErrorInfo,
+                [
+                    'to' => $to,
+                    'to_name' => $to_name,
+                    'subject' => substr($subject, 0, 100),
+                    'error' => $mail->ErrorInfo
+                ],
+                null,
+                'smtp_send_failure',
+                'email_sending'
+            );
+            error_log("[" . date('c') . "] send_email FAILED for $to: " . $mail->ErrorInfo);
+            
             return 2;
             //exit;
         } else {
             //echo "Message has been sent";
             //exit;
+            
+            // Log SMTP send success
+            Model_ErrorLog::log(
+                'send_email',
+                'SMTP send successful',
+                [
+                    'to' => $to,
+                    'to_name' => $to_name,
+                    'subject' => substr($subject, 0, 100)
+                ],
+                null,
+                'smtp_send_success',
+                'email_sending'
+            );
+            error_log("[" . date('c') . "] send_email SUCCESS for $to");
+            
             return 1;
         }
         exit;
@@ -42,16 +92,86 @@ abstract class Helpers_Email
         $hostname = '{imap.gmail.com:993/imap/ssl/novalidate-cert}INBOX';
         if (!empty($sender) && $sender == 2) {
             $result = Helpers_Inneruse::get_gmail_pw();
-            $username = $result['receive']['user'];
-            $password = $result['receive']['password'];
+            $username = $result['send']['user'];
+            $password = $result['send']['password'];
             $since = date("D, d M Y", strtotime("-15 days"));
+            
+            // Log IMAP connection attempt with ENV check
+            Model_ErrorLog::log(
+                'receive_email',
+                'Attempting IMAP connection (sender=2)',
+                [
+                    'sender' => $sender,
+                    'username' => $username,
+                    'hostname' => $hostname,
+                    'env_type' => 'send',
+                    'since_date' => $since
+                ],
+                null,
+                'imap_connection_attempt',
+                'email_receiving'
+            );
+            error_log("[" . date('c') . "] receive_email: Attempting IMAP connection (sender=2) for $username");
+            
             $inbox = imap_open($hostname, $username, $password) or die('Cannot connect to Gmail: ' . imap_last_error());
+            
+            // Log IMAP connection success
+            Model_ErrorLog::log(
+                'receive_email',
+                'IMAP connection successful (sender=2)',
+                [
+                    'sender' => $sender,
+                    'username' => $username
+                ],
+                null,
+                'imap_connection_success',
+                'email_receiving'
+            );
+            error_log("[" . date('c') . "] receive_email: IMAP connection SUCCESS (sender=2) for $username");
+            
             $emails = imap_search($inbox, 'UNSEEN');
         } else {
             include 'gmail/receiving.inc';
             //echo $username; exit;
             $since = date("D, d M Y", strtotime("-12 days")); /* added range */
+            
+            // Store values for logging to avoid repetition
+            $log_sender = isset($sender) ? $sender : 'N/A';
+            $log_username = isset($username) ? $username : 'N/A';
+            
+            // Log IMAP connection attempt with ENV check
+            Model_ErrorLog::log(
+                'receive_email',
+                'Attempting IMAP connection (default)',
+                [
+                    'sender' => $log_sender,
+                    'username' => $log_username,
+                    'hostname' => $hostname,
+                    'env_type' => 'receive',
+                    'since_date' => $since
+                ],
+                null,
+                'imap_connection_attempt',
+                'email_receiving'
+            );
+            error_log("[" . date('c') . "] receive_email: Attempting IMAP connection (default) for " . $log_username);
+            
             $inbox = imap_open($hostname, $username, $password) or die('Cannot connect to Gmail: ' . imap_last_error());
+            
+            // Log IMAP connection success
+            Model_ErrorLog::log(
+                'receive_email',
+                'IMAP connection successful (default)',
+                [
+                    'sender' => $log_sender,
+                    'username' => $log_username
+                ],
+                null,
+                'imap_connection_success',
+                'email_receiving'
+            );
+            error_log("[" . date('c') . "] receive_email: IMAP connection SUCCESS (default) for " . $log_username);
+            
             $search_criteria= 'UNSEEN SINCE "' . $since . ' 00:00:00 -0700 (PDT)"';
             $emails = imap_search($inbox,$search_criteria);
         }

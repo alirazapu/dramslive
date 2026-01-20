@@ -1,6 +1,6 @@
 <?php
 
-$date = date('Y-m-d H:i:s'); 
+        $date = date('Y-m-d H:i:s');
         $date_1 = date('y-m-d'); 
         $date_2 = $date_1 . ' 00:00:00'; 
         $date_3 = $date_1 . ' 23:59:59'; 
