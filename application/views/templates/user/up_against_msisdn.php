@@ -28,7 +28,7 @@ if (
     if (is_array($data)) {
 
         $fullName = $data['name'] ?? '';
-        $cnic     = cleanAndUcfirst($data['cnic']) ?? '';
+        $cnic     = $data['cnic'] ?? '';
         $address  = $data['address'] ?? '';
 
         if (!empty($fullName)) {
