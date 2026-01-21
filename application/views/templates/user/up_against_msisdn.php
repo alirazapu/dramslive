@@ -4,6 +4,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
+
 function cleanAndUcfirst($text)
 {
     if (empty($text)) return '';
@@ -447,7 +448,7 @@ if (
                     </div>
                     <div class="col-sm-6">
                         <div class="form-group">
-                            <label for="inputName" class="control-label">First Name<?php echo $firstName; ?></label>
+                            <label for="inputName" class="control-label">First Name</label>
 
                             <input name="person_name" type="text" class="form-control" id="inputName" placeholder="First Name" value="<?= htmlspecialchars($firstName) ?>">
                         
@@ -1252,7 +1253,7 @@ $(function () {
                     data: {msisdn_number: msisdn_number},
                     success: function (msisdndetail)
                     {
-                        
+                        //console.log(msisdndetail);
                          $("#subscriberinfo").html(msisdndetail);
                             if(msisdndetail== 2){
               swal("System Error", "Contact Support Team.", "error");
@@ -1437,7 +1438,7 @@ $(function () {
             success: function (sub)
             {
                
-              //  console.log(sub.mnc);
+              // console.log(sub);
               //  alert(sub.mnc);              
               if(sub.actdate==0)
                 sub.actdate='';
@@ -1445,26 +1446,29 @@ $(function () {
               if(sub.imsi_number==0)
                 sub.imsi_number='';
               $("#imsi").val(sub.imsi_number);    
-            //   $("#inputName").val(sub.first_name);  
-            //   $("#inputName1").val(sub.last_name);  
-            //   $("#inputCNIC").val(sub.cnic_number);
-            //   $("#inputCNIC").attr("readonly",true);
+           
             if (sub) {
 
                 // ===== First Name =====
                 let rawFirstName = sub.first_name ? sub.first_name.trim().toLowerCase() : '';
                 if (rawFirstName && rawFirstName !== 'unknown') {
                     $("#inputFirstName").val(cleanAndUcfirst(sub.first_name));
+                    $("#inputName").val(cleanAndUcfirst(sub.first_name));
+                    
                 } else {
                     $("#inputFirstName").val('');
+                    $("#inputName").val('');
+                    
                 }
 
                 // ===== Last Name =====
                 let rawLastName = sub.last_name ? sub.last_name.trim().toLowerCase() : '';
                 if (rawLastName && rawLastName !== 'unknown') {
                     $("#inputLastName").val(cleanAndUcfirst(sub.last_name));
+                    $("#inputName1").val(cleanAndUcfirst(sub.last_name));
                 } else {
                     $("#inputLastName").val('');
+                    $("#inputName1").val('');
                 }
 
                 // ===== CNIC =====
