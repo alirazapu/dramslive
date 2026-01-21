@@ -174,11 +174,44 @@ abstract class Helpers_Upload {
             if ($res === TRUE) {
                 try {
                     $zip->extractTo($path);
-                } catch (Exception $e) {}
+                } catch (Exception $e) {
+                    Model_ErrorLog::log(
+                        'upload_unzip_file',
+                        'ZIP file extraction failed during extractTo: ' . $e->getMessage(),
+                        array(
+                            'request_id' => $reference_number,
+                            'processing_index' => 3,
+                            'file_id' => null,
+                            'file_path' => $file,
+                            'extraction_path' => $path,
+                            'error_details' => $e->getMessage()
+                        ),
+                        $e->getTraceAsString(),
+                        'parsing_error',
+                        'file_upload'
+                    );
+                }
                 $zip->close();
                 return $filename;
+            } else {
+                // Log when zip file fails to open
+                Model_ErrorLog::log(
+                    'upload_unzip_file',
+                    'Failed to open ZIP file. Error code: ' . $res,
+                    array(
+                        'request_id' => $reference_number,
+                        'processing_index' => 3,
+                        'file_id' => null,
+                        'file_path' => $file,
+                        'zip_error_code' => $res,
+                        'error_details' => 'ZipArchive::open() returned error code ' . $res
+                    ),
+                    debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS),
+                    'parsing_error',
+                    'file_upload'
+                );
+                return '';
             }
-            return '';
 
         } catch (Exception $e) {
             Model_ErrorLog::log(
@@ -222,9 +255,40 @@ abstract class Helpers_Upload {
                 $filename = $zip->getNameIndex(0);
             }
 
-            $zip->extractTo($path);
+            try {
+                $zip->extractTo($path);
+            } catch (Exception $e) {
+                Model_ErrorLog::log(
+                    'upload_unzip_file_multiple',
+                    'ZIP file extraction failed during extractTo: ' . $e->getMessage(),
+                    array(
+                        'file_path' => $file,
+                        'extraction_path' => $path,
+                        'imei_extract' => $imei_extr,
+                        'error_details' => $e->getMessage()
+                    ),
+                    $e->getTraceAsString(),
+                    'parsing_error',
+                    'file_upload'
+                );
+            }
             $zip->close();
             return $filename;
+        } else {
+            // Log when zip file fails to open
+            Model_ErrorLog::log(
+                'upload_unzip_file_multiple',
+                'Failed to open ZIP file. Error code: ' . $res,
+                array(
+                    'file_path' => $file,
+                    'imei_extract' => $imei_extr,
+                    'zip_error_code' => $res,
+                    'error_details' => 'ZipArchive::open() returned error code ' . $res
+                ),
+                debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS),
+                'parsing_error',
+                'file_upload'
+            );
         }
 
         return '';

@@ -8,6 +8,88 @@
 
 class Controller_Cronjob extends Controller {    
     /* test function */
+
+    public function action_testunzipall()
+    {
+        echo "<pre>";
+        echo "========================================\n";
+        echo "ZIP & RAR UNZIP FUNCTION TEST\n";
+        echo "========================================\n\n";
+
+        // Test file paths
+        $zip_file = DOCROOT . 'dramsfiles/requests-data/955001-960000/923009354085.zip';
+        $rar_file = DOCROOT . 'dramsfiles/requests-data/955001-960000/rqt15fid959174.rar';
+        $request_id = 999999; // dummy
+
+        // 1. Check PHP extensions
+        $zip_ext = extension_loaded('zip');
+        $rar_ext = extension_loaded('rar');
+        $unrar_cli = (shell_exec('where unrar') || shell_exec('which unrar')) ? true : false;
+
+        echo "PHP extension 'zip': " . ($zip_ext ? "✓ Loaded" : "✗ NOT loaded") . "\n";
+        echo "PHP extension 'rar': " . ($rar_ext ? "✓ Loaded" : "✗ NOT loaded") . "\n";
+        echo "unrar CLI available: " . ($unrar_cli ? "✓ Yes" : "✗ No") . "\n\n";
+
+        // 2. Check file existence
+        echo "ZIP file: $zip_file\n";
+        echo "RAR file: $rar_file\n";
+        echo "ZIP file exists: " . (file_exists($zip_file) ? "✓ Yes" : "✗ No") . "\n";
+        echo "RAR file exists: " . (file_exists($rar_file) ? "✓ Yes" : "✗ No") . "\n\n";
+
+        // 3. Check file permissions
+        echo "ZIP file readable: " . (is_readable($zip_file) ? "✓ Yes" : "✗ No") . "\n";
+        echo "RAR file readable: " . (is_readable($rar_file) ? "✓ Yes" : "✗ No") . "\n\n";
+
+        // 4. Test ZIP extraction
+        echo "── Testing ZIP extraction ──\n";
+        if ($zip_ext && file_exists($zip_file) && is_readable($zip_file)) {
+            try {
+                $result = Helpers_Upload::unzip_file($zip_file, $request_id);
+                if ($result) {
+                    echo "✓ unzip_file() SUCCESS: Extracted file: $result\n";
+                } else {
+                    echo "✗ unzip_file() returned empty result.\n";
+                }
+            } catch (Exception $e) {
+                echo "✗ unzip_file() EXCEPTION: " . $e->getMessage() . "\n";
+            }
+        } else {
+            echo "✗ Cannot test ZIP extraction (missing extension or file).\n";
+        }
+        echo "\n";
+
+        // 5. Test RAR extraction
+        echo "── Testing RAR extraction ──\n";
+        if (($rar_ext || $unrar_cli) && file_exists($rar_file) && is_readable($rar_file)) {
+            try {
+                $result = Helpers_Upload::unziprar_file($rar_file, $request_id);
+                if ($result) {
+                    echo "✓ unziprar_file() SUCCESS: Extracted file: $result\n";
+                } else {
+                    echo "✗ unziprar_file() returned empty result.\n";
+                }
+            } catch (Exception $e) {
+                echo "✗ unziprar_file() EXCEPTION: " . $e->getMessage() . "\n";
+            }
+        } else {
+            echo "✗ Cannot test RAR extraction (missing extension/CLI or file).\n";
+        }
+        echo "\n";
+
+        // 6. Print summary of missing requirements
+        echo "========================================\n";
+        echo "SUMMARY OF MISSING REQUIREMENTS:\n";
+        if (!$zip_ext) echo "- PHP 'zip' extension is missing.\n";
+        if (!$rar_ext && !$unrar_cli) echo "- Neither PHP 'rar' extension nor 'unrar' CLI is available.\n";
+        if (!file_exists($zip_file)) echo "- ZIP test file is missing.\n";
+        if (!file_exists($rar_file)) echo "- RAR test file is missing.\n";
+        if (file_exists($zip_file) && !is_readable($zip_file)) echo "- ZIP file is not readable by PHP.\n";
+        if (file_exists($rar_file) && !is_readable($rar_file)) echo "- RAR file is not readable by PHP.\n";
+        if ($zip_ext && $rar_ext) echo "- All required PHP extensions are present.\n";
+        if ($zip_ext && ($rar_ext || $unrar_cli) && file_exists($zip_file) && file_exists($rar_file)) echo "- All requirements for extraction are present.\n";
+        echo "========================================\n";
+        exit;
+    }
     public function action_test() {
 
         //var_dump(shell_exec('unrar'));
