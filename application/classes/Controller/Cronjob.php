@@ -90,7 +90,52 @@ class Controller_Cronjob extends Controller {
         echo "========================================\n";
         exit;
     }
+    public function action_testAdminEmail() {
+
+        $email_config = Helpers_CompanyEmail::get_email(1);
+        echo     $email_config['email'] ?? '';echo "<br/>";
+        echo     $email_config['name'] ?? '';echo "<br/>";
+
+
+        $email_config = Helpers_CompanyEmail::get_email(3,6);
+        echo     $email_config['email'] ?? '';echo "<br/>";
+        echo     $email_config['name'] ?? '';echo "<br/>";
+        $email_config = Helpers_CompanyEmail::get_email(3,1);
+        echo     $email_config['email'] ?? '';echo "<br/>";
+        echo     $email_config['name'] ?? '';echo "<br/>";
+        $email_config = Helpers_CompanyEmail::get_email(3,2);
+        echo     $email_config['email'] ?? '';echo "<br/>";
+        echo     $email_config['name'] ?? '';echo "<br/>";
+
+        $email_config = Helpers_CompanyEmail::get_email(4);
+        echo     $email_config['email'] ?? '';echo "<br/>";
+        echo     $email_config['name'] ?? '';echo "<br/>";
+
+        $email_config = Helpers_CompanyEmail::get_email(6,1);
+        echo     $email_config['email'] ?? '';echo "<br/>";
+        echo     $email_config['name'] ?? '';echo "<br/>";
+        $email_config = Helpers_CompanyEmail::get_email(6,2);
+        echo     $email_config['email'] ?? '';echo "<br/>";
+        echo     $email_config['name'] ?? '';echo "<br/>";
+        $email_config = Helpers_CompanyEmail::get_email(7);
+        echo     $email_config['email'] ?? '';echo "<br/>";
+        echo     $email_config['name'] ?? '';echo "<br/>";
+        $email_config = Helpers_CompanyEmail::get_email(8);
+        echo     $email_config['email'] ?? '';echo "<br/>";
+        echo     $email_config['name'] ?? '';echo "<br/>";
+        $email_config = Helpers_CompanyEmail::get_email(11);
+        echo     $email_config['email'] ?? '';echo "<br/>";
+        echo     $email_config['name'] ?? '';echo "<br/>";
+        $email_config = Helpers_CompanyEmail::get_email(12);
+        echo     $email_config['email'] ?? '';echo "<br/>";
+        echo     $email_config['name'] ?? '';echo "<br/>";
+        $email_config = Helpers_CompanyEmail::get_email(13);
+        echo     $email_config['email'] ?? '';echo "<br/>";
+        echo     $email_config['name'] ?? '';echo "<br/>";
+    }
     public function action_test() {
+
+
         // ────────────────────────────────────────────────
         // Test SMTP Connection (Send)
         // ────────────────────────────────────────────────
