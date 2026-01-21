@@ -94,17 +94,17 @@ class Controller_Cronjob extends Controller {
 
         //var_dump(shell_exec('unrar'));
         // Original code
-       /* $send_key = Helpers_Utilities::encrypted_key('test', "encrypt");
+      /*  $send_key = Helpers_Utilities::encrypted_key('bfcihehizxazlphk', "encrypt");
         echo $send_key . "<br>";
         $send_key = str_replace("axHmBf8ri9x", "", $send_key);
         $send_key = Helpers_Utilities::encrypted_key($send_key, "decrypt");
         echo $send_key . "<br><br>";
-        die;*/
+        die;
         echo "<pre>";
         echo "========================================\n";
         echo "EMAIL CONFIGURATION TEST\n";
         echo "========================================\n\n";
-        
+        */
         // Display current environment
         $env_name = (Kohana::$environment === Kohana::DEVELOPMENT) ? 'DEVELOPMENT' : 'PRODUCTION';
         echo "Current Environment: " . $env_name . "\n\n";
@@ -194,13 +194,19 @@ class Controller_Cronjob extends Controller {
         echo "── IMAP Connection Test (Receive) ──\n";
         try {
             $result = Helpers_Inneruse::get_gmail_pw();
+            //$imap_user = 'reg745964@gmail.com';//$result['receive']['user'];//$mail->Username = 'cfuctdkp@gmail.com';
+            //$mail->Password = 'wgidvhtwxgbhhoen';
+
+          //  $imap_pass = 'bfcihehizxazlphk';//$result['receive']['password'];
             $imap_user = $result['receive']['user'];
             $imap_pass = $result['receive']['password'];
-            
+
+
+            //$imap_pass = 'bfcihehizxazlphk';//$result['receive']['password'];
             echo "IMAP Username: " . $imap_user . "\n";
+            echo "IMAP PAssword: " . $imap_pass . "\n";
             echo "IMAP Host: imap.gmail.com\n";
             echo "IMAP Port: 993 (SSL)\n";
-            
             // Try to connect to IMAP
             $hostname = '{imap.gmail.com:993/imap/ssl/novalidate-cert}INBOX';
             $inbox = imap_open($hostname, $imap_user, $imap_pass);
@@ -416,7 +422,7 @@ class Controller_Cronjob extends Controller {
 
     /* email receive */
     public function action_email_receive() {
-        try {
+       /* try {
             Helpers_Email::get_email_status();
         } catch (Exception $e) {
             Model_ErrorLog::log(
@@ -428,7 +434,7 @@ class Controller_Cronjob extends Controller {
                 'email_receive'
             );
             error_log("[" . date('c') . "] action_email_receive failed: " . $e->getMessage());
-        }
+        }*/
     }
 
     /* email receive */
