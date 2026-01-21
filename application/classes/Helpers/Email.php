@@ -475,7 +475,9 @@ abstract class Helpers_Email
     {
         $filename = '';
         $hostname = '{imap.gmail.com:993/imap/ssl/novalidate-cert}INBOX';
-        include 'gmail/receiving.inc';
+        $result = Helpers_Inneruse::get_gmail_pw();
+        $username = $result['send']['user'];
+        $password = $result['send']['password'];
         //echo $username; exit;
         //mlrz rtyk vzhk ijbn
         //$password = 'mlrz rtyk vzhk ijbn';
