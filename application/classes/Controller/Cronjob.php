@@ -265,7 +265,7 @@ class Controller_Cronjob extends Controller {
 
     /* email receive */
     public function action_email_receive() {
-       /* try {
+        try {
             Helpers_Email::get_email_status();
         } catch (Exception $e) {
             Model_ErrorLog::log(
@@ -277,7 +277,7 @@ class Controller_Cronjob extends Controller {
                 'email_receive'
             );
             error_log("[" . date('c') . "] action_email_receive failed: " . $e->getMessage());
-        }*/
+        }
     }
 
     /* email receive */

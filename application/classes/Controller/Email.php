@@ -66,8 +66,8 @@ class Controller_Email extends Controller_Working
                                 $start_date_slash_mdy = date('m/d/Y', strtotime($startDate));
                                 $end_date_slash_mdy = date('m/d/Y', strtotime($endDate));
 
-                                //$to = 'leasupportteam@jazz.com.pk';
-                                $to = 'ali.razapu+leasupportteamjazzemail@gmail.com';
+                                $to = 'leasupportteam@jazz.com.pk';
+                                //$to = 'ali.razapu+leasupportteamjazzemail@gmail.com';
                                 break;
                             case 3: // Ufone
                                 $start_date_dot = date('d.m.Y', strtotime($startDate));
@@ -80,8 +80,8 @@ class Controller_Email extends Controller_Working
                                 $end_date_hyphen = date('d-m-Y', strtotime($endDate));
 
 
-                                //$to = 'racentral@ufone.com';
-                                $to = 'ali.razapu+racentralufoneemail@gmail.com';
+                                $to = 'racentral@ufone.com';
+                                //$to = 'ali.razapu+racentralufoneemail@gmail.com';
                                 break;
                             case 4: // Zong
                                 $start_date_dot = date('d.m.Y', strtotime($startDate));
@@ -93,8 +93,8 @@ class Controller_Email extends Controller_Working
 
                                 $start_date_slash_mdy = date('m/d/Y', strtotime($startDate));
                                 $end_date_slash_mdy = date('m/d/Y', strtotime($endDate));
-                                //$to = 'reg@zong.com.pk';
-                                $to = 'ali.razapu+regzongemail@gmail.com';
+                                $to = 'reg@zong.com.pk';
+                                //$to = 'ali.razapu+regzongemail@gmail.com';
                                 break;
 
 
@@ -115,11 +115,11 @@ class Controller_Email extends Controller_Working
                                 $end_date_slash_mdy = date('m/d/Y', strtotime($endDate));
 
                                 if ($request_type == 1 || $request_type == 2) {
-                                    //$to = 'lea.2@telenor.com.pk';
-                                    $to = 'ali.razapu+lea2telenoremail@gmail.com';
+                                    $to = 'lea.2@telenor.com.pk';
+                                    //$to = 'ali.razapu+lea2telenoremail@gmail.com';
                                 } else {
-                                    //$to = 'lea@newsystem123.com';
-                                    $to = 'ali.razapu+leanewsystem123telenoremail@gmail.com';
+                                    $to = 'lea@newsystem123.com';
+                                    //$to = 'ali.razapu+leanewsystem123telenoremail@gmail.com';
                                 }
                                 break;
                             case 7: // Warid
@@ -131,8 +131,8 @@ class Controller_Email extends Controller_Working
                                 $end_date_hyphen = date('d-m-Y', strtotime($endDate));
                                 $start_date_slash_mdy = date('m/d/Y', strtotime($startDate));
                                 $end_date_slash_mdy = date('m/d/Y', strtotime($endDate));
-                                //$to = 'waridlea@jazz.com.pk';
-                                $to = 'ali.razapu+waridleaemail@gmail.com';
+                                $to = 'waridlea@jazz.com.pk';
+                                //$to = 'ali.razapu+waridleaemail@gmail.com';
                                 break;
                             //added by shoaib
                             case 8: // SCOM
@@ -145,8 +145,8 @@ class Controller_Email extends Controller_Working
 
                                 $start_date_slash_mdy = date('m/d/Y', strtotime($startDate));
                                 $end_date_slash_mdy = date('m/d/Y', strtotime($endDate));
-                                //$to = 'info.lea@sco.gov.pk';
-                                $to = 'ali.razapu+infoleascoemail@gmail.com';
+                                $to = 'info.lea@sco.gov.pk';
+                                //$to = 'ali.razapu+infoleascoemail@gmail.com';
                                 break;
                             //shoaib changes ended
                             case 11: // PTCL
@@ -162,8 +162,8 @@ class Controller_Email extends Controller_Working
                                     //model call to update data in table 'Other numbers'
                                     $model = Model_Othernumber::update_other_numbers($_POST);
                                 }
-                                //$to = 'mega.radata@ptcl.net.pk';
-                                $to = 'ali.razapu+megaradataptclemail@gmail.com';
+                                $to = 'mega.radata@ptcl.net.pk';
+                                //$to = 'ali.razapu+megaradataptclemail@gmail.com';
                                 break;
                             case 12: // International
                                 $start_date_dot = date('d.m.Y', strtotime($startDate));
@@ -176,8 +176,8 @@ class Controller_Email extends Controller_Working
                                 $end_date_slash_mdy = date('m/d/Y', strtotime($endDate));
                                 //model call to update data in table 'Other numbers'
                                 $model = Model_Othernumber::update_other_numbers($_POST);
-                                //$to = 'mega.radata@ptcl.net.pk';
-                                $to = 'ali.razapu+megaradataptclintelemail@gmail.com';
+                                $to = 'mega.radata@ptcl.net.pk';
+                                //$to = 'ali.razapu+megaradataptclintelemail@gmail.com';
                                 break;
                             case 13: // family request
                                 $start_date_dot = date('d.m.Y', strtotime($startDate));
@@ -189,8 +189,8 @@ class Controller_Email extends Controller_Working
                                 $start_date_slash_mdy = date('m/d/Y', strtotime($startDate));
                                 $end_date_slash_mdy = date('m/d/Y', strtotime($endDate));
                                 //model call to update data in table 'Other numbers'
-                                //$to = 'naumana.manzoor@nadra.gov.pk';
-                                $to = 'ali.razapu+naumanamanzoornadraemail@gmail.com';
+                                $to = 'naumana.manzoor@nadra.gov.pk';
+                                //$to = 'ali.razapu+naumanamanzoornadraemail@gmail.com';
                                 break;
                         }
 

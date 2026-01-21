@@ -532,7 +532,7 @@ abstract class Helpers_Email
                 $query_subject_final = $matches[0][0] ?? '';
                 $word = 'ADM-';
                 $word_1 = 'QRM';
-                if (empty($query_subject_final) || $query_subject_final < 1000
+                if (empty($query_subject_final)
                     || (strpos($string_replace, $word) !== false)
                     || (strpos($string_replace, $word_1) !== false)) {
                     $status = imap_setflag_full($inbox, $email_number, "\Seen \Flagged"); //i will use later
