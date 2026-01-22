@@ -307,9 +307,21 @@ abstract class Helpers_Email
                     if ($attachment['is_attachment'] != 1) continue;
 
                     $original_name = !empty($attachment['name']) ? $attachment['name'] : ($attachment['filename'] ?? 'no-name');
-                    $file_id = Helpers_Upload::get_fileid_with_requestid($members['request_id'] ?? 0)
+                    /*$file_id = Helpers_Upload::get_fileid_with_requestid($members['request_id'] ?? 0)
                         ?: Helpers_Utilities::id_generator("file_id");
-
+                    if (!empty($file_id)) {
+                        $is_file_exist = 1;
+                    } else {
+                        $is_file_exist = 0;
+                    }*/
+                    $file_id = Helpers_Upload::get_fileid_with_requestid($members['request_id']);
+                    if(!empty($file_id))
+                    {
+                        $is_file_exist =1;
+                    }else{
+                        $is_file_exist =0;
+                        $file_id = Helpers_Utilities::id_generator("file_id");
+                    }
                     $file_path = Helpers_Upload::get_request_data_path($file_id, 'save');
 
                     $extension = pathinfo($original_name, PATHINFO_EXTENSION) ?: 'bin';

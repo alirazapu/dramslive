@@ -18,7 +18,6 @@ if(!empty($data['received_file_path']) && $data['received_file_path'] != 'na')
               $file_name = Helpers_Upload::unzip_file($file, $data['request_id']);
               //$file = DOCROOT. 'uploads' . DIRECTORY_SEPARATOR . 'cdr' . DIRECTORY_SEPARATOR . $is_manual . DIRECTORY_SEPARATOR . $file_name;
               $file =  !empty($data['id']) ? Helpers_Upload::get_request_data_path($data['id'], 'save') . DIRECTORY_SEPARATOR . $file_name: '';
-             echo $phone_data['path'] = $file;
               $result= Helpers_Upload::data_mapping($phone_data['path'], $phone_data['company_name'], $phone_data['phone_number'], $phone_data['userrequestid'], $data['id'] );
               unlink($file);
          }elseif($ext == 'rar')
