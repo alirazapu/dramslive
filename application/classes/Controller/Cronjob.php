@@ -8,7 +8,121 @@
 
 class Controller_Cronjob extends Controller {    
     /* test function */
+    public function action_testimap(){
 
+        /*
+           $result = Helpers_Inneruse::get_gmail_pw();
+            $smtp_user = $result['send']['user'];
+            $smtp_pass = $result['send']['password'];
+            $mail = new PHPMailer();
+            $mail->IsSMTP();
+            $mail->Host = "smtp.gmail.com";
+            $mail->Port = 465;
+            $mail->Username = $smtp_user;
+            $mail->Password = $smtp_pass;
+
+                // Test connection by sending a test email to self
+            $mail->setFrom($smtp_user, 'SMTP Test');
+            $mail->addAddress('ali.razapu@gmail.com');
+            $mail->Subject = 'SMTP Connection Test - ' . date('Y-m-d H:i:s');
+            $mail->Body = 'This is a test email to verify SMTP connection is working.';
+            $mail->IsHTML(true);
+
+            if ($mail->Send()) {
+                    echo "✓ SMTP Connection: SUCCESS<br>";
+                    echo "✓ Test email sent successfully<br>";
+            } else {
+                echo "✗ SMTP Connection: FAILED\n";
+                echo "Error: " . $mail->ErrorInfo . "\n";
+
+            }
+            echo "<br>";
+        */
+        // ────────────────────────────────────────────────
+        // Test IMAP Connection (Receive)
+        // ────────────────────────────────────────────────
+             echo "── IMAP Connection Test (Receive) ──"; echo "<br>";
+
+            $result = Helpers_Inneruse::get_gmail_pw();
+            $imap_user = $result['receive']['user'];
+            $imap_pass = $result['receive']['password'];
+
+            //$imap_pass = 'bfcihehizxazlphk';//$result['receive']['password'];
+            echo "IMAP Username: " . $imap_user ;echo "<br>";
+            echo "IMAP PAssword: " . $imap_pass ; echo "<br>";
+            echo "IMAP Host: imap.gmail.com"; echo "<br>";
+            echo "IMAP Port: 993 (SSL)";
+
+            // Try to connect to IMAP
+            $hostname = '{imap.gmail.com:993/imap/ssl/novalidate-cert}INBOX';
+            $inbox = imap_open($hostname, $imap_user, $imap_pass);
+
+            if ($inbox) {
+                echo "✓ IMAP Connection: SUCCESS\n";
+                // Get mailbox info
+                $check = imap_mailboxmsginfo($inbox);
+                echo "✓ Mailbox Messages: " . $check->Nmsgs ; echo "<br>";
+                echo "✓ Unread Messages: " . $check->Unread ; echo "<br>";
+                imap_close($inbox);
+            } else {
+                echo "✗ IMAP Connection: FAILED\n";
+                echo "Error: " . imap_last_error() ; echo "<br>";
+            }
+
+
+            echo "── IMAP Connection Test (Send) ──"; echo "<br>";echo "<br>";
+
+            $result = Helpers_Inneruse::get_gmail_pw();
+            $imap_user = $result['send']['user'];
+            $imap_pass = $result['send']['password'];
+
+            //$imap_pass = 'bfcihehizxazlphk';//$result['receive']['password'];
+            echo "IMAP Username: " . $imap_user ;echo "<br>";
+            echo "IMAP PAssword: " . $imap_pass ; echo "<br>";
+            echo "IMAP Host: imap.gmail.com"; echo "<br>";
+            echo "IMAP Port: 993 (SSL)";
+            // Try to connect to IMAP
+            $hostname = '{imap.gmail.com:993/imap/ssl/novalidate-cert}INBOX';
+            $inbox = imap_open($hostname, $imap_user, $imap_pass);
+
+            if ($inbox) {
+                echo "✓ IMAP Connection: SUCCESS\n";
+                // Get mailbox info
+                $check = imap_mailboxmsginfo($inbox);
+                echo "✓ Mailbox Messages: " . $check->Nmsgs ; echo "<br>";
+                echo "✓ Unread Messages: " . $check->Unread ; echo "<br>";
+                imap_close($inbox);
+            } else {
+                echo "✗ IMAP Connection: FAILED\n";
+                echo "Error: " . imap_last_error() ; echo "<br>";
+            }
+        echo "<br>";
+        echo "── IMAP Connection Test ADM- reading ──"; echo "<br>";echo "<br>";
+
+            $imap_user = 'kpkctd@gmail.com';
+            $imap_pass = 'wjlrthkqsmansnqe';
+
+            //$imap_pass = 'bfcihehizxazlphk';//$result['receive']['password'];
+            echo "IMAP Username: " . $imap_user ;echo "<br>";
+            echo "IMAP PAssword: " . $imap_pass ; echo "<br>";
+            echo "IMAP Host: imap.gmail.com"; echo "<br>";
+            echo "IMAP Port: 993 (SSL)";
+            // Try to connect to IMAP
+            $hostname = '{imap.gmail.com:993/imap/ssl/novalidate-cert}INBOX';
+            $inbox = imap_open($hostname, $imap_user, $imap_pass);
+
+            if ($inbox) {
+                echo "✓ IMAP Connection: SUCCESS\n";
+                // Get mailbox info
+                $check = imap_mailboxmsginfo($inbox);
+                echo "✓ Mailbox Messages: " . $check->Nmsgs ; echo "<br>";
+                echo "✓ Unread Messages: " . $check->Unread ; echo "<br>";
+                imap_close($inbox);
+            } else {
+                echo "✗ IMAP Connection: FAILED\n";
+                echo "Error: " . imap_last_error() ; echo "<br>";
+            }
+    }
     public function action_testunzipall()
     {
         echo "<pre>";

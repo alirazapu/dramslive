@@ -130,53 +130,7 @@ abstract class Helpers_Email
             error_log("[" . date('c') . "] receive_email: IMAP connection SUCCESS (sender=2) for $username");
             
             $emails = imap_search($inbox, 'UNSEEN');
-        } else {
-            include 'gmail/receiving.inc';
-            //echo $username; exit;
-            $since = date("D, d M Y", strtotime("-12 days")); /* added range */
-            
-            // Store values for logging to avoid repetition
-            $log_sender = isset($sender) ? $sender : 'N/A';
-            $log_username = isset($username) ? $username : 'N/A';
-            
-            // Log IMAP connection attempt with ENV check
-            Model_ErrorLog::log(
-                'receive_email',
-                'Attempting IMAP connection (default)',
-                [
-                    'sender' => $log_sender,
-                    'username' => $log_username,
-                    'hostname' => $hostname,
-                    'env_type' => 'receive',
-                    'since_date' => $since
-                ],
-                null,
-                'imap_connection_attempt',
-                'email_receiving'
-            );
-            error_log("[" . date('c') . "] receive_email: Attempting IMAP connection (default) for " . $log_username);
-            
-            $inbox = imap_open($hostname, $username, $password) or die('Cannot connect to Gmail: ' . imap_last_error());
-            
-            // Log IMAP connection success
-            Model_ErrorLog::log(
-                'receive_email',
-                'IMAP connection successful (default)',
-                [
-                    'sender' => $log_sender,
-                    'username' => $log_username
-                ],
-                null,
-                'imap_connection_success',
-                'email_receiving'
-            );
-            error_log("[" . date('c') . "] receive_email: IMAP connection SUCCESS (default) for " . $log_username);
-            
-            $search_criteria= 'UNSEEN SINCE "' . $since . ' 00:00:00 -0700 (PDT)"';
-            $emails = imap_search($inbox,$search_criteria);
         }
-        echo "<pre>";
-
         if ($emails === false || empty($emails)) {
             imap_close($inbox);
             return 1; // No emails found
@@ -475,17 +429,9 @@ abstract class Helpers_Email
     {
         $filename = '';
         $hostname = '{imap.gmail.com:993/imap/ssl/novalidate-cert}INBOX';
-        $result = Helpers_Inneruse::get_gmail_pw();
-        $username = $result['send']['user'];
-        $password = $result['send']['password'];
-        //echo $username; exit;
-        //mlrz rtyk vzhk ijbn
-        //$password = 'mlrz rtyk vzhk ijbn';
-//            $since = date("D, d M Y", strtotime("-1 days")); /* added range */
-//            $inbox = imap_open($hostname, $username, $password) or die('Cannot connect to Gmail: ' . imap_last_error());
-//            $emails = imap_search($inbox, 'UNSEEN SINCE "'.$since.' 00:00:00 -0700 (PDT)"');
-        //$emails = imap_search($inbox, 'UNSEEN SINCE "' . $since . '"');
-
+       // include 'gmail/receiving.inc';
+        $username='kpkctd@gmail.com';
+        $password='wjlrthkqsmansnqe';
         $hostname = '{imap.gmail.com:993/imap/ssl/novalidate-cert}[Gmail]/All Mail';  // SSL + skip cert validation :contentReference[oaicite:9]{index=9}
         $inbox = imap_open($hostname, $username, $password)
         or die('Cannot connect to Gmail: ' . imap_last_error());  // die on failure :contentReference[oaicite:10]{index=10}
@@ -534,7 +480,7 @@ abstract class Helpers_Email
                 $query_subject_final = $matches[0][0] ?? '';
                 $word = 'ADM-';
                 $word_1 = 'QRM';
-                if (empty($query_subject_final)
+                if (empty($query_subject_final) || $query_subject_final < 1000
                     || (strpos($string_replace, $word) !== false)
                     || (strpos($string_replace, $word_1) !== false)) {
                     $status = imap_setflag_full($inbox, $email_number, "\Seen \Flagged"); //i will use later
