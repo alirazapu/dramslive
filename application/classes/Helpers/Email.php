@@ -90,7 +90,7 @@ abstract class Helpers_Email
 
     public static function receive_email($subject, $sender)
     {
-
+        ini_set('max_execution_time', 0);
         $filename = '';
         $hostname = '{imap.gmail.com:993/imap/ssl/novalidate-cert}INBOX';
         if (!empty($sender) && $sender == 2) {
