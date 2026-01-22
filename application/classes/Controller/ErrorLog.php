@@ -11,6 +11,7 @@ class Controller_ErrorLog extends Controller_Working
             'error_source' => Arr::get($_GET, 'error_source'),
             'error_type' => Arr::get($_GET, 'error_type'),
             'process_stage' => Arr::get($_GET, 'process_stage'),
+            'severity' => Arr::get($_GET, 'severity'),
             'request_id' => Arr::get($_GET, 'request_id'),
             'company_name' => Arr::get($_GET, 'company_name'),
             'processing_index' => Arr::get($_GET, 'processing_index'),
@@ -33,6 +34,9 @@ class Controller_ErrorLog extends Controller_Working
         }
         if ($filters['process_stage']) {
             $query->where('process_stage', '=', $filters['process_stage']);
+        }
+        if ($filters['severity']) {
+            $query->where('severity', '=', $filters['severity']);
         }
         if ($filters['request_id'] && is_numeric($filters['request_id'])) {
             $query->where('request_id', '=', (int)$filters['request_id']);
@@ -75,6 +79,9 @@ class Controller_ErrorLog extends Controller_Working
         }
         if ($filters['process_stage']) {
             $count_query->where('process_stage', '=', $filters['process_stage']);
+        }
+        if ($filters['severity']) {
+            $count_query->where('severity', '=', $filters['severity']);
         }
         if ($filters['request_id'] && is_numeric($filters['request_id'])) {
             $count_query->where('request_id', '=', (int)$filters['request_id']);
@@ -161,6 +168,7 @@ class Controller_ErrorLog extends Controller_Working
                 ->set('pagination_html', $pagination_html) // instead of Pagination object
             ->set('company_options', $this->get_company_options()) // helper method
             ->set('source_options', $this->get_source_options())  // helper method
+            ->set('severity_options', $this->get_severity_options())  // helper method
             ->set('processing_index_options', $this->get_processing_index_options()); // helper method
     }
 
@@ -186,6 +194,9 @@ class Controller_ErrorLog extends Controller_Working
             'action_email_receive2' => 'Email Receive 2',
             'cron_parse_sub' => 'Subscriber Parsing Cron',
             'receive_email' => 'Email Receiving',
+            'receive_email_backup' => 'Email Receiving Backup',
+            'get_email_status' => 'Email Status Check',
+            'send_email' => 'Email Sending',
             'cron_email_send' => 'Email Sending Cron',
             'cron_parse_imei' => 'IMEI Parsing',
             'send_high_priority' => 'Send High Priority',
@@ -198,6 +209,18 @@ class Controller_ErrorLog extends Controller_Working
         ];
     }
 
+    // Helper: Severity level dropdown
+    private function get_severity_options()
+    {
+        return [
+            '' => 'All Severities',
+            'error' => 'Error',
+            'warning' => 'Warning',
+            'success' => 'Success',
+            'info' => 'Info',
+        ];
+    }
+
     // Helper: Processing index dropdown for tracking status
     private function get_processing_index_options()
     {
@@ -206,5 +229,30 @@ class Controller_ErrorLog extends Controller_Working
             '3' => 'Status 3 (Error)',
             '5' => 'Status 5 (Not Found)',
         ];
+    }
+
+    /**
+     * Clear error logs action
+     */
+    public function action_clear()
+    {
+        // Only allow POST requests
+
+        if ($this->request->method() !== Request::POST) {
+            $this->redirect('errorlog/');
+        }
+
+        $range = Arr::get($_POST, 'clear_range', '7days');
+        $from = Arr::get($_POST, 'date_from');
+        $to = Arr::get($_POST, 'date_to');
+
+        // Perform the deletion
+        $deleted = Model_ErrorLog::clearLogs($range, $from, $to);
+
+        // Set success message
+        Session::instance()->set('success', "Successfully cleared $deleted log entries.");
+
+        // Redirect back to index
+        $this->redirect('errorlog/index');
     }
 }

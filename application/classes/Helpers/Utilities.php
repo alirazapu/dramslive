@@ -3042,13 +3042,13 @@ abstract class Helpers_Utilities {
             /////  test@temaba345
             //test@gmail.com    nadema@temaba345
             // test@gmail.com     chukar@12345678         
-            // $username='AC22f1b9fca3453931a4dd38a6f45fb779';
+            // $username='[REDACTED]';
             //$password='39dd359c89562c020868b8d27e76028c';
-            // $username='ACa93af84106b69c9a00a691837646ebd5';
+            // $username='[REDACTED]';
             //$password='7d4d96b0229e9f2b4227cff012ade6bf';
-            //$username='ACed3a27a1d8b12f7da531a288c4b153b6';
+            //$username='[REDACTED]';
             //$password='d88b6818e39e89421e0d71f4d6114c62';
-            $username = 'ACf1f74ce02068a4536f726293ff6b76a9';
+            $username = '[REDACTED]';
             $password = '192910478edefd7ba137bea15aa542b9';
             $URL = 'https://lookups.twilio.com/v1/PhoneNumbers/%2B92' . $post['number'] . '?Type=carrier&Type=caller-name';
 
@@ -3103,6 +3103,17 @@ abstract class Helpers_Utilities {
             try {
                 $url = file_get_contents("https://www.mybecharge.com/topup/ajax?cmd=get_operators&phoneNumber=+92" . $post['number'], false, stream_context_create($arrContextOptions));
             } catch (Exception $e) {
+                Model_ErrorLog::log(
+                    'check_mnc',
+                    'Failed to fetch operator info from mybecharge: ' . $e->getMessage(),
+                    [
+                        'phone_number' => strlen($post['number'] ?? '') > 4 ? substr($post['number'], -4) : '****'
+                    ],
+                    $e->getTraceAsString(),
+                    'api_request_error',
+                    'operator_lookup',
+                    'warning'
+                );
                 $url = '';
             }
             //$url = "https://www.mybecharge.com/topup/ajax?cmd=get_operators&phoneNumber=+92".$post['number']."&pinNumber=&operatorid=";

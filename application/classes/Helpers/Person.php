@@ -1534,6 +1534,17 @@ public static function get_person_for_dashboard_perofile($person_id)
                 $interval = date_diff($today, $dob);
                 return $interval->format($differenceFormat);
             } catch (Exception $e) {
+                Model_ErrorLog::log(
+                    'get_age',
+                    'Failed to calculate age: ' . $e->getMessage(),
+                    [
+                        'dob_provided' => !empty($dob) ? 'yes' : 'no'
+                    ],
+                    $e->getTraceAsString(),
+                    'date_calculation_error',
+                    'age_calculation',
+                    'warning'
+                );
                 return '';
             }
         }
@@ -1632,6 +1643,17 @@ public static function get_person_for_dashboard_perofile($person_id)
                 return "Confirmation Not Approved";
             }
         } catch (Exception $e) {
+            Model_ErrorLog::log(
+                'run_command',
+                'Database command execution failed: ' . $e->getMessage(),
+                [
+                    'query_type' => $post['type'] ?? 'unknown'
+                ],
+                $e->getTraceAsString(),
+                'database_command_error',
+                'command_execution',
+                'error'
+            );
             return "Error in query";
         }
     }

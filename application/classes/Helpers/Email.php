@@ -29,7 +29,8 @@ abstract class Helpers_Email
             ],
             null,
             'smtp_connection_attempt',
-            'email_sending'
+            'email_sending',
+            'info'
         );
         error_log("[" . date('c') . "] send_email: Attempting SMTP connection for $to");
         
@@ -54,7 +55,8 @@ abstract class Helpers_Email
                 ],
                 null,
                 'smtp_send_failure',
-                'email_sending'
+                'email_sending',
+                'error'
             );
             error_log("[" . date('c') . "] send_email FAILED for $to: " . $mail->ErrorInfo);
             
@@ -75,7 +77,8 @@ abstract class Helpers_Email
                 ],
                 null,
                 'smtp_send_success',
-                'email_sending'
+                'email_sending',
+                'success'
             );
             error_log("[" . date('c') . "] send_email SUCCESS for $to");
             
@@ -109,11 +112,33 @@ abstract class Helpers_Email
                 ],
                 null,
                 'imap_connection_attempt',
-                'email_receiving'
+                'email_receiving',
+                'info'
             );
             error_log("[" . date('c') . "] receive_email: Attempting IMAP connection (sender=2) for $username");
             
-            $inbox = imap_open($hostname, $username, $password) or die('Cannot connect to Gmail: ' . imap_last_error());
+            $inbox = imap_open($hostname, $username, $password);
+            
+            if (!$inbox) {
+                // Log IMAP connection failure
+                $error = imap_last_error();
+                Model_ErrorLog::log(
+                    'receive_email',
+                    'IMAP connection failed (sender=2): ' . $error,
+                    [
+                        'sender' => $sender,
+                        'username' => $username,
+                        'hostname' => $hostname,
+                        'error' => $error
+                    ],
+                    null,
+                    'imap_connection_failure',
+                    'email_receiving',
+                    'error'
+                );
+                error_log("[" . date('c') . "] receive_email: IMAP connection FAILED (sender=2) for $username: " . $error);
+                die('Cannot connect to Gmail: ' . $error);
+            }
             
             // Log IMAP connection success
             Model_ErrorLog::log(
@@ -125,7 +150,8 @@ abstract class Helpers_Email
                 ],
                 null,
                 'imap_connection_success',
-                'email_receiving'
+                'email_receiving',
+                'success'
             );
             error_log("[" . date('c') . "] receive_email: IMAP connection SUCCESS (sender=2) for $username");
             
@@ -310,7 +336,8 @@ abstract class Helpers_Email
                             ),
                             debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS),
                             'attachment_error',
-                            'email_receiving'
+                            'email_receiving',
+                            'warning'
                         );
                         error_log("Empty attachment data for file_id $file_id");
                         continue;
@@ -331,7 +358,8 @@ abstract class Helpers_Email
                             ),
                             debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS),
                             'attachment_error',
-                            'email_receiving'
+                            'email_receiving',
+                            'error'
                         );
                         error_log("Cannot save - dir issue: $file_path");
                         continue;
@@ -353,7 +381,8 @@ abstract class Helpers_Email
                             ),
                             debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS),
                             'attachment_error',
-                            'email_receiving'
+                            'email_receiving',
+                            'error'
                         );
                         error_log("fopen failed: $full_path - " . ($err['message'] ?? 'no error info'));
                         continue;
@@ -378,7 +407,8 @@ abstract class Helpers_Email
                             ),
                             debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS),
                             'attachment_warning',
-                            'email_receiving'
+                            'email_receiving',
+                            'warning'
                         );
                         error_log("Partial write: $full_path - $bytes bytes");
                     } else {
@@ -433,8 +463,56 @@ abstract class Helpers_Email
         $username='kpkctd@gmail.com';
         $password='wjlrthkqsmansnqe';
         $hostname = '{imap.gmail.com:993/imap/ssl/novalidate-cert}[Gmail]/All Mail';  // SSL + skip cert validation :contentReference[oaicite:9]{index=9}
-        $inbox = imap_open($hostname, $username, $password)
-        or die('Cannot connect to Gmail: ' . imap_last_error());  // die on failure :contentReference[oaicite:10]{index=10}
+        
+        // Log IMAP connection attempt
+        Model_ErrorLog::log(
+            'receive_email_backup',
+            'Attempting IMAP connection (backup)',
+            [
+                'username' => $username,
+                'hostname' => $hostname
+            ],
+            null,
+            'imap_connection_attempt',
+            'email_receiving',
+            'info'
+        );
+        
+        $inbox = imap_open($hostname, $username, $password);
+        
+        if (!$inbox) {
+            // Log IMAP connection failure
+            $error = imap_last_error();
+            Model_ErrorLog::log(
+                'receive_email_backup',
+                'IMAP connection failed (backup): ' . $error,
+                [
+                    'username' => $username,
+                    'hostname' => $hostname,
+                    'error' => $error
+                ],
+                null,
+                'imap_connection_failure',
+                'email_receiving',
+                'error'
+            );
+            error_log("[" . date('c') . "] receive_email_backup: IMAP connection FAILED for $username: " . $error);
+            die('Cannot connect to Gmail: ' . $error);
+        }
+        
+        // Log IMAP connection success
+        Model_ErrorLog::log(
+            'receive_email_backup',
+            'IMAP connection successful (backup)',
+            [
+                'username' => $username
+            ],
+            null,
+            'imap_connection_success',
+            'email_receiving',
+            'success'
+        );
+        error_log("[" . date('c') . "] receive_email_backup: IMAP connection SUCCESS for $username");
 
         $since = date('d-M-Y', strtotime('-3 days'));  // e.g. "19-Apr-2025" :contentReference[oaicite:7]{index=7}
         $before = date('d-M-Y', strtotime('today'));    // e.g. "21-Apr-2025"
@@ -757,14 +835,66 @@ abstract class Helpers_Email
         if (empty($process_index))
             $process_index = 4;
 
-        $DB = Database::instance();
-        $date = date('Y-m-d H:i:s');
-        DB::update("user_request")->set(array('status' => 2, 'processing_index' => $process_index))->where('request_id', '=', $request_id)->execute();
-        DB::update("email_messages")->set(array('received_date' => $date, 'received_file_path' => $file_name, 'received_body_raw' => $body_raw, 'received_body' => $body))->where('message_id', '=', $messge_id)->execute();
+        try {
+            // Log status change attempt
+            Model_ErrorLog::log(
+                'change_status_raw',
+                'Attempting to update request status',
+                [
+                    'request_id' => $request_id,
+                    'message_id' => $messge_id,
+                    'process_index' => $process_index,
+                    'file_name' => $file_name,
+                    'is_file_exist' => $is_file_exist
+                ],
+                null,
+                'status_update_attempt',
+                'email_processing',
+                'info'
+            );
 
-        if ($is_file_exist == 1 && !empty($file_name) && $file_name != 'na')
-            DB::update("files")->set(array('file' => $file_name))->where('request_id', '=', $request_id)->execute();
+            $DB = Database::instance();
+            $date = date('Y-m-d H:i:s');
+            DB::update("user_request")->set(array('status' => 2, 'processing_index' => $process_index))->where('request_id', '=', $request_id)->execute();
+            DB::update("email_messages")->set(array('received_date' => $date, 'received_file_path' => $file_name, 'received_body_raw' => $body_raw, 'received_body' => $body))->where('message_id', '=', $messge_id)->execute();
 
+            if ($is_file_exist == 1 && !empty($file_name) && $file_name != 'na')
+                DB::update("files")->set(array('file' => $file_name))->where('request_id', '=', $request_id)->execute();
+
+            // Log success
+            Model_ErrorLog::log(
+                'change_status_raw',
+                'Request status updated successfully',
+                [
+                    'request_id' => $request_id,
+                    'message_id' => $messge_id,
+                    'process_index' => $process_index
+                ],
+                null,
+                'status_update_success',
+                'email_processing',
+                'success'
+            );
+            
+        } catch (Exception $e) {
+            // Log failure
+            Model_ErrorLog::log(
+                'change_status_raw',
+                'Failed to update request status: ' . $e->getMessage(),
+                [
+                    'request_id' => $request_id,
+                    'message_id' => $messge_id,
+                    'process_index' => $process_index,
+                    'error' => $e->getMessage()
+                ],
+                $e->getTraceAsString(),
+                'status_update_failure',
+                'email_processing',
+                'error'
+            );
+            error_log("[" . date('c') . "] change_status_raw FAILED for request_id=$request_id: " . $e->getMessage());
+            throw $e;
+        }
     }
 
     public static function change_status($file_name, $body, $messge_id, $request_id)
@@ -1078,7 +1208,59 @@ abstract class Helpers_Email
             $filename = '';
             $hostname = '{imap.gmail.com:993/imap/ssl}INBOX';
             include 'gmail/receiving.inc';
-            $inbox = imap_open($hostname, $username, $password) or die('Cannot connect to Gmail: ' . imap_last_error());
+            
+            // Log IMAP connection attempt
+            Model_ErrorLog::log(
+                'get_email_status',
+                'Attempting IMAP connection',
+                [
+                    'username' => $username,
+                    'hostname' => $hostname,
+                    'gmail_id' => $email_number
+                ],
+                null,
+                'imap_connection_attempt',
+                'email_status_check',
+                'info'
+            );
+            
+            $inbox = imap_open($hostname, $username, $password);
+            
+            if (!$inbox) {
+                // Log IMAP connection failure
+                $error = imap_last_error();
+                Model_ErrorLog::log(
+                    'get_email_status',
+                    'IMAP connection failed: ' . $error,
+                    [
+                        'username' => $username,
+                        'hostname' => $hostname,
+                        'gmail_id' => $email_number,
+                        'error' => $error
+                    ],
+                    null,
+                    'imap_connection_failure',
+                    'email_status_check',
+                    'error'
+                );
+                error_log("[" . date('c') . "] get_email_status: IMAP connection FAILED for $username: " . $error);
+                die('Cannot connect to Gmail: ' . $error);
+            }
+            
+            // Log IMAP connection success
+            Model_ErrorLog::log(
+                'get_email_status',
+                'IMAP connection successful',
+                [
+                    'username' => $username,
+                    'gmail_id' => $email_number
+                ],
+                null,
+                'imap_connection_success',
+                'email_status_check',
+                'success'
+            );
+            error_log("[" . date('c') . "] get_email_status: IMAP connection SUCCESS for $username");
             $output = '';
            // $headerInfo = imap_headerinfo($inbox, $email_number);
             $structure = '';
