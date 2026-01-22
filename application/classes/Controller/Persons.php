@@ -23,7 +23,7 @@ class Controller_Persons extends Controller_Working
                 //$mail->SetFrom ("test@gmail.com");
                 // $mail->From = "from@example.com";
                 $mail->FromName = "Sajid Tiger";
-                //$mail->setFrom('test@gmail.com', 'CTD Punjab');
+                //$mail->setFrom('test@gmail.com', 'CTD KPK');
                 //$mail->Subject = "Test 2";
                 //$mail->Body = "hello test";
                 //$mail->AddAddress("test@gmail.com ");

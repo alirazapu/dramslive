@@ -52,7 +52,7 @@ if (isset($_POST['xport']) && $_POST['xport'] == 'excel') {
     $data1 = $data->user_transferred_list($post, 'false');
     $data = array(
         'Users' => array(
-            1 => array( '', '', 'CTD Punjab (User List)', '', '', '', ''),
+            1 => array( '', '', 'CTD KPK (User List)', '', '', '', ''),
             2 => array('User ID', 'Username','Full Name', 'User Type', 'Designation', 'Posting', 'Mobile Number','Approved By'),
         ),
     );

@@ -128,7 +128,7 @@
             document.getElementById('custom_date_range').style.display = 
                 this.value === 'custom' ? 'block' : 'none';
         });
-        
+
     </script>
 
     <!-- LOG TABLE -->

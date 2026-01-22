@@ -55,7 +55,7 @@ if (isset($_POST['xport']) && $_POST['xport'] == 'excel') {
 
     $data = array(
         'Users' => array(
-            1 => array( 'CTD Punjab (User List) of ' .$office),
+            1 => array( 'CTD KPK (User List) of ' .$office),
             2 => array('Person Name', 'Father Name', 'CNIC', 'Category', 'Added By','Added Date'),
         ),
     );

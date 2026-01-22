@@ -54,7 +54,7 @@ if (isset($_POST['xport']) && $_POST['xport'] == 'excel') {
     $data1 = $data->audit_report_basic($search_post, 'false');
     $data = array(
         'Users' => array(
-            1 => array( 'CTD Punjab ( Audit Report )', ''),
+            1 => array( 'CTD KPK ( Audit Report )', ''),
             2 => array('Region/District' , 'Total Request'),
         ),
     );

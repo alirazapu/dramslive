@@ -60,7 +60,7 @@ if(isset($_POST['xport']) && $_POST['xport']=='excel')
                     $data1 = $data->sms_summary($post, 'false', $pid, $phone, $phone2);                                                     
                             $data = array(
                                      'Users' => array(
-                                             1 => array('','CTD Punjab (SMS Summary)/'.$pname,'',''),
+                                             1 => array('','CTD KPK (SMS Summary)/'.$pname,'',''),
                                              2 => array('A Party', 'B Party', 'Total Incoming SMS','Total Outgoing SMS','Grand Total'),
                                      ),
 

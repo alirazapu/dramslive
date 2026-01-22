@@ -53,7 +53,7 @@ if(isset($_POST['xport']) && $_POST['xport']=='excel')
                     $data1 = $data->cdr_summary($post, 'false', $pid);                                                      
                             $data = array(
                                      'Users' => array(
-                                             1 => array('','CTD Punjab (CDR Summary)/'.$pname,'',''),
+                                             1 => array('','CTD KPK (CDR Summary)/'.$pname,'',''),
                                              2 => array('A Party', 'B Party', 'SMS Count','Call Count','Total'),
                                      ),
 

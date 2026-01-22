@@ -53,7 +53,7 @@ if (isset($_POST['xport']) && $_POST['xport'] == 'excel') {
     $data1 = $data->verisys_response_summary($post, 'false');
     $data = array(
         'Users' => array(
-            1 => array('', 'CTD Punjab (Verisys Report)', ''),
+            1 => array('', 'CTD KPK (Verisys Report)', ''),
             2 => array('Region', 'Date', 'Total Request', 'Total Response',),
         ),
     );

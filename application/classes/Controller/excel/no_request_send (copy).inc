@@ -54,7 +54,7 @@ if(isset($_POST['xport']) && $_POST['xport']=='excel')
                     $data1 = $data->no_request_send($post, 'false');                                                      
                             $data = array(
                                      'Users' => array(
-                                             1 => array('','CTD Punjab ( User\'s Request Sent Log)','',''),
+                                             1 => array('','CTD KPK ( User\'s Request Sent Log)','',''),
                                              2 => array('User Type', 'User Name','Designation', 'Region' , 'Posting' , 'Total Request'),
                                      ),
 

@@ -53,7 +53,7 @@ if(isset($_POST['xport']) && $_POST['xport']=='excel')
                     $data1 = $data->no_record_searched($post, 'false');                                                      
                             $data = array(
                                      'Users' => array(
-                                             1 => array('','CTD Punjab ( User\'s Record Search History)','',''),
+                                             1 => array('','CTD KPK ( User\'s Record Search History)','',''),
                                              2 => array('User Name','User Type', 'Search Type','Search Key','Search Time'),
                                      ),
 

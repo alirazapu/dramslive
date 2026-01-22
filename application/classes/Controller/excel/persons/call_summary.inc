@@ -66,7 +66,7 @@ if(isset($_POST['xport']) && $_POST['xport']=='excel')
                                      
                             $data = array(
                                      'Users' => array(
-                                             1 => array('','CTD Punjab (Call Summary)/'.$pname,'',''),
+                                             1 => array('','CTD KPK (Call Summary)/'.$pname,'',''),
                                              2 => array('Party A', 'Party B', 'Total Incomming','Total Outgoing','Grand Total'),
                                      ),
 

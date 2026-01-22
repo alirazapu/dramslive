@@ -53,7 +53,7 @@ if(isset($_POST['xport']) && $_POST['xport']=='excel')
                     $data1 = $data->user_panel_log($post, 'false');                                                      
                             $data = array(
                                      'Users' => array(
-                                             1 => array('','','CTD Punjab ( User\'s Panel Log/History)','','','','',''),
+                                             1 => array('','','CTD KPK ( User\'s Panel Log/History)','','','','',''),
                                              2 => array('User Name', 'Designation', 'User Type','Posting','Region','Activity Type','Activity Time'),
                                      ),
 

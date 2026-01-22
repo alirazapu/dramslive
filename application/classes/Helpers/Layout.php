@@ -7,7 +7,7 @@ abstract class Helpers_Layout {
         /* get notification from db */
         $notification_div= '<br/><br/>'; 
         /*'<div class="marquee col-md-6">
-		<p>CTD Punjab, AIES Notice</p>
+		<p>CTD KPK, AIES Notice</p>
 		<p>Your Internet Connection Is Slow.</p>
 		<p>Please wait or refresh your page again.</p>
 	</div>';*/
