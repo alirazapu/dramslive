@@ -596,8 +596,7 @@ class Controller_Cronjob extends Controller {
                                 ],
                                 null,
                                 'validation_info',
-                                'subscriber_parsing',
-                                'success'
+                                'subscriber_parsing'
                             );
                             
                             $reference_number_1 = Model_Email::email_status($reference_number, 2, 5);
