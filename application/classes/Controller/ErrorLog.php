@@ -255,4 +255,131 @@ class Controller_ErrorLog extends Controller_Working
         // Redirect back to index
         $this->redirect('errorlog/index');
     }
+
+    public function action_testemail1() {
+        $not_fount = 0;
+        $sql = "select *
+                FROM `user_request` as ur
+                join email_messages as em on ur.message_id = em.message_id
+                where ur.status = 2 and ur.processing_index = 4
+                and ur.request_id NOT IN(select os.request_id from user_os_req as os where os.request_id IS NOT NULL)
+                and (ur.user_request_type_id = 1 or ur.user_request_type_id = 6)
+                and ur.company_name = 1
+                ORDER BY ur.request_id  ASC
+            ";                              //Where t1.user_id = {$user_id}
+
+        $parse_data = DB::query(Database::SELECT, $sql)->execute()->as_array();
+
+        foreach ($parse_data as $data) {
+            try {
+                $phone_data['company_name'] = $data['company_name'];
+                $phone_data['phone_number'] = $data['requested_value'];
+                echo    $phone_data['userrequestid'] = $data['request_id'];
+                echo '<br>';
+                $phone_data['file_id'] = Helpers_Upload::get_fileid_aginst_requestid($data['request_id']);
+                $data['id'] = $data['file_id'] = $phone_data['file_id'];
+                $cdrfile_name = Helpers_Upload::get_file_info_with_request_id($data['request_id']);
+
+
+
+                if(empty($cdrfile_name['file']))
+                {
+                    $encode_str= mb_detect_encoding(base64_decode($data['received_body']));
+                    if($encode_str=='ASCII' || $encode_str=='UTF-8'){
+                        $data['received_body'] = base64_decode($data['received_body']);
+                    }
+
+                    $data['received_body'] = array_filter(explode('From:',strip_tags($data['received_body'])));
+                    include DOCUMENT_ROOT . 'application' . DS . 'classes' . DS . 'Controller' . DS . 'cron_job' . DS . 'parse_sub' . DS . 'notfound.inc';
+                    exit;
+                }
+                $data['received_file_path'] = !empty($cdrfile_name['file'])?$cdrfile_name['file']:'';
+
+
+                switch ($data['company_name']) {
+                    case 1: // mobilink
+                        echo '<br>' . 'Mobilink' . '<br>';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'mobilink.inc';
+
+                        break;
+                    case 7: // warid
+                        echo '<br>' . 'Warid' . '<br>';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'warid.inc';
+
+
+                        break;
+                    case 3: // Ufone
+                        echo '<br>' . 'Ufone' . '<br>';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'ufone.inc';
+                        // echo '<pre>';
+                        // print_r($data['received_file_path']);
+
+                        break;
+                    case 6: // Telenor
+                        echo '<br>' . 'Telenor' . '<br>';
+                        //print_r($data['received_file_path']);
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'telenor.inc';
+
+
+
+                        break;
+                    case 4: // Zong
+                        //echo '<br>' . 'Zong' .'<br>';
+                        //print_r($data['received_file_path']);
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'zong.inc';
+
+                        break;
+                }
+
+                if ($not_fount != 1) {
+                    /* Insertion Code */
+                    $reference_number = $data['request_id'];
+
+                    Model_ErrorLog::log(
+                        'cron_parse_phone_mobilink',
+                        'Mobilink phone parsing completed, no records found - marking as status 5 (Not Found)',
+                        [
+                            'request_id' => $reference_number,
+                            'company_name' => $data['company_name'] ?? 'unknown',
+                            'processing_index' => 5,
+                            'phone_number' => $data['requested_value'] ?? 'unknown',
+                            'reason' => 'No phone records found in Mobilink response'
+                        ],
+                        null,
+                        'not_found',
+                        'phone_parsing_mobilink'
+                    );
+
+                    $reference_number = Model_Email::email_status($reference_number, 2, 5);
+                    /* if(strlen($loc_data['cnicsims'])==13 && ctype_digit($loc_data['cnicsims']))
+                      { */
+                    $sub_model = new Model_Generic();
+                    //  $sub_model_result = $sub_model->Manualcnicsimsinsert($loc_data);
+                }die;
+                /* }else{
+                  $reference_number = Model_Email::email_status($reference_number, 2, 3);
+                  } */
+            } catch (Exception $e) {
+                $error_msg = $e->getMessage();
+                $error_trace = $e->getTraceAsString();
+
+                Model_ErrorLog::log(
+                    'cron_parse_phone_1',
+                    $error_msg,
+                    [
+                        'request_id'       => $data['request_id'] ?? 'unknown',
+                        'company_name'     => $data['company_name'] ?? 'unknown',
+                        'phone_number'     => $data['requested_value'] ?? 'unknown',
+                        'file_id'          => $phone_data['file_id'] ?? null
+                    ],
+                    $error_trace,
+                    'parsing_failure',
+                    'phone_parsing_mobilink'
+                );
+
+                $reference_number = $data['request_id'];
+                $reference_number = Model_Email::email_status($reference_number, 2, 3);
+            }
+        }
+    }
 }
