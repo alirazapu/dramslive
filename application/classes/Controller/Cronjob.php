@@ -644,13 +644,13 @@ class Controller_Cronjob extends Controller {
                 Model_ErrorLog::log(
                     'cron_parse_sub',
                     $error_msg,
-                    [
+                    array(
                         'request_id'       => $reference_number,
                         'company_name'     => $company,
                         'mobile_requested' => $data['requested_value'] ?? 'unknown',
                         'email_body_sample'=> $body_sample,
                         'file_id'          => $data['file_id'] ?? null
-                    ],
+                    ),
                     $error_trace,
                     'parsing_failure',
                     'after_include'
@@ -661,12 +661,12 @@ class Controller_Cronjob extends Controller {
                 Model_ErrorLog::log(
                     'cron_parse_sub',
                     'Exception during subscriber parsing - marking as status 3 (Error)',
-                    [
+                    array(
                         'request_id' => $reference_number,
                         'company_name' => $company,
                         'processing_index' => 3,
                         'error_message' => $error_msg
-                    ],
+                    ),
                     null,
                     'exception_error',
                     'subscriber_parsing'
@@ -823,12 +823,12 @@ class Controller_Cronjob extends Controller {
                 Model_ErrorLog::log(
                     'cron_parse_loc',
                     $error_msg,
-                    [
+                    array(
                         'request_id'       => $data['request_id'] ?? 'unknown',
                         'company_name'     => $data['company_name'] ?? 'unknown',
                         'mobile_requested' => $data['requested_value'] ?? 'unknown',
                         'user_id'          => $data['user_id'] ?? null
-                    ],
+                    ),
                     $error_trace,
                     'parsing_failure',
                     'location_parsing'
@@ -955,12 +955,12 @@ class Controller_Cronjob extends Controller {
                 Model_ErrorLog::log(
                     'cron_parse_nic',
                     $error_msg,
-                    [
+                    array(
                         'request_id'       => $data['request_id'] ?? 'unknown',
                         'company_name'     => $data['company_name'] ?? 'unknown',
                         'mobile_requested' => $data['requested_value'] ?? 'unknown',
                         'file_id'          => $data['file_id'] ?? null
-                    ],
+                    ),
                     $error_trace,
                     'parsing_failure',
                     'nic_parsing'
@@ -1064,13 +1064,13 @@ class Controller_Cronjob extends Controller {
                     Model_ErrorLog::log(
                         'cron_parse_phone_high',
                         'Phone parsing completed, no records found - marking as status 5 (Not Found)',
-                        [
+                        array(
                             'request_id' => $reference_number,
                             'company_name' => $data['company_name'] ?? 'unknown',
                             'processing_index' => 5,
                             'phone_number' => $data['requested_value'] ?? 'unknown',
                             'reason' => 'No phone records found in response'
-                        ],
+                        ),
                         null,
                         'not_found',
                         'phone_parsing_high'
@@ -1092,12 +1092,12 @@ class Controller_Cronjob extends Controller {
                 Model_ErrorLog::log(
                     'cron_parse_phone_high',
                     $error_msg,
-                    [
+                    array(
                         'request_id'       => $data['request_id'] ?? 'unknown',
                         'company_name'     => $data['company_name'] ?? 'unknown',
                         'phone_number'     => $data['requested_value'] ?? 'unknown',
                         'file_id'          => $phone_data['file_id'] ?? null
-                    ],
+                    ),
                     $error_trace,
                     'parsing_failure',
                     'phone_parsing_high'
@@ -1195,13 +1195,13 @@ class Controller_Cronjob extends Controller {
                     Model_ErrorLog::log(
                         'cron_parse_phone',
                         'Phone parsing completed, no records found - marking as status 5 (Not Found)',
-                        [
+                        array(
                             'request_id' => $reference_number,
                             'company_name' => $data['company_name'] ?? 'unknown',
                             'processing_index' => 5,
                             'phone_number' => $data['requested_value'] ?? 'unknown',
                             'reason' => 'No phone records found in response'
-                        ],
+                        ),
                         null,
                         'not_found',
                         'phone_parsing'
@@ -1223,12 +1223,12 @@ class Controller_Cronjob extends Controller {
                 Model_ErrorLog::log(
                     'cron_parse_phone',
                     $error_msg,
-                    [
+                    array(
                         'request_id'       => $data['request_id'] ?? 'unknown',
                         'company_name'     => $data['company_name'] ?? 'unknown',
                         'phone_number'     => $data['requested_value'] ?? 'unknown',
                         'file_id'          => $phone_data['file_id'] ?? null
-                    ],
+                    ),
                     $error_trace,
                     'parsing_failure',
                     'phone_parsing'
@@ -1326,13 +1326,13 @@ class Controller_Cronjob extends Controller {
                     Model_ErrorLog::log(
                         'cron_parse_phone_mobilink',
                         'Mobilink phone parsing completed, no records found - marking as status 5 (Not Found)',
-                        [
+                        array(
                             'request_id' => $reference_number,
                             'company_name' => $data['company_name'] ?? 'unknown',
                             'processing_index' => 5,
                             'phone_number' => $data['requested_value'] ?? 'unknown',
                             'reason' => 'No phone records found in Mobilink response'
-                        ],
+                        ),
                         null,
                         'not_found',
                         'phone_parsing_mobilink'
@@ -1354,12 +1354,12 @@ class Controller_Cronjob extends Controller {
                 Model_ErrorLog::log(
                     'cron_parse_phone_1',
                     $error_msg,
-                    [
+                    array(
                         'request_id'       => $data['request_id'] ?? 'unknown',
                         'company_name'     => $data['company_name'] ?? 'unknown',
                         'phone_number'     => $data['requested_value'] ?? 'unknown',
                         'file_id'          => $phone_data['file_id'] ?? null
-                    ],
+                    ),
                     $error_trace,
                     'parsing_failure',
                     'phone_parsing_mobilink'
@@ -1454,13 +1454,13 @@ class Controller_Cronjob extends Controller {
                     Model_ErrorLog::log(
                         'cron_parse_phone_warid',
                         'Warid phone parsing completed, no records found - marking as status 5 (Not Found)',
-                        [
+                        array(
                             'request_id' => $reference_number,
                             'company_name' => $data['company_name'] ?? 'unknown',
                             'processing_index' => 5,
                             'phone_number' => $data['requested_value'] ?? 'unknown',
                             'reason' => 'No phone records found in Warid response'
-                        ],
+                        ),
                         null,
                         'not_found',
                         'phone_parsing_warid'
@@ -1482,12 +1482,12 @@ class Controller_Cronjob extends Controller {
                 Model_ErrorLog::log(
                     'cron_parse_phone_7',
                     $error_msg,
-                    [
+                    array(
                         'request_id'       => $data['request_id'] ?? 'unknown',
                         'company_name'     => $data['company_name'] ?? 'unknown',
                         'phone_number'     => $data['requested_value'] ?? 'unknown',
                         'file_id'          => $phone_data['file_id'] ?? null
-                    ],
+                    ),
                     $error_trace,
                     'parsing_failure',
                     'phone_parsing_warid'
@@ -1544,13 +1544,13 @@ class Controller_Cronjob extends Controller {
                         Model_ErrorLog::log(
                             'cron_parse_phone_ufone',
                             'Ufone phone parsing - no file found, checking notfound.inc - marking as status 5 (Not Found)',
-                            [
+                            array(
                                 'request_id' => $reference_number,
                                 'company_name' => $data['company_name'] ?? 'unknown',
                                 'processing_index' => 5,
                                 'phone_number' => $data['requested_value'] ?? 'unknown',
                                 'reason' => 'No CDR file found, processed notfound.inc'
-                            ],
+                            ),
                             null,
                             'not_found',
                             'phone_parsing_ufone'
@@ -1609,13 +1609,13 @@ class Controller_Cronjob extends Controller {
                     Model_ErrorLog::log(
                         'cron_parse_phone_ufone',
                         'Ufone phone parsing completed, no records found - marking as status 5 (Not Found)',
-                        [
+                        array(
                             'request_id' => $reference_number,
                             'company_name' => $data['company_name'] ?? 'unknown',
                             'processing_index' => 5,
                             'phone_number' => $data['requested_value'] ?? 'unknown',
                             'reason' => 'No phone records found in Ufone response'
-                        ],
+                        ),
                         null,
                         'not_found',
                         'phone_parsing_ufone'
@@ -1637,12 +1637,12 @@ class Controller_Cronjob extends Controller {
                 Model_ErrorLog::log(
                     'cron_parse_phone_3',
                     $error_msg,
-                    [
+                    array(
                         'request_id'       => $data['request_id'] ?? 'unknown',
                         'company_name'     => $data['company_name'] ?? 'unknown',
                         'phone_number'     => $data['requested_value'] ?? 'unknown',
                         'file_id'          => $phone_data['file_id'] ?? null
-                    ],
+                    ),
                     $error_trace,
                     'parsing_failure',
                     'phone_parsing_ufone'
@@ -1737,13 +1737,13 @@ class Controller_Cronjob extends Controller {
                     Model_ErrorLog::log(
                         'cron_parse_phone_telenor',
                         'Telenor phone parsing completed, no records found - marking as status 5 (Not Found)',
-                        [
+                       array(
                             'request_id' => $reference_number,
                             'company_name' => $data['company_name'] ?? 'unknown',
                             'processing_index' => 5,
                             'phone_number' => $data['requested_value'] ?? 'unknown',
                             'reason' => 'No phone records found in Telenor response'
-                        ],
+                       ),
                         null,
                         'not_found',
                         'phone_parsing_telenor'
@@ -1765,12 +1765,12 @@ class Controller_Cronjob extends Controller {
                 Model_ErrorLog::log(
                     'cron_parse_phone_6',
                     $error_msg,
-                    [
+                    array(
                         'request_id'       => $data['request_id'] ?? 'unknown',
                         'company_name'     => $data['company_name'] ?? 'unknown',
                         'phone_number'     => $data['requested_value'] ?? 'unknown',
                         'file_id'          => $phone_data['file_id'] ?? null
-                    ],
+                    ),
                     $error_trace,
                     'parsing_failure',
                     'phone_parsing_telenor'
@@ -1865,13 +1865,13 @@ class Controller_Cronjob extends Controller {
                     Model_ErrorLog::log(
                         'cron_parse_phone_zong',
                         'Zong phone parsing completed, no records found - marking as status 5 (Not Found)',
-                        [
+                        array(
                             'request_id' => $reference_number,
                             'company_name' => $data['company_name'] ?? 'unknown',
                             'processing_index' => 5,
                             'phone_number' => $data['requested_value'] ?? 'unknown',
                             'reason' => 'No phone records found in Zong response'
-                        ],
+                        ),
                         null,
                         'not_found',
                         'phone_parsing_zong'
@@ -1893,12 +1893,12 @@ class Controller_Cronjob extends Controller {
                 Model_ErrorLog::log(
                     'cron_parse_phone_4',
                     $error_msg,
-                    [
+                    array(
                         'request_id'       => $data['request_id'] ?? 'unknown',
                         'company_name'     => $data['company_name'] ?? 'unknown',
                         'phone_number'     => $data['requested_value'] ?? 'unknown',
                         'file_id'          => $phone_data['file_id'] ?? null
-                    ],
+                    ),
                     $error_trace,
                     'parsing_failure',
                     'phone_parsing_zong'
@@ -1984,12 +1984,12 @@ class Controller_Cronjob extends Controller {
                 Model_ErrorLog::log(
                     'cron_parse_imei',
                     $error_msg,
-                    [
+                    array(
                         'request_id'       => $data['request_id'] ?? 'unknown',
                         'company_name'     => $data['company_name'] ?? 'unknown',
                         'imei'             => $data['requested_value'] ?? 'unknown',
                         'file_id'          => $data['file_id'] ?? null
-                    ],
+                    ),
                     $error_trace,
                     'parsing_failure',
                     'imei_parsing'
@@ -2008,7 +2008,7 @@ class Controller_Cronjob extends Controller {
             Model_ErrorLog::log(
                 'action_bparty_table',
                 $e->getMessage(),
-                [],
+                array(),
                 $e->getTraceAsString(),
                 'processing_failure',
                 'bparty_table'
@@ -2024,7 +2024,7 @@ class Controller_Cronjob extends Controller {
             Model_ErrorLog::log(
                 'action_family_tree_complete',
                 $e->getMessage(),
-                [],
+                array(),
                 $e->getTraceAsString(),
                 'processing_failure',
                 'family_tree_complete'
@@ -2042,7 +2042,7 @@ class Controller_Cronjob extends Controller {
             Model_ErrorLog::log(
                 'action_resend_in_parse_queue',
                 $e->getMessage(),
-                [],
+                array(),
                 $e->getTraceAsString(),
                 'processing_failure',
                 'resend_parse_queue'
@@ -2058,7 +2058,7 @@ class Controller_Cronjob extends Controller {
             Model_ErrorLog::log(
                 'action_resend_error_in_queue',
                 $e->getMessage(),
-                [],
+                array(),
                 $e->getTraceAsString(),
                 'processing_failure',
                 'resend_error_queue'
