@@ -175,25 +175,15 @@ class Controller_Login extends Controller {
                 if ($name == TRUE && $psw == TRUE) {
                     $_POST = Helpers_Utilities::remove_injection($_POST);
                     $request = !empty($_POST['type']) ? $_POST['type'] : '';
-
-
                     $_POST['username'] = (string) (strlen((string) $_POST['username']) <= 20) ? $_POST['username'] : 'na';
                     $_POST['password'] = (string) (strlen((string) $_POST['password']) <= 30) ? $_POST['password'] : 'na';
-
-
                     $request = (string) (strlen((string) $request) <= 7) ? $request : 'na';
-
                     $message = 'error';
                     if (HTTP_Request::POST == $this->request->method()) {
                         $remember = array_key_exists('remember', $this->request->post()) ? (bool) $this->request->post('remember') : FALSE;
-
-
                         $user = Auth::instance()->login($this->request->post('username'), $this->request->post('password'), $remember, $request);
-
-
-
                         if ($user) {
-                            //$user_obj = Auth::instance()->get_user();
+
 							$user_obj = Auth::instance()->get_user();
 							if ($user_obj)
 							{
@@ -201,11 +191,7 @@ class Controller_Login extends Controller {
 							}
                             Helpers_Profile::is_login($user_obj->id, TRUE);
                             $permission = Helpers_Utilities::get_user_permission($user_obj->id);
-                            /* if ($permission == 2) {
-                              $this->redirect('user/data_upload');
-                              } else { */
                             $this->redirect('Userdashboard/dashboard');
-                            //}
                         } else {
                             $_SESSION["attempts"] = $_SESSION["attempts"] + 1;
                             $message = "Login Fail";
@@ -230,25 +216,9 @@ class Controller_Login extends Controller {
                 } catch (Exception $e) {
                     
                 }
-                /* if ($permission == 2) {
-                  $this->redirect('user/data_upload');
-                  } else */
                 $this->redirect('Userdashboard/dashboard');
-                //}
-            }
-        /*} else {
-            try {
-                if ($check_ip_exist == 0)
-                    $check_ip_exist = Helpers_Utilities::addblockIP($current_ip, $block_user_name);
-            } catch (Exception $e) {
-                
             }
 
-
-            $_SESSION["attempts"] = 0;
-            echo '<h1>You are block! Please contact to Administrator</h1>';
-            exit;
-        }*/
     }
 
     public function action_remote_login() {
