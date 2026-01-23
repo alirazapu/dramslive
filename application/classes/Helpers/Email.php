@@ -169,13 +169,17 @@ abstract class Helpers_Email
                 $message = imap_fetchbody($inbox, $email_number, 2);
 
             /* explode subject */
+            if(!isset($overview[0]->subject) || empty($overview[0]->subject)){
+                imap_clearflag_full($inbox, $email_number, '\\Seen');  //Seen
+                continue;
+            }
             $string_replace = str_replace("/", " /", $overview[0]->subject);
             $string_replace = str_replace(",", " ,", $string_replace);
             $string_replace = str_replace(".", " . ", $string_replace);
             $query_subject = explode(' ', $string_replace);
             $query_subject_final = '';
             preg_match_all('/\b\d+\b/', $string_replace, $matches);
-            $query_subject_final = $matches[0][0] ?? '';
+            $query_subject_final = isset($matches[0][0])?$matches[0][0]: '';
             if (empty($query_subject_final)){
                 continue;
             }
