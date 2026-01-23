@@ -100,23 +100,6 @@ abstract class Helpers_Email
             $since = date("D, d M Y", strtotime("-15 days"));
             
             // Log IMAP connection attempt with ENV check
-            Model_ErrorLog::log(
-                'receive_email',
-                'Attempting IMAP connection (sender=2)',
-                [
-                    'sender' => $sender,
-                    'username' => $username,
-                    'hostname' => $hostname,
-                    'env_type' => 'send',
-                    'since_date' => $since
-                ],
-                null,
-                'imap_connection_attempt',
-                'email_receiving',
-                'info'
-            );
-            error_log("[" . date('c') . "] receive_email: Attempting IMAP connection (sender=2) for $username");
-            
             $inbox = imap_open($hostname, $username, $password);
             
             if (!$inbox) {
@@ -475,34 +458,18 @@ abstract class Helpers_Email
         $username='kpkctd@gmail.com';
         $password='wjlrthkqsmansnqe';
         $hostname = '{imap.gmail.com:993/imap/ssl/novalidate-cert}[Gmail]/All Mail';  // SSL + skip cert validation :contentReference[oaicite:9]{index=9}
-        
-        // Log IMAP connection attempt
-        Model_ErrorLog::log(
-            'receive_email_backup',
-            'Attempting IMAP connection (backup)',
-            [
-                'username' => $username,
-                'hostname' => $hostname
-            ],
-            null,
-            'imap_connection_attempt',
-            'email_receiving',
-            'info'
-        );
-        
         $inbox = imap_open($hostname, $username, $password);
-        
         if (!$inbox) {
             // Log IMAP connection failure
             $error = imap_last_error();
             Model_ErrorLog::log(
                 'receive_email_backup',
                 'IMAP connection failed (backup): ' . $error,
-                [
+               array(
                     'username' => $username,
                     'hostname' => $hostname,
                     'error' => $error
-                ],
+               ),
                 null,
                 'imap_connection_failure',
                 'email_receiving',
@@ -511,20 +478,7 @@ abstract class Helpers_Email
             error_log("[" . date('c') . "] receive_email_backup: IMAP connection FAILED for $username: " . $error);
             die('Cannot connect to Gmail: ' . $error);
         }
-        
-        // Log IMAP connection success
-        Model_ErrorLog::log(
-            'receive_email_backup',
-            'IMAP connection successful (backup)',
-            [
-                'username' => $username
-            ],
-            null,
-            'imap_connection_success',
-            'email_receiving',
-            'success'
-        );
-        error_log("[" . date('c') . "] receive_email_backup: IMAP connection SUCCESS for $username");
+
 
         $since = date('d-M-Y', strtotime('-3 days'));  // e.g. "19-Apr-2025" :contentReference[oaicite:7]{index=7}
         $before = date('d-M-Y', strtotime('today'));    // e.g. "21-Apr-2025"
@@ -1211,31 +1165,13 @@ abstract class Helpers_Email
         $DB = Database::instance();
         $sql = "SELECT gmail_id FROM email_read_status WHERE request_id = {$request_id}";
         $results = $DB->query(Database::SELECT, $sql, TRUE)->current();
-
         $file_id = Helpers_Upload::get_fileid_with_requestid($request_id);
-
         if (!empty($results->gmail_id)) {
-
             $email_number = $results->gmail_id;
             $filename = '';
             $hostname = '{imap.gmail.com:993/imap/ssl}INBOX';
             include 'gmail/receiving.inc';
-            
             // Log IMAP connection attempt
-            Model_ErrorLog::log(
-                'get_email_status',
-                'Attempting IMAP connection',
-                [
-                    'username' => $username,
-                    'hostname' => $hostname,
-                    'gmail_id' => $email_number
-                ],
-                null,
-                'imap_connection_attempt',
-                'email_status_check',
-                'info'
-            );
-            
             $inbox = imap_open($hostname, $username, $password);
             
             if (!$inbox) {
@@ -1244,12 +1180,12 @@ abstract class Helpers_Email
                 Model_ErrorLog::log(
                     'get_email_status',
                     'IMAP connection failed: ' . $error,
-                    [
+                    array(
                         'username' => $username,
                         'hostname' => $hostname,
                         'gmail_id' => $email_number,
                         'error' => $error
-                    ],
+                    ),
                     null,
                     'imap_connection_failure',
                     'email_status_check',
@@ -1258,21 +1194,6 @@ abstract class Helpers_Email
                 error_log("[" . date('c') . "] get_email_status: IMAP connection FAILED for $username: " . $error);
                 die('Cannot connect to Gmail: ' . $error);
             }
-            
-            // Log IMAP connection success
-            Model_ErrorLog::log(
-                'get_email_status',
-                'IMAP connection successful',
-                [
-                    'username' => $username,
-                    'gmail_id' => $email_number
-                ],
-                null,
-                'imap_connection_success',
-                'email_status_check',
-                'success'
-            );
-            error_log("[" . date('c') . "] get_email_status: IMAP connection SUCCESS for $username");
             $output = '';
            // $headerInfo = imap_headerinfo($inbox, $email_number);
             $structure = '';
