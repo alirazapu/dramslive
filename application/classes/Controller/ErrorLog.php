@@ -257,14 +257,20 @@ class Controller_ErrorLog extends Controller_Working
     }
 
     public function action_testemail1() {
+		
+ini_set('display_errors', '1');
+ini_set('display_startup_errors', '1');
+error_reporting(E_ALL);
+
         $not_fount = 0;
         $sql = "select *
                 FROM `user_request` as ur
                 join email_messages as em on ur.message_id = em.message_id
-                where ur.status = 2 and ur.processing_index = 4
+                where ur.status = 2 and ur.processing_index = 3
                 and ur.request_id NOT IN(select os.request_id from user_os_req as os where os.request_id IS NOT NULL)
                 and (ur.user_request_type_id = 1 or ur.user_request_type_id = 6)
                 and ur.company_name = 1
+				AND ur.reference_id='995555'
                 ORDER BY ur.request_id  ASC
             ";                              //Where t1.user_id = {$user_id}
 
@@ -278,7 +284,7 @@ class Controller_ErrorLog extends Controller_Working
                 echo '<br>';
                 $phone_data['file_id'] = Helpers_Upload::get_fileid_aginst_requestid($data['request_id']);
                 $data['id'] = $data['file_id'] = $phone_data['file_id'];
-                $cdrfile_name = Helpers_Upload::get_file_info_with_request_id($data['request_id']);
+				$cdrfile_name = Helpers_Upload::get_file_info_with_request_id($data['request_id']);echo "<br/>";
 
 
 
@@ -293,8 +299,7 @@ class Controller_ErrorLog extends Controller_Working
                     include DOCUMENT_ROOT . 'application' . DS . 'classes' . DS . 'Controller' . DS . 'cron_job' . DS . 'parse_sub' . DS . 'notfound.inc';
                     exit;
                 }
-                $data['received_file_path'] = !empty($cdrfile_name['file'])?$cdrfile_name['file']:'';
-
+                echo $data['received_file_path'] = !empty($cdrfile_name['file'])?$cdrfile_name['file']:'';
 
                 switch ($data['company_name']) {
                     case 1: // mobilink

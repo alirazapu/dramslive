@@ -67,11 +67,11 @@ define('DOCUMENT_ROOT', $doc_root . DS);
 define('PROJECT_ROOT',  $project_root);
 
 // Directory constants
-define('UFONE_FILES',   PROJECT_ROOT . 'dramsfiles' . DS . 'ufone_tem_files' . DS);
-define('UPLOADS_DIR',   PROJECT_ROOT . 'uploads' . DS);
-define('TEMPLATES_DIR', PROJECT_ROOT . 'templates' . DS);
-define('EXPORTS_DIR',   PROJECT_ROOT . 'exports' . DS);
-define('TEMP_DIR',      PROJECT_ROOT . 'temp' . DS);
+define('UFONE_FILES',   PROJECT_ROOT .  'drams' . DS . 'dramsfiles' . DS . 'ufone_tem_files' . DS);
+define('UPLOADS_DIR',   PROJECT_ROOT .  'drams' . DS . 'uploads' . DS);
+define('TEMPLATES_DIR', PROJECT_ROOT .  'drams' . DS . 'application' .DS. 'views' . DS. 'templates' . DS);
+define('EXPORTS_DIR',   PROJECT_ROOT .  'drams' . DS . 'dramsfiles' . DS. 'exports' . DS);
+define('TEMP_DIR',      PROJECT_ROOT  . 'drams' . DS . 'dramsfiles' . DS .'temp' . DS);
 
 define('FAMILYTREE_TERMP_IMAGES',   UPLOADS_DIR . 'familytree_temp_images' . DS);
 define('TRAVELHISTORY_TERMP_IMAGES', UPLOADS_DIR . 'travelhistory_temp_images' . DS);
