@@ -90,62 +90,90 @@ abstract class Helpers_Email
 
     public static function receive_email($subject, $sender)
     {
-        ini_set('max_execution_time', 0);
-        $filename = '';
-        $hostname = '{imap.gmail.com:993/imap/ssl/novalidate-cert}INBOX';
-        if (!empty($sender) && $sender == 2) {
-            $result = Helpers_Inneruse::get_gmail_pw();
-            $username = $result['receive']['user'];
-            $password = $result['receive']['password'];
-            $since = date("D, d M Y", strtotime("-15 days"));
-            
-            // Log IMAP connection attempt with ENV check
-            $inbox = imap_open($hostname, $username, $password);
-            
-            if (!$inbox) {
-                // Log IMAP connection failure
-                $error = imap_last_error();
-                Model_ErrorLog::log(
-                    'receive_email',
-                    'IMAP connection failed (sender=2): ' . $error,
-                    [
-                        'sender' => $sender,
-                        'username' => $username,
-                        'hostname' => $hostname,
-                        'error' => $error
-                    ],
-                    null,
-                    'imap_connection_failure',
-                    'email_receiving',
-                    'error'
-                );
-                error_log("[" . date('c') . "] receive_email: IMAP connection FAILED (sender=2) for $username: " . $error);
-                die('Cannot connect to Gmail: ' . $error);
-            }
-            
-            // Log IMAP connection success
-            Model_ErrorLog::log(
-                'receive_email',
-                'IMAP connection successful (sender=2)',
-                [
-                    'sender' => $sender,
-                    'username' => $username
-                ],
-                null,
-                'imap_connection_success',
-                'email_receiving',
-                'success'
-            );
-            error_log("[" . date('c') . "] receive_email: IMAP connection SUCCESS (sender=2) for $username");
-            
-            $emails = imap_search($inbox, 'UNSEEN');
-        }
-        if ($emails === false || empty($emails)) {
-            imap_close($inbox);
-            return 1; // No emails found
+        /* ===================== SAFETY GUARDS ===================== */
+
+        // Execution limit (cron-safe)
+        ini_set('max_execution_time', 240);
+        set_time_limit(240);
+
+        // Runtime lock (prevents parallel runs)
+        $lockFile = DOCROOT . 'application/logs/gmail_imap_receive.lock';
+        $lockFp   = fopen($lockFile, 'c');
+
+        if (!flock($lockFp, LOCK_EX | LOCK_NB)) {
+            error_log('[' . date('c') . '] IMAP already running, exiting.');
+            return 0;
         }
 
-        /* newest first */
+        // Cooldown after failure (5 minutes)
+        $cooldownFile = DOCROOT . 'application/logs/gmail_imap_fail.cooldown';
+        if (file_exists($cooldownFile) && (time() - filemtime($cooldownFile)) < 300) {
+            error_log('[' . date('c') . '] IMAP cooldown active, skipping run.');
+            return 0;
+        }
+
+        /* ===================== GMAIL SETTINGS ===================== */
+
+        if ((int)$sender !== 2) {
+            return 0;
+        }
+        //$hostname = '{imap.gmail.com:993/imap/ssl/novalidate-cert}INBOX';
+        $hostname = '{imap.gmail.com:993/imap/ssl}INBOX';
+        $result   = Helpers_Inneruse::get_gmail_pw();
+        $username = $result['receive']['user'];
+        $password = $result['receive']['password'];
+
+        // IMAP timeouts (very important)
+        imap_timeout(IMAP_OPENTIMEOUT, 20);
+        imap_timeout(IMAP_READTIMEOUT, 60);
+        imap_timeout(IMAP_WRITETIMEOUT, 60);
+        imap_timeout(IMAP_CLOSETIMEOUT, 20);
+
+        error_log('[' . date('c') . "] IMAP connecting to Gmail as {$username}");
+
+        /* ===================== IMAP CONNECT ===================== */
+
+        $inbox = @imap_open($hostname, $username, $password, 0, 1);
+
+        if (!$inbox) {
+            $error = imap_last_error();
+            imap_errors();
+            imap_alerts();
+
+            // Start cooldown
+            file_put_contents($cooldownFile, time());
+
+            Model_ErrorLog::log(
+                'receive_email',
+                'Gmail IMAP connection failed',
+                [
+                    'username' => $username,
+                    'hostname' => $hostname,
+                    'error'    => $error
+                ],
+                null,
+                'imap_connection_failure',
+                'email_receiving',
+                'error'
+            );
+
+            error_log('[' . date('c') . '] IMAP FAILED: ' . $error);
+            return 0;
+        }
+
+        error_log('[' . date('c') . '] IMAP connection SUCCESS');
+
+        /* ===================== SEARCH EMAILS ===================== */
+
+        $emails = imap_search($inbox, 'UNSEEN');
+
+        if ($emails === false || empty($emails)) {
+            imap_close($inbox);
+            flock($lockFp, LOCK_UN);
+            fclose($lockFp);
+            return 1;
+        }
+
         rsort($emails);
         /* For each email... */
         foreach ($emails as $email_number) {
@@ -181,6 +209,7 @@ abstract class Helpers_Email
             preg_match_all('/\b\d+\b/', $string_replace, $matches);
             $query_subject_final = isset($matches[0][0])?$matches[0][0]: '';
             if (empty($query_subject_final)){
+                imap_clearflag_full($inbox, $email_number, '\\Seen');  //Seen
                 continue;
             }
             if (!empty($query_subject_final)) {
@@ -328,7 +357,7 @@ abstract class Helpers_Email
                             'receive_email_attachment',
                             'Attachment data is empty or missing',
                             array(
-                                'request_id' => $members['request_id'] ?? null,
+                                'request_id' => isset($members['request_id']) ?$members['request_id']: null,
                                 'file_id' => $file_id,
                                 'original_name' => $original_name,
                                 'file_path' => $file_path
@@ -348,7 +377,7 @@ abstract class Helpers_Email
                             'receive_email_attachment',
                             'Directory missing or not writable',
                             array(
-                                'request_id' => $members['request_id'] ?? null,
+                                'request_id' => isset($members['request_id']) ?$members['request_id']: null,
                                 'file_id' => $file_id,
                                 'original_name' => $original_name,
                                 'file_path' => $file_path,
@@ -372,18 +401,18 @@ abstract class Helpers_Email
                             'receive_email_attachment',
                             'Cannot open file for writing',
                             array(
-                                'request_id' => $members['request_id'] ?? null,
+                                'request_id' => isset($members['request_id']) ?$members['request_id']: null,
                                 'file_id' => $file_id,
                                 'original_name' => $original_name,
                                 'full_path' => $full_path,
-                                'error_message' => $err['message'] ?? 'unknown'
+                                'error_message' => isset($err['message']) ?$err['message']: 'unknown'
                             ),
                             debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS),
                             'attachment_error',
                             'email_receiving',
                             'error'
                         );
-                        error_log("fopen failed: $full_path - " . ($err['message'] ?? 'no error info'));
+                        error_log("fopen failed: $full_path - " . (isset($err['message']) ?$err['message']: 'no error info'));
                         continue;
                     }
 
@@ -397,7 +426,7 @@ abstract class Helpers_Email
                             'receive_email_attachment',
                             'Partial write - file may be incomplete',
                             array(
-                                'request_id' => $members['request_id'] ?? null,
+                                'request_id' => isset($members['request_id']) ? $members['request_id']: null,
                                 'file_id' => $file_id,
                                 'original_name' => $original_name,
                                 'full_path' => $full_path,
@@ -449,7 +478,11 @@ abstract class Helpers_Email
                 imap_clearflag_full($inbox, $email_number, '\\Seen');  //Seen
             }
         }
-        imap_close($inbox);
+        imap_close($inbox, CL_EXPUNGE);
+        flock($lockFp, LOCK_UN);
+        fclose($lockFp);
+
+        error_log('[' . date('c') . '] IMAP run completed successfully');
         return 1;
 
     }
