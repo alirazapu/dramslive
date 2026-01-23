@@ -2,25 +2,27 @@
 
 defined('SYSPATH') or die('No direct script access.');
 
-class Controller_Login extends Controller {
+class Controller_Login extends Controller
+{
 
-    public function __Construct(Request $request, Response $response) {
+    public function __Construct(Request $request, Response $response)
+    {
         parent::__construct($request, $response);
         $this->request = $request;
         $this->response = $response;
         $user = Auth::instance()->get_user();
-        if ($user) {            
-            $this->redirect('Userdashboard/dashboard');            
+        if ($user) {
+            $this->redirect('Userdashboard/dashboard');
         }
     }
 
-  public function action_index()
+    public function action_index()
     {
-    $view = View::factory('main');
-    $view->roles = Helpers_Utilities::get_roles_data();
-    $view->message = Session::instance()->get_once('error_message');
+        $view = View::factory('main');
+        $view->roles = Helpers_Utilities::get_roles_data();
+        $view->message = Session::instance()->get_once('error_message');
 
-    $this->response->body($view);
+        $this->response->body($view);
     }
 
 //    public function action_entry() {        
@@ -30,57 +32,52 @@ class Controller_Login extends Controller {
     /* Password Recovery */
 
 
-    public function action_forget() {
+    public function action_forget()
+    {
         try {
-            $_POST = Helpers_Utilities::remove_injection($_POST); 
+            $_POST = Helpers_Utilities::remove_injection($_POST);
             $result = Helpers_Utilities::setwetcookies();
         } catch (Exception $e) {
-            
+
         }
         if ($result == 1)
             $this->redirect('errors');
 
 
         $actual_link = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
-        $size = strlen((string) $actual_link);
+        $size = strlen((string)$actual_link);
         $current_ip = $_SERVER['REMOTE_ADDR'];
         try {
             $check_ip_exist = Helpers_Utilities::checkblockIPforever($current_ip);
         } catch (Exception $e) {
-            
+
         }
         if ($check_ip_exist == 1 || $size >= 100) {
             $this->response->body(View::factory('templates/user/block'));
         }
-
         if (!isset($_SESSION["attempts"]))
             $_SESSION["attempts"] = 0;
         $current_ip = $_SERVER['REMOTE_ADDR'];
         try {
             $check_ip_exist = Helpers_Utilities::checkblockIPforever($current_ip);
         } catch (Exception $e) {
-            
+
         }
-
         if ($_SESSION["attempts"] < 5 && $check_ip_exist != 1) {
-
-            $_POST['ftype'] = (int) !empty($_POST['ftype']) ? preg_replace("/[^0-9]/", "", $_POST['ftype']) : '';
+            $_POST['ftype'] = (int)!empty($_POST['ftype']) ? preg_replace("/[^0-9]/", "", $_POST['ftype']) : '';
             $_POST['fusername'] = !empty($_POST['fusername']) ? $_POST['fusername'] : '';
             $_POST['femail'] = !empty($_POST['femail']) ? $_POST['femail'] : '';
-
-
-
             if ((!empty($_POST)) && !empty($_POST['fusername']) && !empty($_POST['femail']) && !empty($_POST['ftype'])) {
-                //   print_r($_POST); exit; 
+
                 $result = Helpers_Utilities::your_php_validation($_POST['fusername'], 'alphanumricdecimal', 8, 15);
                 $message = "Incorrect Username";
 
                 if ($result) {
                     $_POST = Helpers_Utilities::remove_injection($_POST);
                     //   print_r($_POST); exit;     
-                    $_POST['fusername'] = (string) (strlen((string) $_POST['fusername']) <= 20) ? $_POST['fusername'] : 'na';
-                    $_POST['femail'] = (string) (strlen((string) $_POST['femail']) <= 50) ? $_POST['femail'] : 'na';
-                    $_POST['ftype'] = (int) (strlen((string) $_POST['ftype']) <= 5) ? $_POST['ftype'] : 'na';
+                    $_POST['fusername'] = (string)(strlen((string)$_POST['fusername']) <= 20) ? $_POST['fusername'] : 'na';
+                    $_POST['femail'] = (string)(strlen((string)$_POST['femail']) <= 50) ? $_POST['femail'] : 'na';
+                    $_POST['ftype'] = (int)(strlen((string)$_POST['ftype']) <= 5) ? $_POST['ftype'] : 'na';
 
 
                     try {
@@ -90,8 +87,6 @@ class Controller_Login extends Controller {
                         $_SESSION["attempts"] = $_SESSION["attempts"] + 1;
                         $this->redirect();
                     }
-//                print_r($content_id);
-//                exit();
                     if ($content_id == 1) {
 
                         $message = "Request is successful";
@@ -102,29 +97,21 @@ class Controller_Login extends Controller {
                         $_SESSION["attempts"] = $_SESSION["attempts"] + 1;
                     }
                 }
-//            $view = View::factory('main')->bind('message', $message);
-//            $this->response->body($view);
                 $_SESSION['error_message'] = $message;
                 $this->redirect();
-                // $this->redirect('login');               
             } else {
 
                 $_SESSION["attempts"] = $_SESSION["attempts"] + 1;
                 $message = "All fields must be filled";
                 $_SESSION['error_message'] = $message;
                 $this->redirect('blocked/userstatus?msg=Data');
-
-//            $message = "All fields must be filled";
-//            $view = View::factory('main')->bind('message', $message);
-//            $this->response->body($view);
-                //  $this->redirect('login'); 
             }
         } else {
             try {
                 if ($check_ip_exist == 0)
                     $check_ip_exist = Helpers_Utilities::addblockIPapache($current_ip);
             } catch (Exception $e) {
-                
+
             }
 
 
@@ -135,18 +122,19 @@ class Controller_Login extends Controller {
 
     /* User Login */
 
-    public function action_check() {
+    public function action_check()
+    {
         $_POST = Helpers_Utilities::remove_injection($_POST);
         $result = Helpers_Utilities::setwetcookies();
         if ($result == 1)
             $this->redirect('errors');
 
         $actual_link = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
-        $size = strlen((string) $actual_link);
+        $size = strlen((string)$actual_link);
         $current_ip = $_SERVER['REMOTE_ADDR'];
         $check_ip_exist = Helpers_Utilities::checkblockIPforever($current_ip);
 
-        if ($check_ip_exist == 1 || $size >= 100) {            
+        if ($check_ip_exist == 1 || $size >= 100) {
             $this->response->body(View::factory('templates/user/block'));
         }
 
@@ -157,71 +145,72 @@ class Controller_Login extends Controller {
 
         $check_ip_exist = Helpers_Utilities::checkblockIP($current_ip, $block_user_name);
 
-        //if ($_SESSION["attempts"] < 4 && $check_ip_exist !== 1) {
-
-
-            if (!Auth::instance()->logged_in()) {
-                try {
-                    if (!empty($_POST['username']) || !empty($_POST['password'])) {
-                        $name = Helpers_Utilities::your_php_validation($_POST['username'], 'alphanumricdecimal', 8, 20);
-                        $psw = Helpers_Utilities::your_php_validation($_POST['password'], 'alphanumricspecial', 8, 20);
-                    } else {
-                        $_POST['username'] = 'na';
-                        $_POST['password'] = 'na';
-                    }
-                } catch (Exception $e) {
-                    
+        if (!Auth::instance()->logged_in()) {
+            try {
+                if (!empty($_POST['username']) || !empty($_POST['password'])) {
+                    $name = Helpers_Utilities::your_php_validation($_POST['username'], 'alphanumricdecimal', 8, 20);
+                    $psw = Helpers_Utilities::your_php_validation($_POST['password'], 'alphanumricspecial', 8, 20);
+                } else {
+                    $_POST['username'] = 'na';
+                    $_POST['password'] = 'na';
                 }
-                if ($name == TRUE && $psw == TRUE) {
-                    $_POST = Helpers_Utilities::remove_injection($_POST);
-                    $request = !empty($_POST['type']) ? $_POST['type'] : '';
-                    $_POST['username'] = (string) (strlen((string) $_POST['username']) <= 20) ? $_POST['username'] : 'na';
-                    $_POST['password'] = (string) (strlen((string) $_POST['password']) <= 30) ? $_POST['password'] : 'na';
-                    $request = (string) (strlen((string) $request) <= 7) ? $request : 'na';
-                    $message = 'error';
-                    if (HTTP_Request::POST == $this->request->method()) {
-                        $remember = array_key_exists('remember', $this->request->post()) ? (bool) $this->request->post('remember') : FALSE;
-                        $user = Auth::instance()->login($this->request->post('username'), $this->request->post('password'), $remember, $request);
-                        if ($user) {
+            } catch (Exception $e) {
 
-							$user_obj = Auth::instance()->get_user();
-							if ($user_obj)
-							{
-								$user_obj = ORM::factory('User', $user_obj);
-							}
-                            Helpers_Profile::is_login($user_obj->id, TRUE);
-                            $permission = Helpers_Utilities::get_user_permission($user_obj->id);
-                            $this->redirect('Userdashboard/dashboard');
-                        } else {
-                            $_SESSION["attempts"] = $_SESSION["attempts"] + 1;
-                            $message = "Login Fail";
-                            $view = View::factory('main')->bind('message', $message);
-                            $this->response->body($view);
+            }
+            if ($name == TRUE && $psw == TRUE) {
+                $_POST = Helpers_Utilities::remove_injection($_POST);
+                $request = !empty($_POST['type']) ? $_POST['type'] : '';
+                $_POST['username'] = (string)(strlen((string)$_POST['username']) <= 20) ? $_POST['username'] : 'na';
+                $_POST['password'] = (string)(strlen((string)$_POST['password']) <= 30) ? $_POST['password'] : 'na';
+                $request = (string)(strlen((string)$request) <= 7) ? $request : 'na';
+                $message = 'error';
+                if (HTTP_Request::POST == $this->request->method()) {
+                    $remember = array_key_exists('remember', $this->request->post()) ? (bool)$this->request->post('remember') : FALSE;
+                    $user = Auth::instance()->login($this->request->post('username'), $this->request->post('password'), $remember, $request);
+                    if ($user) {
+
+                        $user_obj = Auth::instance()->get_user();
+                        if ($user_obj) {
+                            $user_obj = ORM::factory('User', $user_obj);
                         }
+                        Helpers_Profile::is_login($user_obj->id, TRUE);
+                        $permission = Helpers_Utilities::get_user_permission($user_obj->id);
+                        $this->redirect('Userdashboard/dashboard');
                     } else {
-                        $view = View::factory('main')                                           //->set('places', array('Rome', 'Paris', 'London', 'New York', 'Tokyo'));
-                                ->bind('message', $message);                                       //$this->response->body(View::factory('main')); 
+                        $_SESSION["attempts"] = $_SESSION["attempts"] + 1;
+                        $message = "Login Fail";
+                        $view = View::factory('main')->bind('message', $message);
+                        $view->roles = Helpers_Utilities::get_roles_data();
                         $this->response->body($view);
                     }
                 } else {
-                    $message = "Please enter correct input";
                     $view = View::factory('main')                                           //->set('places', array('Rome', 'Paris', 'London', 'New York', 'Tokyo'));
-                            ->bind('message', $message);                                       //$this->response->body(View::factory('main')); 
+                    ->bind('message', $message);
+                    $view->roles = Helpers_Utilities::get_roles_data();
+                    //$this->response->body(View::factory('main'));
                     $this->response->body($view);
                 }
             } else {
-                try {
-                    $user_obj = Auth::instance()->get_user();
-                    $permission = Helpers_Utilities::get_user_permission($user_obj->id);
-                } catch (Exception $e) {
-                    
-                }
-                $this->redirect('Userdashboard/dashboard');
+                $message = "Please enter correct input";
+                $view = View::factory('main')                                           //->set('places', array('Rome', 'Paris', 'London', 'New York', 'Tokyo'));
+                ->bind('message', $message);                                       //$this->response->body(View::factory('main'));
+                $view->roles = Helpers_Utilities::get_roles_data();
+                $this->response->body($view);
             }
+        } else {
+            try {
+                $user_obj = Auth::instance()->get_user();
+                $permission = Helpers_Utilities::get_user_permission($user_obj->id);
+            } catch (Exception $e) {
+
+            }
+            $this->redirect('Userdashboard/dashboard');
+        }
 
     }
 
-    public function action_remote_login() {
+    public function action_remote_login()
+    {
 
         if (Auth::instance()->logged_in()) {
             Auth::instance()->logout(TRUE, TRUE);
@@ -238,19 +227,19 @@ class Controller_Login extends Controller {
 //            $this->redirect('errors'); 
 
         $actual_link = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
-        $size = strlen((string) $actual_link);
+        $size = strlen((string)$actual_link);
         $current_ip = $_SERVER['REMOTE_ADDR'];
         $check_ip_exist = Helpers_Utilities::checkblockIPforever($current_ip);
         if ($size >= 150) {
             //header("Location : https://www.aiesdfdfdfmail.com/");
             //$this->response->body(View::factory('templates/user/block'));             
-            header("Location : ".URL::site('blocked/')."?id=2");
+            header("Location : " . URL::site('blocked/') . "?id=2");
             exit;
         }
         if ($check_ip_exist == 1) {
             //header("Location : https://www.aiesdfdfdfmail.com/");
             //$this->response->body(View::factory('templates/user/block'));             
-            header("Location : ".URL::site('blocked/')."?id=1");
+            header("Location : " . URL::site('blocked/') . "?id=1");
             exit;
         }
 
@@ -343,14 +332,14 @@ class Controller_Login extends Controller {
                     $message = 'error';
 
                     if (HTTP_Request::POST == $this->request->method()) {
-                        $remember = array_key_exists('remember', $this->request->post()) ? (bool) $this->request->post('remember') : FALSE;
+                        $remember = array_key_exists('remember', $this->request->post()) ? (bool)$this->request->post('remember') : FALSE;
 
                         $user = Auth::instance()->login($this->request->post('username'), $this->request->post('password'), $remember, $request);
                         if ($user) {
                             $user_obj = Auth::instance()->get_user();
                             try {
                                 Helpers_Profile::is_login($user_obj->id, TRUE);
-                                $permission = Helpers_Utilities::get_user_permission($user_obj->id);                            
+                                $permission = Helpers_Utilities::get_user_permission($user_obj->id);
                             } catch (Exception $e) {
                             }
 //                            echo '<pre>';
@@ -381,7 +370,7 @@ class Controller_Login extends Controller {
                     $user_obj = Auth::instance()->get_user();
                     $permission = Helpers_Utilities::get_user_permission($user_obj->id);
                 } catch (Exception $e) {
-                    
+
                 }
                 /* if ($permission == 2) {
                   $this->redirect('user/data_upload');
@@ -392,7 +381,7 @@ class Controller_Login extends Controller {
                     $data = new Model_Api();
                     $response = $data->update_cis_aies_api_permissions($user_obj->id, 'update_posting_status', 'both');
                 } catch (Exception $e) {
-                    
+
                 }
 
                 $this->redirect('Userdashboard/dashboard');
@@ -403,7 +392,7 @@ class Controller_Login extends Controller {
                 if ($check_ip_exist)
                     $check_ip_exist = Helpers_Utilities::addblockIP($current_ip, $block_user_name);
             } catch (Exception $e) {
-                
+
             }
             $_SESSION["attempts"] = 0;
             $this->response->body(View::factory('templates/user/block'));
