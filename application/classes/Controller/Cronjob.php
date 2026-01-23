@@ -292,7 +292,7 @@ class Controller_Cronjob extends Controller {
             Model_ErrorLog::log(
                 'action_email_send_ufone',
                 $e->getMessage(),
-                [],
+                array('exception' => get_class($e)),
                 $e->getTraceAsString(),
                 'processing_failure',
                 'email_send_ufone'
@@ -308,7 +308,7 @@ class Controller_Cronjob extends Controller {
             Model_ErrorLog::log(
                 'action_email_send_nadira',
                 $e->getMessage(),
-                [],
+                array('exception' => get_class($e)),
                 $e->getTraceAsString(),
                 'processing_failure',
                 'email_send_nadira'
@@ -325,7 +325,7 @@ class Controller_Cronjob extends Controller {
             Model_ErrorLog::log(
                 'action_email_send_ptcl',
                 $e->getMessage(),
-                [],
+                array('exception' => get_class($e)),
                 $e->getTraceAsString(),
                 'processing_failure',
                 'email_send_ptcl'
@@ -344,7 +344,7 @@ class Controller_Cronjob extends Controller {
             Model_ErrorLog::log(
                 'action_email_send_loc',
                 $e->getMessage(),
-                [],
+                array('exception' => get_class($e)),
                 $e->getTraceAsString(),
                 'processing_failure',
                 'email_send_loc'
@@ -368,7 +368,7 @@ class Controller_Cronjob extends Controller {
             Model_ErrorLog::log(
                 'action_email_send',
                 $e->getMessage(),
-                [],
+                array('exception' => get_class($e)),
                 $e->getTraceAsString(),
                 'processing_failure',
                 'email_send'
@@ -385,7 +385,7 @@ class Controller_Cronjob extends Controller {
             Model_ErrorLog::log(
                 'action_email_receive',
                 $e->getMessage(),
-                [],
+                array('exception' => get_class($e)),
                 $e->getTraceAsString(),
                 'processing_failure',
                 'email_receive'
@@ -423,16 +423,12 @@ class Controller_Cronjob extends Controller {
         } catch (Exception $e) {
             Model_ErrorLog::log(
                 'action_email_receive2',
-                $e->getMessage(), [],
+                $e->getMessage(),  array('exception' => get_class($e)) ,
                 $e->getTraceAsString(),
                 'processing_failure',
                 'email_receive2'
             );
             error_log("[" . date('c') . "] email_receive2 failed: " . $e->getMessage());
-        } finally {
-          //  flock($lock, LOCK_UN);
-            //fclose($lock);
-            //@unlink($lockFile);
         }
     }
 

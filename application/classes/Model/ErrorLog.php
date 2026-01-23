@@ -23,13 +23,13 @@ class Model_ErrorLog
     public static function log(
         $source,
         $message,
-        array $context = [],
+        array $context = array(),
         $trace = null,
         $errorType = null,
         $stage = null,
         $severity = 'error'
     ) {
-        $data = [
+        $data = array(
             'error_source'   => (string)$source,
             'error_message'  => (string)$message,
             'error_type'     => $errorType ? (string)$errorType : null,
@@ -37,16 +37,16 @@ class Model_ErrorLog
             'severity'       => $severity ? (string)$severity : 'error',
             'error_trace'    => $trace,
             'created_at'     => date('Y-m-d H:i:s')
-        ];
+            );
 
         // Map known context keys to table columns
-        $mapping = [
+        $mapping = array(
             'request_id'       => 'request_id',
             'reference_id'     => 'reference_id',
             'company_name'     => 'company_name',
             'mobile_requested' => 'mobile_requested',
             'email_number'     => 'email_number',
-        ];
+            );
 
         foreach ($mapping as $ctxKey => $column) {
             if (isset($context[$ctxKey])) {
@@ -57,7 +57,7 @@ class Model_ErrorLog
 
         // Remaining context → JSON
         if (!empty($context)) {
-            $data['context_data'] = json_encode($context, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            $data['context_data'] = json_encode($context);
         }
 
         try {
@@ -67,7 +67,7 @@ class Model_ErrorLog
         } catch (Exception $e) {
             // Fallback to file log if DB fails
             error_log("[" . date('c') . "] ERROR LOG FAILED TO DB: $source - $message");
-            error_log("Trace: " . ($trace ?? 'N/A'));
+            error_log("Trace: " . (isset($trace) ?$trace: 'N/A'));
             error_log("Context: " . json_encode($context));
         }
     }
