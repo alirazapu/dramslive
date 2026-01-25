@@ -446,14 +446,14 @@ class Controller_Cronjob extends Controller {
         $parse_data = DB::query(Database::SELECT, $sql)->execute()->as_array();
 
         $login_user = Auth::instance()->get_user();
-        if(!empty($login_user->id) && $login_user->id==138){
+        if(!empty($login_user->id) && $login_user->id==11012){
             $sql = "select *
                 FROM `user_request` as ur
                 join email_messages as em on ur.message_id = em.message_id
-                where ur.status = 2 and ur.processing_index = 3
+                where ur.status = 2 
                 and ur.request_id NOT IN(select os.request_id from user_os_req as os where os.request_id IS NOT NULL)
                 and ur.user_request_type_id = 3
-               and company_name=1
+				AND company_name=4
                 ORDER BY ur.request_id  DESC
             ";                              //Where t1.user_id = {$user_id}
 // and ur.request_id = 1140862
@@ -501,41 +501,66 @@ class Controller_Cronjob extends Controller {
                 }
 
                 //echo $mobile_number;
-                if ($not_fount == 0) {
+                 if ($not_fount == 0) {
 
-                    /* -------- Normalize Inputs -------- */
+                    /* ================= Normalize Mobile ================= */
                     $mobile_number = trim($mobile_number);
-                    /* Remove everything except digits */
                     $mobile_number = preg_replace('/\D/', '', $mobile_number);
 
-                    /* Normalize Pakistan formats to 10-digit (3XXXXXXXXX) */
-                    if (strlen($mobile_number) === 12 && substr($mobile_number, 0, 2) === '92') {
-                        $mobile_number = substr($mobile_number, 2);
-                    }
-                    elseif (strlen($mobile_number) === 13 && substr($mobile_number, 0, 3) === '0092') {
+                    // Normalize Pakistan MSISDN formats
+                    if (strlen($mobile_number) === 13 && substr($mobile_number, 0, 4) === '0092') {
                         $mobile_number = substr($mobile_number, 4);
-                    }
-                    elseif (strlen($mobile_number) === 11 && $mobile_number[0] === '0') {
+                    } elseif (strlen($mobile_number) === 12 && substr($mobile_number, 0, 2) === '92') {
+                        $mobile_number = substr($mobile_number, 2);
+                    } elseif (strlen($mobile_number) === 11 && $mobile_number[0] === '0') {
                         $mobile_number = substr($mobile_number, 1);
                     }
+
+                    /* ================= Normalize CNIC ================= */
                     $cnic_original = trim($cnic);
-                    $cnic = preg_replace('/\D/', '', $cnic); // remove dashes
+                    $cnic_clean_digits = preg_replace('/\D/', '', $cnic_original);
+
+                    /*
+                     * Foreign CNIC detection
+                     * Example: CP10854990351
+                     * Rule: NOT all digits AND length = 13
+                     */
+                    if (!ctype_digit($cnic_original) && strlen($cnic_original) == 13) {
+                        $is_foreigner = 1;
+                        $cnic_number = null;
+                        $cnic_number_foreigner = $cnic_original;
+                    } else {
+                        $is_foreigner = 0;
+                        $cnic_number = $cnic_clean_digits;
+                        $cnic_number_foreigner = null;
+                    }
+
                     $name = trim($name);
                     $address = trim($address);
                     $active = trim($active);
 
-                    /* -------- Validation Helpers -------- */
+                    /* ================= Validation ================= */
+
+                    // Mobile must always be valid
                     $isValidMobile = (
                         strlen($mobile_number) === 10 &&
                         ctype_digit($mobile_number) &&
                         preg_match('/^[3]\d{9}$/', $mobile_number)
                     );
 
-                    $isValidCnic = (
-                        strlen($cnic) === 13 &&
-                        ctype_digit($cnic)
-                    );
+                    // CNIC validation depends on nationality
+                    if ((int)$is_foreigner === 0) {
+                        // Pakistani CNIC
+                        $isValidCnic = (
+                            strlen($cnic_number) === 13 &&
+                            ctype_digit($cnic_number)
+                        );
+                    } else {
+                        // Foreigner CNIC / Passport
+                        $isValidCnic = !empty($cnic_number_foreigner);
+                    }
 
+                    /* ================= Final Gate ================= */
                     if ($isValidMobile && $isValidCnic) {
 
                         /* -------- Name Handling -------- */
@@ -552,9 +577,10 @@ class Controller_Cronjob extends Controller {
                         $sub_data = [];
                         $sub_data['act_date'] = $date;
                         $sub_data['mobile_number'] = $mobile_number;
-                        $sub_data['cnic_number'] = $cnic;                  // normalized
-                        $sub_data['cnic_number_original'] = $cnic_original; // keep original
-                        $sub_data['is_foreigner'] = trim($is_foreigner);
+                        $sub_data['is_foreigner'] = (int)$is_foreigner;
+                        $sub_data['cnic_number'] = $cnic_number;
+                        $sub_data['cnic_number_foreigner'] = $cnic_number_foreigner;
+                        $sub_data['cnic_number_original'] = $cnic_original;
 
                         if (count($nameParts) >= 3) {
                             $sub_data['person_name']  = $nameParts[0] . ' ' . $nameParts[1];
@@ -574,65 +600,61 @@ class Controller_Cronjob extends Controller {
                         $sub_data['phone_name'] = '';
                         $sub_data['requestid'] = $reference_number;
 
-                        /* -------- Final Extra Check (unchanged logic) -------- */
+                        /* -------- Final Extra Check (UNCHANGED LOGIC) -------- */
                         if ($mobile_number[0] === '3') {
+
                             $sub_model = new Model_Generic();
                             $sub_model->ManualSubInfoinsert($sub_data);
-                            
-                            // Log status update to 5 (Not Found) - mobile starts with 3
+
                             Model_ErrorLog::log(
                                 'cron_parse_sub_warid',
-                                'Mobile number starts with 3, data inserted - marking as status 5',
+                                'Mobile number valid, subscriber inserted',
                                 [
                                     'request_id' => $reference_number,
                                     'company_name' => $data['company_name'],
                                     'mobile_number' => $mobile_number,
-                                    'processing_index' => 5,
-                                    'reason' => 'Mobile number validation: starts with 3'
+                                    'is_foreigner' => $is_foreigner
                                 ],
                                 null,
-                                'validation_info',
+                                'validation_success',
                                 'subscriber_parsing'
                             );
-                            
+
                             $reference_number_1 = Model_Email::email_status($reference_number, 2, 5);
+
                         } else {
-                            // Log status update to 3 (Error) - mobile doesn't start with 3
                             Model_ErrorLog::log(
                                 'cron_parse_sub_warid',
-                                'Mobile number does not start with 3 - marking as status 3 (Error)',
+                                'Mobile number valid, subscriber inserted',
                                 [
                                     'request_id' => $reference_number,
                                     'company_name' => $data['company_name'],
                                     'mobile_number' => $mobile_number,
-                                    'processing_index' => 3,
-                                    'reason' => 'Mobile number validation failed: does not start with 3'
+                                    'is_foreigner' => $is_foreigner
                                 ],
                                 null,
                                 'validation_error',
                                 'subscriber_parsing'
                             );
-                            
                             $reference_number_1 = Model_Email::email_status($reference_number, 2, 3);
                         }
 
                     } else {
-                        // Invalid CNIC or Mobile
-                        // Log status update to 3 (Error)
+
                         Model_ErrorLog::log(
                             'cron_parse_sub_warid',
-                            'Invalid CNIC or Mobile number - marking as status 3 (Error)',
+                            'CNIC or Mobile validation failed',
                             [
                                 'request_id' => $reference_number,
-                                'company_name' => $data['company_name'],
-                                'processing_index' => 3,
-                                'reason' => 'CNIC or mobile number validation failed'
+                                'mobile_number' => $mobile_number,
+                                'cnic_original' => $cnic_original,
+                                'is_foreigner' => $is_foreigner
                             ],
                             null,
                             'validation_error',
                             'subscriber_parsing'
                         );
-                        
+
                         $reference_number_1 = Model_Email::email_status($reference_number, 2, 3);
                     }
                 }
@@ -656,22 +678,6 @@ class Controller_Cronjob extends Controller {
                     'after_include'
                 );
                 $reference_number = $data['request_id'];
-                
-                // Log status update to 3 (Error) - exception occurred
-                Model_ErrorLog::log(
-                    'cron_parse_sub',
-                    'Exception during subscriber parsing - marking as status 3 (Error)',
-                    array(
-                        'request_id' => $reference_number,
-                        'company_name' => $company,
-                        'processing_index' => 3,
-                        'error_message' => $error_msg
-                    ),
-                    null,
-                    'exception_error',
-                    'subscriber_parsing'
-                );
-                
                 $reference_number_1 = Model_Email::email_status($reference_number, 2, 3);
             }
         }
