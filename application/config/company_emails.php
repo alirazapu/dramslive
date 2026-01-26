@@ -4,22 +4,22 @@ $base_emails = array(
     1  => ['email' => 'leasupportteam@jazz.com.pk',               'name' => ''],
     3  => [
         'types' => [
-            [6,1,2]   => ['email' => 'cdr.requests@ptclgroup.com',     'name' => ''],
-            [4,3]     => ['email' => 'ufone.location@ptclgroup.com',   'name' => ''],
+            '6,1,2'   => ['email' => 'cdr.requests@ptclgroup.com',     'name' => '', 'type_ids' => [6,1,2]],
+            '4,3'     => ['email' => 'ufone.location@ptclgroup.com',   'name' => '', 'type_ids' => [4,3]],
             'default' => ['email' => 'racentral@ufone.com',            'name' => ''],
         ],
     ],
     4  => ['email' => 'reg@zong.com.pk',                          'name' => ''],
     6  => [
         'types' => [
-            [3,5,1,2] => ['email' => 'lea.2@telenor.com.pk',           'name' => ''],
-            [4]       => ['email' => 'lea.1@telenor.com.pk',           'name' => ''],
+            '3,5,1,2' => ['email' => 'lea.2@telenor.com.pk',           'name' => '', 'type_ids' => [3,5,1,2]],
+            '4'       => ['email' => 'lea.1@telenor.com.pk',           'name' => '', 'type_ids' => [4]],
             'default' => ['email' => 'lea@newsystem123.com',           'name' => ''],
         ],
     ],
     7  => [
         'types' => [
-            [5,3,4]   => ['email' => 'leasupportteam@jazz.com.pk',     'name' => ''],
+            '5,3,4'   => ['email' => 'leasupportteam@jazz.com.pk',     'name' => '', 'type_ids' => [5,3,4]],
             'default' => ['email' => 'leasupportteam@jazz.com.pk',     'name' => ''],
         ],
     ],
@@ -29,11 +29,14 @@ $base_emails = array(
     13 => ['email' => 'naumana.manzoor@nadra.gov.pk',             'name' => 'Nadra'],
 );
 
-// Your Gmail address (or move to config/email.php if you prefer)
-$dev_base = 'ali.razapu';   // ← change only here if needed
+// Development email base - can be overridden by environment variable
+$dev_base = getenv('DEV_EMAIL_BASE') ?: 'ali.razapu';
 
-if (1==1){
-    //(Kohana::$environment === Kohana::DEVELOPMENT) {
+// Check if we're in development mode
+// This will use masked emails for testing in DEV, real emails in PRODUCTION
+$is_dev_mode = (Kohana::$environment === Kohana::DEVELOPMENT);
+
+if ($is_dev_mode) {
     $suffix_map = [
         1  => 'leasupportteam-jazz',
         3  => function($type) {
@@ -56,9 +59,9 @@ if (1==1){
 
     foreach ($base_emails as $company_id => &$cfg) {
         if (isset($cfg['email'])) {
-            // Simple case
+            // Simple case - for simple emails, we use the suffix directly
             $suffix = is_callable($suffix_map[$company_id] ?? null)
-                ? $suffix_map[$company_id]($res['user_request_type_id'] ?? 0) // fallback
+                ? $suffix_map[$company_id](0) // default request type
                 : ($suffix_map[$company_id] ?? 'unknown-' . $company_id);
 
             $cfg['email'] = $dev_base . '+' . str_replace(['@','.'], '', $suffix) . '@gmail.com';
@@ -66,15 +69,22 @@ if (1==1){
             // Type-based case
             foreach ($cfg['types'] as $key => &$details) {
                 if ($key === 'default') continue;
+                
+                // Get type_ids from the details array
+                $type_ids = $details['type_ids'] ?? [];
+                $first_type = !empty($type_ids) ? $type_ids[0] : 0;
+                
                 $suffix = is_callable($suffix_map[$company_id])
-                    ? $suffix_map[$company_id]($key[0])  // use first type as example
+                    ? $suffix_map[$company_id]($first_type)  // use first type as example
                     : ($suffix_map[$company_id] ?? 'unknown-' . $company_id);
 
                 $details['email'] = $dev_base . '+' . str_replace(['@','.'], '', $suffix) . '@gmail.com';
             }
             // Also override default
             if (isset($cfg['types']['default'])) {
-                $suffix = $suffix_map[$company_id] ?? 'unknown-' . $company_id;
+                $suffix = is_callable($suffix_map[$company_id] ?? null)
+                    ? $suffix_map[$company_id](0)  // use 0 for default
+                    : ($suffix_map[$company_id] ?? 'unknown-' . $company_id);
                 $cfg['types']['default']['email'] = $dev_base . '+' . str_replace(['@','.'], '', $suffix) . '@gmail.com';
             }
         }

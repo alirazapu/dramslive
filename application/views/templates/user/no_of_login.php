@@ -72,6 +72,11 @@
                                     <option <?php echo ((!empty($search_post['designation']) && ($search_post['designation'] == 'Assistant Sub-Inspector')) ? 'selected' : ''); ?> value="Assistant Sub-Inspector">Assistant Sub-Inspector (ASI)</option>
                                     <option <?php echo ((!empty($search_post['designation']) && ($search_post['designation'] == 'Head Constable')) ? 'selected' : ''); ?> value="Head Constable">Head Constable (HC)</option>
                                     <option <?php echo ((!empty($search_post['designation']) && ($search_post['designation'] == 'Constable')) ? 'selected' : ''); ?> value="Constable">Constable (C)</option>
+                                    <option <?php echo ((!empty($search_post['designation']) && ($search_post['designation'] == 'Director')) ? 'selected' : ''); ?> value="Director">Director</option>
+                                    <option <?php echo ((!empty($search_post['designation']) && ($search_post['designation'] == 'Deputy Director')) ? 'selected' : ''); ?> value="Deputy Director">Deputy Director</option>
+                                    <option <?php echo ((!empty($search_post['designation']) && ($search_post['designation'] == 'Assistant Director')) ? 'selected' : ''); ?> value="Assistant Director">Assistant Director</option>
+                                    <option <?php echo ((!empty($search_post['designation']) && ($search_post['designation'] == 'Supervisor')) ? 'selected' : ''); ?> value="Supervisor">Supervisor</option>
+                                    <option <?php echo ((!empty($search_post['designation']) && ($search_post['designation'] == 'Computer Operator')) ? 'selected' : ''); ?> value="Computer Operator">Computer Operator</option>
                                 </select>
                             </div>
 

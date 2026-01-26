@@ -28,6 +28,11 @@
                 </div>
 
                 <div class="col-sm-2">
+                    <label>Processing Status</label>
+                    <?= Form::select('processing_index', $processing_index_options, Arr::get($filters,'processing_index'), ['class'=>'form-control']) ?>
+                </div>
+
+                <div class="col-sm-2">
                     <label>Request ID</label>
                     <input type="number" name="request_id" value="<?= Arr::get($filters,'request_id') ?>" class="form-control">
                 </div>
@@ -83,9 +88,10 @@
                     <tr>
                         <th width="140">Time</th>
                         <th width="130">Source</th>
-                        <th width="130">Type</th>
-                        <th width="90">Request</th>
-                        <th width="80">Company</th>
+                        <th width="110">Type</th>
+                        <th width="100">Stage</th>
+                        <th width="80">Request</th>
+                        <th width="70">Company</th>
                         <th>Error Message</th>
                         <th width="160">Details</th>
                     </tr>
@@ -105,6 +111,12 @@
                             <td>
                                 <span class="label label-danger">
                                     <?= HTML::chars($log['error_type'] ?: 'unknown') ?>
+                                </span>
+                            </td>
+
+                            <td>
+                                <span class="label label-info">
+                                    <?= HTML::chars($log['process_stage'] ?: '—') ?>
                                 </span>
                             </td>
 
@@ -136,7 +148,7 @@
 
                         <?php if ($log['context_data'] || $log['error_trace']): ?>
                             <tr id="detail<?= $log['id'] ?>" class="collapse">
-                                <td colspan="7">
+                                <td colspan="8">
                                     <div class="well well-sm"
                                          style="font-family: monospace; font-size:12px">
 

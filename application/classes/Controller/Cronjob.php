@@ -8,94 +8,433 @@
 
 class Controller_Cronjob extends Controller {    
     /* test function */
+
+    public function action_testunzipall()
+    {
+        echo "<pre>";
+        echo "========================================\n";
+        echo "ZIP & RAR UNZIP FUNCTION TEST\n";
+        echo "========================================\n\n";
+
+        // Test file paths
+        $zip_file = DOCROOT . 'dramsfiles/requests-data/955001-960000/923009354085.zip';
+        $rar_file = DOCROOT . 'dramsfiles/requests-data/955001-960000/rqt15fid959174.rar';
+        $request_id = 999999; // dummy
+
+        // 1. Check PHP extensions
+        $zip_ext = extension_loaded('zip');
+        $rar_ext = extension_loaded('rar');
+        $unrar_cli = (shell_exec('where unrar') || shell_exec('which unrar')) ? true : false;
+
+        echo "PHP extension 'zip': " . ($zip_ext ? "✓ Loaded" : "✗ NOT loaded") . "\n";
+        echo "PHP extension 'rar': " . ($rar_ext ? "✓ Loaded" : "✗ NOT loaded") . "\n";
+        echo "unrar CLI available: " . ($unrar_cli ? "✓ Yes" : "✗ No") . "\n\n";
+
+        // 2. Check file existence
+        echo "ZIP file: $zip_file\n";
+        echo "RAR file: $rar_file\n";
+        echo "ZIP file exists: " . (file_exists($zip_file) ? "✓ Yes" : "✗ No") . "\n";
+        echo "RAR file exists: " . (file_exists($rar_file) ? "✓ Yes" : "✗ No") . "\n\n";
+
+        // 3. Check file permissions
+        echo "ZIP file readable: " . (is_readable($zip_file) ? "✓ Yes" : "✗ No") . "\n";
+        echo "RAR file readable: " . (is_readable($rar_file) ? "✓ Yes" : "✗ No") . "\n\n";
+
+        // 4. Test ZIP extraction
+        echo "── Testing ZIP extraction ──\n";
+        if ($zip_ext && file_exists($zip_file) && is_readable($zip_file)) {
+            try {
+                $result = Helpers_Upload::unzip_file($zip_file, $request_id);
+                if ($result) {
+                    echo "✓ unzip_file() SUCCESS: Extracted file: $result\n";
+                } else {
+                    echo "✗ unzip_file() returned empty result.\n";
+                }
+            } catch (Exception $e) {
+                echo "✗ unzip_file() EXCEPTION: " . $e->getMessage() . "\n";
+            }
+        } else {
+            echo "✗ Cannot test ZIP extraction (missing extension or file).\n";
+        }
+        echo "\n";
+
+        // 5. Test RAR extraction
+        echo "── Testing RAR extraction ──\n";
+        if (($rar_ext || $unrar_cli) && file_exists($rar_file) && is_readable($rar_file)) {
+            try {
+                $result = Helpers_Upload::unziprar_file($rar_file, $request_id);
+                if ($result) {
+                    echo "✓ unziprar_file() SUCCESS: Extracted file: $result\n";
+                } else {
+                    echo "✗ unziprar_file() returned empty result.\n";
+                }
+            } catch (Exception $e) {
+                echo "✗ unziprar_file() EXCEPTION: " . $e->getMessage() . "\n";
+            }
+        } else {
+            echo "✗ Cannot test RAR extraction (missing extension/CLI or file).\n";
+        }
+        echo "\n";
+
+        // 6. Print summary of missing requirements
+        echo "========================================\n";
+        echo "SUMMARY OF MISSING REQUIREMENTS:\n";
+        if (!$zip_ext) echo "- PHP 'zip' extension is missing.\n";
+        if (!$rar_ext && !$unrar_cli) echo "- Neither PHP 'rar' extension nor 'unrar' CLI is available.\n";
+        if (!file_exists($zip_file)) echo "- ZIP test file is missing.\n";
+        if (!file_exists($rar_file)) echo "- RAR test file is missing.\n";
+        if (file_exists($zip_file) && !is_readable($zip_file)) echo "- ZIP file is not readable by PHP.\n";
+        if (file_exists($rar_file) && !is_readable($rar_file)) echo "- RAR file is not readable by PHP.\n";
+        if ($zip_ext && $rar_ext) echo "- All required PHP extensions are present.\n";
+        if ($zip_ext && ($rar_ext || $unrar_cli) && file_exists($zip_file) && file_exists($rar_file)) echo "- All requirements for extraction are present.\n";
+        echo "========================================\n";
+        exit;
+    }
     public function action_test() {
-        var_dump(shell_exec('unrar'));
+
+        //var_dump(shell_exec('unrar'));
         // Original code
-        $send_key = Helpers_Utilities::encrypted_key('ftoqbqythasdpwqz', "encrypt");
+      /*  $send_key = Helpers_Utilities::encrypted_key('bfcihehizxazlphk', "encrypt");
         echo $send_key . "<br>";
-        $send_key = str_replace("axHmBf8ri9x", "", 'c3AxdXcveDNqUjlaMVdyYXpsUCswaVk1OTdWL2oyK3dWMFE1OER3N0QvUT0==');
+        $send_key = str_replace("axHmBf8ri9x", "", $send_key);
         $send_key = Helpers_Utilities::encrypted_key($send_key, "decrypt");
         echo $send_key . "<br><br>";
-
+        die;
+        echo "<pre>";
+        echo "========================================\n";
+        echo "EMAIL CONFIGURATION TEST\n";
+        echo "========================================\n\n";
+        */
+        // Display current environment
+        $env_name = (Kohana::$environment === Kohana::DEVELOPMENT) ? 'DEVELOPMENT' : 'PRODUCTION';
+        echo "Current Environment: " . $env_name . "\n\n";
+        
         // ────────────────────────────────────────────────
-        // Test logging with Model_ErrorLog
+        // Test SMTP Connection (Send)
         // ────────────────────────────────────────────────
-
-      /*  try {
-            // Simulate a success log (no error)
-            Model_ErrorLog::log(
-                'test_cron',
-                'This is a test info message (not an error)',
-                [
-                    'test_param1' => 'value1',
-                    'test_param2' => 123
-                ],
-                null,
-                'info',
-                'test_stage'
-            );
-            echo "Success info logged.<br>";
-
-            // Simulate an error
-            throw new Exception("Simulated test error for logging");
-
+      /*  echo "── SMTP Connection Test (Send) ──\n";
+        try {
+            $result = Helpers_Inneruse::get_gmail_pw();
+            $smtp_user = $result['send']['user'];
+            $smtp_pass = $result['send']['password'];
+            
+            echo "SMTP Username: " . $smtp_user . "\n";
+            echo "SMTP Host: smtp.gmail.com\n";
+            echo "SMTP Port: 465 (SSL)\n";
+            
+            // Try to connect to SMTP
+            $mail = new PHPMailer();
+            $mail->IsSMTP();
+            $mail->SMTPAuth = true;
+            $mail->SMTPSecure = 'ssl';
+            $mail->Host = "smtp.gmail.com";
+            $mail->Port = 465;
+            $mail->Username = $smtp_user;
+            $mail->Password = $smtp_pass;
+            
+            // Test connection by sending a test email to self
+            $mail->setFrom($smtp_user, 'SMTP Test');
+            $mail->addAddress($smtp_user);
+            $mail->Subject = 'SMTP Connection Test - ' . date('Y-m-d H:i:s');
+            $mail->Body = 'This is a test email to verify SMTP connection is working.';
+            $mail->IsHTML(true);
+            
+            if ($mail->Send()) {
+                echo "✓ SMTP Connection: SUCCESS\n";
+                echo "✓ Test email sent successfully\n";
+                
+                Model_ErrorLog::log(
+                    'action_test_smtp',
+                    'SMTP connection test successful',
+                    [
+                        'smtp_user' => $smtp_user,
+                        'smtp_host' => 'smtp.gmail.com',
+                        'smtp_port' => 465
+                    ],
+                    null,
+                    'smtp_test_success',
+                    'connection_test'
+                );
+            } else {
+                echo "✗ SMTP Connection: FAILED\n";
+                echo "Error: " . $mail->ErrorInfo . "\n";
+                
+                Model_ErrorLog::log(
+                    'action_test_smtp',
+                    'SMTP connection test failed: ' . $mail->ErrorInfo,
+                    [
+                        'smtp_user' => $smtp_user,
+                        'smtp_host' => 'smtp.gmail.com',
+                        'smtp_port' => 465,
+                        'error' => $mail->ErrorInfo
+                    ],
+                    null,
+                    'smtp_test_failure',
+                    'connection_test'
+                );
+            }
         } catch (Exception $e) {
+            echo "✗ SMTP Connection: EXCEPTION\n";
+            echo "Error: " . $e->getMessage() . "\n";
+            
             Model_ErrorLog::log(
-                'test_cron',
-                $e->getMessage(),
-                [
-                    'extra_context' => 'This is test context',
-                    'user_id'       => Auth::instance()->get_user()->id ?? 'unknown',
-                    'timestamp'     => date('c')
-                ],
+                'action_test_smtp',
+                'SMTP connection test exception: ' . $e->getMessage(),
+                [],
                 $e->getTraceAsString(),
-                'test_error',
-                'simulation'
+                'smtp_test_exception',
+                'connection_test'
             );
-            echo "Error logged successfully: " . htmlspecialchars($e->getMessage()) . "<br>";
-        }*/
+        }
+        echo "\n";
+        */
+        // ────────────────────────────────────────────────
+        // Test IMAP Connection (Receive)
+        // ────────────────────────────────────────────────
+        echo "── IMAP Connection Test (Receive) ──\n";
+        try {
+            $result = Helpers_Inneruse::get_gmail_pw();
+            //$imap_user = 'reg745964@gmail.com';//$result['receive']['user'];//$mail->Username = 'cfuctdkp@gmail.com';
+            //$mail->Password = 'wgidvhtwxgbhhoen';
 
-        // Check logs manually in DB or tail error_log
-        echo "Check system_error_log table or error_log file for entries with error_source='test_cron'";
+          //  $imap_pass = 'bfcihehizxazlphk';//$result['receive']['password'];
+            $imap_user = $result['receive']['user'];
+            $imap_pass = $result['receive']['password'];
 
+
+            //$imap_pass = 'bfcihehizxazlphk';//$result['receive']['password'];
+            echo "IMAP Username: " . $imap_user . "\n";
+            echo "IMAP PAssword: " . $imap_pass . "\n";
+            echo "IMAP Host: imap.gmail.com\n";
+            echo "IMAP Port: 993 (SSL)\n";
+            // Try to connect to IMAP
+            $hostname = '{imap.gmail.com:993/imap/ssl/novalidate-cert}INBOX';
+            $inbox = imap_open($hostname, $imap_user, $imap_pass);
+            
+            if ($inbox) {
+                echo "✓ IMAP Connection: SUCCESS\n";
+                
+                // Get mailbox info
+                $check = imap_mailboxmsginfo($inbox);
+                echo "✓ Mailbox Messages: " . $check->Nmsgs . "\n";
+                echo "✓ Unread Messages: " . $check->Unread . "\n";
+                
+                imap_close($inbox);
+                
+                Model_ErrorLog::log(
+                    'action_test_imap',
+                    'IMAP connection test successful',
+                    [
+                        'imap_user' => $imap_user,
+                        'imap_host' => 'imap.gmail.com',
+                        'imap_port' => 993,
+                        'total_messages' => $check->Nmsgs,
+                        'unread_messages' => $check->Unread
+                    ],
+                    null,
+                    'imap_test_success',
+                    'connection_test'
+                );
+            } else {
+                echo "✗ IMAP Connection: FAILED\n";
+                echo "Error: " . imap_last_error() . "\n";
+                
+                Model_ErrorLog::log(
+                    'action_test_imap',
+                    'IMAP connection test failed: ' . imap_last_error(),
+                    [
+                        'imap_user' => $imap_user,
+                        'imap_host' => 'imap.gmail.com',
+                        'imap_port' => 993,
+                        'error' => imap_last_error()
+                    ],
+                    null,
+                    'imap_test_failure',
+                    'connection_test'
+                );
+            }
+        } catch (Exception $e) {
+            echo "✗ IMAP Connection: EXCEPTION\n";
+            echo "Error: " . $e->getMessage() . "\n";
+            
+            Model_ErrorLog::log(
+                'action_test_imap',
+                'IMAP connection test exception: ' . $e->getMessage(),
+                [],
+                $e->getTraceAsString(),
+                'imap_test_exception',
+                'connection_test'
+            );
+        }
+        echo "\n";
+       /*
+        // ────────────────────────────────────────────────
+        // Test Gmail credentials
+        // ────────────────────────────────────────────────
+        echo "── Gmail Credentials Test ──\n";
+        $gmail_creds = Helpers_Inneruse::get_gmail_pw();
+        print_r($gmail_creds);
+        echo "\n";
+        
+        // ────────────────────────────────────────────────
+        // Test Company Emails
+        // ────────────────────────────────────────────────
+        echo "── Company Email Configuration Test ──\n\n";
+        
+        $companies = [
+            1  => 'Mobilink/Jazz',
+            3  => 'Ufone',
+            4  => 'Zong',
+            6  => 'Telenor',
+            7  => 'Warid',
+            8  => 'SCOM',
+            11 => 'PTCL',
+            12 => 'International',
+            13 => 'NADRA'
+        ];
+        
+        foreach ($companies as $company_id => $company_name) {
+            echo "Company ID {$company_id} - {$company_name}:\n";
+            $email_config = Helpers_CompanyEmail::get_email($company_id);
+            print_r($email_config);
+            echo "\n";
+        }
+        
+        // Test company emails with specific request types
+        echo "\n── Company Emails with Request Types ──\n\n";
+        
+        // Ufone with different request types
+        echo "Ufone (Company ID 3) - Request Type 1 (MSISDN CDR):\n";
+        print_r(Helpers_CompanyEmail::get_email(3, 1));
+        echo "\nUfone (Company ID 3) - Request Type 4 (Location):\n";
+        print_r(Helpers_CompanyEmail::get_email(3, 4));
+        echo "\n";
+        
+        // Telenor with different request types
+        echo "Telenor (Company ID 6) - Request Type 1 (MSISDN CDR):\n";
+        print_r(Helpers_CompanyEmail::get_email(6, 1));
+        echo "\nTelenor (Company ID 6) - Request Type 4 (Location):\n";
+        print_r(Helpers_CompanyEmail::get_email(6, 4));
+        echo "\n";
+        
+        // Warid with different request types
+        echo "Warid (Company ID 7) - Request Type 3:\n";
+        print_r(Helpers_CompanyEmail::get_email(7, 3));
+        echo "\n";
+        
+        echo "========================================\n";
+        echo "TEST COMPLETED SUCCESSFULLY\n";
+        echo "========================================\n";*/
         exit;
     }    
     public function action_email_send_ufone() {
-        /*  High prority  for location */
-        include 'cron_job/send_other/low_ufone.inc';
+        try {
+            /*  High prority  for location */
+            include 'cron_job' . DS . 'send_other' . DS . 'low_ufone.inc';
+        } catch (Exception $e) {
+            Model_ErrorLog::log(
+                'action_email_send_ufone',
+                $e->getMessage(),
+                [],
+                $e->getTraceAsString(),
+                'processing_failure',
+                'email_send_ufone'
+            );
+            error_log("[" . date('c') . "] action_email_send_ufone failed: " . $e->getMessage());
+        }
     }
     public function action_email_send_nadira() {
-        /*  High prority  for location */
-        include 'cron_job/send_nadira/heigh.inc';
+        try {
+            /*  High prority  for location */
+            include 'cron_job' . DS . 'send_nadira' . DS . 'heigh.inc';
+        } catch (Exception $e) {
+            Model_ErrorLog::log(
+                'action_email_send_nadira',
+                $e->getMessage(),
+                [],
+                $e->getTraceAsString(),
+                'processing_failure',
+                'email_send_nadira'
+            );
+            error_log("[" . date('c') . "] action_email_send_nadira failed: " . $e->getMessage());
+        }
     }
     /* ptcl */
     public function action_email_send_ptcl() {
-        /*  High prority  for location */
-        include 'cron_job/send_ptcl/heigh.inc';
+        try {
+            /*  High prority  for location */
+            include 'cron_job' . DS . 'send_ptcl' . DS . 'heigh.inc';
+        } catch (Exception $e) {
+            Model_ErrorLog::log(
+                'action_email_send_ptcl',
+                $e->getMessage(),
+                [],
+                $e->getTraceAsString(),
+                'processing_failure',
+                'email_send_ptcl'
+            );
+            error_log("[" . date('c') . "] action_email_send_ptcl failed: " . $e->getMessage());
+        }
     }
     /* Current Location */
     public function action_email_send_loc() {
-        /* Telco Report */
-        include 'cron_job/send_other/telco_rep.inc';
-        /*  High prority  for location */
-        include 'cron_job/send_location/heigh.inc';
+        try {
+            /* Telco Report */
+            include 'cron_job' . DS . 'send_other' . DS . 'telco_rep.inc';
+            /*  High prority  for location */
+            include 'cron_job' . DS . 'send_location' . DS . 'heigh.inc';
+        } catch (Exception $e) {
+            Model_ErrorLog::log(
+                'action_email_send_loc',
+                $e->getMessage(),
+                [],
+                $e->getTraceAsString(),
+                'processing_failure',
+                'email_send_loc'
+            );
+            error_log("[" . date('c') . "] action_email_send_loc failed: " . $e->getMessage());
+        }
     }
 
     public function action_email_send() {
-        $data = Model_Generic::resend_error_in_queue();
-        /* Telco Report */
-        include 'cron_job/send_other/telco_rep.inc';
-        /*  High prority */
-        include 'cron_job/send_other/heigh.inc';
-        /*  Medium prority */
-        include 'cron_job/send_other/medium.inc';
-        /*  Low prority */
-        include 'cron_job/send_other/low.inc';
+        try {
+            $data = Model_Generic::resend_error_in_queue();
+            /* Telco Report */
+            include 'cron_job' . DS . 'send_other' . DS . 'telco_rep.inc';
+            /*  High prority */
+            include 'cron_job' . DS . 'send_other' . DS . 'heigh.inc';
+            /*  Medium prority */
+            include 'cron_job' . DS . 'send_other' . DS . 'medium.inc';
+            /*  Low prority */
+            include 'cron_job' . DS . 'send_other' . DS . 'low.inc';
+        } catch (Exception $e) {
+            Model_ErrorLog::log(
+                'action_email_send',
+                $e->getMessage(),
+                [],
+                $e->getTraceAsString(),
+                'processing_failure',
+                'email_send'
+            );
+            error_log("[" . date('c') . "] action_email_send failed: " . $e->getMessage());
+        }
     }
 
     /* email receive */
-    public function action_email_receive() {        
-      Helpers_Email::get_email_status();
+    public function action_email_receive() {
+       /* try {
+            Helpers_Email::get_email_status();
+        } catch (Exception $e) {
+            Model_ErrorLog::log(
+                'action_email_receive',
+                $e->getMessage(),
+                [],
+                $e->getTraceAsString(),
+                'processing_failure',
+                'email_receive'
+            );
+            error_log("[" . date('c') . "] action_email_receive failed: " . $e->getMessage());
+        }*/
     }
 
     /* email receive */
@@ -191,19 +530,19 @@ class Controller_Cronjob extends Controller {
                 switch ($data['company_name']) {
                     case 1: // mobilink
                     case 7: // mobilink
-                        include 'cron_job/parse_sub/mobilink.inc';
+                        include 'cron_job' . DS . 'parse_sub' . DS . 'mobilink.inc';
                         $company    = 'mobilink';
                         break;
                     case 3: // Ufone
-                        include 'cron_job/parse_sub/ufone.inc';
+                        include 'cron_job' . DS . 'parse_sub' . DS . 'ufone.inc';
                         $company    = 'ufone';
                         break;
                     case 6: // Telenor
-                        include 'cron_job/parse_sub/telenor.inc';
+                        include 'cron_job' . DS . 'parse_sub' . DS . 'telenor.inc';
                         $company    = 'telenor';
                         break;
                     case 4: // Zong
-                        include 'cron_job/parse_sub/zong.inc';
+                        include 'cron_job' . DS . 'parse_sub' . DS . 'zong.inc';
                         $company    = 'zong';
                         break;
                 }
@@ -286,13 +625,61 @@ class Controller_Cronjob extends Controller {
                         if ($mobile_number[0] === '3') {
                             $sub_model = new Model_Generic();
                             $sub_model->ManualSubInfoinsert($sub_data);
+                            
+                            // Log status update to 5 (Not Found) - mobile starts with 3
+                            Model_ErrorLog::log(
+                                'cron_parse_sub_warid',
+                                'Mobile number starts with 3, data inserted - marking as status 5',
+                                [
+                                    'request_id' => $reference_number,
+                                    'company_name' => $data['company_name'],
+                                    'mobile_number' => $mobile_number,
+                                    'processing_index' => 5,
+                                    'reason' => 'Mobile number validation: starts with 3'
+                                ],
+                                null,
+                                'validation_info',
+                                'subscriber_parsing'
+                            );
+                            
                             $reference_number_1 = Model_Email::email_status($reference_number, 2, 5);
                         } else {
+                            // Log status update to 3 (Error) - mobile doesn't start with 3
+                            Model_ErrorLog::log(
+                                'cron_parse_sub_warid',
+                                'Mobile number does not start with 3 - marking as status 3 (Error)',
+                                [
+                                    'request_id' => $reference_number,
+                                    'company_name' => $data['company_name'],
+                                    'mobile_number' => $mobile_number,
+                                    'processing_index' => 3,
+                                    'reason' => 'Mobile number validation failed: does not start with 3'
+                                ],
+                                null,
+                                'validation_error',
+                                'subscriber_parsing'
+                            );
+                            
                             $reference_number_1 = Model_Email::email_status($reference_number, 2, 3);
                         }
 
                     } else {
                         // Invalid CNIC or Mobile
+                        // Log status update to 3 (Error)
+                        Model_ErrorLog::log(
+                            'cron_parse_sub_warid',
+                            'Invalid CNIC or Mobile number - marking as status 3 (Error)',
+                            [
+                                'request_id' => $reference_number,
+                                'company_name' => $data['company_name'],
+                                'processing_index' => 3,
+                                'reason' => 'CNIC or mobile number validation failed'
+                            ],
+                            null,
+                            'validation_error',
+                            'subscriber_parsing'
+                        );
+                        
                         $reference_number_1 = Model_Email::email_status($reference_number, 2, 3);
                     }
                 }
@@ -316,6 +703,22 @@ class Controller_Cronjob extends Controller {
                     'after_include'
                 );
                 $reference_number = $data['request_id'];
+                
+                // Log status update to 3 (Error) - exception occurred
+                Model_ErrorLog::log(
+                    'cron_parse_sub',
+                    'Exception during subscriber parsing - marking as status 3 (Error)',
+                    [
+                        'request_id' => $reference_number,
+                        'company_name' => $company,
+                        'processing_index' => 3,
+                        'error_message' => $error_msg
+                    ],
+                    null,
+                    'exception_error',
+                    'subscriber_parsing'
+                );
+                
                 $reference_number_1 = Model_Email::email_status($reference_number, 2, 3);
             }
         }
@@ -400,34 +803,34 @@ class Controller_Cronjob extends Controller {
                 switch ($data['company_name']) {
                     case 1: // mobilink                      
                         // echo '<br>' . 'Mobilink' .'<br>';                                                                        
-                        include 'cron_job/parse_location/mobilink.inc';
+                        include 'cron_job' . DS . 'parse_location' . DS . 'mobilink.inc';
 
                         break;
                     case 7: // warid
                         //echo '<br>' . 'Warid' .'<br>';
-                        include 'cron_job/parse_location/warid.inc';
+                        include 'cron_job' . DS . 'parse_location' . DS . 'warid.inc';
 
                         break;
                     case 3: // Ufone
                         //echo '<br>' . 'Ufone' .'<br>';  
                         
-                        include 'cron_job/parse_location/ufone.inc';
+                        include 'cron_job' . DS . 'parse_location' . DS . 'ufone.inc';
 
                         break;
                     case 6: // Telenor
                         //echo '<br>' . 'Telenor' .'<br>';                        
-                        include 'cron_job/parse_location/telenor.inc';
+                        include 'cron_job' . DS . 'parse_location' . DS . 'telenor.inc';
 
                         break;
                     case 4: // Zong
                         //echo '<br>' . 'Zong' .'<br>';                        
-                        include 'cron_job/parse_location/zong.inc';
+                        include 'cron_job' . DS . 'parse_location' . DS . 'zong.inc';
 
                         break;
                     
                          case 8: // scom
                         //echo '<br>' . 'Scom' .'<br>';                                               
-                        include 'cron_job/parse_location/scom.inc';
+                        include 'cron_job' . DS . 'parse_location' . DS . 'scom.inc';
 
                         break;
                 }
@@ -440,22 +843,44 @@ class Controller_Cronjob extends Controller {
                         $sub_model = new Model_Generic();
                         $sub_model_result = $sub_model->ManualLocationinsert($loc_data);
                     } else {
+                        Model_ErrorLog::log(
+                            'cron_parse_location',
+                            'Invalid location MSISDN format - marking as status 3 (Error)',
+                            [
+                                'request_id' => $reference_number,
+                                'company_name' => $data['company_name'] ?? 'unknown',
+                                'processing_index' => 3,
+                                'locationmsisdn' => $loc_data['locationmsisdn'] ?? '',
+                                'reason' => 'Location MSISDN validation failed: invalid length or format'
+                            ],
+                            null,
+                            'validation_error',
+                            'location_parsing'
+                        );
+                        
                         $reference_number = Model_Email::email_status($reference_number, 2, 3);
                       //  break;
                        // exit;
                     }
                 }
             } catch (Exception $e) {
+                $error_msg = $e->getMessage();
+                $error_trace = $e->getTraceAsString();
                 
-//                if(!empty($login_user->id) && $login_user->id==138){
-//         echo '<pre>'; print_r($e);         
-//          exit;
-//         
-//          }
-                //re-throw exception
-                //throw new customException($email);
-                //echo $loc_data['requestid']; 
-               // echo $e;
+                Model_ErrorLog::log(
+                    'cron_parse_loc',
+                    $error_msg,
+                    [
+                        'request_id'       => $data['request_id'] ?? 'unknown',
+                        'company_name'     => $data['company_name'] ?? 'unknown',
+                        'mobile_requested' => $data['requested_value'] ?? 'unknown',
+                        'user_id'          => $data['user_id'] ?? null
+                    ],
+                    $error_trace,
+                    'parsing_failure',
+                    'location_parsing'
+                );
+                
                 $reference_number = $data['request_id'];
                 $reference_number = Model_Email::email_status($reference_number, 2, 3);
 
@@ -516,28 +941,28 @@ class Controller_Cronjob extends Controller {
                 switch ($data['company_name']) {
                     case 1: // mobilink  
                         // echo '<br>' . 'Mobilink' .'<br>';
-                        include 'cron_job/parse_nic/mobilink.inc';
+                        include 'cron_job' . DS . 'parse_nic' . DS . 'mobilink.inc';
 
                         break;
                     case 7: // warid
                         //echo '<br>' . 'Warid' .'<br>';
-                        include 'cron_job/parse_nic/warid.inc';
+                        include 'cron_job' . DS . 'parse_nic' . DS . 'warid.inc';
 
                         break;
                     case 3: // Ufone
                         //echo '<br>' . 'Ufone' .'<br>';                                    
-                        include 'cron_job/parse_nic/ufone.inc';
+                        include 'cron_job' . DS . 'parse_nic' . DS . 'ufone.inc';
 
                         break;
                     case 6: // Telenor
                         echo '<br>' . 'Telenor' .'<br>';                        
-                        include 'cron_job/parse_nic/telenor.inc';
+                        include 'cron_job' . DS . 'parse_nic' . DS . 'telenor.inc';
 
 
                         break;
                     case 4: // Zong
                         //echo '<br>' . 'Zong' .'<br>';                                               
-                        include 'cron_job/parse_nic/zong.inc';
+                        include 'cron_job' . DS . 'parse_nic' . DS . 'zong.inc';
 
                         break;
                 }
@@ -550,17 +975,44 @@ class Controller_Cronjob extends Controller {
                         $sub_model = new Model_Generic();
                         $sub_model_result = $sub_model->Manualcnicsimsinsert($loc_data);
                     } else {
+                        Model_ErrorLog::log(
+                            'cron_parse_nic',
+                            'Invalid CNIC format - marking as status 3 (Error)',
+                            [
+                                'request_id' => $reference_number,
+                                'company_name' => $data['company_name'] ?? 'unknown',
+                                'processing_index' => 3,
+                                'cnicsims' => $loc_data['cnicsims'] ?? '',
+                                'reason' => 'CNIC validation failed: invalid length or format'
+                            ],
+                            null,
+                            'validation_error',
+                            'nic_parsing'
+                        );
+                        
                         $reference_number = Model_Email::email_status($reference_number, 2, 3);
                         break;
                         exit;
                     }
                 }
             } catch (Exception $e) {
-                //re-throw exception
-                //echo $loc_data['requestid'];         //throw new customException($email);
-                /*echo '<pre>';
-                echo $e;
-                exit;*/
+                $error_msg = $e->getMessage();
+                $error_trace = $e->getTraceAsString();
+                
+                Model_ErrorLog::log(
+                    'cron_parse_nic',
+                    $error_msg,
+                    [
+                        'request_id'       => $data['request_id'] ?? 'unknown',
+                        'company_name'     => $data['company_name'] ?? 'unknown',
+                        'mobile_requested' => $data['requested_value'] ?? 'unknown',
+                        'file_id'          => $data['file_id'] ?? null
+                    ],
+                    $error_trace,
+                    'parsing_failure',
+                    'nic_parsing'
+                );
+                
                 $reference_number = $data['request_id'];
                 $reference_number = Model_Email::email_status($reference_number, 2, 3);
                 break;
@@ -611,7 +1063,7 @@ class Controller_Cronjob extends Controller {
                         $data['received_body'] = base64_decode($data['received_body']); 
                     }
                     $data['received_body'] = array_filter(explode('From:',strip_tags($data['received_body'])));                                 
-                    include DOCUMENT_ROOT.'application/classes/Controller/cron_job/parse_sub/notfound.inc';
+                    include DOCUMENT_ROOT . 'application' . DS . 'classes' . DS . 'Controller' . DS . 'cron_job' . DS . 'parse_sub' . DS . 'notfound.inc';
                     exit;
                 }    
                 $data['received_file_path'] = !empty($cdrfile_name['file'])?$cdrfile_name['file']:'';
@@ -620,18 +1072,18 @@ class Controller_Cronjob extends Controller {
                 switch ($data['company_name']) {
                     case 1: // mobilink  
                         echo '<br>' . 'Mobilink' . '<br>';
-                        include 'cron_job/parse_phone/mobilink.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'mobilink.inc';
 
                         break;
                     case 7: // warid
                         echo '<br>' . 'Warid' . '<br>';
-                        include 'cron_job/parse_phone/warid.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'warid.inc';
 
 
                         break;
                     case 3: // Ufone
                         echo '<br>' . 'Ufone' . '<br>';
-                        include 'cron_job/parse_phone/ufone.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'ufone.inc';
                         // echo '<pre>';
                         // print_r($data['received_file_path']);                      
 
@@ -639,7 +1091,7 @@ class Controller_Cronjob extends Controller {
                     case 6: // Telenor
                         echo '<br>' . 'Telenor' . '<br>';
                         //print_r($data['received_file_path']);
-                        include 'cron_job/parse_phone/telenor.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'telenor.inc';
 
 
 
@@ -647,7 +1099,7 @@ class Controller_Cronjob extends Controller {
                     case 4: // Zong
                         //echo '<br>' . 'Zong' .'<br>';                        
                         //print_r($data['received_file_path']);
-                        include 'cron_job/parse_phone/zong.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'zong.inc';
 
                         break;
                 }
@@ -656,6 +1108,21 @@ class Controller_Cronjob extends Controller {
                     /* Insertion Code */
                     $reference_number = $data['request_id'];
 
+                    Model_ErrorLog::log(
+                        'cron_parse_phone_high',
+                        'Phone parsing completed, no records found - marking as status 5 (Not Found)',
+                        [
+                            'request_id' => $reference_number,
+                            'company_name' => $data['company_name'] ?? 'unknown',
+                            'processing_index' => 5,
+                            'phone_number' => $data['requested_value'] ?? 'unknown',
+                            'reason' => 'No phone records found in response'
+                        ],
+                        null,
+                        'not_found',
+                        'phone_parsing_high'
+                    );
+                    
                     $reference_number = Model_Email::email_status($reference_number, 2, 5);
                     /* if(strlen($loc_data['cnicsims'])==13 && ctype_digit($loc_data['cnicsims']))
                       { */
@@ -666,10 +1133,23 @@ class Controller_Cronjob extends Controller {
                   $reference_number = Model_Email::email_status($reference_number, 2, 3);
                   } */
             } catch (Exception $e) {
-                //re-throw exception
-                //throw new customException($email);
-//                echo $e;
-//                exit;
+                $error_msg = $e->getMessage();
+                $error_trace = $e->getTraceAsString();
+                
+                Model_ErrorLog::log(
+                    'cron_parse_phone_high',
+                    $error_msg,
+                    [
+                        'request_id'       => $data['request_id'] ?? 'unknown',
+                        'company_name'     => $data['company_name'] ?? 'unknown',
+                        'phone_number'     => $data['requested_value'] ?? 'unknown',
+                        'file_id'          => $phone_data['file_id'] ?? null
+                    ],
+                    $error_trace,
+                    'parsing_failure',
+                    'phone_parsing_high'
+                );
+                
                 $reference_number = $data['request_id'];
                 $reference_number = Model_Email::email_status($reference_number, 2, 3);
             }
@@ -714,7 +1194,7 @@ class Controller_Cronjob extends Controller {
                         $data['received_body'] = base64_decode($data['received_body']); 
                     }
                     $data['received_body'] = array_filter(explode('From:',strip_tags($data['received_body'])));
-                    include DOCUMENT_ROOT.'application\classes\Controller\cron_job\parse_sub\notfound.inc';
+                    include DOCUMENT_ROOT . 'application' . DS . 'classes' . DS . 'Controller' . DS . 'cron_job' . DS . 'parse_sub' . DS . 'notfound.inc';
                     exit;
                 }    
                 $data['received_file_path'] = !empty($cdrfile_name['file'])?$cdrfile_name['file']:'';
@@ -723,18 +1203,18 @@ class Controller_Cronjob extends Controller {
                 switch ($data['company_name']) {
                     case 1: // mobilink  
                         echo '<br>' . 'Mobilink' . '<br>';
-                        include 'cron_job/parse_phone/mobilink.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'mobilink.inc';
 
                         break;
                     case 7: // warid
                         echo '<br>' . 'Warid' . '<br>';
-                        include 'cron_job/parse_phone/warid.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'warid.inc';
 
 
                         break;
                     case 3: // Ufone
                         echo '<br>' . 'Ufone' . '<br>';
-                        include 'cron_job/parse_phone/ufone.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'ufone.inc';
                         // echo '<pre>';
                         // print_r($data['received_file_path']);                      
 
@@ -742,7 +1222,7 @@ class Controller_Cronjob extends Controller {
                     case 6: // Telenor
                         echo '<br>' . 'Telenor' . '<br>';
                         //print_r($data['received_file_path']);
-                        include 'cron_job/parse_phone/telenor.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'telenor.inc';
 
 
 
@@ -750,7 +1230,7 @@ class Controller_Cronjob extends Controller {
                     case 4: // Zong
                         //echo '<br>' . 'Zong' .'<br>';                        
                         //print_r($data['received_file_path']);
-                        include 'cron_job/parse_phone/zong.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'zong.inc';
 
                         break;
                 }
@@ -759,6 +1239,21 @@ class Controller_Cronjob extends Controller {
                     /* Insertion Code */
                     $reference_number = $data['request_id'];
 
+                    Model_ErrorLog::log(
+                        'cron_parse_phone',
+                        'Phone parsing completed, no records found - marking as status 5 (Not Found)',
+                        [
+                            'request_id' => $reference_number,
+                            'company_name' => $data['company_name'] ?? 'unknown',
+                            'processing_index' => 5,
+                            'phone_number' => $data['requested_value'] ?? 'unknown',
+                            'reason' => 'No phone records found in response'
+                        ],
+                        null,
+                        'not_found',
+                        'phone_parsing'
+                    );
+                    
                     $reference_number = Model_Email::email_status($reference_number, 2, 5);
                     /* if(strlen($loc_data['cnicsims'])==13 && ctype_digit($loc_data['cnicsims']))
                       { */
@@ -769,10 +1264,23 @@ class Controller_Cronjob extends Controller {
                   $reference_number = Model_Email::email_status($reference_number, 2, 3);
                   } */
             } catch (Exception $e) {
-                //re-throw exception
-                //throw new customException($email);
-//                echo $e;
-//                exit;
+                $error_msg = $e->getMessage();
+                $error_trace = $e->getTraceAsString();
+                
+                Model_ErrorLog::log(
+                    'cron_parse_phone',
+                    $error_msg,
+                    [
+                        'request_id'       => $data['request_id'] ?? 'unknown',
+                        'company_name'     => $data['company_name'] ?? 'unknown',
+                        'phone_number'     => $data['requested_value'] ?? 'unknown',
+                        'file_id'          => $phone_data['file_id'] ?? null
+                    ],
+                    $error_trace,
+                    'parsing_failure',
+                    'phone_parsing'
+                );
+                
                 $reference_number = $data['request_id'];
                 $reference_number = Model_Email::email_status($reference_number, 2, 3);
             }
@@ -817,7 +1325,7 @@ class Controller_Cronjob extends Controller {
                     }
 
                     $data['received_body'] = array_filter(explode('From:',strip_tags($data['received_body'])));
-                    include DOCUMENT_ROOT.'application\classes\Controller\cron_job\parse_sub\notfound.inc';
+                    include DOCUMENT_ROOT . 'application' . DS . 'classes' . DS . 'Controller' . DS . 'cron_job' . DS . 'parse_sub' . DS . 'notfound.inc';
                     exit;
                 }    
                 $data['received_file_path'] = !empty($cdrfile_name['file'])?$cdrfile_name['file']:'';
@@ -826,18 +1334,18 @@ class Controller_Cronjob extends Controller {
                 switch ($data['company_name']) {
                     case 1: // mobilink  
                         echo '<br>' . 'Mobilink' . '<br>';
-                        include 'cron_job/parse_phone/mobilink.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'mobilink.inc';
 
                         break;
                     case 7: // warid
                         echo '<br>' . 'Warid' . '<br>';
-                        include 'cron_job/parse_phone/warid.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'warid.inc';
 
 
                         break;
                     case 3: // Ufone
                         echo '<br>' . 'Ufone' . '<br>';
-                        include 'cron_job/parse_phone/ufone.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'ufone.inc';
                         // echo '<pre>';
                         // print_r($data['received_file_path']);                      
 
@@ -845,7 +1353,7 @@ class Controller_Cronjob extends Controller {
                     case 6: // Telenor
                         echo '<br>' . 'Telenor' . '<br>';
                         //print_r($data['received_file_path']);
-                        include 'cron_job/parse_phone/telenor.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'telenor.inc';
 
 
 
@@ -853,7 +1361,7 @@ class Controller_Cronjob extends Controller {
                     case 4: // Zong
                         //echo '<br>' . 'Zong' .'<br>';                        
                         //print_r($data['received_file_path']);
-                        include 'cron_job/parse_phone/zong.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'zong.inc';
 
                         break;
                 }
@@ -862,6 +1370,21 @@ class Controller_Cronjob extends Controller {
                     /* Insertion Code */
                     $reference_number = $data['request_id'];
 
+                    Model_ErrorLog::log(
+                        'cron_parse_phone_mobilink',
+                        'Mobilink phone parsing completed, no records found - marking as status 5 (Not Found)',
+                        [
+                            'request_id' => $reference_number,
+                            'company_name' => $data['company_name'] ?? 'unknown',
+                            'processing_index' => 5,
+                            'phone_number' => $data['requested_value'] ?? 'unknown',
+                            'reason' => 'No phone records found in Mobilink response'
+                        ],
+                        null,
+                        'not_found',
+                        'phone_parsing_mobilink'
+                    );
+                    
                     $reference_number = Model_Email::email_status($reference_number, 2, 5);
                     /* if(strlen($loc_data['cnicsims'])==13 && ctype_digit($loc_data['cnicsims']))
                       { */
@@ -872,10 +1395,23 @@ class Controller_Cronjob extends Controller {
                   $reference_number = Model_Email::email_status($reference_number, 2, 3);
                   } */
             } catch (Exception $e) {
-                //re-throw exception
-                //throw new customException($email);
-              //  echo $e;
-              //  exit;
+                $error_msg = $e->getMessage();
+                $error_trace = $e->getTraceAsString();
+                
+                Model_ErrorLog::log(
+                    'cron_parse_phone_1',
+                    $error_msg,
+                    [
+                        'request_id'       => $data['request_id'] ?? 'unknown',
+                        'company_name'     => $data['company_name'] ?? 'unknown',
+                        'phone_number'     => $data['requested_value'] ?? 'unknown',
+                        'file_id'          => $phone_data['file_id'] ?? null
+                    ],
+                    $error_trace,
+                    'parsing_failure',
+                    'phone_parsing_mobilink'
+                );
+                
                 $reference_number = $data['request_id'];
                 $reference_number = Model_Email::email_status($reference_number, 2, 3);
             }
@@ -917,7 +1453,7 @@ class Controller_Cronjob extends Controller {
                         $data['received_body'] = base64_decode($data['received_body']); 
                     }
                     $data['received_body'] = array_filter(explode('From:',strip_tags($data['received_body'])));
-                    include DOCUMENT_ROOT.'application\classes\Controller\cron_job\parse_sub\notfound.inc';
+                    include DOCUMENT_ROOT . 'application' . DS . 'classes' . DS . 'Controller' . DS . 'cron_job' . DS . 'parse_sub' . DS . 'notfound.inc';
                     exit;
                 }    
                 $data['received_file_path'] = !empty($cdrfile_name['file'])?$cdrfile_name['file']:'';
@@ -926,18 +1462,18 @@ class Controller_Cronjob extends Controller {
                 switch ($data['company_name']) {
                     case 1: // mobilink  
                         echo '<br>' . 'Mobilink' . '<br>';
-                        include 'cron_job/parse_phone/mobilink.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'mobilink.inc';
 
                         break;
                     case 7: // warid
                         echo '<br>' . 'Warid' . '<br>';
-                        //include 'cron_job/parse_phone/warid.inc';
-                        include 'cron_job/parse_phone/mobilink.inc';    
+                        //include 'cron_job' . DS . 'parse_phone' . DS . 'warid.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'mobilink.inc';    
 
                         break;
                     case 3: // Ufone
                         echo '<br>' . 'Ufone' . '<br>';
-                        include 'cron_job/parse_phone/ufone.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'ufone.inc';
                         // echo '<pre>';
                         // print_r($data['received_file_path']);                      
 
@@ -945,7 +1481,7 @@ class Controller_Cronjob extends Controller {
                     case 6: // Telenor
                         echo '<br>' . 'Telenor' . '<br>';
                         //print_r($data['received_file_path']);
-                        include 'cron_job/parse_phone/telenor.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'telenor.inc';
 
 
 
@@ -953,7 +1489,7 @@ class Controller_Cronjob extends Controller {
                     case 4: // Zong
                         //echo '<br>' . 'Zong' .'<br>';                        
                         //print_r($data['received_file_path']);
-                        include 'cron_job/parse_phone/zong.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'zong.inc';
 
                         break;
                 }
@@ -962,6 +1498,21 @@ class Controller_Cronjob extends Controller {
                     /* Insertion Code */
                     $reference_number = $data['request_id'];
 
+                    Model_ErrorLog::log(
+                        'cron_parse_phone_warid',
+                        'Warid phone parsing completed, no records found - marking as status 5 (Not Found)',
+                        [
+                            'request_id' => $reference_number,
+                            'company_name' => $data['company_name'] ?? 'unknown',
+                            'processing_index' => 5,
+                            'phone_number' => $data['requested_value'] ?? 'unknown',
+                            'reason' => 'No phone records found in Warid response'
+                        ],
+                        null,
+                        'not_found',
+                        'phone_parsing_warid'
+                    );
+                    
                     $reference_number = Model_Email::email_status($reference_number, 2, 5);
                     /* if(strlen($loc_data['cnicsims'])==13 && ctype_digit($loc_data['cnicsims']))
                       { */
@@ -972,10 +1523,23 @@ class Controller_Cronjob extends Controller {
                   $reference_number = Model_Email::email_status($reference_number, 2, 3);
                   } */
             } catch (Exception $e) {
-                //re-throw exception
-                //throw new customException($email);
-//                echo $e;
-//                exit;
+                $error_msg = $e->getMessage();
+                $error_trace = $e->getTraceAsString();
+                
+                Model_ErrorLog::log(
+                    'cron_parse_phone_7',
+                    $error_msg,
+                    [
+                        'request_id'       => $data['request_id'] ?? 'unknown',
+                        'company_name'     => $data['company_name'] ?? 'unknown',
+                        'phone_number'     => $data['requested_value'] ?? 'unknown',
+                        'file_id'          => $phone_data['file_id'] ?? null
+                    ],
+                    $error_trace,
+                    'parsing_failure',
+                    'phone_parsing_warid'
+                );
+                
                 $reference_number = $data['request_id'];
                 $reference_number = Model_Email::email_status($reference_number, 2, 3);
             }
@@ -1019,10 +1583,26 @@ class Controller_Cronjob extends Controller {
                         $data['received_body'] = base64_decode($data['received_body']); 
                     }
                     $data['received_body'] = array_filter(explode('From:',strip_tags($data['received_body'])));
-                    include DOCUMENT_ROOT.'application\classes\Controller\cron_job\parse_sub\notfound.inc';
+                    include DOCUMENT_ROOT . 'application' . DS . 'classes' . DS . 'Controller' . DS . 'cron_job' . DS . 'parse_sub' . DS . 'notfound.inc';
                     if($not_fount != 1)
                     {    
                         $reference_number = $data['request_id'];
+                        
+                        Model_ErrorLog::log(
+                            'cron_parse_phone_ufone',
+                            'Ufone phone parsing - no file found, checking notfound.inc - marking as status 5 (Not Found)',
+                            [
+                                'request_id' => $reference_number,
+                                'company_name' => $data['company_name'] ?? 'unknown',
+                                'processing_index' => 5,
+                                'phone_number' => $data['requested_value'] ?? 'unknown',
+                                'reason' => 'No CDR file found, processed notfound.inc'
+                            ],
+                            null,
+                            'not_found',
+                            'phone_parsing_ufone'
+                        );
+                        
                         $reference_number = Model_Email::email_status($reference_number, 2, 5);                        
                     }
                      
@@ -1035,18 +1615,18 @@ class Controller_Cronjob extends Controller {
                 switch ($data['company_name']) {
                     case 1: // mobilink  
                         echo '<br>' . 'Mobilink' . '<br>';
-                        include 'cron_job/parse_phone/mobilink.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'mobilink.inc';
 
                         break;
                     case 7: // warid
                         echo '<br>' . 'Warid' . '<br>';
-                        include 'cron_job/parse_phone/warid.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'warid.inc';
 
 
                         break;
                     case 3: // Ufone
                         echo '<br>' . 'Ufone' . '<br>';
-                        include 'cron_job/parse_phone/ufone.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'ufone.inc';
                         // echo '<pre>';
                         // print_r($data['received_file_path']);                      
 
@@ -1054,7 +1634,7 @@ class Controller_Cronjob extends Controller {
                     case 6: // Telenor
                         echo '<br>' . 'Telenor' . '<br>';
                         //print_r($data['received_file_path']);
-                        include 'cron_job/parse_phone/telenor.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'telenor.inc';
 
 
 
@@ -1062,7 +1642,7 @@ class Controller_Cronjob extends Controller {
                     case 4: // Zong
                         //echo '<br>' . 'Zong' .'<br>';                        
                         //print_r($data['received_file_path']);
-                        include 'cron_job/parse_phone/zong.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'zong.inc';
 
                         break;
                 }
@@ -1073,6 +1653,21 @@ class Controller_Cronjob extends Controller {
                     /* Insertion Code */
                     $reference_number = $data['request_id'];
 
+                    Model_ErrorLog::log(
+                        'cron_parse_phone_ufone',
+                        'Ufone phone parsing completed, no records found - marking as status 5 (Not Found)',
+                        [
+                            'request_id' => $reference_number,
+                            'company_name' => $data['company_name'] ?? 'unknown',
+                            'processing_index' => 5,
+                            'phone_number' => $data['requested_value'] ?? 'unknown',
+                            'reason' => 'No phone records found in Ufone response'
+                        ],
+                        null,
+                        'not_found',
+                        'phone_parsing_ufone'
+                    );
+                    
                     $reference_number = Model_Email::email_status($reference_number, 2, 5);
                     /* if(strlen($loc_data['cnicsims'])==13 && ctype_digit($loc_data['cnicsims']))
                       { */
@@ -1083,10 +1678,23 @@ class Controller_Cronjob extends Controller {
                   $reference_number = Model_Email::email_status($reference_number, 2, 3);
                   } */
             } catch (Exception $e) {
-                //re-throw exception
-                //throw new customException($email);
-                echo $e;
-//                exit;
+                $error_msg = $e->getMessage();
+                $error_trace = $e->getTraceAsString();
+                
+                Model_ErrorLog::log(
+                    'cron_parse_phone_3',
+                    $error_msg,
+                    [
+                        'request_id'       => $data['request_id'] ?? 'unknown',
+                        'company_name'     => $data['company_name'] ?? 'unknown',
+                        'phone_number'     => $data['requested_value'] ?? 'unknown',
+                        'file_id'          => $phone_data['file_id'] ?? null
+                    ],
+                    $error_trace,
+                    'parsing_failure',
+                    'phone_parsing_ufone'
+                );
+                
                 $reference_number = $data['request_id'];
                 $reference_number = Model_Email::email_status($reference_number, 2, 3);
             }
@@ -1128,7 +1736,7 @@ class Controller_Cronjob extends Controller {
                         $data['received_body'] = base64_decode($data['received_body']); 
                     }
                     $data['received_body'] = array_filter(explode('From:',strip_tags($data['received_body'])));
-                    include DOCUMENT_ROOT.'application\classes\Controller\cron_job\parse_sub\notfound.inc';
+                    include DOCUMENT_ROOT . 'application' . DS . 'classes' . DS . 'Controller' . DS . 'cron_job' . DS . 'parse_sub' . DS . 'notfound.inc';
                     exit;
                 }    
                 $data['received_file_path'] = !empty($cdrfile_name['file'])?$cdrfile_name['file']:'';
@@ -1137,18 +1745,18 @@ class Controller_Cronjob extends Controller {
                 switch ($data['company_name']) {
                     case 1: // mobilink  
                         echo '<br>' . 'Mobilink' . '<br>';
-                        include 'cron_job/parse_phone/mobilink.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'mobilink.inc';
 
                         break;
                     case 7: // warid
                         echo '<br>' . 'Warid' . '<br>';
-                        include 'cron_job/parse_phone/warid.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'warid.inc';
 
 
                         break;
                     case 3: // Ufone
                         echo '<br>' . 'Ufone' . '<br>';
-                        include 'cron_job/parse_phone/ufone.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'ufone.inc';
                         // echo '<pre>';
                         // print_r($data['received_file_path']);                      
 
@@ -1156,7 +1764,7 @@ class Controller_Cronjob extends Controller {
                     case 6: // Telenor
                         echo '<br>' . 'Telenor' . '<br>';
                         //print_r($data['received_file_path']);
-                        include 'cron_job/parse_phone/telenor.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'telenor.inc';
 
 
 
@@ -1164,7 +1772,7 @@ class Controller_Cronjob extends Controller {
                     case 4: // Zong
                         //echo '<br>' . 'Zong' .'<br>';                        
                         //print_r($data['received_file_path']);
-                        include 'cron_job/parse_phone/zong.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'zong.inc';
 
                         break;
                 }
@@ -1173,6 +1781,21 @@ class Controller_Cronjob extends Controller {
                     /* Insertion Code */
                     $reference_number = $data['request_id'];
 
+                    Model_ErrorLog::log(
+                        'cron_parse_phone_telenor',
+                        'Telenor phone parsing completed, no records found - marking as status 5 (Not Found)',
+                        [
+                            'request_id' => $reference_number,
+                            'company_name' => $data['company_name'] ?? 'unknown',
+                            'processing_index' => 5,
+                            'phone_number' => $data['requested_value'] ?? 'unknown',
+                            'reason' => 'No phone records found in Telenor response'
+                        ],
+                        null,
+                        'not_found',
+                        'phone_parsing_telenor'
+                    );
+                    
                     $reference_number = Model_Email::email_status($reference_number, 2, 5);
                     /* if(strlen($loc_data['cnicsims'])==13 && ctype_digit($loc_data['cnicsims']))
                       { */
@@ -1183,10 +1806,23 @@ class Controller_Cronjob extends Controller {
                   $reference_number = Model_Email::email_status($reference_number, 2, 3);
                   } */
             } catch (Exception $e) {
-                //re-throw exception
-                //throw new customException($email);
-                echo $e;
-                exit;
+                $error_msg = $e->getMessage();
+                $error_trace = $e->getTraceAsString();
+                
+                Model_ErrorLog::log(
+                    'cron_parse_phone_6',
+                    $error_msg,
+                    [
+                        'request_id'       => $data['request_id'] ?? 'unknown',
+                        'company_name'     => $data['company_name'] ?? 'unknown',
+                        'phone_number'     => $data['requested_value'] ?? 'unknown',
+                        'file_id'          => $phone_data['file_id'] ?? null
+                    ],
+                    $error_trace,
+                    'parsing_failure',
+                    'phone_parsing_telenor'
+                );
+                
                 $reference_number = $data['request_id'];
                 $reference_number = Model_Email::email_status($reference_number, 2, 3);
             }
@@ -1228,7 +1864,7 @@ class Controller_Cronjob extends Controller {
                         $data['received_body'] = base64_decode($data['received_body']); 
                     }
                     $data['received_body'] = array_filter(explode('From:',strip_tags($data['received_body'])));
-                    include DOCUMENT_ROOT.'application\classes\Controller\cron_job\parse_sub\notfound.inc';
+                    include DOCUMENT_ROOT . 'application' . DS . 'classes' . DS . 'Controller' . DS . 'cron_job' . DS . 'parse_sub' . DS . 'notfound.inc';
                     exit;
                 }    
                 $data['received_file_path'] = !empty($cdrfile_name['file'])?$cdrfile_name['file']:'';
@@ -1237,18 +1873,18 @@ class Controller_Cronjob extends Controller {
                 switch ($data['company_name']) {
                     case 1: // mobilink  
                         echo '<br>' . 'Mobilink' . '<br>';
-                        include 'cron_job/parse_phone/mobilink.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'mobilink.inc';
 
                         break;
                     case 7: // warid
                         echo '<br>' . 'Warid' . '<br>';
-                        include 'cron_job/parse_phone/warid.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'warid.inc';
 
 
                         break;
                     case 3: // Ufone
                         echo '<br>' . 'Ufone' . '<br>';
-                        include 'cron_job/parse_phone/ufone.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'ufone.inc';
                         // echo '<pre>';
                         // print_r($data['received_file_path']);                      
 
@@ -1256,7 +1892,7 @@ class Controller_Cronjob extends Controller {
                     case 6: // Telenor
                         echo '<br>' . 'Telenor' . '<br>';
                         //print_r($data['received_file_path']);
-                        include 'cron_job/parse_phone/telenor.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'telenor.inc';
 
 
 
@@ -1264,7 +1900,7 @@ class Controller_Cronjob extends Controller {
                     case 4: // Zong
                         //echo '<br>' . 'Zong' .'<br>';                        
                         //print_r($data['received_file_path']);
-                        include 'cron_job/parse_phone/zong.inc';
+                        include 'cron_job' . DS . 'parse_phone' . DS . 'zong.inc';
 
                         break;
                 }
@@ -1273,6 +1909,21 @@ class Controller_Cronjob extends Controller {
                     /* Insertion Code */
                     $reference_number = $data['request_id'];
 
+                    Model_ErrorLog::log(
+                        'cron_parse_phone_zong',
+                        'Zong phone parsing completed, no records found - marking as status 5 (Not Found)',
+                        [
+                            'request_id' => $reference_number,
+                            'company_name' => $data['company_name'] ?? 'unknown',
+                            'processing_index' => 5,
+                            'phone_number' => $data['requested_value'] ?? 'unknown',
+                            'reason' => 'No phone records found in Zong response'
+                        ],
+                        null,
+                        'not_found',
+                        'phone_parsing_zong'
+                    );
+                    
                     $reference_number = Model_Email::email_status($reference_number, 2, 5);
                     /* if(strlen($loc_data['cnicsims'])==13 && ctype_digit($loc_data['cnicsims']))
                       { */
@@ -1283,10 +1934,23 @@ class Controller_Cronjob extends Controller {
                   $reference_number = Model_Email::email_status($reference_number, 2, 3);
                   } */
             } catch (Exception $e) {
-                //re-throw exception
-                //throw new customException($email);
-               // echo $e;
-               // exit;
+                $error_msg = $e->getMessage();
+                $error_trace = $e->getTraceAsString();
+                
+                Model_ErrorLog::log(
+                    'cron_parse_phone_4',
+                    $error_msg,
+                    [
+                        'request_id'       => $data['request_id'] ?? 'unknown',
+                        'company_name'     => $data['company_name'] ?? 'unknown',
+                        'phone_number'     => $data['requested_value'] ?? 'unknown',
+                        'file_id'          => $phone_data['file_id'] ?? null
+                    ],
+                    $error_trace,
+                    'parsing_failure',
+                    'phone_parsing_zong'
+                );
+                
                 $reference_number = $data['request_id'];
                 $reference_number = Model_Email::email_status($reference_number, 2, 3);
             }
@@ -1326,27 +1990,27 @@ class Controller_Cronjob extends Controller {
                 switch ($data['company_name']) {
                     case 1: // mobilink  
                         echo '<br>' . 'Mobilink' . '<br>';
-                        include 'cron_job/parse_imei/mobilink.inc';
+                        include 'cron_job' . DS . 'parse_imei' . DS . 'mobilink.inc';
                         break;
                     case 7: // warid
                         echo '<br>' . 'Warid' . '<br>';
                         //print_r($data['received_file_path']);      
-                        include 'cron_job/parse_imei/warid.inc';
+                        include 'cron_job' . DS . 'parse_imei' . DS . 'warid.inc';
                         break;
                     case 3: // Ufone
                         echo '<br>' . 'Ufone' . '<br>';
                         // print_r($data['received_file_path']);
-                        include 'cron_job/parse_imei/ufone.inc';
+                        include 'cron_job' . DS . 'parse_imei' . DS . 'ufone.inc';
                         break;
                     case 6: // Telenor
                         // echo '<br>' . 'Telenor' .'<br>';                        
                         //print_r($data['received_file_path']);
-                        include 'cron_job/parse_imei/telenor.inc';
+                        include 'cron_job' . DS . 'parse_imei' . DS . 'telenor.inc';
 
                         break;
                     case 4: // Zong
                         // echo '<br>' . 'Zong' .'<br>';                        
-                        include 'cron_job/parse_imei/zong.inc';
+                        include 'cron_job' . DS . 'parse_imei' . DS . 'zong.inc';
                         break;
                 }
 
@@ -1361,9 +2025,23 @@ class Controller_Cronjob extends Controller {
                   $reference_number = Model_Email::email_status($reference_number, 2, 3);
                   } */
             } catch (Exception $e) {
-                //re-throw exception
-                //throw new customException($email);
-               // echo $e;
+                $error_msg = $e->getMessage();
+                $error_trace = $e->getTraceAsString();
+                
+                Model_ErrorLog::log(
+                    'cron_parse_imei',
+                    $error_msg,
+                    [
+                        'request_id'       => $data['request_id'] ?? 'unknown',
+                        'company_name'     => $data['company_name'] ?? 'unknown',
+                        'imei'             => $data['requested_value'] ?? 'unknown',
+                        'file_id'          => $data['file_id'] ?? null
+                    ],
+                    $error_trace,
+                    'parsing_failure',
+                    'imei_parsing'
+                );
+                
                 $reference_number = $data['request_id'];
                 $reference_number = Model_Email::email_status($reference_number, 2, 3);
             }
@@ -1374,7 +2052,15 @@ class Controller_Cronjob extends Controller {
         try {
             $data = Model_Generic::get_bparty_data();
         } catch (Exception $e) {
-            
+            Model_ErrorLog::log(
+                'action_bparty_table',
+                $e->getMessage(),
+                [],
+                $e->getTraceAsString(),
+                'processing_failure',
+                'bparty_table'
+            );
+            error_log("[" . date('c') . "] action_bparty_table failed: " . $e->getMessage());
         }
     }
 
@@ -1382,7 +2068,15 @@ class Controller_Cronjob extends Controller {
         try {
             $data = Model_Generic::family_tree_complete();
         } catch (Exception $e) {
-            
+            Model_ErrorLog::log(
+                'action_family_tree_complete',
+                $e->getMessage(),
+                [],
+                $e->getTraceAsString(),
+                'processing_failure',
+                'family_tree_complete'
+            );
+            error_log("[" . date('c') . "] action_family_tree_complete failed: " . $e->getMessage());
         }
     }
 
@@ -1392,7 +2086,15 @@ class Controller_Cronjob extends Controller {
         try {
             $data = Model_Generic::resend_parse_queue();
         } catch (Exception $e) {
-            
+            Model_ErrorLog::log(
+                'action_resend_in_parse_queue',
+                $e->getMessage(),
+                [],
+                $e->getTraceAsString(),
+                'processing_failure',
+                'resend_parse_queue'
+            );
+            error_log("[" . date('c') . "] action_resend_in_parse_queue failed: " . $e->getMessage());
         }
     }
 
@@ -1400,7 +2102,15 @@ class Controller_Cronjob extends Controller {
         try {
             $data = Model_Generic::resend_error_in_queue();
         } catch (Exception $e) {
-            
+            Model_ErrorLog::log(
+                'action_resend_error_in_queue',
+                $e->getMessage(),
+                [],
+                $e->getTraceAsString(),
+                'processing_failure',
+                'resend_error_queue'
+            );
+            error_log("[" . date('c') . "] action_resend_error_in_queue failed: " . $e->getMessage());
         }
     }
     

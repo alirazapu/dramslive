@@ -52,6 +52,20 @@ switch ($company) {
                 if (!empty($file_id))
                     $error_number = Model_Email::file_status($file_id, 1, 3);                
                 if(!empty($userrequestid)){
+                    Model_ErrorLog::log(
+                        'parse_cellmatch',
+                        'Invalid Telenor CDR format - header validation failed',
+                        array(
+                            'request_id' => $userrequestid,
+                            'processing_index' => 3,
+                            'file_id' => !empty($file_id) ? $file_id : null,
+                            'company' => 'Telenor',
+                            'row' => !empty($row) ? $row : null
+                        ),
+                        null,
+                        'validation_error',
+                        'cellmatch_parsing'
+                    );
                     $reference_number = Model_Email::email_status($userrequestid, 2, 3);
                 }
                 exit;
@@ -114,6 +128,20 @@ switch ($company) {
                 if (!empty($file_id))
                     $error_number = Model_Email::file_status($file_id, 1, 3);
                 if(!empty($userrequestid)){
+                    Model_ErrorLog::log(
+                        'parse_cellmatch',
+                        'Invalid Jazz CDR format - header validation failed',
+                        array(
+                            'request_id' => $userrequestid,
+                            'processing_index' => 3,
+                            'file_id' => !empty($file_id) ? $file_id : null,
+                            'company' => 'Jazz',
+                            'row' => !empty($row) ? $row : null
+                        ),
+                        null,
+                        'validation_error',
+                        'cellmatch_parsing'
+                    );
                     $reference_number = Model_Email::email_status($userrequestid, 2, 3);
                 }
                 exit;
@@ -157,6 +185,20 @@ switch ($company) {
                 if (!empty($file_id))
                     $error_number = Model_Email::file_status($file_id, 1, 3);
                 if(!empty($userrequestid)){
+                    Model_ErrorLog::log(
+                        'parse_cellmatch',
+                        'Invalid Ufone CDR format - header validation failed',
+                        array(
+                            'request_id' => $userrequestid,
+                            'processing_index' => 3,
+                            'file_id' => !empty($file_id) ? $file_id : null,
+                            'company' => 'Ufone',
+                            'row' => !empty($row) ? $row : null
+                        ),
+                        null,
+                        'validation_error',
+                        'cellmatch_parsing'
+                    );
                     $reference_number = Model_Email::email_status($userrequestid, 2, 3);
                 }
                 exit;
@@ -188,6 +230,20 @@ switch ($company) {
                 if (!empty($file_id))
                     $error_number = Model_Email::file_status($file_id, 1, 3);
                 if(!empty($userrequestid)){
+                    Model_ErrorLog::log(
+                        'parse_cellmatch',
+                        'Invalid Warid CDR format - header validation failed',
+                        array(
+                            'request_id' => $userrequestid,
+                            'processing_index' => 3,
+                            'file_id' => !empty($file_id) ? $file_id : null,
+                            'company' => 'Warid',
+                            'row' => !empty($row) ? $row : null
+                        ),
+                        null,
+                        'validation_error',
+                        'cellmatch_parsing'
+                    );
                     $reference_number = Model_Email::email_status($userrequestid, 2, 3);
                 }
                 exit;
@@ -236,6 +292,20 @@ switch ($company) {
                 if (!empty($file_id))
                     $error_number = Model_Email::file_status($file_id, 1, 3);
                 if(!empty($userrequestid)){
+                    Model_ErrorLog::log(
+                        'parse_cellmatch',
+                        'Invalid Zong CDR format - header validation failed',
+                        array(
+                            'request_id' => $userrequestid,
+                            'processing_index' => 3,
+                            'file_id' => !empty($file_id) ? $file_id : null,
+                            'company' => 'Zong',
+                            'row' => !empty($row) ? $row : null
+                        ),
+                        null,
+                        'validation_error',
+                        'cellmatch_parsing'
+                    );
                     $reference_number = Model_Email::email_status($userrequestid, 2, 3);
                 }
                 exit;

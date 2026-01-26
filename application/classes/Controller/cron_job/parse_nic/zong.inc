@@ -11,7 +11,7 @@ $data['received_body'] = explode('From:',$data['received_body']);
 
           var_dump(DOCUMENT_ROOT);
   //check if no data found exist
- include DOCUMENT_ROOT.'application\classes\Controller\cron_job\parse_sub\notfound.inc';
+ include DOCUMENT_ROOT . 'application' . DS . 'classes' . DS . 'Controller' . DS . 'cron_job' . DS . 'parse_sub' . DS . 'notfound.inc';
 
                 
 if (!empty($not_fount)) {

@@ -34,5 +34,5 @@ $ext = pathinfo($data['received_file_path'], PATHINFO_EXTENSION);
       }else{
 
              $data['received_body'] = array_filter(explode('From:',strip_tags($data['received_body'])));                                 
-            include '/var/www/html/aies/application/classes/Controller/cron_job/parse_sub/notfound.inc';
+            include APPPATH . 'classes' . DS . 'Controller' . DS . 'cron_job' . DS . 'parse_sub' . DS . 'notfound.inc';
       }                             

@@ -28,6 +28,24 @@ if ($total_sub == 1) {
     if(sizeof($second_array)==1 && (trim($second_array[0]) == 'MSISDN:0' . $data['requested_value']))
     {        
         //$data = Model_Generic::resend_error_id_queue($data['request_id']);
+        
+        Model_ErrorLog::log(
+            'parse_sub_telenor',
+            'Incomplete response - only MSISDN present without subscriber details - marking as status 3 (Error)',
+            [
+                'request_id' => $data['request_id'],
+                'company_name' => $data['company_name'] ?? 'telenor',
+                'user_request_type_id' => $data['user_request_type_id'] ?? null,
+                'processing_index' => 3,
+                'requested_value' => $data['requested_value'] ?? '',
+                'body_sample' => isset($second_array[0]) ? substr($second_array[0], 0, 200) : '',
+                'reason' => 'Response contains only MSISDN without Name/Address/CNIC fields'
+            ],
+            null,
+            'parsing_error',
+            'subscriber_parsing'
+        );
+        
         $data = Model_Email::email_status($data['request_id'], 2, 3);  
         exit;
     }

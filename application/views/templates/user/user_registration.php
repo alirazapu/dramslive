@@ -118,6 +118,11 @@
                                     <option value="Assistant Sub-Inspector">Assistant Sub-Inspector (ASI)</option>
                                     <option value="Head Constable">Head Constable (HC)</option>
                                     <option value="Constable">Constable (C)</option>
+                                    <option value="Director">Director</option>
+                                    <option value="Deputy Director">Deputy Director</option>
+                                    <option  value="Assistant Director">Assistant Director</option>
+                                    <option  value="Supervisor">Supervisor</option>
+                                    <option  value="Computer Operator">Computer Operator</option>
                                 </select>
                             </div>
                             <div class="form-group col-md-6">

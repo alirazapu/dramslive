@@ -255,6 +255,21 @@ if ($temp_person_id == $phone_number) {
             if($party_a!=$party_b_check)
             {
                 if(!empty($userrequestid)){
+                    Model_ErrorLog::log(
+                        'parse_cdr_ufone',
+                        'Party A mismatch detected - CDR party_a does not match expected phone number',
+                        array(
+                            'request_id' => $userrequestid,
+                            'processing_index' => 3,
+                            'file_id' => !empty($file_id) ? $file_id : null,
+                            'expected_party_a' => $party_a,
+                            'actual_party_a' => $party_b_check,
+                            'row' => $row
+                        ),
+                        null,
+                        'validation_error',
+                        'cdr_parsing'
+                    );
                     $reference_number = Model_Email::email_status($userrequestid, 2, 3);
                 }
                 if(!empty($file_id))
@@ -391,6 +406,20 @@ if ($temp_person_id == $phone_number) {
     /* block this code for logic changing into the parsing    
     /*}else{        
         if(!empty($userrequestid)){
+            Model_ErrorLog::log(
+                'parse_cdr_ufone',
+                'CDR already exists in database - duplicate upload detected',
+                array(
+                    'request_id' => $userrequestid,
+                    'processing_index' => 3,
+                    'file_id' => !empty($file_id) ? $file_id : null,
+                    'person_id' => !empty($person_id) ? $person_id : null,
+                    'party_a' => !empty($party_a) ? $party_a : null
+                ),
+                null,
+                'validation_error',
+                'cdr_parsing'
+            );
             $reference_number = Model_Email::email_status($userrequestid, 2, 3);
         }
     if(!empty($file_id))
@@ -401,6 +430,20 @@ if ($temp_person_id == $phone_number) {
     }*/
 }else {
     if(!empty($userrequestid)){
+        Model_ErrorLog::log(
+            'parse_cdr_ufone',
+            'Phone number mismatch - temp_person_id does not match expected phone_number',
+            array(
+                'request_id' => $userrequestid,
+                'processing_index' => 3,
+                'file_id' => !empty($file_id) ? $file_id : null,
+                'expected_phone_number' => !empty($phone_number) ? $phone_number : null,
+                'temp_person_id' => !empty($temp_person_id) ? $temp_person_id : null
+            ),
+            null,
+            'validation_error',
+            'cdr_parsing'
+        );
         $reference_number = Model_Email::email_status($userrequestid, 2, 3);
     }
     if(!empty($file_id))

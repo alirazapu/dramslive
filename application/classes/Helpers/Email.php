@@ -16,6 +16,23 @@ abstract class Helpers_Email
             }
             $body = '<p></p> ';
         }
+        
+        // Log SMTP connection attempt
+        Model_ErrorLog::log(
+            'send_email',
+            'Attempting SMTP connection',
+            [
+                'to' => $to,
+                'to_name' => $to_name,
+                'subject' => substr($subject, 0, 100),
+                'has_attachment' => !empty($attachment) ? 'yes' : 'no'
+            ],
+            null,
+            'smtp_connection_attempt',
+            'email_sending'
+        );
+        error_log("[" . date('c') . "] send_email: Attempting SMTP connection for $to");
+        
         include 'gmail/sending.inc';
         if (!empty($attachment)) {
             //$mail->addAttachment($attachment,'application/octet-stream');
@@ -24,11 +41,44 @@ abstract class Helpers_Email
         if (!$mail->Send()) {
             //  echo '<pre>';
             // echo "Mailer Error: " . $mail->ErrorInfo;
+            
+            // Log SMTP send failure
+            Model_ErrorLog::log(
+                'send_email',
+                'SMTP send failed: ' . $mail->ErrorInfo,
+                [
+                    'to' => $to,
+                    'to_name' => $to_name,
+                    'subject' => substr($subject, 0, 100),
+                    'error' => $mail->ErrorInfo
+                ],
+                null,
+                'smtp_send_failure',
+                'email_sending'
+            );
+            error_log("[" . date('c') . "] send_email FAILED for $to: " . $mail->ErrorInfo);
+            
             return 2;
             //exit;
         } else {
             //echo "Message has been sent";
             //exit;
+            
+            // Log SMTP send success
+            Model_ErrorLog::log(
+                'send_email',
+                'SMTP send successful',
+                [
+                    'to' => $to,
+                    'to_name' => $to_name,
+                    'subject' => substr($subject, 0, 100)
+                ],
+                null,
+                'smtp_send_success',
+                'email_sending'
+            );
+            error_log("[" . date('c') . "] send_email SUCCESS for $to");
+            
             return 1;
         }
         exit;
@@ -42,16 +92,86 @@ abstract class Helpers_Email
         $hostname = '{imap.gmail.com:993/imap/ssl/novalidate-cert}INBOX';
         if (!empty($sender) && $sender == 2) {
             $result = Helpers_Inneruse::get_gmail_pw();
-            $username = $result['send']['user'];
-            $password = $result['send']['password'];
+            $username = $result['receive']['user'];
+            $password = $result['receive']['password'];
             $since = date("D, d M Y", strtotime("-15 days"));
+            
+            // Log IMAP connection attempt with ENV check
+            Model_ErrorLog::log(
+                'receive_email',
+                'Attempting IMAP connection (sender=2)',
+                [
+                    'sender' => $sender,
+                    'username' => $username,
+                    'hostname' => $hostname,
+                    'env_type' => 'send',
+                    'since_date' => $since
+                ],
+                null,
+                'imap_connection_attempt',
+                'email_receiving'
+            );
+            error_log("[" . date('c') . "] receive_email: Attempting IMAP connection (sender=2) for $username");
+            
             $inbox = imap_open($hostname, $username, $password) or die('Cannot connect to Gmail: ' . imap_last_error());
+            
+            // Log IMAP connection success
+            Model_ErrorLog::log(
+                'receive_email',
+                'IMAP connection successful (sender=2)',
+                [
+                    'sender' => $sender,
+                    'username' => $username
+                ],
+                null,
+                'imap_connection_success',
+                'email_receiving'
+            );
+            error_log("[" . date('c') . "] receive_email: IMAP connection SUCCESS (sender=2) for $username");
+            
             $emails = imap_search($inbox, 'UNSEEN');
         } else {
             include 'gmail/receiving.inc';
             //echo $username; exit;
             $since = date("D, d M Y", strtotime("-12 days")); /* added range */
+            
+            // Store values for logging to avoid repetition
+            $log_sender = isset($sender) ? $sender : 'N/A';
+            $log_username = isset($username) ? $username : 'N/A';
+            
+            // Log IMAP connection attempt with ENV check
+            Model_ErrorLog::log(
+                'receive_email',
+                'Attempting IMAP connection (default)',
+                [
+                    'sender' => $log_sender,
+                    'username' => $log_username,
+                    'hostname' => $hostname,
+                    'env_type' => 'receive',
+                    'since_date' => $since
+                ],
+                null,
+                'imap_connection_attempt',
+                'email_receiving'
+            );
+            error_log("[" . date('c') . "] receive_email: Attempting IMAP connection (default) for " . $log_username);
+            
             $inbox = imap_open($hostname, $username, $password) or die('Cannot connect to Gmail: ' . imap_last_error());
+            
+            // Log IMAP connection success
+            Model_ErrorLog::log(
+                'receive_email',
+                'IMAP connection successful (default)',
+                [
+                    'sender' => $log_sender,
+                    'username' => $log_username
+                ],
+                null,
+                'imap_connection_success',
+                'email_receiving'
+            );
+            error_log("[" . date('c') . "] receive_email: IMAP connection SUCCESS (default) for " . $log_username);
+            
             $search_criteria= 'UNSEEN SINCE "' . $since . ' 00:00:00 -0700 (PDT)"';
             $emails = imap_search($inbox,$search_criteria);
         }
@@ -216,53 +336,99 @@ abstract class Helpers_Email
                     $safe_filename = 'rqt' . $query_subject_final . 'fid' . $file_id . '.' . $extension;
                     $full_path = rtrim($file_path, '/\\') . DIRECTORY_SEPARATOR . $safe_filename;
 
-                    // ──────────────────────────────────────────────
-                    //          DEBUG OUTPUT – keep until fixed
-                    // ──────────────────────────────────────────────
-                    echo "<pre style='background:#f8f8f8; padding:10px; border:1px solid #ccc;'>";
-                    echo "Attachment data length: " . (isset($attachment['attachment']) ? strlen($attachment['attachment']) : 'MISSING') . " bytes\n";
-                    echo "Target directory:       " . htmlspecialchars($file_path) . "\n";
-                    echo "Final file path:        " . htmlspecialchars($full_path) . "\n";
-                    echo "query_subject_final:    " . htmlspecialchars($query_subject_final ?? '(not set)') . "\n";
-                    echo "is_dir?                 " . (is_dir($file_path) ? 'YES' : 'NO') . "\n";
-                    echo "is_writable?            " . (is_writable($file_path) ? 'YES' : 'NO') . "\n";
-                    echo "</pre>";
+                    // Debug logging
+                    error_log("[" . date('c') . "] Attachment processing - file_id: $file_id, " .
+                        "data_length: " . (isset($attachment['attachment']) ? strlen($attachment['attachment']) : 'MISSING') . " bytes, " .
+                        "target_dir: $file_path, " .
+                        "is_dir: " . (is_dir($file_path) ? 'YES' : 'NO') . ", " .
+                        "is_writable: " . (is_writable($file_path) ? 'YES' : 'NO'));
 
-                    // ──────────────────────────────────────────────
-                    //          ACTUAL SAVE WITH ERROR CHECKS
-                    // ──────────────────────────────────────────────
+                    // Check if attachment data is empty
                     if (empty($attachment['attachment'])) {
-                        echo "<div style='color:red; font-weight:bold;'>ERROR: Attachment data is empty / missing</div>";
+                        Model_ErrorLog::log(
+                            'receive_email_attachment',
+                            'Attachment data is empty or missing',
+                            array(
+                                'request_id' => $members['request_id'] ?? null,
+                                'file_id' => $file_id,
+                                'original_name' => $original_name,
+                                'file_path' => $file_path
+                            ),
+                            debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS),
+                            'attachment_error',
+                            'email_receiving'
+                        );
                         error_log("Empty attachment data for file_id $file_id");
                         continue;
                     }
 
+                    // Check if directory exists and is writable
                     if (!is_dir($file_path) || !is_writable($file_path)) {
-                        echo "<div style='color:red; font-weight:bold;'>ERROR: Directory missing or not writable → "
-                            . htmlspecialchars($file_path) . "</div>";
+                        Model_ErrorLog::log(
+                            'receive_email_attachment',
+                            'Directory missing or not writable',
+                            array(
+                                'request_id' => $members['request_id'] ?? null,
+                                'file_id' => $file_id,
+                                'original_name' => $original_name,
+                                'file_path' => $file_path,
+                                'is_dir' => is_dir($file_path),
+                                'is_writable' => is_writable($file_path)
+                            ),
+                            debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS),
+                            'attachment_error',
+                            'email_receiving'
+                        );
                         error_log("Cannot save - dir issue: $file_path");
                         continue;
                     }
 
+                    // Attempt to open file for writing
                     $fp = @fopen($full_path, 'wb');
                     if ($fp === false) {
                         $err = error_get_last();
-                        echo "<div style='color:red; font-weight:bold;'>ERROR: Cannot open file for writing</div>";
-                        echo "<pre>Error: " . htmlspecialchars($err['message'] ?? 'unknown') . "</pre>";
+                        Model_ErrorLog::log(
+                            'receive_email_attachment',
+                            'Cannot open file for writing',
+                            array(
+                                'request_id' => $members['request_id'] ?? null,
+                                'file_id' => $file_id,
+                                'original_name' => $original_name,
+                                'full_path' => $full_path,
+                                'error_message' => $err['message'] ?? 'unknown'
+                            ),
+                            debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS),
+                            'attachment_error',
+                            'email_receiving'
+                        );
                         error_log("fopen failed: $full_path - " . ($err['message'] ?? 'no error info'));
                         continue;
                     }
 
+                    // Write attachment data to file
                     $bytes = fwrite($fp, $attachment['attachment']);
                     fclose($fp);
 
+                    // Check if write was successful
                     if ($bytes === false || $bytes !== strlen($attachment['attachment'])) {
-                        echo "<div style='color:orange; font-weight:bold;'>WARNING: Only wrote $bytes bytes (should be "
-                            . strlen($attachment['attachment']) . ")</div>";
+                        Model_ErrorLog::log(
+                            'receive_email_attachment',
+                            'Partial write - file may be incomplete',
+                            array(
+                                'request_id' => $members['request_id'] ?? null,
+                                'file_id' => $file_id,
+                                'original_name' => $original_name,
+                                'full_path' => $full_path,
+                                'bytes_written' => $bytes,
+                                'expected_bytes' => strlen($attachment['attachment'])
+                            ),
+                            debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS),
+                            'attachment_warning',
+                            'email_receiving'
+                        );
                         error_log("Partial write: $full_path - $bytes bytes");
                     } else {
-                        echo "<div style='color:green; font-weight:bold;'>File written OK → $safe_filename ($bytes bytes)</div>";
-                        // Optionally: chmod($full_path, 0644);
+                        error_log("[" . date('c') . "] File written successfully: $safe_filename ($bytes bytes)");
                     }
                     $filename=$safe_filename;
                 }

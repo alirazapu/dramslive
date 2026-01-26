@@ -29,6 +29,15 @@ class Controller_Adminrequest extends Controller_Working
                 $this->template->content = View::factory('templates/user/access_denied');
             }
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_admin_request_sent_form',
+                $ex->getMessage(),
+                [],
+                $ex->getTraceAsString(),
+                'exception',
+                'page_load'
+            );
+            error_log("[" . date('c') . "] action_admin_request_sent_form exception: " . $ex->getMessage());
             $this->template->content = View::factory('templates/user/exception_error_page')
                 ->bind('exception', $ex);
         }
@@ -50,6 +59,15 @@ class Controller_Adminrequest extends Controller_Working
                 $this->template->content = View::factory('templates/user/access_denied');
             }
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_admin_custom_request_form',
+                $ex->getMessage(),
+                [],
+                $ex->getTraceAsString(),
+                'exception',
+                'page_load'
+            );
+            error_log("[" . date('c') . "] action_admin_custom_request_form exception: " . $ex->getMessage());
             $this->template->content = View::factory('templates/user/exception_error_page')
                 ->bind('exception', $ex);
         }
@@ -82,6 +100,15 @@ class Controller_Adminrequest extends Controller_Working
                 $this->template->content = View::factory('templates/user/access_denied');
             }
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_admin_sent_request_count',
+                $ex->getMessage(),
+                [],
+                $ex->getTraceAsString(),
+                'exception',
+                'page_load'
+            );
+            error_log("[" . date('c') . "] action_admin_sent_request_count exception: " . $ex->getMessage());
             $this->template->content = View::factory('templates/user/exception_error_page')
                 ->bind('exception', $ex);
         }
@@ -115,6 +142,15 @@ class Controller_Adminrequest extends Controller_Working
                 $this->template->content = View::factory('templates/user/access_denied');
             }
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_user_request_count',
+                $ex->getMessage(),
+                [],
+                $ex->getTraceAsString(),
+                'exception',
+                'page_load'
+            );
+            error_log("[" . date('c') . "] action_user_request_count exception: " . $ex->getMessage());
             $this->template->content = View::factory('templates/user/exception_error_page')
                 ->bind('exception', $ex);
         }
@@ -147,6 +183,15 @@ class Controller_Adminrequest extends Controller_Working
                 $this->template->content = View::factory('templates/user/access_denied');
             }
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_admin_sent_request_status',
+                $ex->getMessage(),
+                [],
+                $ex->getTraceAsString(),
+                'exception',
+                'page_load'
+            );
+            error_log("[" . date('c') . "] action_admin_sent_request_status exception: " . $ex->getMessage());
             $this->template->content = View::factory('templates/user/exception_error_page')
                 ->bind('exception', $ex);
         }
@@ -339,6 +384,15 @@ class Controller_Adminrequest extends Controller_Working
             echo json_encode($output);
             exit();
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_ajaxadminsentrequeststatus',
+                $ex->getMessage(),
+                [],
+                $ex->getTraceAsString(),
+                'exception',
+                'ajax_request'
+            );
+            error_log("[" . date('c') . "] action_ajaxadminsentrequeststatus exception: " . $ex->getMessage());
         }
     }
 
@@ -527,6 +581,15 @@ class Controller_Adminrequest extends Controller_Working
             echo json_encode($output);
             exit();
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_ajaxadminsentrequests',
+                $ex->getMessage(),
+                [],
+                $ex->getTraceAsString(),
+                'exception',
+                'ajax_request'
+            );
+            error_log("[" . date('c') . "] action_ajaxadminsentrequests exception: " . $ex->getMessage());
         }
     } //ajax call for data requests
 
@@ -714,6 +777,15 @@ class Controller_Adminrequest extends Controller_Working
             echo json_encode($output);
             exit();
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_ajaxusersentrequests',
+                $ex->getMessage(),
+                [],
+                $ex->getTraceAsString(),
+                'exception',
+                'ajax_request'
+            );
+            error_log("[" . date('c') . "] action_ajaxusersentrequests exception: " . $ex->getMessage());
         }
     }
 
@@ -788,6 +860,15 @@ class Controller_Adminrequest extends Controller_Working
             echo json_encode($output);
             exit();
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_ajaxadminsentrequestcount',
+                $ex->getMessage(),
+                [],
+                $ex->getTraceAsString(),
+                'exception',
+                'ajax_request'
+            );
+            error_log("[" . date('c') . "] action_ajaxadminsentrequestcount exception: " . $ex->getMessage());
         }
     }
 
@@ -868,6 +949,15 @@ class Controller_Adminrequest extends Controller_Working
             echo json_encode($output);
             exit();
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_ajaxuserrequestcount',
+                $ex->getMessage(),
+                [],
+                $ex->getTraceAsString(),
+                'exception',
+                'ajax_request'
+            );
+            error_log("[" . date('c') . "] action_ajaxuserrequestcount exception: " . $ex->getMessage());
         }
     }
 
@@ -897,6 +987,18 @@ class Controller_Adminrequest extends Controller_Working
                 return 0;
             }
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_deleteuserrequest',
+                $ex->getMessage(),
+                [
+                    'request_id_encrypted' => $request_id_encrypted ?? 'N/A',
+                    'login_user_id' => $login_user_id ?? 'N/A'
+                ],
+                $ex->getTraceAsString(),
+                'exception',
+                'delete_request'
+            );
+            error_log("[" . date('c') . "] action_deleteuserrequest exception: " . $ex->getMessage());
             echo json_encode(-2);
         }
     }
@@ -930,6 +1032,18 @@ class Controller_Adminrequest extends Controller_Working
                 $this->template->content = View::factory('templates/user/access_denied');
             }*/
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_requests',
+                $ex->getMessage(),
+                [
+                    'name' => $name ?? 'N/A',
+                    'request_type' => $u_req_id ?? 'N/A'
+                ],
+                $ex->getTraceAsString(),
+                'exception',
+                'page_load'
+            );
+            error_log("[" . date('c') . "] action_requests exception: " . $ex->getMessage());
             $this->template->content = View::factory('templates/user/exception_error_page')
                 ->bind('exception', $ex);
         }
@@ -963,6 +1077,18 @@ class Controller_Adminrequest extends Controller_Working
                 $this->template->content = View::factory('templates/user/access_denied');
             }*/
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_u_requests',
+                $ex->getMessage(),
+                [
+                    'user_id' => $name ?? 'N/A',
+                    'request_type' => $u_req_id ?? 'N/A'
+                ],
+                $ex->getTraceAsString(),
+                'exception',
+                'page_load'
+            );
+            error_log("[" . date('c') . "] action_u_requests exception: " . $ex->getMessage());
             $this->template->content = View::factory('templates/user/exception_error_page')
                 ->bind('exception', $ex);
         }
@@ -1038,6 +1164,15 @@ class Controller_Adminrequest extends Controller_Working
             echo json_encode($output);
             exit();
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_ajax_nadra_request_status',
+                $ex->getMessage(),
+                [],
+                $ex->getTraceAsString(),
+                'exception',
+                'ajax_request'
+            );
+            error_log("[" . date('c') . "] action_ajax_nadra_request_status exception: " . $ex->getMessage());
         }
     }
 
@@ -1110,6 +1245,15 @@ class Controller_Adminrequest extends Controller_Working
             echo json_encode($output);
             exit();
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_ajax_familytree_request_status',
+                $ex->getMessage(),
+                [],
+                $ex->getTraceAsString(),
+                'exception',
+                'ajax_request'
+            );
+            error_log("[" . date('c') . "] action_ajax_familytree_request_status exception: " . $ex->getMessage());
         }
     }
 
@@ -1188,6 +1332,15 @@ class Controller_Adminrequest extends Controller_Working
             echo json_encode($output);
             exit();
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_ajax_travel_request_status',
+                $ex->getMessage(),
+                [],
+                $ex->getTraceAsString(),
+                'exception',
+                'ajax_request'
+            );
+            error_log("[" . date('c') . "] action_ajax_travel_request_status exception: " . $ex->getMessage());
         }
     }
 
@@ -1394,67 +1547,14 @@ class Controller_Adminrequest extends Controller_Working
 // previous low request 1000
                     if ($total_count['total'] <= 1450) {
                         //// limit check end
-                        switch ($company_name) {
-                            case 1: // Mobilink
-                                //$to = 'leasupportteam@jazz.com.pk';
-                                $to = 'ali.razapu+mobilink@gmail.com';
-                                $to_name = '';
-                                break;
-                            case 3: // Ufone
-                                //$to = 'racentral@ufone.com';
-                                //$to_name = '';
-                                if (($request_type == 6 || $request_type == 1 || $request_type == 2)) {
-                                    //$to = 'cdr.requests@ptclgroup.com';
-                                    $to = 'ali.razapu+cdrptcl@gmail.com';
-                                    $to_name = ''; //ufone auto for cdr msisdn/imei
-                                } else {
-                                    //$to = 'ufone.location@ptclgroup.com';
-                                    $to = 'ali.razapu+locatoinptcl@gmail.com';
-                                    $to_name = '';
-                                }
-                                break;
-                            case 4: // Zong
-                                //$to = 'reg@zong.com.pk';
-                                $to = 'ali.razapu+regzong@gmail.com';
-                                $to_name = '';
-                                break;
-                            case 6: // Telenor   $request_type
-                                if ($request_type == 1 || $request_type == 2) {
-                                    // $to = 'lea.2@telenor.com.pk';
-                                    $to = 'ali.razapu+lea2telenor@gmail.com';
-                                } else {
-                                    //  $to = 'lea@newsystem123.com';
-                                    $to = 'ali.razapu+leanewsystem123@gmail.com';
-                                }
-                                $to_name = '';
-                                break;
-                            case 7: // Warid
-                                //$to = 'waridlea@jazz.com.pk';
-                                $to = 'ali.razapu+waridlea@gmail.com';
-                                $to_name = '';
-                                break;
-                            //added by shoaib
-                            case 8: // SCOM
-                                //  $to = 'reg@zong.com.pk';
-                                $to = 'ali.razapu+regzong@gmail.com';
-                                $to_name = 'scom';
-                                break;
-                            //shoaib changes ended
-                            case 11: // PTCL
-                                //  $to = 'mega.radata@ptcl.net.pk';
-                                $to = 'ali.razapu+megaradata11@gmail.com';
-                                $to_name = 'MegaRAdata/PTCL';
-                                break;
-                            case 12: // International
-                                //  $to = 'mega.radata@ptcl.net.pk';
-                                $to = 'ali.razapu+megaradata12@gmail.com';
-                                $to_name = 'MegaRAdata/PTCL';
-                                break;
-                            case 13: // family request
-                                // $to = 'naumana.manzoor@nadra.gov.pk';
-                                $to = 'ali.razapu+nmanzoornadra@gmail.com';
-                                $to_name = 'Nadra';
-                                break;
+                        // Use centralized email helper
+                        $email_config = Helpers_CompanyEmail::get_email($company_name, $request_type);
+                        $to = $email_config['email'] ?? '';
+                        $to_name = $email_config['name'] ?? '';
+                        
+                        // Validate email configuration
+                        if (empty($to)) {
+                            throw new Exception("Email configuration not found for company_name: {$company_name}, request_type: {$request_type}");
                         }
                         do {
                             if ($GLOBALS['id_generator'] == 0) {
@@ -1527,7 +1627,19 @@ class Controller_Adminrequest extends Controller_Working
                     //limit end
 
                 } catch (Exception $e) {
-
+                    Model_ErrorLog::log(
+                        'action_admincustomsend',
+                        $e->getMessage(),
+                        [
+                            'request_type' => $request_type ?? 'N/A',
+                            'company_name' => $company_name ?? 'N/A',
+                            'cust_email' => $cust_email ?? 'N/A'
+                        ],
+                        $e->getTraceAsString(),
+                        'email_send_failure',
+                        'admin_custom_send'
+                    );
+                    error_log("[" . date('c') . "] action_admincustomsend exception: " . $e->getMessage());
                     echo json_encode(2);
                     exit;
                 }
@@ -1590,176 +1702,38 @@ class Controller_Adminrequest extends Controller_Working
                         if ($total_count['total'] <= 1350) {
                             //// limit check end
 
-                            switch ($company_name) {
-                                case 1: // Mobilink
-                                    $start_date_dot = date('d.m.Y', strtotime($startDate));
-                                    $end_date_dot = date('d.m.Y', strtotime($endDate));
+                            // Use centralized email helper
+                            $email_config = Helpers_CompanyEmail::get_email($company_name, $request_type);
+                            $to = $email_config['email'] ?? '';
+                            $to_name = $email_config['name'] ?? '';
+                            
+                            // Validate email configuration
+                            if (empty($to)) {
+                                throw new Exception("Email configuration not found for company_name: {$company_name}, request_type: {$request_type}");
+                            }
+                            
+                            // Format dates for different companies
+                            $start_date_dot = date('d.m.Y', strtotime($startDate));
+                            $end_date_dot = date('d.m.Y', strtotime($endDate));
 
-                                    $start_date_slash = date('d/m/Y', strtotime($startDate));
-                                    $end_date_slash = date('d/m/Y', strtotime($endDate));
+                            $start_date_slash = date('d/m/Y', strtotime($startDate));
+                            $end_date_slash = date('d/m/Y', strtotime($endDate));
 
-                                    $start_date_hyphen = date('d-m-Y', strtotime($startDate));
-                                    $end_date_hyphen = date('d-m-Y', strtotime($endDate));
+                            $start_date_hyphen = date('d-m-Y', strtotime($startDate));
+                            $end_date_hyphen = date('d-m-Y', strtotime($endDate));
 
-                                    $start_date_slash_mdy = date('m/d/Y', strtotime($startDate));
-                                    $end_date_slash_mdy = date('m/d/Y', strtotime($endDate));
-
-                                    //$to = 'leasupportteam@jazz.com.pk';
-                                    $to = 'ali.razapu+adminleasupportteam@gmail.com';
-                                    $to_name = '';
-                                    break;
-                                case 3: // Ufone
-                                    $start_date_dot = date('d.m.Y', strtotime($startDate));
-                                    $end_date_dot = date('d.m.Y', strtotime($endDate));
-                                    $start_date_slash = date('d/m/Y', strtotime($startDate));
-                                    $end_date_slash = date('d/m/Y', strtotime($endDate));
-                                    $start_date_slash_mdy = date('m/d/Y', strtotime($startDate));
-                                    $end_date_slash_mdy = date('m/d/Y', strtotime($endDate));
-                                    $start_date_hyphen = date('d-m-Y', strtotime($startDate));
-                                    $end_date_hyphen = date('d-m-Y', strtotime($endDate));
-
-                                    if (strlen($requested_value) == 15) {
-                                        $requested_value = substr($requested_value, 0, 14) . '0';
-                                    }
-                                    if (($request_type == 6 || $request_type == 1 || $request_type == 2)) {
-
-                                        // $to = 'cdr.requests@ptclgroup.com';
-                                        $to = 'ali.razapu+admincdrptcl@gmail.com';
-                                        $to_name = ''; //ufone auto for cdr msisdn/imei
-                                    } else {
-                                        //$to = 'ufone.location@ptclgroup.com';
-                                        $to = 'ali.razapu+adminufoneloc@gmail.com';
-                                        $to_name = '';
-                                    }
-                                    break;
-                                case 4: // Zong
-                                    $start_date_dot = date('d.m.Y', strtotime($startDate));
-                                    $end_date_dot = date('d.m.Y', strtotime($endDate));
-                                    $start_date_slash = date('d/m/Y', strtotime($startDate));
-                                    $end_date_slash = date('d/m/Y', strtotime($endDate));
-                                    $start_date_hyphen = date('d-m-Y', strtotime($startDate));
-                                    $end_date_hyphen = date('d-m-Y', strtotime($endDate));
-
-                                    $start_date_slash_mdy = date('m/d/Y', strtotime($startDate));
-                                    $end_date_slash_mdy = date('m/d/Y', strtotime($endDate));
-
-                                    //$to = 'reg@zong.com.pk';
-                                    $to = 'ali.razapu+adminregzong@gmail.com';
-                                    $to_name = '';
-                                    break;
-
-
-                                case 6: // Telenor   $request_type
-                                    //print_r($_POST['inputIMEI']);
-                                    //echo '<br>' . substr($_POST['inputIMEI'], 0, -1);
-                                    $_POST['inputIMEI'] = isset($_POST['inputIMEI']) && !empty($_POST['inputIMEI']) ? mb_substr($_POST['inputIMEI'], 0, -1) : '';
-                                    //$_POST['inputIMEI'] = mb_substr($_POST['inputIMEI'], 0, -1);
-
-                                    $start_date_dot = date('d.m.Y', strtotime($startDate));
-                                    $end_date_dot = date('d.m.Y', strtotime($endDate));
-                                    $start_date_slash = date('d/m/Y', strtotime($startDate));
-                                    $end_date_slash = date('d/m/Y', strtotime($endDate));
-                                    $start_date_hyphen = date('d-m-Y', strtotime($startDate));
-                                    $end_date_hyphen = date('d-m-Y', strtotime($endDate));
-
-                                    $start_date_slash_mdy = date('m/d/Y', strtotime($startDate));
-                                    $end_date_slash_mdy = date('m/d/Y', strtotime($endDate));
-                                    if (($request_type == 1 || $request_type == 2 || $request_type == 3 || $request_type == 5)) {
-                                        // $to = 'lea.2@telenor.com.pk';
-                                        $to = 'ali.razapu+adminlea2telenor@gmail.com';
-                                        $to_name = ''; //Law Enforcement Agency
-                                    } elseif ($request_type == 4) {
-                                        //$to = 'lea.1@telenor.com.pk';
-                                        $to = 'ali.razapu+adminlea1telenor@gmail.com';
-                                        $to_name = '';
-                                    } else {
-                                        // $to = 'lea@newsystem123.com';
-                                        $to = 'ali.razapu+adminleanewsystem123@gmail.com';
-                                        $to_name = '';
-                                    }
-
-                                    break;
-                                case 7: // Warid
-                                    $start_date_dot = date('d.m.Y', strtotime($startDate));
-                                    $end_date_dot = date('d.m.Y', strtotime($endDate));
-                                    $start_date_slash = date('d/m/Y', strtotime($startDate));
-                                    $end_date_slash = date('d/m/Y', strtotime($endDate));
-                                    $start_date_hyphen = date('d-m-Y', strtotime($startDate));
-                                    $end_date_hyphen = date('d-m-Y', strtotime($endDate));
-                                    $start_date_slash_mdy = date('m/d/Y', strtotime($startDate));
-                                    $end_date_slash_mdy = date('m/d/Y', strtotime($endDate));
-                                    if (($request_type == 5 || $request_type == 3 || $request_type == 4)) {
-                                        //$to = 'leasupportteam@jazz.com.pk';
-                                        $to = 'ali.razapu+adminleasupportteamjazz@gmail.com';
-                                        $to_name = '';
-                                    } else {
-                                        // $to = 'leasupportteam@jazz.com.pk';
-                                        $to = 'ali.razapu+adminleasupportteamjazz@gmail.com';
-                                        $to_name = '';
-                                    }
-                                    break;
-                                //added by shoaib
-                                case 8: // SCOM
-                                    $start_date_dot = date('d.m.Y', strtotime($startDate));
-                                    $end_date_dot = date('d.m.Y', strtotime($endDate));
-                                    $start_date_slash = date('d/m/Y', strtotime($startDate));
-                                    $end_date_slash = date('d/m/Y', strtotime($endDate));
-                                    $start_date_hyphen = date('d-m-Y', strtotime($startDate));
-                                    $end_date_hyphen = date('d-m-Y', strtotime($endDate));
-
-                                    $start_date_slash_mdy = date('m/d/Y', strtotime($startDate));
-                                    $end_date_slash_mdy = date('m/d/Y', strtotime($endDate));
-                                    // $to = 'info.lea@sco.gov.pk';
-                                    $to = 'ali.razapu+admininfoleasco@gmail.com';
-                                    $to_name = 'scom';
-                                    break;
-                                //shoaib changes ended
-                                case 11: // PTCL
-                                    $start_date_dot = date('d.m.Y', strtotime($startDate));
-                                    $end_date_dot = date('d.m.Y', strtotime($endDate));
-                                    $start_date_slash = date('d/m/Y', strtotime($startDate));
-                                    $end_date_slash = date('d/m/Y', strtotime($endDate));
-                                    $start_date_hyphen = date('d-m-Y', strtotime($startDate));
-                                    $end_date_hyphen = date('d-m-Y', strtotime($endDate));
-                                    $start_date_slash_mdy = date('m/d/Y', strtotime($startDate));
-                                    $end_date_slash_mdy = date('m/d/Y', strtotime($endDate));
-//                                if ($request_type != 11) {
-//                                    //model call to update data in table 'Other numbers'
-//                                    $model = Model_Othernumber::update_other_numbers($_POST);
-//                                }
-                                    // $to = 'mega.radata@ptcl.net.pk';
-                                    $to = 'ali.razapu+adminmegaradataptcl@gmail.com';
-                                    $to_name = 'MegaRAdata/PTCL';
-                                    break;
-                                case 12: // International
-                                    $start_date_dot = date('d.m.Y', strtotime($startDate));
-                                    $end_date_dot = date('d.m.Y', strtotime($endDate));
-                                    $start_date_slash = date('d/m/Y', strtotime($startDate));
-                                    $end_date_slash = date('d/m/Y', strtotime($endDate));
-                                    $start_date_hyphen = date('d-m-Y', strtotime($startDate));
-                                    $end_date_hyphen = date('d-m-Y', strtotime($endDate));
-                                    $start_date_slash_mdy = date('m/d/Y', strtotime($startDate));
-                                    $end_date_slash_mdy = date('m/d/Y', strtotime($endDate));
-                                    //model call to update data in table 'Other numbers'
-//                                $model = Model_Othernumber::update_other_numbers($_POST);
-                                    //$to = 'mega.radata@ptcl.net.pk';
-                                    $to = 'ali.razapu+adminmegaradataptclInte@gmail.com';
-                                    $to_name = 'MegaRAdata/PTCL';
-                                    break;
-                                case 13: // family request
-                                    $start_date_dot = date('d.m.Y', strtotime($startDate));
-                                    $end_date_dot = date('d.m.Y', strtotime($endDate));
-                                    $start_date_slash = date('d/m/Y', strtotime($startDate));
-                                    $end_date_slash = date('d/m/Y', strtotime($endDate));
-                                    $start_date_hyphen = date('d-m-Y', strtotime($startDate));
-                                    $end_date_hyphen = date('d-m-Y', strtotime($endDate));
-                                    $start_date_slash_mdy = date('m/d/Y', strtotime($startDate));
-                                    $end_date_slash_mdy = date('m/d/Y', strtotime($endDate));
-                                    //model call to update data in table 'Other numbers'
-                                    //$to = 'naumana.manzoor@nadra.gov.pk';
-                                    $to = 'ali.razapu+naumanamanzoornadra@gmail.com';
-                                    $to_name = 'Nadra';
-                                    break;
+                            $start_date_slash_mdy = date('m/d/Y', strtotime($startDate));
+                            $end_date_slash_mdy = date('m/d/Y', strtotime($endDate));
+                            
+                            // Special handling for specific companies
+                            if ($company_name == 3 && strlen($requested_value) == 15) {
+                                // Ufone specific: truncate IMEI
+                                $requested_value = substr($requested_value, 0, 14) . '0';
+                            }
+                            
+                            if ($company_name == 6 && isset($_POST['inputIMEI']) && !empty($_POST['inputIMEI'])) {
+                                // Telenor specific: trim last character from IMEI
+                                $_POST['inputIMEI'] = mb_substr($_POST['inputIMEI'], 0, -1);
                             }
 
 
@@ -1890,7 +1864,19 @@ class Controller_Adminrequest extends Controller_Working
                         //limit end
 
                     } catch (Exception $e) {
-
+                        Model_ErrorLog::log(
+                            'action_adminsend',
+                            $e->getMessage(),
+                            [
+                                'request_type' => $request_type ?? 'N/A',
+                                'company_name' => $company_name ?? 'N/A',
+                                'requested_value' => $requested_value ?? 'N/A'
+                            ],
+                            $e->getTraceAsString(),
+                            'email_send_failure',
+                            'admin_send'
+                        );
+                        error_log("[" . date('c') . "] action_adminsend exception: " . $e->getMessage());
                         echo json_encode([
                             'status' => 0,
                             'message' => $e->getMessage(),
@@ -2046,6 +2032,15 @@ class Controller_Adminrequest extends Controller_Working
                 $this->template->content = View::factory('templates/user/access_denied');
             }
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_admin_request_status',
+                $ex->getMessage(),
+                [],
+                $ex->getTraceAsString(),
+                'exception',
+                'page_load'
+            );
+            error_log("[" . date('c') . "] action_admin_request_status exception: " . $ex->getMessage());
             $this->template->content = View::factory('templates/user/exception_error_page')
                 ->bind('exception', $ex);
         }
@@ -2067,6 +2062,15 @@ class Controller_Adminrequest extends Controller_Working
                 $this->template->content = View::factory('templates/user/access_denied');
             }
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_nadra_request_sent_form',
+                $ex->getMessage(),
+                [],
+                $ex->getTraceAsString(),
+                'exception',
+                'page_load'
+            );
+            error_log("[" . date('c') . "] action_nadra_request_sent_form exception: " . $ex->getMessage());
             $this->template->content = View::factory('templates/user/exception_error_page')
                 ->bind('exception', $ex);
         }
@@ -2086,6 +2090,15 @@ class Controller_Adminrequest extends Controller_Working
                 $this->template->content = View::factory('templates/user/access_denied');
             }
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_familytree_request_sent_form',
+                $ex->getMessage(),
+                [],
+                $ex->getTraceAsString(),
+                'exception',
+                'page_load'
+            );
+            error_log("[" . date('c') . "] action_familytree_request_sent_form exception: " . $ex->getMessage());
             $this->template->content = View::factory('templates/user/exception_error_page')
                 ->bind('exception', $ex);
         }
@@ -2107,6 +2120,15 @@ class Controller_Adminrequest extends Controller_Working
                 $this->template->content = View::factory('templates/user/access_denied');
             }
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_travel_request_sent_form',
+                $ex->getMessage(),
+                [],
+                $ex->getTraceAsString(),
+                'exception',
+                'page_load'
+            );
+            error_log("[" . date('c') . "] action_travel_request_sent_form exception: " . $ex->getMessage());
             $this->template->content = View::factory('templates/user/exception_error_page')
                 ->bind('exception', $ex);
         }
@@ -2127,6 +2149,15 @@ class Controller_Adminrequest extends Controller_Working
                 $this->template->content = View::factory('templates/user/access_denied');
             }
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_nadra_bulk_request_sent_form',
+                $ex->getMessage(),
+                [],
+                $ex->getTraceAsString(),
+                'exception',
+                'page_load'
+            );
+            error_log("[" . date('c') . "] action_nadra_bulk_request_sent_form exception: " . $ex->getMessage());
             $this->template->content = View::factory('templates/user/exception_error_page')
                 ->bind('exception', $ex);
         }

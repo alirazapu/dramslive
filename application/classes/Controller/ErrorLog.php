@@ -13,6 +13,7 @@ class Controller_ErrorLog extends Controller_Working
             'process_stage' => Arr::get($_GET, 'process_stage'),
             'request_id' => Arr::get($_GET, 'request_id'),
             'company_name' => Arr::get($_GET, 'company_name'),
+            'processing_index' => Arr::get($_GET, 'processing_index'),
             'date_from' => Arr::get($_GET, 'date_from'),
             'date_to' => Arr::get($_GET, 'date_to'),
             'search' => trim(Arr::get($_GET, 'search')),
@@ -38,6 +39,11 @@ class Controller_ErrorLog extends Controller_Working
         }
         if ($filters['company_name'] !== '') {
             $query->where('company_name', '=', $filters['company_name']);
+        }
+        if ($filters['processing_index'] !== '') {
+            // Filter by processing_index in context_data using safer JSON search
+            $processing_search = '%"processing_index":' . (int)$filters['processing_index'] . '%';
+            $query->where('context_data', 'LIKE', $processing_search);
         }
         if ($filters['date_from']) {
             $query->where('created_at', '>=', $filters['date_from'] . ' 00:00:00');
@@ -74,7 +80,12 @@ class Controller_ErrorLog extends Controller_Working
             $count_query->where('request_id', '=', (int)$filters['request_id']);
         }
         if ($filters['company_name'] !== '') {
-            $query->where('company_name', '=', $filters['company_name']);
+            $count_query->where('company_name', '=', $filters['company_name']);
+        }
+        if ($filters['processing_index'] !== '') {
+            // Filter by processing_index in context_data using safer JSON search
+            $processing_search = '%"processing_index":' . (int)$filters['processing_index'] . '%';
+            $count_query->where('context_data', 'LIKE', $processing_search);
         }
         if ($filters['date_from']) {
             $count_query->where('created_at', '>=', $filters['date_from'] . ' 00:00:00');
@@ -149,7 +160,8 @@ class Controller_ErrorLog extends Controller_Working
 
                 ->set('pagination_html', $pagination_html) // instead of Pagination object
             ->set('company_options', $this->get_company_options()) // helper method
-            ->set('source_options', $this->get_source_options());  // helper method
+            ->set('source_options', $this->get_source_options())  // helper method
+            ->set('processing_index_options', $this->get_processing_index_options()); // helper method
     }
 
     // Helper: Company dropdown options (adjust as per your system)
@@ -171,13 +183,28 @@ class Controller_ErrorLog extends Controller_Working
     {
         return [
             '' => 'All Sources',
+            'action_email_receive2' => 'Email Receive 2',
             'cron_parse_sub' => 'Subscriber Parsing Cron',
             'receive_email' => 'Email Receiving',
             'cron_email_send' => 'Email Sending Cron',
             'cron_parse_imei' => 'IMEI Parsing',
+            'send_high_priority' => 'Send High Priority',
+            'send_high_priority_query' => 'High Priority Query',
+            'high_priority_send' => 'High Priority Send',
+            'high_priority_fetch' => 'High Priority Fetch',
             'test_cron' => 'Test / Debug',
             'upload' => 'File Upload',
             'controller_action' => 'Controller Action',
+        ];
+    }
+
+    // Helper: Processing index dropdown for tracking status
+    private function get_processing_index_options()
+    {
+        return [
+            '' => 'All Status',
+            '3' => 'Status 3 (Error)',
+            '5' => 'Status 5 (Not Found)',
         ];
     }
 }
