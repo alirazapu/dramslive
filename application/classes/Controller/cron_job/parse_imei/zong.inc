@@ -58,7 +58,8 @@ if (!empty($data['received_file_path']) && $data['received_file_path'] != 'na') 
     $data['received_body'] = array_filter(explode('From:', strip_tags($data['received_body'])));
     if (strpos(strtolower($data['received_body'][0]), 'not found') !== false ||
             strpos(strtolower($data['received_body'][0]), 'format error') !== false
-           || strpos(strtolower($data['received_body'][0]), 'no record found') !== false) {
+           || strpos(strtolower($data['received_body'][0]), 'no record found') !== false
+		   || strpos(strtolower($data['received_body'][0]), 'no data found') !== false) {
         $reference_number = $data['request_id'];
         
         Model_ErrorLog::log(
