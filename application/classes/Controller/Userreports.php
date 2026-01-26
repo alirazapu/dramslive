@@ -3249,17 +3249,17 @@ exit();
                // include 'user_functions/subscriber_api_key.inc';
                 $post = $result;
 
-if (!empty($post['data'])) {
-    // Access the CNIC directly
-    $cnic = $post['data']['cnic'] ?? null;
+            if (!empty($post['data'])) {
+                // Access the CNIC directly
+                $cnic = $post['data']['cnic'] ?? null;
 
-    if (!empty($cnic)) {
-        $data = new Model_Userrequest();
-        $results = $data->subscriber_external_search_results($post, $uid, 'true');
-        echo $results;
-        exit;
-    }
-}
+                if (!empty($cnic)) {
+                    $data = new Model_Userrequest();
+                    $results = $data->subscriber_external_search_results($post, $uid, 'true');
+                    echo $results;
+                    exit;
+                }
+            }
 
                 echo '<p style="color: red;font-weight: bold">NO RECORD FOUND</p><a class="btn btn-primary pull-right" style="margin-top:-37px;" href="#" onclick="' . $request_function . '">' . $request_function_name . '</a>';
 
@@ -3298,13 +3298,14 @@ if (!empty($post['data'])) {
 
                 //user activity type
                 Helpers_Profile::user_activity_log($uid, 82, $search_type, $search_value);
-
-                include 'user_functions/subscriber_api_key.inc';
+                $test_array = Helpers_Subscriber::searchForeignerAccount($search_type, $search_value);
+                //include 'user_functions/subscriber_api_key.inc';
                 $post = $test_array;
+
                 if (!empty($post['data'])) {
-                    foreach ($post['data'] as $result) {
-                        $cnic = $result['cnic_number'];
-                    }
+                    // Access the CNIC directly
+                    $cnic = $post['data']['master_acc_number'] ?? null;
+
                     if (!empty($cnic)) {
                         $data = new Model_Userrequest();
                         $results = $data->foreigner_external_search_results($post, $uid, 'true');
@@ -3312,6 +3313,7 @@ if (!empty($post['data'])) {
                         exit;
                     }
                 }
+
                 echo '<p style="color: red;font-weight: bold">NO RECORD FOUND</p>';
 
                 echo '<hr class="style14 ">';
@@ -3337,9 +3339,13 @@ if (!empty($post['data'])) {
         }
         if ($permission == 1 || $permission == 2 || $permission == 3 || $permission == 4) {
             //get person id by updating table
+            $content = new Model_Generic();
+            $pid = $content->update_cnic_number($_POST);
+            //print_r($pid);die();
             try {                                
                 $_POST = Helpers_Utilities::remove_injection($_POST);
                 $array_person['cnic_number'] = $_POST['cnic_number'];
+                $array_person['first_name'] = $_POST['person_name'];
                 $array_person['is_foreigner'] = 1;
                 $content = new Model_Generic();
 

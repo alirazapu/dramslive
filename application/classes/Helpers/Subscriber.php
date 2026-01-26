@@ -80,4 +80,46 @@ class Helpers_Subscriber
             'data'   => $row
         );
     }
+
+
+public static function searchForeignerAccount($search_type, $search_value)
+{
+    // Map logical search types to DB columns
+    $column_map = array(
+        'foreigner_profile' => 'master_acc_number',
+        'foreign_cnic'      => 'foreign_cnic',
+        'master_acc_number' => 'master_acc_number'
+    );
+
+    if (!isset($column_map[$search_type])) {
+        return array(
+            'status' => false,
+            'error'  => 'Invalid search type'
+        );
+    }
+
+    $column = $column_map[$search_type];
+
+    $query = DB::select('*')
+        ->from('afghan_accounts')
+        ->where($column, '=', $search_value)
+        ->limit(1);
+
+    $result = $query->execute('mobile');
+    $row    = $result->current();
+
+    if (!$row) {
+        return array(
+            'status' => false,
+            'error'  => 'No foreigner account found'
+        );
+    }
+
+    return array(
+        'status' => true,
+        'data'   => $row
+    );
+}
+
+
 }

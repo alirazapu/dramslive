@@ -2682,64 +2682,100 @@ public static function subscriber_external_search_results($data, $uid) {
 
     /* Search Subscriber in local databases  */
 
-    public static function foreigner_external_search_results($data, $uid) {
-        $i = 1;
-        $cnic_body = '';
-        foreach ($data['data'] as $result) {
-            if (!empty($result)) {
-                //basic info
-                $cnic = !empty($result['cnic_number']) ? $result['cnic_number'] : '';
-                $name = !empty($result['person_name']) ? $result['person_name'] : 'NA';
-                $fname = !empty($result['person_g_name']) ? $result['person_g_name'] : '';
-                $gender = !empty($result['person_gender']) ? $result['person_gender'] : '';
-                if ($gender == 1) {
-                    $person_gender = 'Male';
-                } elseif ($gender == 2) {
-                    $person_gender = 'Female';
-                } else {
-                    $person_gender = 'Other';
-                }
-                $maritalstatus = !empty($result['martial_status']) ? Helpers_Utilities::get_marital_status($result['martial_status']) : '';
-
-                $dob = !empty($result['person_dob']) ? $result['person_dob'] : '';
-                $present_Add = !empty($result['person_present_add']) ? $result['person_present_add'] : '';
-                $permanent_Add = !empty($result['person_permanent_add']) ? $result['person_permanent_add'] : '';
-                $family_id = !empty($result['family_id']) ? $result['family_id'] : '';
-                $pak_district = !empty($result['pak_district']) ? $result['pak_district'] : '';
-                $pak_tehsil = !empty($result['pak_tehsil']) ? $result['pak_tehsil'] : '';
-                $home_country = !empty($result['home_country']) ? $result['home_country'] : '';
-                $ethnicity = !empty($result['ethnicity']) ? $result['ethnicity'] : '';
-                $address = $present_Add . " " . $pak_tehsil . " " . $pak_district;
-                ?>
-                <div>
-                    <p style="color: #00a7d0;font-weight: bold"><u>RECORD-<?php echo $i; ?></u></p>
-                    <span><b >NAME: </b><i><?php echo $name ?></i></span><br>
-                    <span><b >GARDIAN NAME: </b><i><?php echo $fname ?></i></span><br>
-                    <span><b >CNIC: </b><i><?php echo $cnic ?></i></span><br>
-                    <span><b >DOB: </b><i><?php echo $dob ?></i></span><br>
-                    <span><b >GENDER: </b><i><?php echo $person_gender ?></i></span><br>
-                    <span><b >MARITAL STATUS: </b><i><?php echo $maritalstatus ?></i></span><br>
-                    <span><b >PRESENT ADDRESS: </b><i><?php echo $address; ?></i></span><br>
-                    <span><b >PERMANENT ADDRESS: </b><i><?php echo $permanent_Add; ?></i></span><br>
-                    <span><b >HOME COUNTRY: </b><i><?php echo $home_country; ?></i></span><br>
-                    <span><b >ETHNICITY: </b><i><?php echo $ethnicity; ?></i></span><br>
-
-                    <form  name="fixerror-<?php echo $i ?>" id="fixerror-<?php echo $i ?>" action="<?php echo URL::base() . 'userreports/create_foreigner_person'; ?>"  method="post"  >
-
-                        <input type="hidden" name="cnic_number" value="<?php echo $cnic; ?>">
-                        <input type="hidden" name="is_foreigner" value="1">
-                        <button  style="margin-top: -22px; margin-right: 5px" type="submit" title="Save in AIES" class="pull-right btn-primary" >Save in Database</button>
-
-                    </form>
 
 
-
-                    <hr class="style14 ">
-                </div>
-                <?php
-            }
-            $i++;
+    public static function foreigner_external_search_results($data, $uid)
+    {
+        if (empty($data['data']) || !is_array($data['data'])) {
+            return '<p class="text-danger">No record found.</p>';
         }
+
+        $result = $data['data'];
+        $i = 1;
+        $html = '';
+
+        // Basic mapping
+        $cnic   = $result['cnic'] ?? '';
+        $name  = self::clean_person_name($result['master_name'] ?? '');
+        $fname = self::clean_person_name($result['father_name'] ?? '');
+
+        $dob    = '';
+        $gender = '';
+
+        $person_gender = 'NA';
+        $maritalstatus = '';
+        $home_country  = 'Pakistan';
+        $ethnicity     = '';
+
+        $present_Add = $result['site_address'] ?? '';
+        $pak_tehsil  = $result['master_pak_tehsil'] ?? '';
+        $pak_district = $result['master_pak_district'] ?? '';
+        $msisdn = $result['msisdn'] ?? '';
+
+        $address = trim($present_Add . ' ' . $pak_tehsil . ' ' . $pak_district);
+
+        $html .= '
+        <div>
+            <p style="color:#00a7d0;font-weight:bold">
+                <u>RECORD-' . $i . '</u>
+            </p>
+
+            <span><b>NAME: </b><i>' . htmlspecialchars($name) . '</i></span><br>
+            <span><b>GARDIAN NAME: </b><i>' . htmlspecialchars($fname) . '</i></span><br>
+            <span><b>CNIC: </b><i>' . htmlspecialchars($cnic) . '</i></span><br>
+            <span><b>MSISDN: </b><i>' . htmlspecialchars($msisdn) . '</i></span><br>
+            <span><b>DOB: </b><i>' . $dob . '</i></span><br>
+            <span><b>GENDER: </b><i>' . $person_gender . '</i></span><br>
+            <span><b>MARITAL STATUS: </b><i>' . $maritalstatus . '</i></span><br>
+            <span><b>PRESENT ADDRESS: </b><i>' . htmlspecialchars($address) . '</i></span><br>
+            <span><b>PERMANENT ADDRESS: </b><i></i></span><br>
+            <span><b>HOME COUNTRY: </b><i>' . $home_country . '</i></span><br>
+            <span><b>District: </b><i>' . $pak_district . '</i></span><br>
+            <span><b>Tehsil: </b><i>' . $pak_tehsil . '</i></span><br>
+
+            <form name="fixerror-' . $i . '" 
+                id="fixerror-' . $i . '" 
+                action="' . URL::base() . 'userreports/create_foreigner_person" 
+                method="post">
+
+                <input type="hidden" name="cnic_number" value="' . htmlspecialchars($cnic) . '">
+                <input type="hidden" name="is_foreigner" value="1">
+                <input type="hidden" name="created_by" value="' . (int)$uid . '">
+                <input type="hidden" name="mobile" value="' . htmlspecialchars($msisdn) . '">
+                <input type="hidden" name="first_name" value="' . htmlspecialchars($name) . '">
+                <input type="hidden" name="address" value="' . htmlspecialchars($address) . '">
+                <button type="submit"
+                        class="pull-right btn-primary"
+                        style="margin-top:-22px;margin-right:5px">
+                    Save in Database
+                </button>
+            </form>
+
+            <hr class="style14">
+        </div>';
+
+        return $html;
+    }
+
+    public static function clean_person_name($text)
+    {
+        if (empty($text)) {
+            return '';
+        }
+
+        // Trim spaces
+        $text = trim($text);
+
+        // Remove special characters (keep letters & spaces)
+        $text = preg_replace('/[^a-zA-Z\s]/', '', $text);
+
+        // Remove multiple spaces
+        $text = preg_replace('/\s+/', ' ', $text);
+
+        // Convert to Proper Case (Camel Case)
+        $text = ucwords(strtolower($text));
+
+        return $text;
     }
 
 //function to update user request status
