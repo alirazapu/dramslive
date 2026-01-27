@@ -190,8 +190,11 @@ abstract class Helpers_Email
             /* get information specific to this email */
             $overview = imap_fetch_overview($inbox, $email_number, 0);
 
-// Use safe, decoded body (prefers plain/HTML, skips obvious binary)
-            $message = Helpers_Email::safe_fetch_body($inbox, $email_number);
+            $message = imap_fetchbody($inbox, $email_number, 1.2);
+            if (empty($message))
+                $message = quoted_printable_decode(imap_fetchbody($inbox, $email_number, 1));
+            if (empty($message))
+                $message = imap_fetchbody($inbox, $email_number, 2);
 
             /* explode subject */
             if(!isset($overview[0]->subject) || empty($overview[0]->subject)){
@@ -443,78 +446,24 @@ abstract class Helpers_Email
                 }
                 $status = imap_setflag_full($inbox, $email_number, "\Seen \Flagged"); //i will use later
                 $result = array();
-                $result['file'] = $filename;
-
-                /**
-                 * Decide what to treat as the "text body" for parsing.
-                 * Priority:
-                 *   1. Decoded $message if it is non-binary
-                 *   2. Decoded $message_raw if that looks like base64/QP text
-                 *   3. Raw $message_raw as absolute fallback
-                 */
-
-                // Start from $message (decoded from IMAP parts)
-                $text_for_parsing = $message;
-
-                    // If $message is empty or binary, try to decode $message_raw
-                if (empty($text_for_parsing) || Helpers_Email::is_binary_string($text_for_parsing)) {
-                    $try = Helpers_Email::try_decode_text($message_raw);
-                    if (!empty($try) && !Helpers_Email::is_binary_string($try)) {
-                        $text_for_parsing = $try;
-                    } else {
-                        // Last fallback: original raw
-                        $text_for_parsing = $message_raw;
-                    }
-                }
+                 $result['file'] = $filename;
 
                 try {
-                    $extrac = explode("On Sun,", $text_for_parsing);
+                    $extrac = explode("On Sun,", $message);
                     $extrac = explode("On Mon,", $extrac[0]);
                     $extrac = explode("On Tue,", $extrac[0]);
                     $extrac = explode("On Wed,", $extrac[0]);
                     $extrac = explode("On Thu,", $extrac[0]);
                     $extrac = explode("On Fri,", $extrac[0]);
                     $extrac = explode("On Sat,", $extrac[0]);
-                    $result['body'] = strip_tags($extrac[0]); // cleaned text for your hard-coded parsers
+                    $result['body'] = strip_tags($extrac[0]);
                 } catch (Exception $e) {
-                    $result['body'] = strip_tags($text_for_parsing);
+                    $result['body'] = $message_raw;
                 }
-
-                /**
-                 * For "body_raw" (used as 'Received Body Decoded' in UI), we want the best text view:
-                 *   1. Decoded $message if not binary
-                 *   2. Decoded $message_raw if that looks like base64/QP text
-                 *   3. Fallback: original $message_raw
-                 */
-                $body_raw_candidate = null;
-
-                // Prefer non-binary $message
-                if (!empty($message) && !Helpers_Email::is_binary_string($message)) {
-                    $body_raw_candidate = $message;
-                } else {
-                    // Try decode $message_raw (like your MzE2... base64 case)
-                    $try = Helpers_Email::try_decode_text($message_raw);
-                    if (!empty($try) && !Helpers_Email::is_binary_string($try)) {
-                        $body_raw_candidate = $try;
-                    }
-                }
-
-                // Final fallback if everything failed
-                if ($body_raw_candidate === null) {
-                    $body_raw_candidate = $message_raw;
-                }
-
-                $result['body_raw'] = $body_raw_candidate;
-
+                $result['body_raw'] = $message_raw;
                 $file_name = !empty($result['file']) ? $result['file'] : 'na';
-                $body     = Helpers_Email::normalize_email_text($result['body'] ?? '');
-                $body_raw = Helpers_Email::normalize_email_text($result['body_raw'] ?? '');
-                if ($body === '') {
-                    $body = 'na';
-                }
-                if ($body_raw === '') {
-                    $body_raw = 'na';
-                }
+                $body = !empty($result['body']) ? $result['body'] : 'na';
+                $body_raw = !empty($result['body_raw']) ? $result['body_raw'] : 'na';
                 if ($members['company_name'] >= 11 && $members['company_name'] <= 13) {
                     $process_index = 7;
                 } else {
@@ -592,11 +541,13 @@ abstract class Helpers_Email
                 $structure = imap_fetchstructure($inbox, $email_number);
 
                 /* get information specific to this email */
-                /* get information specific to this email */
                 $overview = imap_fetch_overview($inbox, $email_number, 0);
 
-                // Use safe, decoded body (prefers plain/HTML, skips binary like XLSX)
-                $message = Helpers_Email::safe_fetch_body($inbox, $email_number);
+                $message = imap_fetchbody($inbox, $email_number, 1.2);
+                if (empty($message))
+                    $message = quoted_printable_decode(imap_fetchbody($inbox, $email_number, 1));
+                if (empty($message))
+                    $message = imap_fetchbody($inbox, $email_number, 2);
                 $check_match = trim(str_replace("Re:", "", $overview[0]->subject));
 
                 $string_replace = str_replace("/", " /", $overview[0]->subject);
@@ -781,71 +732,25 @@ abstract class Helpers_Email
 
                     $result = array();
                     $result['file'] = $filename;
-
-                    /**
-                     * Decide what to treat as the "text body" for parsing.
-                     * Priority:
-                     *   1. Decoded $message if it is non-binary
-                     *   2. Decoded $message_raw if that looks like base64/QP text
-                     *   3. Raw $message_raw as absolute fallback
-                     */
-
-                    // Start from $message (decoded from IMAP parts)
-                    $text_for_parsing = $message;
-
-                    // If $message is empty or binary, try to decode $message_raw
-                    if (empty($text_for_parsing) || Helpers_Email::is_binary_string($text_for_parsing)) {
-                        $try = Helpers_Email::try_decode_text($message_raw);
-                        if (!empty($try) && !Helpers_Email::is_binary_string($try)) {
-                            $text_for_parsing = $try;
-                        } else {
-                            // Last fallback: original raw
-                            $text_for_parsing = $message_raw;
-                        }
-                    }
-
                     try {
-                        $extrac = explode("On Sun,", $text_for_parsing);
+                        $extrac = explode("On Sun,", $message);
                         $extrac = explode("On Mon,", $extrac[0]);
                         $extrac = explode("On Tue,", $extrac[0]);
                         $extrac = explode("On Wed,", $extrac[0]);
                         $extrac = explode("On Thu,", $extrac[0]);
                         $extrac = explode("On Fri,", $extrac[0]);
                         $extrac = explode("On Sat,", $extrac[0]);
-                        $result['body'] = strip_tags($extrac[0]); // cleaned text for your hard-coded parsers
+                        $result['body'] = strip_tags($extrac[0]);
                     } catch (Exception $e) {
-                        $result['body'] = strip_tags($text_for_parsing);
+                        $result['body'] = $message_raw;
                     }
-
-                    /**
-                     * For "body_raw" (used as 'Received Body Decoded' in UI), we want the best text view:
-                     *   1. Decoded $message if not binary
-                     *   2. Decoded $message_raw if that looks like base64/QP text
-                     *   3. Fallback: original $message_raw
-                     */
-                    $body_raw_candidate = null;
-
-                    // Prefer non-binary $message
-                    if (!empty($message) && !Helpers_Email::is_binary_string($message)) {
-                        $body_raw_candidate = $message;
-                    } else {
-                        // Try decode $message_raw (like your MzE2... base64 case)
-                        $try = Helpers_Email::try_decode_text($message_raw);
-                        if (!empty($try) && !Helpers_Email::is_binary_string($try)) {
-                            $body_raw_candidate = $try;
-                        }
-                    }
-
-                    // Final fallback if everything failed
-                    if ($body_raw_candidate === null) {
-                        $body_raw_candidate = $message_raw;
-                    }
-
-                    $result['body_raw'] = $body_raw_candidate;
+                    $result['body_raw'] = $message_raw;
+                    //imap_close($inbox);
 
                     $file_name = !empty($result['file']) ? $result['file'] : 'na';
-                    $body      = !empty($result['body']) ? $result['body'] : 'na';
-                    $body_raw  = !empty($result['body_raw']) ? $result['body_raw'] : 'na';
+                    $body = !empty($result['body']) ? $result['body'] : 'na';
+                    $body_raw = !empty($result['body_raw']) ? $result['body_raw'] : 'na';
+
                     if ($members['company_name'] >= 11 && $members['company_name'] <= 13) {
                         $process_index = 7;
                     } else {
@@ -859,9 +764,18 @@ abstract class Helpers_Email
                     Helpers_Email::change_status_raw($file_name, $body_raw, $body, $members['message_id'], $members['request_id'], $is_file_exist);
                 } else {
                     imap_clearflag_full($inbox, $email_number, '\\Seen');  //Seen
+                    //$status = imap_setflag_full($inbox, $email_number, "\Seen \Flagged"); //i will use later
+
+                    //imap_setflag_full($inbox, $overview[0]->msgno, "\\Seen \\Flagged", ST_UID);
+                    // echo '<br>  N ' . $overview[0]->msgno;
+                    //$message = imap_fetchbody($inbox,$overview[0]->msgno,1, FT_PEEK);
+                    //imap_fetchbody($inbox,$overview[0]->msgno,1, FT_PEEK);
+                    //$status = imap_setflag_full($inbox, $overview[0]->msgno, "\\Seen"); //i will use later
                 }
             }
+            //echo $output;
         }
+
         /* close the connection */
         imap_close($inbox);
         return 1;
@@ -1421,38 +1335,18 @@ abstract class Helpers_Email
                 $status = imap_setflag_full($inbox, $email_number, "\Seen \Flagged"); //i will use later
                 $result = array();
                 $result['file'] = $filename;
-
-                // Decide what to treat as the "text body" for parsing.
-                // Prefer $message (decoded, safe). If it's empty or binary, fall back to $message_raw.
-                $text_for_parsing = $message;
-                if (empty($text_for_parsing) || Helpers_Email::is_binary_string($text_for_parsing)) {
-                    $text_for_parsing = $message_raw;
-                }
-
-                try {
-                    $extrac = explode("On Sun,", $text_for_parsing);
-                    $extrac = explode("On Mon,", $extrac[0]);
-                    $extrac = explode("On Tue,", $extrac[0]);
-                    $extrac = explode("On Wed,", $extrac[0]);
-                    $extrac = explode("On Thu,", $extrac[0]);
-                    $extrac = explode("On Fri,", $extrac[0]);
-                    $extrac = explode("On Sat,", $extrac[0]);
-                    $result['body'] = strip_tags($extrac[0]); // cleaned text for your hard-coded parsers
-                } catch (Exception $e) {
-                    $result['body'] = strip_tags($text_for_parsing);
-                }
-
-                // For "body_raw" (used as 'Received Body Decoded' in UI), prefer decoded text,
-                // but if that's binary/empty, keep original $message_raw to avoid surprises.
-                if (!empty($message) && !Helpers_Email::is_binary_string($message)) {
-                    $result['body_raw'] = $message;  // decoded body (plain or HTML)
-                } else {
-                    $result['body_raw'] = $message_raw;
-                }
-
+                $extrac = explode("On Sun,", $message);
+                $extrac = explode("On Mon,", $extrac[0]);
+                $extrac = explode("On Tue,", $extrac[0]);
+                $extrac = explode("On Wed,", $extrac[0]);
+                $extrac = explode("On Thu,", $extrac[0]);
+                $extrac = explode("On Fri,", $extrac[0]);
+                $extrac = explode("On Sat,", $extrac[0]);
+                $result['body'] = strip_tags($extrac[0]);
+                $result['body_raw'] = $message_raw;
                 $file_name = !empty($result['file']) ? $result['file'] : 'na';
-                $body      = !empty($result['body']) ? $result['body'] : 'na';
-                $body_raw  = !empty($result['body_raw']) ? $result['body_raw'] : 'na';
+                $body = !empty($result['body']) ? $result['body'] : 'na';
+                $body_raw = !empty($result['body_raw']) ? $result['body_raw'] : 'na';
 
 
                 if (!empty($file_id) && $file_name != 'na' && !empty($is_file_exist) && $is_file_exist == 0)
@@ -1463,123 +1357,7 @@ abstract class Helpers_Email
             imap_close($inbox);
         }
     }
-    /**
-     * Detect if a string is likely binary (e.g., XLSX/ZIP, images, etc.).
-     * Used to avoid treating raw attachment bytes as text body.
-     */
-    protected static function is_binary_string($str)
-    {
-        if ($str === '' || $str === null) {
-            return false;
-        }
 
-        // ZIP magic (XLSX/DOCX/PPTX, etc.)
-        if (strncmp($str, "PK\x03\x04", 4) === 0 || strncmp($str, "PK\x05\x06", 4) === 0) {
-            return true;
-        }
-
-        // Heuristic: count non-printable characters in first 1KB
-        $sample = substr($str, 0, 1024);
-        $nonPrintable = 0;
-        $len = strlen($sample);
-
-        for ($i = 0; $i < $len; $i++) {
-            $ord = ord($sample[$i]);
-            // Allow CR, LF, TAB
-            if ($ord === 9 || $ord === 10 || $ord === 13) {
-                continue;
-            }
-            if ($ord < 32 || $ord > 126) {
-                $nonPrintable++;
-            }
-        }
-
-        return ($len > 0 && ($nonPrintable / $len) > 0.3);
-    }
-
-    /**
-     * Safely fetch and decode the body of an email.
-     * - Try HTML part (1.2)
-     * - Fallback to quoted-printable plain text (1)
-     * - Fallback to part 2 as last resort
-     * - Avoid returning obvious binary blobs as "body"
-     */
-    public static function safe_fetch_body($inbox, $email_number)
-    {
-        // 1) Try HTML part of multipart/alternative
-        $message = imap_fetchbody($inbox, $email_number, 1.2);
-
-        // 2) Fallback: plain text, quoted-printable
-        if (empty($message)) {
-            $message = imap_fetchbody($inbox, $email_number, 1);
-            if (!empty($message)) {
-                $message = quoted_printable_decode($message);
-            }
-        }
-
-        // 3) Last fallback: part 2 (often HTML/text, sometimes weird)
-        if (empty($message)) {
-            $message = imap_fetchbody($inbox, $email_number, 2);
-        }
-
-        // If this looks like binary (e.g., XLSX/ZIP), don't use it as text body
-        if (self::is_binary_string($message)) {
-            return '';
-        }
-
-        return $message;
-    }
-
-    /**
-     * Try to decode a string that may be base64 or quoted-printable text.
-     * Does not harm normal plain text.
-     */
-    protected static function try_decode_text($str)
-    {
-        if ($str === '' || $str === null) {
-            return $str;
-        }
-
-        $decoded = $str;
-
-        if (
-            strlen($str) > 100 &&
-            preg_match('/^[A-Za-z0-9+\/=\r\n]+$/', trim($str))
-        ) {
-            $b64 = base64_decode($str, true);
-            if ($b64 !== false && $b64 !== '') {
-                $decoded = $b64;
-            }
-        }
-
-        // Always try quoted-printable decode on top
-        $qp = quoted_printable_decode($decoded);
-        if (!empty($qp)) {
-            $decoded = $qp;
-        }
-
-        return $decoded;
-    }
-    protected static function normalize_email_text($text)
-    {
-        if ($text === null || $text === '') {
-            return '';
-        }
-
-        // Decode base64 / quoted-printable safely
-        $text = self::try_decode_text($text);
-
-        // Remove HTML safely
-        if (strip_tags($text) !== $text) {
-            $text = html_entity_decode(strip_tags($text), ENT_QUOTES | ENT_HTML5, 'UTF-8');
-        }
-
-        // Normalize whitespace
-        $text = preg_replace("/\r\n|\r/", "\n", $text);
-        $text = preg_replace("/\n{3,}/", "\n\n", $text);
-
-        return trim($text);
-    }
     public static function email_status($reference_number, $status, $process_status)
     {
         $query = DB::update('user_request')->set(array('status' => $status, 'processing_index' => $process_status))
@@ -1588,7 +1366,6 @@ abstract class Helpers_Email
         return $query;
 
     }
-
 }
 
 ?>
