@@ -502,8 +502,7 @@ class Controller_Cronjob extends Controller {
 
                 //echo $mobile_number;
                  if ($not_fount == 0) {
-
-                    /* ================= Normalize Mobile ================= */
+					/* ================= Normalize Mobile ================= */
                     $mobile_number = trim($mobile_number);
                     $mobile_number = preg_replace('/\D/', '', $mobile_number);
 
@@ -550,14 +549,17 @@ class Controller_Cronjob extends Controller {
 
                     // CNIC validation depends on nationality
                     if ((int)$is_foreigner === 0) {
-                        // Pakistani CNIC
                         $isValidCnic = (
                             strlen($cnic_number) === 13 &&
                             ctype_digit($cnic_number)
                         );
                     } else {
-                        // Foreigner CNIC / Passport
-                        $isValidCnic = !empty($cnic_number_foreigner);
+                        // Foreigner: allow alphanumeric 13 chars, or at least non-empty
+                        $isValidCnic = (
+                            !empty($cnic_number_foreigner) &&
+                            strlen($cnic_number_foreigner) === 13 &&
+                            preg_match('/^[A-Za-z0-9]{13}$/', $cnic_number_foreigner)
+                        );
                     }
 
                     /* ================= Final Gate ================= */
