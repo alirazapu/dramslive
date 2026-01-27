@@ -507,8 +507,14 @@ abstract class Helpers_Email
                 $result['body_raw'] = $body_raw_candidate;
 
                 $file_name = !empty($result['file']) ? $result['file'] : 'na';
-                $body      = !empty($result['body']) ? $result['body'] : 'na';
-                $body_raw  = !empty($result['body_raw']) ? $result['body_raw'] : 'na';
+                $body     = Helpers_Email::normalize_email_text($result['body'] ?? '');
+                $body_raw = Helpers_Email::normalize_email_text($result['body_raw'] ?? '');
+                if ($body === '') {
+                    $body = 'na';
+                }
+                if ($body_raw === '') {
+                    $body_raw = 'na';
+                }
                 if ($members['company_name'] >= 11 && $members['company_name'] <= 13) {
                     $process_index = 7;
                 } else {
@@ -1536,8 +1542,10 @@ abstract class Helpers_Email
 
         $decoded = $str;
 
-        // Try base64 decode if it looks like base64 (your MzE2... example)
-        if (preg_match('/^[A-Za-z0-9+\/=\r\n]+$/', $str)) {
+        if (
+            strlen($str) > 100 &&
+            preg_match('/^[A-Za-z0-9+\/=\r\n]+$/', trim($str))
+        ) {
             $b64 = base64_decode($str, true);
             if ($b64 !== false && $b64 !== '') {
                 $decoded = $b64;
@@ -1552,7 +1560,26 @@ abstract class Helpers_Email
 
         return $decoded;
     }
+    protected static function normalize_email_text($text)
+    {
+        if ($text === null || $text === '') {
+            return '';
+        }
 
+        // Decode base64 / quoted-printable safely
+        $text = self::try_decode_text($text);
+
+        // Remove HTML safely
+        if (strip_tags($text) !== $text) {
+            $text = html_entity_decode(strip_tags($text), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        }
+
+        // Normalize whitespace
+        $text = preg_replace("/\r\n|\r/", "\n", $text);
+        $text = preg_replace("/\n{3,}/", "\n\n", $text);
+
+        return trim($text);
+    }
     public static function email_status($reference_number, $status, $process_status)
     {
         $query = DB::update('user_request')->set(array('status' => $status, 'processing_index' => $process_status))
