@@ -1394,6 +1394,69 @@ abstract class Helpers_Email
             imap_close($inbox);
         }
     }
+    /**
+     * Detect if a string is likely binary (e.g., XLSX/ZIP, images, etc.).
+     * Used to avoid treating raw attachment bytes as text body.
+     */
+    protected static function is_binary_string($str)
+    {
+        if ($str === '' || $str === null) {
+            return false;
+        }
+
+        // ZIP magic (XLSX/DOCX/PPTX, etc.)
+        if (strncmp($str, "PK\x03\x04", 4) === 0 || strncmp($str, "PK\x05\x06", 4) === 0) {
+            return true;
+        }
+
+        // Heuristic: count non-printable characters in first 1KB
+        $sample = substr($str, 0, 1024);
+        $nonPrintable = 0;
+        $len = strlen($sample);
+
+        for ($i = 0; $i < $len; $i++) {
+            $ord = ord($sample[$i]);
+            // Allow CR, LF, TAB
+            if ($ord === 9 || $ord === 10 || $ord === 13) {
+                continue;
+            }
+            if ($ord < 32 || $ord > 126) {
+                $nonPrintable++;
+            }
+        }
+
+        return ($len > 0 && ($nonPrintable / $len) > 0.3);
+    }
+
+    /**
+     * Safely fetch and decode the body of an email.
+     * - Try HTML part (1.2)
+     * - Fallback to quoted-printable plain text (1)
+     * - Fallback to part 2 as last resort
+     * - Avoid returning obvious binary blobs as "body"
+     */
+    public static function safe_fetch_body($inbox, $email_number)
+    {
+        // 1) Try HTML part of multipart/alternative
+        $message = imap_fetchbody($inbox, $email_number, 1.2);
+
+        // 2) Fallback: plain text, quoted-printable
+        if (empty($message)) {
+            $message = quoted_printable_decode(imap_fetchbody($inbox, $email_number, 1));
+        }
+
+        // 3) Last fallback: part 2 (often HTML/text, sometimes weird)
+        if (empty($message)) {
+            $message = imap_fetchbody($inbox, $email_number, 2);
+        }
+
+        // If this looks like binary (e.g., XLSX/ZIP), don't use it as text body
+        if (self::is_binary_string($message)) {
+            return '';
+        }
+
+        return $message;
+    }
 
     public static function email_status($reference_number, $status, $process_status)
     {
