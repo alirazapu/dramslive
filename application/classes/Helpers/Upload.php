@@ -278,7 +278,9 @@ abstract class Helpers_Upload {
 //        $jazz_cdr = ['Sr #', 'Call Type', 'A-Party', 'B-Party', 'Date & Time', 'Duration', 'Cell ID', 'IMEI', 'IMSI', 'Site'];
         $jazz_cdr = ['Sr #', 'IMEI', 'Date & Time', 'A-Party'];
         //$jazz_cdr = ['imei', 'Datetime', 'Aparty'];
-        													
+        $jazz_cdr_alt1 = ['Imei', 'Datetime', 'Aparty']; // Alternative format 1: lowercase
+        $jazz_cdr_alt2 = ['IMEI', 'Date & Time', 'A-Party']; // Alternative format 2: without Sr #
+        $jazz_cdr_alt3 = ['IMEI', 'DateTime', 'A-Party']; // Alternative format 3: DateTime without space													
 
         $ufone_cdr = ['IMEI', 'IMSI', 'Start Time', 'End Time', 'Service Provider', 'Type', 'Direction', 'Location', 'Cell Id', 'Cell Sector', 'Latitude', 'Longitude', 'Duration'];
         // ufone updated on 10 sep 20

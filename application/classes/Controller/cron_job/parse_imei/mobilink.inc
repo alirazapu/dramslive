@@ -76,7 +76,7 @@ if (!empty($data['received_file_path']) && $data['received_file_path'] != 'na') 
             
             $nameoffile = $file_name[0];
             $fileext = pathinfo($nameoffile, PATHINFO_EXTENSION);
-                if($fileext=='xls'|| $fileext=='csv')
+                if($fileext=='xls' || $fileext=='xlsx' || $fileext=='csv')
                 {
                     
                     echo 'mobilink .';
