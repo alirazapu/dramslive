@@ -1663,7 +1663,7 @@ abstract class Helpers_Upload {
             return $request_save_data_path;
         } else {
             //alias for download only
-            $request_download_data_path = $serverdata['server_name'] . $serverdata['request_download_data_path'] . $folder_range . '/';
+            $request_download_data_path =  $serverdata['request_download_data_path'] . $folder_range . '/';
         
             return $request_download_data_path;
         }
