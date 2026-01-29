@@ -1523,15 +1523,41 @@ public static function get_person_for_dashboard_perofile($person_id)
         } else {
             try {
                 $differenceFormat = '%y Year %m Month %d Day';
-                $today = date("m/d/y");
-                //$datetime1 = date_create($dob);
-                $datetime1 = date("m/y/d", strtotime($dob));
-                //$datetime2 = $today->format('Y-m-d H:i:s');
-                $datetime2 = date_create($today);
-                print_r($datetime1);
-                //print_r($datetime2);
-                //exit;
-                $interval = date_diff($today, $dob);
+                $datetime2 = new DateTime();
+                
+                // Try to parse the date string - try DD/MM/YYYY format first
+                $datetime1 = DateTime::createFromFormat('d/m/Y', $dob);
+                
+                // Validate parsing was successful with no errors
+                if ($datetime1 !== false) {
+                    $errors = DateTime::getLastErrors();
+                    if ($errors && ($errors['warning_count'] > 0 || $errors['error_count'] > 0)) {
+                        $datetime1 = false;
+                    }
+                }
+                
+                // If that fails, try MM/DD/YYYY format
+                if ($datetime1 === false) {
+                    $datetime1 = DateTime::createFromFormat('m/d/Y', $dob);
+                    if ($datetime1 !== false) {
+                        $errors = DateTime::getLastErrors();
+                        if ($errors && ($errors['warning_count'] > 0 || $errors['error_count'] > 0)) {
+                            $datetime1 = false;
+                        }
+                    }
+                }
+                
+                // If all parsing attempts failed, return NA
+                if ($datetime1 === false) {
+                    return "NA";
+                }
+                
+                // Validate that the date is not in the future
+                if ($datetime1 > $datetime2) {
+                    return "NA";
+                }
+                
+                $interval = date_diff($datetime1, $datetime2);
                 return $interval->format($differenceFormat);
             } catch (Exception $e) {
                 Model_ErrorLog::log(
