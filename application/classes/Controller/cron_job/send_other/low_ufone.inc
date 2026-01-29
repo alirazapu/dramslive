@@ -40,7 +40,7 @@ $query = "select *
                     //create attachment end
                     //echo $file_name;                    
                     //echo $to='test@gmail.com';
-                    $body = $reference_idd .".txt";
+                    $body = $reference_idd;
                     $query = "select *
                         FROM `user_request` as ur
                         where ur.status = 0 and ur.processing_index = 0                      

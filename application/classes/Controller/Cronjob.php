@@ -8,6 +8,62 @@
 
 class Controller_Cronjob extends Controller {    
     /* test function */
+	public function action_testufone(){
+		$reference_number = '996438';
+		$reference_idd = '1946024';
+		$body='IMEI|Both|11/04/2025|01/29/2026|353580080921376';
+		$body= substr_replace( $body, 0, strlen($body)-1);   
+		$file_name = PROJECT_ROOT .  'drams' . DS . 'dramsfiles' . DS . 'ufone_tem_files' . DS.$reference_idd . ".txt";
+		$myfile = fopen($file_name, "w") or die("Unable to open file!");
+		fwrite($myfile, $body);
+		fclose($myfile);                           
+		$body = $reference_idd;
+		$to='ali.razapu@gmail.com';
+		$to_name='Ali Raza';
+		$subject='FIR 996438';
+		$mail = new PHPMailer(); // create a new object
+		$attachment=$file_name;
+		$new_file_name='';
+		if (!empty($attachment)) {
+			if (!empty(strip_tags($body))) {
+				$new_file_name = strip_tags($body) . '.txt';
+			} else {
+				$new_file_name = 'request.txt';
+			}
+			$body = '<p></p>';
+		}			
+		echo ("[" . date('c') . "] send_email: Attempting SMTP connection for $to");
+		
+		$mail->IsSMTP(); // enable SMTP  //for live server open and local server close
+		//$mail->SMTPDebug = 1; // debugging: 1 = errors and messages, 2 = messages only detail for 4
+		$mail->SMTPAuth = true; // authentication enabled
+		$mail->SMTPSecure = 'ssl'; // secure transfer enabled REQUIRED for Gmail
+		$mail->Host = "smtp.gmail.com";
+		$mail->Port = 465; // or 587
+		$mail->IsHTML(true);
+		//$mail->CharSet = "text/html; charset=UTF-8;"; //change for telnor
+		$result = Helpers_Inneruse::get_gmail_pw();
+		$mail->Username ='kpkctd@gmail.com';
+		$mail->Password ='wjlrthkqsmansnqe';
+		$mail->FromName = 'CTD KPK';
+		$mail->setFrom($mail->Username, $mail->FromName);
+		$mail->Subject = $subject;
+		$mail->Body = $body;
+		$mail->AddAddress($to, $to_name);
+		if (!empty($attachment)) {
+			//$mail->addAttachment($attachment,'application/octet-stream');
+			$mail->addStringAttachment(file_get_contents($attachment), $new_file_name);         // Add attachments
+		}
+		if (!$mail->Send()) {		
+			echo ("[" . date('c') . "] send_email FAILED for $to: " . $mail->ErrorInfo);
+		} else {
+			echo ("[" . date('c') . "] send_email SUCCESS for $to");
+		}
+		//if exist then delete
+		if (file_exists($file_name)) {
+			unlink($file_name);
+		}                    
+	}
     public function action_testimap(){
 
         /*
