@@ -17,27 +17,19 @@ $query = "select *
                 $total_count = $sql->execute()->current();         
                 //echo $total_count['total'];                
                 if($total_count['total']<= 600)
-                {
-
-                    // Explode $body using | and use the 0th index for the file name
+                {             
+                    
                     $company_name = $res['company_name'];                  
                     /* telco email */
                     include 'telco_email.inc';                    
                     $subject = $res['message_subject'];                    
                     $body = strip_tags($res['message_body']);
                     $text=str_ireplace('&lt;p&gt;','',$body);                
-                    $body=str_ireplace('&lt;/p&gt;','',$text);
-                    // Adjust body if user request type is 2
-                    if ($res['user_request_type_id'] == 2) {
-                        $body = substr_replace($body, '', -1); // Remove the last character from body
-                    }
-
-                    list($fileBaseName) = explode('|', $body);
-                    // Ensure .txt extension is not duplicated
-                    if (substr($fileBaseName, -4) !== '.txt') {
-                        $file_name = $fileBaseName . ".txt"; // Construct file name ensuring .txt appears only once
-                    }
-
+                     $body=str_ireplace('&lt;/p&gt;','',$text); 
+                     if($res['user_request_type_id']==2)
+                     {
+                         $body= substr_replace( $body, 0, strlen($body)-1);
+                     }    
                     $reference_number = $res['request_id'];
                     $reference_idd = $res['reference_id'];
                     //create attachment start
@@ -78,10 +70,11 @@ $query = "select *
                     $subject = $res['message_subject'];                    
                     $body = strip_tags($res['message_body']);
                     $text=str_ireplace('&lt;p&gt;','',$body);                
-                     $body=str_ireplace('&lt;/p&gt;','',$text);
-                    if ($res['user_request_type_id'] == 2) {
-                        $body = substr_replace($body, '', -1); // Remove the last character from body
-                    }
+                     $body=str_ireplace('&lt;/p&gt;','',$text); 
+                     if($res['user_request_type_id']==2)
+                     {
+                         $body= substr_replace( $body, 0, strlen($body)-1);
+                     }    
                     $reference_number = $res['request_id'];
                     $reference_idd = $res['reference_id'];
                     //create attachment start

@@ -2072,7 +2072,7 @@ class Controller_Personprofile extends Controller_Working {
             $requested_file = !empty($_POST['file']) ? $_POST['file'] : (!empty($_GET['file']) ? $_GET['file'] : '');
             $file = rtrim($target, '/\\') . '/' . ltrim($requested_file, '/\\');
 
-            if (!$file || !file_exists($file) || !is_readable($file)) {
+            if (!$file ) {
                 http_response_code(404);
                 die('File not found');
             }

@@ -1598,8 +1598,8 @@ abstract class Helpers_Upload {
             
         if (!is_dir($person_subfolder_path)) {
             mkdir("{$person_subfolder_path}", 0777);
-            copy($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'dist/uploads/htaccess/.htaccess', $person_subfolder_path.'/.htaccess');
-            copy($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'dist/uploads/htaccess/index.php', $person_subfolder_path.'/index.php');
+            copy($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'dist'.DS.'uploads'.DS.'htaccess'.DS.'.htaccess', $person_subfolder_path.'/.htaccess');
+            copy($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'dist'.DS.'uploads'.DS.'htaccess'.DS.'index.php', $person_subfolder_path.'/index.php');
         }
 
         //alias for download only
@@ -1612,9 +1612,9 @@ abstract class Helpers_Upload {
         
         //check && make folder for person data
         if (!is_dir($person_save_data_path)) {
-            mkdir("{$person_save_data_path}", 0777); 
-            copy($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'dist/uploads/htaccess/index.php', $person_save_data_path.'/index.php');
-            copy($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'dist/uploads/htaccess/.htaccess', $person_save_data_path.'/.htaccess');
+            mkdir("{$person_save_data_path}", 0777);
+            copy($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'dist'.DS.'uploads'.DS.'htaccess'.DS.'.htaccess', $person_subfolder_path.'/.htaccess');
+            copy($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'dist'.DS.'uploads'.DS.'htaccess'.DS.'index.php', $person_subfolder_path.'/index.php');
             
         }
         //checking and updating record in database table
@@ -1651,19 +1651,19 @@ abstract class Helpers_Upload {
        // print_r($request_subfolder_path); exit;
         if ((!is_dir($request_subfolder_path)) && !empty($request_subfolder_path)) {
             mkdir("{$request_subfolder_path}", 0777);
-            copy($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR .'dist/uploads/htaccess/.htaccess', $request_subfolder_path.'/.htaccess');
-            copy($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR .'dist/uploads/htaccess/index.php', $request_subfolder_path.'/index.php');
+            copy($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'dist'.DS.'uploads'.DS.'htaccess'.DS.'.htaccess', $person_subfolder_path.'/.htaccess');
+            copy($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'dist'.DS.'uploads'.DS.'htaccess'.DS.'index.php', $person_subfolder_path.'/index.php');
         }
         
 
         if ($type == "save") {
             //request data folder path
-            $request_save_data_path = $serverdata['request_save_data_path'] . $folder_range . '/';
+            $request_save_data_path = $serverdata['request_save_data_path'] . $folder_range . DS;
         
             return $request_save_data_path;
         } else {
             //alias for download only
-            $request_download_data_path =  $serverdata['request_download_data_path'] . $folder_range . '/';
+            $request_download_data_path =  $serverdata['server_name'] .$serverdata['request_download_data_path'] . $folder_range . DS;
         
             return $request_download_data_path;
         }
