@@ -28,7 +28,17 @@ $query = "select *
                      $body=str_ireplace('&lt;/p&gt;','',$text); 
                      if($res['user_request_type_id']==2)
                      {
-                         $body= substr_replace( $body, 0, strlen($body)-1);
+                         // Validate and fix IMEI format: IMEI|Both|11/20/2017|11/25/2018|358334010XXXXXX
+                         // The last part (after last |) should be exactly 15 characters
+                         $parts = explode('|', $body);
+                         if (count($parts) >= 5) {
+                             $imei = $parts[count($parts) - 1];
+                             // If IMEI has more than 15 characters, trim it to 15
+                             if (strlen($imei) > 15) {
+                                 $parts[count($parts) - 1] = substr($imei, 0, 15);
+                                 $body = implode('|', $parts);
+                             }
+                         }
                      }    
                     $reference_number = $res['request_id'];
                     $reference_idd = $res['reference_id'];
