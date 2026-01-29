@@ -54,10 +54,10 @@
                                     <div class="form-group" >
                                         <label for="quickoption" class="control-label">Quick Options (for start and End Date)</label>
                                         <div class="col-md-12" id="quickoption">
-                                            <button type="button" onclick="dateonemonth()" class="btn btn-primary" >Last 1 Month </button>                                            
-                                            <button type="button" onclick="datetwomonths()" class="btn btn-primary" >Last 2 Months </button>                                            
-                                            <button type="button" onclick="datethreemonths()" class="btn btn-primary" >Last 3 Months </button>
-                                            <button type="button" onclick="datesixmonths()" class="btn btn-primary" >Last 6 Months </button>
+                                            <button type="button" onclick="dateonemonth()" class="btn btn-primary" >Last 30 Days </button>                                            
+                                            <button type="button" onclick="datetwomonths()" class="btn btn-primary" >Last 60 Days </button>                                            
+                                            <button type="button" onclick="datethreemonths()" class="btn btn-primary" >Last 90 Days </button>
+                                            <button type="button" onclick="datesixmonths()" class="btn btn-primary" >Last 180 Days</button>
                                         </div>
                                     </div>
                                 </div>                            
