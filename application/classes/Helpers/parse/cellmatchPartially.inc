@@ -309,7 +309,7 @@ switch ($company) {
                         $data[$index_no] = array_map("strtoupper", $data[$index_no]);
                         $call_type_index = array_search('CALL_TYPE', array_map('trim', $data[$index_no]));  //OPER column in Warid
                     } 
-                    $party_aindex = array_search('Mobile No', array_map('trim', $data[$index_no]));  //SUBNO in warid
+                    $party_aindex = array_search('MOBILE NO', array_map('trim', $data[$index_no]));  //SUBNO in warid
                     $party_bindex = array_search('BNUMBER', array_map('trim', $data[$index_no])); //B_SUBNO in warid
                     $date_index = array_search('LAST_ACTIVITY_DATE', array_map('trim', $data[$index_no]));
                     $time_index = array_search('MINS', array_map('trim', $data[$index_no]));
