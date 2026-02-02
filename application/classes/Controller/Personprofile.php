@@ -2066,7 +2066,7 @@ class Controller_Personprofile extends Controller_Working {
             }
             if (!empty($_POST['fid'])) {
                 $decrypted_fid = Helpers_Utilities::encrypted_key($_POST['fid'], 'decrypt');
-                $target = Helpers_Upload::get_request_data_path($decrypted_fid);
+                $target = Helpers_Upload::get_request_data_path($decrypted_fid,'save');
             }
 
             $requested_file = !empty($_POST['file']) ? $_POST['file'] : (!empty($_GET['file']) ? $_GET['file'] : '');
