@@ -273,6 +273,7 @@ abstract class Helpers_Upload {
         $flag = '';
         $telenor_cdr = ['MSISDN', 'CALL_ORIG_NUM', 'CALL_DIALED_NUM', 'IMSI', 'IMEI', 'CALL_START_DT_TM', 'CALL_END_DT_TM', 'INBOUND_OUTBOUND_IND', 'Call_Network_Volume', 'Cell_Lac_Id', 'Cell_Site_Id', 'ORIG_OPER_NAME', 'TERM_OPER_NAME', 'CALL_TYPE', 'Location'];
         $telenor_cdr_2 = ['MSISDN', 'call_org_num', 'CALL_DIALED_NUM', 'IMSI', 'IMEI', 'CALL_START_DT_TM', 'CALL_END_DT_TM', 'INBOUND_OUTBOUND_IND', 'Call_Network_Volume', 'Lac_Id','Site_Id', 'CELL_SITE_ID', 'LAT', 'LONGITUDE', 'CALL_TYPE', 'LOCATION'];
+		$telenor_cdr_3 = ['MSISDN',	'IMEI',	'CALL_START_DT_TM'];
 //        $telenor_cdr_2 = ['MSISDN', 'CALL_ORIG_NUM', 'CALL_DIALED_NUM', 'IMSI', 'IMEI', 'CALL_START_DT_TM', 'CALL_END_DT_TM', 'INBOUND_OUTBOUND_IND', 'Call_Network_Volume', 'Cell_Lac_Id', 'Cell_Site_Id', 'LAT', 'LONGITUDE', 'CALL_TYPE', 'Location'];
 //        $telenor_cdr_2 = ['MSISDN', 'CALL_ORIG_NUM', 'CALL_DIALED_NUM', 'IMSI', 'IMEI', 'CALL_START_DT_TM', 'CALL_END_DT_TM', 'INBOUND_OUTBOUND_IND', 'Call_Network_Volume', 'Lac_Id', 'Site_Id','cell_site_id', 'LAT', 'LONGITUDE', 'CALL_TYPE', 'LOCATION'];
 //        $jazz_cdr = ['Sr #', 'Call Type', 'A-Party', 'B-Party', 'Date & Time', 'Duration', 'Cell ID', 'IMEI', 'IMSI', 'Site'];

@@ -5,14 +5,15 @@ switch ($company) {
         
         $compare_telenor_cdr = array_diff($telenor_cdr, array_map('trim', $data[$row]));
         $compare_telenor_cdr2 = array_diff($telenor_cdr_2, array_map('trim', $data[$row]));
-     
+		$compare_telenor_cdr3 = array_diff($telenor_cdr_3, array_map('trim', $data[$row]));
         if ((sizeof($compare_telenor_cdr) == sizeof($telenor_cdr)) && ($objPHPExcel->getSheetCount() > 1) || 
-            (sizeof($compare_telenor_cdr2) == sizeof($telenor_cdr_2)) && ($objPHPExcel->getSheetCount() > 1)) {
+            (sizeof($compare_telenor_cdr2) == sizeof($telenor_cdr_2)) && ($objPHPExcel->getSheetCount() > 1) || 
+            (sizeof($compare_telenor_cdr3) == sizeof($telenor_cdr_3)) && ($objPHPExcel->getSheetCount() > 1)) {
             $continue = 'continue';
         } else {
           
             //if (empty($compare_telenor_cdr) || empty($compare_telenor_cdr2)) {
-            if (empty($compare_telenor_cdr)) {
+            if (empty($compare_telenor_cdr) || empty($compare_telenor_cdr3)) {
                 $flag = 'telnor_cdr';
                 /* Index Setting */
                 $data[$row] = array_map("strtoupper", $data[$row]);
@@ -293,7 +294,11 @@ switch ($company) {
 //        if (($compare_zong_cdr == 0) && ($total_Sheet > 1)) {            
 //            $continue = 'continue';
 //            
-             $compare_zong_cdr = array_diff($zong_cdr, array_map('trim', $data[$row]));
+             $compare_zong_cdr = array_diff(
+					array_map('strtoupper', $zong_cdr),
+					array_map('strtoupper', array_map('trim', $data[$row]))
+				);
+				
         if ((sizeof($compare_zong_cdr) == sizeof($zong_cdr)) && ($objPHPExcel->getSheetCount() > 1)) {
             $continue = 'continue';
         } else {            
@@ -325,10 +330,15 @@ switch ($company) {
             } else {
                 if (!empty($file_id))
                     $error_number = Model_Email::file_status($file_id, 1, 3);
+					$str ='';
+					$str =("Raw header: " . print_r($data[$row], true));
+					$str .=("Trimmed header: " . print_r(array_map('trim', $data[$row]), true));
+					$str .=("Diff result: " . print_r($compare_zong_cdr, true));
+					$str .=("Diff size: " . sizeof($compare_zong_cdr));
                 if(!empty($userrequestid)){
                     Model_ErrorLog::log(
                         'parse_cellmatch',
-                        'Invalid Zong CDR format - header validation failed',
+                        $str,
                         array(
                             'request_id' => $userrequestid,
                             'processing_index' => 3,
