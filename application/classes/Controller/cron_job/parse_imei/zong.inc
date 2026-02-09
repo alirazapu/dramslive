@@ -80,7 +80,8 @@ if (!empty($data['received_file_path']) && $data['received_file_path'] != 'na') 
             ],
             null,
             'not_found',
-            'imei_parsing'
+            'imei_parsing',
+            'success'
         );
 
         // Update email status

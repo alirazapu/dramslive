@@ -58,7 +58,8 @@ if (!empty($data['received_file_path']) && $data['received_file_path'] != 'na') 
             ],
             null,
             'not_found',
-            'imei_parsing'
+            'imei_parsing',
+            'success'
         );
         
         $reference_number = Model_Email::email_status($reference_number, 2, 5);
