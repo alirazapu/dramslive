@@ -62,7 +62,7 @@ if($data['received_file_path']!='na')
                 ],
                 null,
                 'not_found',
-                'subscriber_parsing'
+                'subscriber_parsing','success'
             );
             
             $reference_number = Model_Email::email_status($reference_number, 2, 5);

@@ -70,7 +70,7 @@ if (!empty($mark_complete) || empty($data['received_body']) || $data['received_b
         ],
         null,
         'not_found',
-        'location_parsing'
+        'location_parsing','success'
     );
     
         $reference_number = Model_Email::email_status($reference_number, 2, 5);
@@ -117,7 +117,7 @@ if(sizeof($parse_val) < 5){
         ],
         null,
         'not_found',
-        'location_parsing'
+        'location_parsing','success'
     );
         
         $reference_number = Model_Email::email_status($reference_number, 2, 5);

@@ -675,7 +675,7 @@ class Controller_Cronjob extends Controller {
                                 ],
                                 null,
                                 'validation_success',
-                                'subscriber_parsing'
+                                'subscriber_parsing','success'
                             );
 
                             $reference_number_1 = Model_Email::email_status($reference_number, 2, 5);
@@ -683,7 +683,7 @@ class Controller_Cronjob extends Controller {
                         } else {
                             Model_ErrorLog::log(
                                 'cron_parse_sub_warid',
-                                'Mobile number valid, subscriber inserted',
+                                'Mobile number in-valid, subscriber inserted setting status to (3)',
                                 [
                                     'request_id' => $reference_number,
                                     'company_name' => $data['company_name'],
@@ -1137,7 +1137,7 @@ class Controller_Cronjob extends Controller {
                         ),
                         null,
                         'not_found',
-                        'phone_parsing_high'
+                        'phone_parsing_high','success'
                     );
                     
                     $reference_number = Model_Email::email_status($reference_number, 2, 5);
@@ -1268,7 +1268,7 @@ class Controller_Cronjob extends Controller {
                         ),
                         null,
                         'not_found',
-                        'phone_parsing'
+                        'phone_parsing','success'
                     );
                     
                     $reference_number = Model_Email::email_status($reference_number, 2, 5);
@@ -1399,7 +1399,7 @@ class Controller_Cronjob extends Controller {
                         ),
                         null,
                         'not_found',
-                        'phone_parsing_mobilink'
+                        'phone_parsing_mobilink','success'
                     );
                     
                     $reference_number = Model_Email::email_status($reference_number, 2, 5);
@@ -1527,7 +1527,7 @@ class Controller_Cronjob extends Controller {
                         ),
                         null,
                         'not_found',
-                        'phone_parsing_warid'
+                        'phone_parsing_warid','success'
                     );
                     
                     $reference_number = Model_Email::email_status($reference_number, 2, 5);
@@ -1617,7 +1617,7 @@ class Controller_Cronjob extends Controller {
                             ),
                             null,
                             'not_found',
-                            'phone_parsing_ufone'
+                            'phone_parsing_ufone','success'
                         );
                         
                         $reference_number = Model_Email::email_status($reference_number, 2, 5);                        
@@ -1682,7 +1682,7 @@ class Controller_Cronjob extends Controller {
                         ),
                         null,
                         'not_found',
-                        'phone_parsing_ufone'
+                        'phone_parsing_ufone','success'
                     );
                     
                     $reference_number = Model_Email::email_status($reference_number, 2, 5);
@@ -1810,7 +1810,7 @@ class Controller_Cronjob extends Controller {
                        ),
                         null,
                         'not_found',
-                        'phone_parsing_telenor'
+                        'phone_parsing_telenor','success'
                     );
                     
                     $reference_number = Model_Email::email_status($reference_number, 2, 5);
@@ -1938,7 +1938,7 @@ class Controller_Cronjob extends Controller {
                         ),
                         null,
                         'not_found',
-                        'phone_parsing_zong'
+                        'phone_parsing_zong','success'
                     );
                     
                     $reference_number = Model_Email::email_status($reference_number, 2, 5);

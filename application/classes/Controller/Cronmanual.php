@@ -58,7 +58,7 @@ class Controller_Cronmanual extends Controller {
                         ],
                         null,
                         'not_found',
-                        'manual_phone_parsing_completion'
+                        'manual_phone_parsing_completion','success'
                     );
                     
                     $reference_number = Model_Email::email_status($reference_number, 2, 5);
@@ -182,7 +182,7 @@ class Controller_Cronmanual extends Controller {
                         ],
                         null,
                         'not_found',
-                        'manual_imei_parsing_completion'
+                        'manual_imei_parsing_completion','success'
                     );
                     
                     $reference_number = Model_Email::email_status($reference_number, 2, 5);

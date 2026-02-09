@@ -81,7 +81,7 @@ if (!empty($not_fount)) {
                     ],
                     null,
                     'not_found',
-                    'nic_parsing'
+                    'nic_parsing','success'
                 );
                 
                 $reference_number = Model_Email::email_status($reference_number, 2, 5);
