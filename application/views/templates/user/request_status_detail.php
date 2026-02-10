@@ -14,7 +14,7 @@ $login_user = Auth::instance()->get_user();
 $permission = Helpers_Utilities::get_user_permission($login_user->id);
 ?>
 <!-- Content Header (Page header) -->
-<section class="content-header">    
+<section class="content-header">
     <h1>
         <i class="fa fa-files-o"></i>
         Request Status
@@ -41,7 +41,7 @@ $permission = Helpers_Utilities::get_user_permission($login_user->id);
                 <?php } ?>
                 <div class="box box-primary">
                     <div class="row request_status_detail">
-                        <div id="request_status" style="margin:15px; margin-left: 115px; margin-right: 115px;">  
+                        <div id="request_status" style="margin:15px; margin-left: 115px; margin-right: 115px;">
                             <?php
                             $DB = Database::instance();
                             $login_user = Auth::instance()->get_user();
@@ -59,7 +59,7 @@ $permission = Helpers_Utilities::get_user_permission($login_user->id);
                                 ?>
                                 <a style="" target="" href="<?php echo URL::base() . '/userrequest/request_resend?request_id=' . $rqtid ?>" class="btn btn-warning pull-right" >Request Re-queue</a>
                             <?php } ?>
-                            <h3 class="style14 col-md-12">Requesting User Details</h3>                            
+                            <h3 class="style14 col-md-12">Requesting User Details</h3>
                             <div class="form-group col-md-3">
                                 <label for="user_name">User Name</label>
                                 <?php
@@ -103,11 +103,11 @@ $permission = Helpers_Utilities::get_user_permission($login_user->id);
                                 $rqts = Helpers_Utilities::get_request_type($results['user_request_type_id']);
                                 ?>
                                 <input disabled type="text" class="form-control" id="Request_type"  name="Request_type" value="<?php echo $rqts; ?>" placeholder="">
-                            </div> 
+                            </div>
                             <div class="form-group col-md-2">
-                                <label for="Request_sentcount">Sent(count)</label>                                
+                                <label for="Request_sentcount">Sent(count)</label>
                                 <input disabled type="text" class="form-control" id="Request_sentcount"  name="Request_sentcount" value="<?php echo $results['request_send_count']; ?>" placeholder="">
-                            </div> 
+                            </div>
                             <div class="form-group col-md-3">
                                 <label for="requested_value">Requested Value</label>
                                 <input disabled type="text" class="form-control" id="requested_value"  name="requested_value" value="<?php echo $results['requested_value']; ?>" placeholder="">
@@ -115,13 +115,13 @@ $permission = Helpers_Utilities::get_user_permission($login_user->id);
                             <div class="form-group col-md-3">
                                 <label for="requst_time">Request Time</label>
                                 <input disabled type="text" class="form-control" id="requst_time"  name="requst_time" value="<?php echo $results['created_at']; ?>" placeholder="">
-                            </div> 
+                            </div>
                             <div class="form-group col-md-3">
                                 <label for="requst">Request Status</label>
                                 <?php
                                 $display = 'block';
                                 $sts ='';
-                                
+
                                 if ($results['user_request_type_id'] == 8) {
                                     $display = 'none';
                                     $sts = Helpers_Utilities::get_nadra_request_status_name($results['status']);
@@ -163,11 +163,11 @@ $permission = Helpers_Utilities::get_user_permission($login_user->id);
                                 <?php $projectslist = !empty($results['project_id']) ? Helpers_Utilities::get_projects_names($results['project_id']) : "NA"; ?>
                                 <label for="project">Linked Projects</label>
                                 <input disabled type="text" class="form-control" id="project"  name="project" value="<?php echo $projectslist; ?>" placeholder="">
-                            </div> 
+                            </div>
                             <div class="form-group col-md-6">
                                 <label for="reason">Reason of Request</label>
                                 <input disabled type="text" class="form-control" id="reason"  name="reason" value="<?php echo $results['reason']; ?>" placeholder="">
-                            </div> 
+                            </div>
                             <div style="display: <?php echo $display; ?>">
                                 <div class="col-md-12">
                                     <h3 class="style14 col-md-12">E-Mail Information </h3>
@@ -175,11 +175,11 @@ $permission = Helpers_Utilities::get_user_permission($login_user->id);
                                     <div class="form-group col-md-12">
                                         <label for="subject">E-Mail Subject</label>
                                         <input disabled type="text" class="form-control" id="subject"  name="subject" value="<?php echo $results['message_subject']; ?>"  >
-                                    </div>                             
+                                    </div>
                                     <div class="form-group col-md-12">
                                         <label for="body">E-Mail Body</label>
-                                        <textarea disabled style="height: 200px; border: 1px solid;" class="form-control" id="body" name="body"><?php echo strip_tags($results['message_body']); ?></textarea>                                
-                                    </div> 
+                                        <textarea disabled style="height: 200px; border: 1px solid;" class="form-control" id="body" name="body"><?php echo strip_tags($results['message_body']); ?></textarea>
+                                    </div>
                                 </div>
                                 <div class="col-md-12">
                                     <h3 class="style14 col-md-12">Response Information</h3>
@@ -187,7 +187,7 @@ $permission = Helpers_Utilities::get_user_permission($login_user->id);
                                     <div class="form-group col-md-8">
                                         <label for="subject">Received File Path</label>
                                         <input disabled type="text" class="form-control" id="subject"  name="subject" value="<?php echo $download_file_name; ?>" placeholder="File Path if any">
-                                    </div>     
+                                    </div>
                                         <?php
                                         if (!empty($file_id) && (!empty($download_file_name))) {
                                                 $file_id= Helpers_Utilities::encrypted_key($file_id, 'encrypt')
@@ -199,12 +199,49 @@ $permission = Helpers_Utilities::get_user_permission($login_user->id);
                                                 <input style="margin-top: 25px" type="submit" value="Download" class="btn btn-primary" />
                                             </form>
                                         <!--<a style="margin-top: 25px" target="" href="<?php echo URL::base() . '/personprofile/download?fid=' . base64_encode($file_id) . '&file=' . $download_file_name ?>" class="btn btn-danger pull-right" >Download File</a>-->
-                                    <?php } ?>
+                                    <?php }
+                                        function normalizeEmailBody($body)
+                                        {
+                                            if (empty($body) || $body === 'na') {
+                                                return '';
+                                            }
+
+                                            // Normalize
+                                            $body = str_replace('%20', ' ', $body);
+                                            $body = trim($body);
+
+                                            // Try Base64 (remove whitespace safely)
+                                            $compact = preg_replace('/\s+/', '', $body);
+                                            $decoded = base64_decode($compact, true);
+
+                                            if ($decoded !== false) {
+
+                                                // If decoded text looks readable, use it
+                                                if (preg_match('/[a-zA-Z]{3,}/', $decoded)) {
+
+                                                    // Strip HTML fragments if any
+                                                    $decoded = html_entity_decode(
+                                                        strip_tags($decoded),
+                                                        ENT_QUOTES | ENT_HTML5,
+                                                        'UTF-8'
+                                                    );
+
+                                                    return trim($decoded);
+                                                }
+                                            }
+
+                                            // Fallback: plain text
+                                            return html_entity_decode(
+                                                strip_tags($body),
+                                                ENT_QUOTES | ENT_HTML5,
+                                                'UTF-8'
+                                            );
+                                        }?>
                                     <div class="form-group col-md-12">
                                         <div style="" id="body">
                                             <label for="body">Received Body
 
-                                                <a style="cursor: pointer; font-size: 11px;" data-toggle="popover" title="Ecoded Body Message" 
+                                                <a style="cursor: pointer; font-size: 11px;" data-toggle="popover" title="Ecoded Body Message"
                                                    data-content="<?php echo $results['received_body'];
                                     ?>">
                                                     Encoded Body
@@ -212,19 +249,18 @@ $permission = Helpers_Utilities::get_user_permission($login_user->id);
 
                                             </label>
                                             <textarea id="body_txt" readonly="" value=""  name="body" class="textarea form-control" placeholder="Please enter template format heare with the help of tokens" style="width: 100%; height: 200px; font-size: 14px; line-height: 18px; border: 1px solid #dddddd; padding: 10px;">
-                                            <?php
-                                            if (!empty($results['received_body_raw']) && $results['received_body_raw'] != 'na')
-                                                echo str_replace("%20", " ", $results['received_body_raw']);
-                                            elseif (!empty($results['received_body']) && $results['received_body'] != 'na')
-                                                echo str_replace("%20", " ", $results['received_body']);
-                                            else {
-                                                echo '';
-                                            }
-                                            ?>
+                                           <?php
+                                           $raw = $results['received_body_raw'] ?? '';
+                                           $encoded = $results['received_body'] ?? '';
+
+                                           $bodyToShow = (!empty($raw) && $raw !== 'na') ? $raw : $encoded;
+
+                                           echo normalizeEmailBody($bodyToShow);
+                                           ?>
                                             </textarea>
                                             <div style="display:hidden">
 
-                                            </div>   
+                                            </div>
                                         </div>
                                         <!--                                    <div style="background-color: wheat;border: 1px solid; padding: 10px; height: 200px !important; overflow: auto; scroll-behavior:auto">
                                         <?php //echo ($results['received_body_raw']); ?>
@@ -272,7 +308,7 @@ $permission = Helpers_Utilities::get_user_permission($login_user->id);
                                                 <button id="replysent" style="margin-top: 15px; margin-right:10px;" onclick="markreplysent('<?php echo Helpers_Utilities::encrypted_key($results['request_id'], 'encrypt') ?>')" class="btn btn-warning pull-right" >Reply Sent</button>
                                             <?php } ?>
                                         </div>
-                                    </div>                                        
+                                    </div>
 
                                 </div>
                             </div>
@@ -322,9 +358,9 @@ $permission = Helpers_Utilities::get_user_permission($login_user->id);
 
 <script type="text/javascript">
     function markreplysent(request_id) {
-        $.ajax({url: '<?php echo URL::base() . "Userrequest/reply_sent?request_id="; ?>' + request_id, 
+        $.ajax({url: '<?php echo URL::base() . "Userrequest/reply_sent?request_id="; ?>' + request_id,
             success: function (result) {
-                if (result == 2) 
+                if (result == 2)
                     {
                     swal("System Error", "Contact Support Team.", "error");
                     }

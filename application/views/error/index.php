@@ -191,7 +191,7 @@
                             </td>
 
                             <td>
-                                <span class="label <?= $severity === 'success' ? 'label-success' : 'label-danger' ?>">
+                                <span class="label <?= $severity_class ?>">
                                     <?= HTML::chars($log['error_type'] ?: 'unknown') ?>
                                 </span>
                             </td>

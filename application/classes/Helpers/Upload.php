@@ -273,12 +273,15 @@ abstract class Helpers_Upload {
         $flag = '';
         $telenor_cdr = ['MSISDN', 'CALL_ORIG_NUM', 'CALL_DIALED_NUM', 'IMSI', 'IMEI', 'CALL_START_DT_TM', 'CALL_END_DT_TM', 'INBOUND_OUTBOUND_IND', 'Call_Network_Volume', 'Cell_Lac_Id', 'Cell_Site_Id', 'ORIG_OPER_NAME', 'TERM_OPER_NAME', 'CALL_TYPE', 'Location'];
         $telenor_cdr_2 = ['MSISDN', 'call_org_num', 'CALL_DIALED_NUM', 'IMSI', 'IMEI', 'CALL_START_DT_TM', 'CALL_END_DT_TM', 'INBOUND_OUTBOUND_IND', 'Call_Network_Volume', 'Lac_Id','Site_Id', 'CELL_SITE_ID', 'LAT', 'LONGITUDE', 'CALL_TYPE', 'LOCATION'];
+		$telenor_cdr_3 = ['MSISDN',	'IMEI',	'CALL_START_DT_TM'];
 //        $telenor_cdr_2 = ['MSISDN', 'CALL_ORIG_NUM', 'CALL_DIALED_NUM', 'IMSI', 'IMEI', 'CALL_START_DT_TM', 'CALL_END_DT_TM', 'INBOUND_OUTBOUND_IND', 'Call_Network_Volume', 'Cell_Lac_Id', 'Cell_Site_Id', 'LAT', 'LONGITUDE', 'CALL_TYPE', 'Location'];
 //        $telenor_cdr_2 = ['MSISDN', 'CALL_ORIG_NUM', 'CALL_DIALED_NUM', 'IMSI', 'IMEI', 'CALL_START_DT_TM', 'CALL_END_DT_TM', 'INBOUND_OUTBOUND_IND', 'Call_Network_Volume', 'Lac_Id', 'Site_Id','cell_site_id', 'LAT', 'LONGITUDE', 'CALL_TYPE', 'LOCATION'];
 //        $jazz_cdr = ['Sr #', 'Call Type', 'A-Party', 'B-Party', 'Date & Time', 'Duration', 'Cell ID', 'IMEI', 'IMSI', 'Site'];
         $jazz_cdr = ['Sr #', 'IMEI', 'Date & Time', 'A-Party'];
         //$jazz_cdr = ['imei', 'Datetime', 'Aparty'];
-        													
+        $jazz_cdr_alt1 = ['Imei', 'Datetime', 'Aparty']; // Alternative format 1: lowercase
+        $jazz_cdr_alt2 = ['IMEI', 'Date & Time', 'A-Party']; // Alternative format 2: without Sr #
+        $jazz_cdr_alt3 = ['IMEI', 'DateTime', 'A-Party']; // Alternative format 3: DateTime without space													
 
         $ufone_cdr = ['IMEI', 'IMSI', 'Start Time', 'End Time', 'Service Provider', 'Type', 'Direction', 'Location', 'Cell Id', 'Cell Sector', 'Latitude', 'Longitude', 'Duration'];
         // ufone updated on 10 sep 20
@@ -1596,8 +1599,8 @@ abstract class Helpers_Upload {
             
         if (!is_dir($person_subfolder_path)) {
             mkdir("{$person_subfolder_path}", 0777);
-            copy($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'dist/uploads/htaccess/.htaccess', $person_subfolder_path.'/.htaccess');
-            copy($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'dist/uploads/htaccess/index.php', $person_subfolder_path.'/index.php');
+            copy($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'dist'.DS.'uploads'.DS.'htaccess'.DS.'.htaccess', $person_subfolder_path.'/.htaccess');
+            copy($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'dist'.DS.'uploads'.DS.'htaccess'.DS.'index.php', $person_subfolder_path.'/index.php');
         }
 
         //alias for download only
@@ -1610,9 +1613,9 @@ abstract class Helpers_Upload {
         
         //check && make folder for person data
         if (!is_dir($person_save_data_path)) {
-            mkdir("{$person_save_data_path}", 0777); 
-            copy($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'dist/uploads/htaccess/index.php', $person_save_data_path.'/index.php');
-            copy($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'dist/uploads/htaccess/.htaccess', $person_save_data_path.'/.htaccess');
+            mkdir("{$person_save_data_path}", 0777);
+            copy($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'dist'.DS.'uploads'.DS.'htaccess'.DS.'.htaccess', $person_subfolder_path.'/.htaccess');
+            copy($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'dist'.DS.'uploads'.DS.'htaccess'.DS.'index.php', $person_subfolder_path.'/index.php');
             
         }
         //checking and updating record in database table
@@ -1649,19 +1652,19 @@ abstract class Helpers_Upload {
        // print_r($request_subfolder_path); exit;
         if ((!is_dir($request_subfolder_path)) && !empty($request_subfolder_path)) {
             mkdir("{$request_subfolder_path}", 0777);
-            copy($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR .'dist/uploads/htaccess/.htaccess', $request_subfolder_path.'/.htaccess');
-            copy($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR .'dist/uploads/htaccess/index.php', $request_subfolder_path.'/index.php');
+            copy($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'dist'.DS.'uploads'.DS.'htaccess'.DS.'.htaccess', $person_subfolder_path.'/.htaccess');
+            copy($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'dist'.DS.'uploads'.DS.'htaccess'.DS.'index.php', $person_subfolder_path.'/index.php');
         }
         
 
         if ($type == "save") {
             //request data folder path
-            $request_save_data_path = $serverdata['request_save_data_path'] . $folder_range . '/';
+            $request_save_data_path = $serverdata['request_save_data_path'] . $folder_range . DS;
         
             return $request_save_data_path;
         } else {
             //alias for download only
-            $request_download_data_path = $serverdata['server_name'] . $serverdata['request_download_data_path'] . $folder_range . '/';
+            $request_download_data_path =  $serverdata['server_name'] .$serverdata['request_download_data_path'] . $folder_range . DS;
         
             return $request_download_data_path;
         }

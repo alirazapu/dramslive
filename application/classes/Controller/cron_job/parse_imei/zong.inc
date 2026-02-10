@@ -55,29 +55,38 @@ if (!empty($data['received_file_path']) && $data['received_file_path'] != 'na') 
         
     }
 } else {
-    $data['received_body'] = array_filter(explode('From:', strip_tags($data['received_body'])));
-    if (strpos(strtolower($data['received_body'][0]), 'not found') !== false ||
-            strpos(strtolower($data['received_body'][0]), 'format error') !== false
-           || strpos(strtolower($data['received_body'][0]), 'no record found') !== false) {
-        $reference_number = $data['request_id'];
-        
+    $rawBody = isset($data['received_body']) ? (string) $data['received_body'] : '';
+    $plainBody = strip_tags($rawBody);
+    $lowerBody = strtolower($plainBody);
+
+    if (
+        strpos($lowerBody, 'not found') !== false ||
+        strpos($lowerBody, 'format error') !== false ||
+        strpos($lowerBody, 'no record found') !== false ||
+        strpos($lowerBody, 'no data found') !== false
+    ) {
+        $reference_number = isset($data['request_id']) ?$data['request_id']: null;
+
         Model_ErrorLog::log(
             'parse_imei_zong',
             'IMEI not found in response - marking as status 5 (Not Found)',
             [
-                'request_id' => $reference_number,
-                'company_name' => $data['company_name'] ?? null,
-                'user_request_type_id' => $data['user_request_type_id'] ?? null,
-                'processing_index' => 5,
-                'body_sample' => substr($data['received_body'][0] ?? '', 0, 200)
+                'request_id'           => $reference_number,
+                'company_name'         => isset($data['company_name'])?$data['company_name']:  null,
+                'user_request_type_id' =>  isset($data['user_request_type_id'])?$data['user_request_type_id']:  null,
+                'processing_index'     => 5,
+                // store a small sample of the body for debugging
+                'body_sample'          => substr($plainBody, 0, 500),
             ],
             null,
             'not_found',
-            'imei_parsing'
+            'imei_parsing',
+            'success'
         );
-        
+
+        // Update email status
         $reference_number = Model_Email::email_status($reference_number, 2, 5);
-        $not_fount = 1;                                
+        $not_fount = 1; // (you may want to fix this typo to $not_found)
     } else {
         $reference_number = $data['request_id'];
         

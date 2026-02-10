@@ -52,7 +52,7 @@ if (strpos(strtolower($data['received_body']), 'not reachable') !== false ||
         ],
         null,
         'not_found',
-        'location_parsing'
+        'location_parsing','success'
     );
     
     $reference_number = Model_Email::email_status($reference_number, 2, 5);

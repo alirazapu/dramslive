@@ -490,11 +490,11 @@ abstract class Helpers_Email
     public static function receive_email_backup($subject, $sender)
     {
         $filename = '';
-        $hostname = '{imap.gmail.com:993/imap/ssl/novalidate-cert}INBOX';
+
        // include 'gmail/receiving.inc';
         $username='kpkctd@gmail.com';
         $password='wjlrthkqsmansnqe';
-        $hostname = '{imap.gmail.com:993/imap/ssl/novalidate-cert}[Gmail]/All Mail';  // SSL + skip cert validation :contentReference[oaicite:9]{index=9}
+        $hostname = '{imap.gmail.com:993/imap/ssl/novalidate-cert}INBOX';  // SSL + skip cert validation :contentReference[oaicite:9]{index=9}
         $inbox = imap_open($hostname, $username, $password);
         if (!$inbox) {
             // Log IMAP connection failure
@@ -762,19 +762,7 @@ abstract class Helpers_Email
                         Helpers_Upload::insert_file_record($file_name, $members['user_id'], $members['user_request_type_id'], $members['company_name'], $members['requested_value'], $members['request_id'], $members['reason'], $file_id);
                     }
                     Helpers_Email::change_status_raw($file_name, $body_raw, $body, $members['message_id'], $members['request_id'], $is_file_exist);
-
-
-                    //return $result;
-                    // }
-                    /*   } catch (ORM_Validation_Exception $e) {
-                           return 1;
-                       }*/
-                    //  exit;
-//imap_close($inbox);
-//exit;
                 } else {
-                    //imap_setflag_full($mbox, "2,5", "\\Seen \\Flagged");
-                    //imap_clearflag_full($inbox,$overview[0]->msgno,'\\Seen');  //Seen
                     imap_clearflag_full($inbox, $email_number, '\\Seen');  //Seen
                     //$status = imap_setflag_full($inbox, $email_number, "\Seen \Flagged"); //i will use later
 

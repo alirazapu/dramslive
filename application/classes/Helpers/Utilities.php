@@ -849,7 +849,7 @@ abstract class Helpers_Utilities {
                 $where_clause = " where ( ip.region_id = {$posting_region})";
             }
         }
-        
+		$where_clause .= " AND ip.project_status!=1";        
         // print_r($where_clause); exit;
         $DB = Database::instance();
         $sql = "SELECT * 

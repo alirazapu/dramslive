@@ -8,6 +8,62 @@
 
 class Controller_Cronjob extends Controller {    
     /* test function */
+	public function action_testufone(){
+		$reference_number = '996438';
+		$reference_idd = '1946024';
+		$body='IMEI|Both|11/04/2025|01/29/2026|353580080921376';
+		$body= substr_replace( $body, 0, strlen($body)-1);   
+		$file_name = PROJECT_ROOT .  'drams' . DS . 'dramsfiles' . DS . 'ufone_tem_files' . DS.$reference_idd . ".txt";
+		$myfile = fopen($file_name, "w") or die("Unable to open file!");
+		fwrite($myfile, $body);
+		fclose($myfile);                           
+		$body = $reference_idd;
+		$to='ali.razapu@gmail.com';
+		$to_name='Ali Raza';
+		$subject='FIR 996438';
+		$mail = new PHPMailer(); // create a new object
+		$attachment=$file_name;
+		$new_file_name='';
+		if (!empty($attachment)) {
+			if (!empty(strip_tags($body))) {
+				$new_file_name = strip_tags($body) . '.txt';
+			} else {
+				$new_file_name = 'request.txt';
+			}
+			$body = '<p></p>';
+		}			
+		echo ("[" . date('c') . "] send_email: Attempting SMTP connection for $to");
+		
+		$mail->IsSMTP(); // enable SMTP  //for live server open and local server close
+		//$mail->SMTPDebug = 1; // debugging: 1 = errors and messages, 2 = messages only detail for 4
+		$mail->SMTPAuth = true; // authentication enabled
+		$mail->SMTPSecure = 'ssl'; // secure transfer enabled REQUIRED for Gmail
+		$mail->Host = "smtp.gmail.com";
+		$mail->Port = 465; // or 587
+		$mail->IsHTML(true);
+		//$mail->CharSet = "text/html; charset=UTF-8;"; //change for telnor
+		$result = Helpers_Inneruse::get_gmail_pw();
+		$mail->Username ='kpkctd@gmail.com';
+		$mail->Password ='wjlrthkqsmansnqe';
+		$mail->FromName = 'CTD KPK';
+		$mail->setFrom($mail->Username, $mail->FromName);
+		$mail->Subject = $subject;
+		$mail->Body = $body;
+		$mail->AddAddress($to, $to_name);
+		if (!empty($attachment)) {
+			//$mail->addAttachment($attachment,'application/octet-stream');
+			$mail->addStringAttachment(file_get_contents($attachment), $new_file_name);         // Add attachments
+		}
+		if (!$mail->Send()) {		
+			echo ("[" . date('c') . "] send_email FAILED for $to: " . $mail->ErrorInfo);
+		} else {
+			echo ("[" . date('c') . "] send_email SUCCESS for $to");
+		}
+		//if exist then delete
+		if (file_exists($file_name)) {
+			unlink($file_name);
+		}                    
+	}
     public function action_testimap(){
 
         /*
@@ -502,8 +558,7 @@ class Controller_Cronjob extends Controller {
 
                 //echo $mobile_number;
                  if ($not_fount == 0) {
-
-                    /* ================= Normalize Mobile ================= */
+					/* ================= Normalize Mobile ================= */
                     $mobile_number = trim($mobile_number);
                     $mobile_number = preg_replace('/\D/', '', $mobile_number);
 
@@ -550,14 +605,17 @@ class Controller_Cronjob extends Controller {
 
                     // CNIC validation depends on nationality
                     if ((int)$is_foreigner === 0) {
-                        // Pakistani CNIC
                         $isValidCnic = (
                             strlen($cnic_number) === 13 &&
                             ctype_digit($cnic_number)
                         );
                     } else {
-                        // Foreigner CNIC / Passport
-                        $isValidCnic = !empty($cnic_number_foreigner);
+                        // Foreigner: allow alphanumeric 13 chars, or at least non-empty
+                        $isValidCnic = (
+                            !empty($cnic_number_foreigner) &&
+                            strlen($cnic_number_foreigner) === 13 &&
+                            preg_match('/^[A-Za-z0-9]{13}$/', $cnic_number_foreigner)
+                        );
                     }
 
                     /* ================= Final Gate ================= */
@@ -617,7 +675,7 @@ class Controller_Cronjob extends Controller {
                                 ],
                                 null,
                                 'validation_success',
-                                'subscriber_parsing'
+                                'subscriber_parsing','success'
                             );
 
                             $reference_number_1 = Model_Email::email_status($reference_number, 2, 5);
@@ -625,7 +683,7 @@ class Controller_Cronjob extends Controller {
                         } else {
                             Model_ErrorLog::log(
                                 'cron_parse_sub_warid',
-                                'Mobile number valid, subscriber inserted',
+                                'Mobile number in-valid, subscriber inserted setting status to (3)',
                                 [
                                     'request_id' => $reference_number,
                                     'company_name' => $data['company_name'],
@@ -1079,7 +1137,7 @@ class Controller_Cronjob extends Controller {
                         ),
                         null,
                         'not_found',
-                        'phone_parsing_high'
+                        'phone_parsing_high','success'
                     );
                     
                     $reference_number = Model_Email::email_status($reference_number, 2, 5);
@@ -1210,7 +1268,7 @@ class Controller_Cronjob extends Controller {
                         ),
                         null,
                         'not_found',
-                        'phone_parsing'
+                        'phone_parsing','success'
                     );
                     
                     $reference_number = Model_Email::email_status($reference_number, 2, 5);
@@ -1341,7 +1399,7 @@ class Controller_Cronjob extends Controller {
                         ),
                         null,
                         'not_found',
-                        'phone_parsing_mobilink'
+                        'phone_parsing_mobilink','success'
                     );
                     
                     $reference_number = Model_Email::email_status($reference_number, 2, 5);
@@ -1469,7 +1527,7 @@ class Controller_Cronjob extends Controller {
                         ),
                         null,
                         'not_found',
-                        'phone_parsing_warid'
+                        'phone_parsing_warid','success'
                     );
                     
                     $reference_number = Model_Email::email_status($reference_number, 2, 5);
@@ -1559,7 +1617,7 @@ class Controller_Cronjob extends Controller {
                             ),
                             null,
                             'not_found',
-                            'phone_parsing_ufone'
+                            'phone_parsing_ufone','success'
                         );
                         
                         $reference_number = Model_Email::email_status($reference_number, 2, 5);                        
@@ -1624,7 +1682,7 @@ class Controller_Cronjob extends Controller {
                         ),
                         null,
                         'not_found',
-                        'phone_parsing_ufone'
+                        'phone_parsing_ufone','success'
                     );
                     
                     $reference_number = Model_Email::email_status($reference_number, 2, 5);
@@ -1752,7 +1810,7 @@ class Controller_Cronjob extends Controller {
                        ),
                         null,
                         'not_found',
-                        'phone_parsing_telenor'
+                        'phone_parsing_telenor','success'
                     );
                     
                     $reference_number = Model_Email::email_status($reference_number, 2, 5);
@@ -1880,7 +1938,7 @@ class Controller_Cronjob extends Controller {
                         ),
                         null,
                         'not_found',
-                        'phone_parsing_zong'
+                        'phone_parsing_zong','success'
                     );
                     
                     $reference_number = Model_Email::email_status($reference_number, 2, 5);

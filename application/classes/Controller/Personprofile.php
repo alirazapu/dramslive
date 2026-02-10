@@ -2048,36 +2048,75 @@ class Controller_Personprofile extends Controller_Working {
 
     public function action_download() {
         $login_user = Auth::instance()->get_user();
-        $user_id = !empty($login_user->id) ? $login_user->id : 0;
-        ob_clean();
+        $user_id    = !empty($login_user->id) ? $login_user->id : 0;
+
+        // Clean output buffers early
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
         try {
-            $_GET = Helpers_Utilities::remove_injection($_GET);
+            $_GET  = Helpers_Utilities::remove_injection($_GET);
             $_POST = Helpers_Utilities::remove_injection($_POST);
+
+            $target = '';
             if (!empty($_GET['pid'])) {
-                //get person assets dowload path
-                $person_download_data_path = !empty(Helpers_Utilities::encrypted_key($_GET['pid'], "decrypt")) ? Helpers_Person::get_person_download_data_path(Helpers_Utilities::encrypted_key($_GET['pid'], "decrypt")) : '';
-                $target = $person_download_data_path;
+                $decrypted_pid = Helpers_Utilities::encrypted_key($_GET['pid'], "decrypt");
+                $target = Helpers_Person::get_person_download_data_path($decrypted_pid);
             }
             if (!empty($_POST['fid'])) {
-                $file_link = !empty(Helpers_Utilities::encrypted_key($_POST['fid'], 'decrypt')) ? Helpers_Upload::get_request_data_path(Helpers_Utilities::encrypted_key($_POST['fid'], 'decrypt')) : '';
-                $target = $file_link;
+                $decrypted_fid = Helpers_Utilities::encrypted_key($_POST['fid'], 'decrypt');
+                $target = Helpers_Upload::get_request_data_path($decrypted_fid,'save');
             }
-            $_GET['file'] = $file = !empty($_POST['file']) ? $_POST['file'] : '';
-            $file = $target . $file;
-            if (!$file) { // file does not exist
-                die('file not found');
-            } else {
-                header("Cache-Control: public");
-                header("Content-Description: File Transfer");
-                header("Content-Disposition: attachment; filename={$_GET['file']}");
-                header("Content-Type: application/zip");
-                header("Content-Transfer-Encoding: binary");
-                header("Content-type:application/pdf");
-                // read the file from disk
-                readfile($file);
+
+            $requested_file = !empty($_POST['file']) ? $_POST['file'] : (!empty($_GET['file']) ? $_GET['file'] : '');
+            $file = rtrim($target, '/\\') . '/' . ltrim($requested_file, '/\\');
+
+            if (!$file ) {
+                http_response_code(404);
+                die('File not found');
             }
+
+            // Get extension (lowercase, without dot)
+            $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+
+            // MIME type mapping
+            $mimeTypes = [
+                'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'xls'  => 'application/vnd.ms-excel',
+                'csv'  => 'text/csv',
+                'zip'  => 'application/zip',
+                'rar'  => 'application/x-rar-compressed',
+                // Add more if needed: pdf, docx, etc.
+            ];
+
+            $contentType = $mimeTypes[$ext] ?? 'application/octet-stream';
+
+            // Optional: improve filename (use original requested name if available)
+            $downloadName = !empty($_GET['filename']) ? $_GET['filename'] : basename($file);
+            // Make sure it has extension
+            if (strpos($downloadName, '.') === false) {
+                $downloadName .= '.' . $ext;
+            }
+
+            // Headers
+            header('Cache-Control: public, must-revalidate, max-age=0');
+            header('Pragma: public');
+            header('Expires: 0');
+            header('Content-Description: File Transfer');
+            header('Content-Transfer-Encoding: binary');
+            header('Content-Type: ' . $contentType);
+            header('Content-Length: ' . filesize($file));
+            header('Content-Disposition: attachment; filename="' . $downloadName . '"');
+
+            // For large files: increase timeout & flush
+            set_time_limit(0);
+            readfile($file);
+            exit;
+
         } catch (Exception $ex) {
-            echo 'Error in file download';
+            http_response_code(500);
+            echo 'Error in file download: ' . htmlspecialchars($ex->getMessage());
         }
     }
 

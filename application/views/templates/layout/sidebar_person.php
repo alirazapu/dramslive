@@ -18,7 +18,8 @@ if(!isset($_GET['id']))
                     <!-- Sidebar user panel -->
                          
                     <!-- sidebar menu: : style can be found in sidebar.less -->
-                    <ul class="sidebar-menu">                        
+                    <ul class="sidebar-menu">       
+						<li class="header"> <span id="date_time"></span></li>					
                         <li class="treeview">
                             <a href="<?php echo URL::site('Userdashboard/dashboard'); ?>">
                                 <i class="fa fa-rotate-left text-aqua"></i> <span>Back</span>            

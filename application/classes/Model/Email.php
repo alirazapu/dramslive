@@ -282,7 +282,7 @@ class Model_Email {
         } elseif ($check_region[0] == 'r') {
             $region = $check_region[1];
         } elseif ($check_region[0] == 'h') {
-            $region = 11;
+            $region = 1;
         }
 
         $query = DB::insert('users_profile', array('user_id', 'first_name', 'last_name', 'father_name', 'mobile_number', 'job_title', 'department',
