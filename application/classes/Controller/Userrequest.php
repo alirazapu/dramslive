@@ -3161,14 +3161,11 @@ class Controller_Userrequest extends Controller_Working {
                 $message = "Not Permitted: Previous request is in queue, check in request status or contact Admin";
             } else {
                 //check if request was generated in last 15 days
-                //Ali Raza remove The Check For 15 days for BVS
-                /*$date_permission = Helpers_Email::check_old_request_with_date(3, $inputSubNO, $permissionperiod);
+                $date_permission = Helpers_Email::check_old_request_with_date(3, $inputSubNO, $permissionperiod);
                 if ($date_permission == 1) {
                     $permission = 2;
                     $message = "Not Permitted: Previous request is initiated within last 15 days, check in request status or contact Admin";
-                }
-                else*/
-                {
+                } else {
                     $message = "Permitted: Permission granted to request data from company";
                 }
             }
