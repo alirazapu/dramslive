@@ -116,6 +116,25 @@ class Model_Generic {
         $content = new Model_Generic();
         $sub_update_status = $content->update_imei_mobile_number($array_imei);
 
+        // update person details
+            if (
+                !empty($person_id) &&
+                !empty($data['person_name']) &&
+                !empty($data['address'])
+            ) {
+                DB::update('person')
+                    ->set([
+                        'first_name' => trim((string) $data['person_name']),
+                        'last_name'  => trim((string) $data['person_name1']),
+                        'address'    => trim((string) $data['address']),
+                    ])
+                    ->where('person_id', '=', (int) $person_id)
+                    ->execute();
+            } else {
+                // Handle validation failure (log, throw exception, or return error)
+                throw new Exception('Required person information is missing or invalid.');
+            }
+
 
 //        //to check phone number exist
 //        $sql = "SELECT * FROM person_phone_number where phone_number = {$data['mobile_number'] }";
@@ -408,6 +427,7 @@ class Model_Generic {
          * is_active
          */
         $imei_number = !empty($data['imei']) ? $data['imei'] : 0;
+        
         if (!empty($imei_number)) {
             $imei_number = Helpers_Utilities::find_imei_last_digit($imei_number);
             // to check if imei number exist
@@ -433,7 +453,9 @@ class Model_Generic {
                 $send_array['user_id'] = $user_id;
                 $content = new Model_Generic();
                 $device_id = $content->update_imei_number($send_array);
+                return $device_id;
             }
+            
             if (empty($device_id)) {
                 $device_id = Helpers_Utilities::get_device_id($imei_number);
             }
@@ -483,6 +505,7 @@ class Model_Generic {
         $imei_number = !empty($data['imei']) ? $data['imei'] : 0;
         $device_id = 0;
         if (!empty($imei_number)) {
+           
             $imei_number = Helpers_Utilities::find_imei_last_digit($imei_number);
             $current_date = date('Y-m-d H:i:s');
 
@@ -503,8 +526,10 @@ class Model_Generic {
                 $device_id = $query[0];
                 Helpers_Profile::user_activity_log($user_id, 78, "IMEI No", $imei_number, $person_id);
             } elseif (!empty($chkimei) && !empty($imei_number)) {
+    
                 $device_id = Helpers_Utilities::get_device_id($imei_number);
                 if (!empty($person_id)) {
+                    
                     DB::update('person_phone_device')->set(array('person_id' => $person_id, 'user_id' => $user_id))
                             ->where('id', '=', $device_id)
                             ->execute();
