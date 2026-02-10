@@ -521,8 +521,6 @@ class Model_Generic {
 
     public static function update_cnic_number($data, $chk = Null) {
 
-
-
         /* Parameters in array:
          * cnic_number
          * first_name
@@ -539,10 +537,8 @@ class Model_Generic {
          * cis_desktop
          */
         $cnic_number = !empty($data['cnic_number']) ? $data['cnic_number'] : '';
-
        // $cnic_number = !empty($data) ? $data : '';
         $person_id = Helpers_Utilities::get_person_id_with_cnic($cnic_number);
-        
         if (empty($person_id) && !empty($cnic_number)) {
             $first_name = !empty($data['first_name']) ? $data['first_name'] : '';
             $middle_name = !empty($data['middle_name']) ? $data['middle_name'] : '';
@@ -616,8 +612,8 @@ class Model_Generic {
                                                  ->values(array($person_id, $cnic_number, 0, $is_foreigner, 0, $uid, $created_from, $access_by, $current_date))
                         ->execute();
                 }
-                $query = DB::insert('person_foreigner_profile', array('person_id', 'cnic_number', 'user_id'))
-                        ->values(array($person_id, $cnic_number, $uid))
+                $query = DB::insert('person_foreigner_profile', array('person_id', 'person_name', 'cnic_number', 'user_id'))
+                        ->values(array($person_id, $first_name, $cnic_number, $uid))
                         ->execute();
             }
 
