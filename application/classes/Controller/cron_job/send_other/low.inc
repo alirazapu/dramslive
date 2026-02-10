@@ -40,10 +40,10 @@ try {
                 continue;
             }
             
-            if (($company_name == 3 && in_array($res['user_request_type_id'], [1, 2, 5, 6])) ||
+            /*if (($company_name == 3 && in_array($res['user_request_type_id'], [1, 2, 5, 6])) ||
                 ($company_name == 6 && in_array($res['user_request_type_id'], [1, 2]))) {
                 continue;
-            }
+            }*/
             
             // Include email routing logic
             include 'telco_email.inc';

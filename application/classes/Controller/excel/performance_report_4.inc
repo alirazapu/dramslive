@@ -53,7 +53,7 @@ if(isset($_POST['xport']) && $_POST['xport']=='excel')
                     $data1 = $data->performance_report($post, 'false');                                                      
                             $data = array(
                                      'Users' => array(
-                                             1 => array('','','CTD Punjab ( User\'s Performace Report)','','','','',''),
+                                             1 => array('','','CTD KPK ( User\'s Performace Report)','','','','',''),
                                              2 => array('User Name', 'Total Request','Total Favourite person','Total Favourite User','Total White', 'Total Grey', 'Total Black','Total LogIN'),
                                      ),
 

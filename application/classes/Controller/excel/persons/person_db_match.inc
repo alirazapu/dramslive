@@ -60,7 +60,7 @@ if(isset($_POST['xport']) && $_POST['xport']=='excel')
                     
                             $data = array(
                                      'dbmatch' => array(
-                                             1 => array('','CTD Punjab ( Person\'s DB Match)','',''),
+                                             1 => array('','CTD KPK ( Person\'s DB Match)','',''),
                                              2 => array('Phone Number', 'B Party', 'Person\'s Name','Father Name','Person CNIC','I Calls','O Calls','I SMS','O SMS', 'Last Call/SMS'),
                                      ),
 

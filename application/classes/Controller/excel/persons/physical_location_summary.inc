@@ -54,7 +54,7 @@ if(isset($_POST['xport']) && $_POST['xport']=='excel')
                     $data1 = $data->person_physical_location($post, 'false',$pid);                                                      
                             $data = array(
                                      'dbmatch' => array(
-                                             1 => array('CTD Punjab ( Person\'s Physical Location)'),
+                                             1 => array('CTD KPK ( Person\'s Physical Location)'),
                                              2 => array('Phone Number', 'Location', 'Location Count'),
                                      ),
 

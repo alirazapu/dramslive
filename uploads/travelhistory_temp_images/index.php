@@ -16,22 +16,22 @@
         <!-- Tell the browser to be responsive to screen width -->
         <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
         <!-- Bootstrap 3.3.6 -->
-        <link rel="stylesheet" href="https://www.aiesmail.com/bootstrap/css/bootstrap.min.css">
+        <link rel="stylesheet" href="https://ctd.drams.com/bootstrap/css/bootstrap.min.css">
         <!-- Font Awesome -->
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.5.0/css/font-awesome.min.css">
         <!-- Ionicons -->
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ionicons/2.0.1/css/ionicons.min.css">
         <!-- Theme style -->
-        <link rel="stylesheet" href="https://www.aiesmail.com/dist/css/kpkhtml.min.css">
+        <link rel="stylesheet" href="https://ctd.drams.com/dist/css/kpkhtml.min.css">
         <!-- iCheck -->
-        <link rel="stylesheet" href="https://www.aiesmail.com/plugins/iCheck/square/blue.css">
+        <link rel="stylesheet" href="https://ctd.drams.com/plugins/iCheck/square/blue.css">
 
         <!--New Added-->
-        <link rel="stylesheet" href="https://www.aiesmail.com/dist/css/pre-loader.css">
-        <link rel="stylesheet" href="https://www.aiesmail.com/dist/css/animate.css">
-        <link rel="stylesheet" href="https://www.aiesmail.com/dist/css/new-style.css">
+        <link rel="stylesheet" href="https://ctd.drams.com/dist/css/pre-loader.css">
+        <link rel="stylesheet" href="https://ctd.drams.com/dist/css/animate.css">
+        <link rel="stylesheet" href="https://ctd.drams.com/dist/css/new-style.css">
         <!--New Added-->
-        <link rel="shortcut icon" href="https://www.aiesmail.com/dist/img/icon/icon.png" type="image/x-icon"> 
+        <link rel="shortcut icon" href="https://ctd.drams.com/dist/img/icon/icon.png" type="image/x-icon"> 
 
         <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
         <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -57,7 +57,7 @@
         </div>
         <div class="login-box">
             <div class="login-logo">
-                <a href=""><b></b><img style="width:153px;" src="https://www.aiesmail.com/dist/img/CTD-Logo.png"> </a>
+                <a href=""><b></b><img style="width:153px;" src="https://ctd.drams.com/dist/img/CTD-Logo.png"> </a>
             </div>
             <!-- /.login-logo -->
             <div class="login-box-body">                
@@ -72,7 +72,7 @@
                     <i class="fa fa-key"></i>
                 </div>
 
-<form action="https://www.aiesmail.com/login/check" method="post" id="entrypoint" accept-charset="utf-8">    
+<form action="https://ctd.drams.com/login/check" method="post" id="entrypoint" accept-charset="utf-8">    
 
                 <div><label for="username" generated="true" class="error" style="display: none"></label></div>
                 <div class="form-group has-feedback icon-set">                        
@@ -126,7 +126,7 @@
                         <h4 class="modal-title">Request Password Recovery</h4>
                     </div>
                     <div class="modal-body" style='background-color: #fff !important ; color: #000 !important;'>
-                       <form class="ipf-form" action="https://www.aiesmail.com/login/forget" name="forgetform" id="forgetform1" method="post" enctype="multipart/form-data">
+                       <form class="ipf-form" action="https://ctd.drams.com/login/forget" name="forgetform" id="forgetform1" method="post" enctype="multipart/form-data">
                             <div class="form-group">
                                 <div class="row">
                                     <div class="col-md-3" style="padding-top: 10px">
@@ -176,19 +176,19 @@
         </div>
 
         <!--New Added-->
-        <script src="https://www.aiesmail.com/dist/js/particles.js"></script>
-        <script src="https://www.aiesmail.com/dist/js/particles-app.js"></script>
+        <script src="https://ctd.drams.com/dist/js/particles.js"></script>
+        <script src="https://ctd.drams.com/dist/js/particles-app.js"></script>
         <!--New Added-->
 
         <!-- jQuery 2.2.3 -->
-        <script src="https://www.aiesmail.com/plugins/jQuery/jquery-2.2.3.min.js"></script>
+        <script src="https://ctd.drams.com/plugins/jQuery/jquery-2.2.3.min.js"></script>
         <!-- Bootstrap 3.3.6 -->
-        <script src="https://www.aiesmail.com/bootstrap/js/bootstrap.min.js"></script>
+        <script src="https://ctd.drams.com/bootstrap/js/bootstrap.min.js"></script>
         <!-- iCheck -->
-        <script src="https://www.aiesmail.com/plugins/iCheck/icheck.min.js"></script>
-        <script src="https://www.aiesmail.com/dist/js/jquery.validate.js"></script>
+        <script src="https://ctd.drams.com/plugins/iCheck/icheck.min.js"></script>
+        <script src="https://ctd.drams.com/dist/js/jquery.validate.js"></script>
         <!--for password recover-->
-        <script src="https://www.aiesmail.com/plugins/select2/select2.full.min.js"></script>
+        <script src="https://ctd.drams.com/plugins/select2/select2.full.min.js"></script>
         <script src="https://gitcdn.github.io/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js"></script>
         <script>
             $(function () {

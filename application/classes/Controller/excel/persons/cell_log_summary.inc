@@ -54,7 +54,7 @@ if(isset($_POST['xport']) && $_POST['xport']=='excel')
                     $data1 = $data->cell_log_summary($post, 'false', $pid);                                                    
                             $data = array(
                                      'Users' => array(
-                                             1 => array('','CTD Punjab (CDR Call Log)/'.$pname,'',''),
+                                             1 => array('','CTD KPK (CDR Call Log)/'.$pname,'',''),
                                              2 => array('Party A', 'Party B', 'Call Type','Call Duration','Date & Time','Location'),
                                      ),
 

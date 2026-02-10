@@ -54,7 +54,7 @@ if(isset($_POST['xport']) && $_POST['xport']=='excel')
                     $data1 = $data->sms_log_summary($post, 'false', $pid);                                                     
                             $data = array(
                                      'Users' => array(
-                                             1 => array('','CTD Punjab (Location Log Summary)/'.$pname,'',''),
+                                             1 => array('','CTD KPK (Location Log Summary)/'.$pname,'',''),
                                              2 => array('Party A', 'Party B', 'Date & Time','Location'),
                                      ),
 

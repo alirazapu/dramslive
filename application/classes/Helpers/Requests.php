@@ -99,6 +99,18 @@ abstract class Helpers_Requests {
             $region_district =  $region . $district ;
         }
         } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'get_project_region_district',
+                'Failed to get region/district info: ' . $ex->getMessage(),
+                [
+                    'region_id' => $region_id,
+                    'district_id' => $district_id
+                ],
+                $ex->getTraceAsString(),
+                'database_query_error',
+                'region_district_fetch',
+                'error'
+            );
             echo '<pre>';
             print_r($ex);
             exit;   

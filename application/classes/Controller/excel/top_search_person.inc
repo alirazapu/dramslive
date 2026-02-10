@@ -54,7 +54,7 @@ if(isset($_POST['xport']) && $_POST['xport']=='excel')
                     $data1 = $data->top_search_persons($post, 'false');                                                      
                             $data = array(
                                      'Users' => array(
-                                             1 => array('','','CTD Punjab ( Top Searched Persons)','',''),
+                                             1 => array('','','CTD KPK ( Top Searched Persons)','',''),
                                              2 => array('Person Name', 'Father Name','CNIC','Address','Category','Search Count'),
                                      ),
 

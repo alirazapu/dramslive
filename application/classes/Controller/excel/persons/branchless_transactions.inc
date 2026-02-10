@@ -54,7 +54,7 @@ if(isset($_POST['xport']) && $_POST['xport']=='excel')
                     $data1 = $data->branchless_transactions($post, 'false', $pid);                                                     
                             $data = array(
                                      'Users' => array(
-                                             1 => array('CTD Punjab (Branchless Transactions)/'.$pname),
+                                             1 => array('CTD KPK (Branchless Transactions)/'.$pname),
                                              2 => array('Party A', 'Party B', 'SMS Type','Date & Time','Location'),
                                      ),
 

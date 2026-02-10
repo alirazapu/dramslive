@@ -8,7 +8,121 @@
 
 class Controller_Cronjob extends Controller {    
     /* test function */
+    public function action_testimap(){
 
+        /*
+           $result = Helpers_Inneruse::get_gmail_pw();
+            $smtp_user = $result['send']['user'];
+            $smtp_pass = $result['send']['password'];
+            $mail = new PHPMailer();
+            $mail->IsSMTP();
+            $mail->Host = "smtp.gmail.com";
+            $mail->Port = 465;
+            $mail->Username = $smtp_user;
+            $mail->Password = $smtp_pass;
+
+                // Test connection by sending a test email to self
+            $mail->setFrom($smtp_user, 'SMTP Test');
+            $mail->addAddress('ali.razapu@gmail.com');
+            $mail->Subject = 'SMTP Connection Test - ' . date('Y-m-d H:i:s');
+            $mail->Body = 'This is a test email to verify SMTP connection is working.';
+            $mail->IsHTML(true);
+
+            if ($mail->Send()) {
+                    echo "✓ SMTP Connection: SUCCESS<br>";
+                    echo "✓ Test email sent successfully<br>";
+            } else {
+                echo "✗ SMTP Connection: FAILED\n";
+                echo "Error: " . $mail->ErrorInfo . "\n";
+
+            }
+            echo "<br>";
+        */
+        // ────────────────────────────────────────────────
+        // Test IMAP Connection (Receive)
+        // ────────────────────────────────────────────────
+             echo "── IMAP Connection Test (Receive) ──"; echo "<br>";
+
+            $result = Helpers_Inneruse::get_gmail_pw();
+            $imap_user = $result['receive']['user'];
+            $imap_pass = $result['receive']['password'];
+
+            //$imap_pass = 'bfcihehizxazlphk';//$result['receive']['password'];
+            echo "IMAP Username: " . $imap_user ;echo "<br>";
+            echo "IMAP PAssword: " . $imap_pass ; echo "<br>";
+            echo "IMAP Host: imap.gmail.com"; echo "<br>";
+            echo "IMAP Port: 993 (SSL)";
+
+            // Try to connect to IMAP
+            $hostname = '{imap.gmail.com:993/imap/ssl/novalidate-cert}INBOX';
+            $inbox = imap_open($hostname, $imap_user, $imap_pass);
+
+            if ($inbox) {
+                echo "✓ IMAP Connection: SUCCESS\n";
+                // Get mailbox info
+                $check = imap_mailboxmsginfo($inbox);
+                echo "✓ Mailbox Messages: " . $check->Nmsgs ; echo "<br>";
+                echo "✓ Unread Messages: " . $check->Unread ; echo "<br>";
+                imap_close($inbox);
+            } else {
+                echo "✗ IMAP Connection: FAILED\n";
+                echo "Error: " . imap_last_error() ; echo "<br>";
+            }
+
+
+            echo "── IMAP Connection Test (Send) ──"; echo "<br>";echo "<br>";
+
+            $result = Helpers_Inneruse::get_gmail_pw();
+            $imap_user = $result['send']['user'];
+            $imap_pass = $result['send']['password'];
+
+            //$imap_pass = 'bfcihehizxazlphk';//$result['receive']['password'];
+            echo "IMAP Username: " . $imap_user ;echo "<br>";
+            echo "IMAP PAssword: " . $imap_pass ; echo "<br>";
+            echo "IMAP Host: imap.gmail.com"; echo "<br>";
+            echo "IMAP Port: 993 (SSL)";
+            // Try to connect to IMAP
+            $hostname = '{imap.gmail.com:993/imap/ssl/novalidate-cert}INBOX';
+            $inbox = imap_open($hostname, $imap_user, $imap_pass);
+
+            if ($inbox) {
+                echo "✓ IMAP Connection: SUCCESS\n";
+                // Get mailbox info
+                $check = imap_mailboxmsginfo($inbox);
+                echo "✓ Mailbox Messages: " . $check->Nmsgs ; echo "<br>";
+                echo "✓ Unread Messages: " . $check->Unread ; echo "<br>";
+                imap_close($inbox);
+            } else {
+                echo "✗ IMAP Connection: FAILED\n";
+                echo "Error: " . imap_last_error() ; echo "<br>";
+            }
+        echo "<br>";
+        echo "── IMAP Connection Test ADM- reading ──"; echo "<br>";echo "<br>";
+
+            $imap_user = 'kpkctd@gmail.com';
+            $imap_pass = 'wjlrthkqsmansnqe';
+
+            //$imap_pass = 'bfcihehizxazlphk';//$result['receive']['password'];
+            echo "IMAP Username: " . $imap_user ;echo "<br>";
+            echo "IMAP PAssword: " . $imap_pass ; echo "<br>";
+            echo "IMAP Host: imap.gmail.com"; echo "<br>";
+            echo "IMAP Port: 993 (SSL)";
+            // Try to connect to IMAP
+            $hostname = '{imap.gmail.com:993/imap/ssl/novalidate-cert}INBOX';
+            $inbox = imap_open($hostname, $imap_user, $imap_pass);
+
+            if ($inbox) {
+                echo "✓ IMAP Connection: SUCCESS\n";
+                // Get mailbox info
+                $check = imap_mailboxmsginfo($inbox);
+                echo "✓ Mailbox Messages: " . $check->Nmsgs ; echo "<br>";
+                echo "✓ Unread Messages: " . $check->Unread ; echo "<br>";
+                imap_close($inbox);
+            } else {
+                echo "✗ IMAP Connection: FAILED\n";
+                echo "Error: " . imap_last_error() ; echo "<br>";
+            }
+    }
     public function action_testunzipall()
     {
         echo "<pre>";
@@ -90,30 +204,57 @@ class Controller_Cronjob extends Controller {
         echo "========================================\n";
         exit;
     }
+    public function action_testAdminEmail() {
+
+        $email_config = Helpers_CompanyEmail::get_email(1);
+        echo     $email_config['email'] ?? '';echo "<br/>";
+        echo     $email_config['name'] ?? '';echo "<br/>";
+
+
+        $email_config = Helpers_CompanyEmail::get_email(3,6);
+        echo     $email_config['email'] ?? '';echo "<br/>";
+        echo     $email_config['name'] ?? '';echo "<br/>";
+        $email_config = Helpers_CompanyEmail::get_email(3,1);
+        echo     $email_config['email'] ?? '';echo "<br/>";
+        echo     $email_config['name'] ?? '';echo "<br/>";
+        $email_config = Helpers_CompanyEmail::get_email(3,2);
+        echo     $email_config['email'] ?? '';echo "<br/>";
+        echo     $email_config['name'] ?? '';echo "<br/>";
+
+        $email_config = Helpers_CompanyEmail::get_email(4);
+        echo     $email_config['email'] ?? '';echo "<br/>";
+        echo     $email_config['name'] ?? '';echo "<br/>";
+
+        $email_config = Helpers_CompanyEmail::get_email(6,1);
+        echo     $email_config['email'] ?? '';echo "<br/>";
+        echo     $email_config['name'] ?? '';echo "<br/>";
+        $email_config = Helpers_CompanyEmail::get_email(6,2);
+        echo     $email_config['email'] ?? '';echo "<br/>";
+        echo     $email_config['name'] ?? '';echo "<br/>";
+        $email_config = Helpers_CompanyEmail::get_email(7);
+        echo     $email_config['email'] ?? '';echo "<br/>";
+        echo     $email_config['name'] ?? '';echo "<br/>";
+        $email_config = Helpers_CompanyEmail::get_email(8);
+        echo     $email_config['email'] ?? '';echo "<br/>";
+        echo     $email_config['name'] ?? '';echo "<br/>";
+        $email_config = Helpers_CompanyEmail::get_email(11);
+        echo     $email_config['email'] ?? '';echo "<br/>";
+        echo     $email_config['name'] ?? '';echo "<br/>";
+        $email_config = Helpers_CompanyEmail::get_email(12);
+        echo     $email_config['email'] ?? '';echo "<br/>";
+        echo     $email_config['name'] ?? '';echo "<br/>";
+        $email_config = Helpers_CompanyEmail::get_email(13);
+        echo     $email_config['email'] ?? '';echo "<br/>";
+        echo     $email_config['name'] ?? '';echo "<br/>";
+    }
     public function action_test() {
 
-        //var_dump(shell_exec('unrar'));
-        // Original code
-      /*  $send_key = Helpers_Utilities::encrypted_key('bfcihehizxazlphk', "encrypt");
-        echo $send_key . "<br>";
-        $send_key = str_replace("axHmBf8ri9x", "", $send_key);
-        $send_key = Helpers_Utilities::encrypted_key($send_key, "decrypt");
-        echo $send_key . "<br><br>";
-        die;
-        echo "<pre>";
-        echo "========================================\n";
-        echo "EMAIL CONFIGURATION TEST\n";
-        echo "========================================\n\n";
-        */
-        // Display current environment
-        $env_name = (Kohana::$environment === Kohana::DEVELOPMENT) ? 'DEVELOPMENT' : 'PRODUCTION';
-        echo "Current Environment: " . $env_name . "\n\n";
-        
+
         // ────────────────────────────────────────────────
         // Test SMTP Connection (Send)
         // ────────────────────────────────────────────────
-      /*  echo "── SMTP Connection Test (Send) ──\n";
-        try {
+        echo "── SMTP Connection Test (Send) ──\n";
+
             $result = Helpers_Inneruse::get_gmail_pw();
             $smtp_user = $result['send']['user'];
             $smtp_pass = $result['send']['password'];
@@ -121,7 +262,6 @@ class Controller_Cronjob extends Controller {
             echo "SMTP Username: " . $smtp_user . "\n";
             echo "SMTP Host: smtp.gmail.com\n";
             echo "SMTP Port: 465 (SSL)\n";
-            
             // Try to connect to SMTP
             $mail = new PHPMailer();
             $mail->IsSMTP();
@@ -130,201 +270,18 @@ class Controller_Cronjob extends Controller {
             $mail->Host = "smtp.gmail.com";
             $mail->Port = 465;
             $mail->Username = $smtp_user;
-            $mail->Password = $smtp_pass;
-            
-            // Test connection by sending a test email to self
-            $mail->setFrom($smtp_user, 'SMTP Test');
-            $mail->addAddress($smtp_user);
-            $mail->Subject = 'SMTP Connection Test - ' . date('Y-m-d H:i:s');
-            $mail->Body = 'This is a test email to verify SMTP connection is working.';
-            $mail->IsHTML(true);
-            
-            if ($mail->Send()) {
-                echo "✓ SMTP Connection: SUCCESS\n";
-                echo "✓ Test email sent successfully\n";
-                
-                Model_ErrorLog::log(
-                    'action_test_smtp',
-                    'SMTP connection test successful',
-                    [
-                        'smtp_user' => $smtp_user,
-                        'smtp_host' => 'smtp.gmail.com',
-                        'smtp_port' => 465
-                    ],
-                    null,
-                    'smtp_test_success',
-                    'connection_test'
-                );
-            } else {
-                echo "✗ SMTP Connection: FAILED\n";
-                echo "Error: " . $mail->ErrorInfo . "\n";
-                
-                Model_ErrorLog::log(
-                    'action_test_smtp',
-                    'SMTP connection test failed: ' . $mail->ErrorInfo,
-                    [
-                        'smtp_user' => $smtp_user,
-                        'smtp_host' => 'smtp.gmail.com',
-                        'smtp_port' => 465,
-                        'error' => $mail->ErrorInfo
-                    ],
-                    null,
-                    'smtp_test_failure',
-                    'connection_test'
-                );
-            }
-        } catch (Exception $e) {
-            echo "✗ SMTP Connection: EXCEPTION\n";
-            echo "Error: " . $e->getMessage() . "\n";
-            
-            Model_ErrorLog::log(
-                'action_test_smtp',
-                'SMTP connection test exception: ' . $e->getMessage(),
-                [],
-                $e->getTraceAsString(),
-                'smtp_test_exception',
-                'connection_test'
-            );
-        }
-        echo "\n";
-        */
-        // ────────────────────────────────────────────────
-        // Test IMAP Connection (Receive)
-        // ────────────────────────────────────────────────
-        echo "── IMAP Connection Test (Receive) ──\n";
-        try {
+            echo "── IMAP Connection Test (Receive) ──\n";
             $result = Helpers_Inneruse::get_gmail_pw();
-            //$imap_user = 'reg745964@gmail.com';//$result['receive']['user'];//$mail->Username = 'cfuctdkp@gmail.com';
-            //$mail->Password = 'wgidvhtwxgbhhoen';
-
-          //  $imap_pass = 'bfcihehizxazlphk';//$result['receive']['password'];
             $imap_user = $result['receive']['user'];
             $imap_pass = $result['receive']['password'];
-
-
             //$imap_pass = 'bfcihehizxazlphk';//$result['receive']['password'];
             echo "IMAP Username: " . $imap_user . "\n";
             echo "IMAP PAssword: " . $imap_pass . "\n";
             echo "IMAP Host: imap.gmail.com\n";
             echo "IMAP Port: 993 (SSL)\n";
-            // Try to connect to IMAP
-            $hostname = '{imap.gmail.com:993/imap/ssl/novalidate-cert}INBOX';
-            $inbox = imap_open($hostname, $imap_user, $imap_pass);
-            
-            if ($inbox) {
-                echo "✓ IMAP Connection: SUCCESS\n";
-                
-                // Get mailbox info
-                $check = imap_mailboxmsginfo($inbox);
-                echo "✓ Mailbox Messages: " . $check->Nmsgs . "\n";
-                echo "✓ Unread Messages: " . $check->Unread . "\n";
-                
-                imap_close($inbox);
-                
-                Model_ErrorLog::log(
-                    'action_test_imap',
-                    'IMAP connection test successful',
-                    [
-                        'imap_user' => $imap_user,
-                        'imap_host' => 'imap.gmail.com',
-                        'imap_port' => 993,
-                        'total_messages' => $check->Nmsgs,
-                        'unread_messages' => $check->Unread
-                    ],
-                    null,
-                    'imap_test_success',
-                    'connection_test'
-                );
-            } else {
-                echo "✗ IMAP Connection: FAILED\n";
-                echo "Error: " . imap_last_error() . "\n";
-                
-                Model_ErrorLog::log(
-                    'action_test_imap',
-                    'IMAP connection test failed: ' . imap_last_error(),
-                    [
-                        'imap_user' => $imap_user,
-                        'imap_host' => 'imap.gmail.com',
-                        'imap_port' => 993,
-                        'error' => imap_last_error()
-                    ],
-                    null,
-                    'imap_test_failure',
-                    'connection_test'
-                );
-            }
-        } catch (Exception $e) {
-            echo "✗ IMAP Connection: EXCEPTION\n";
-            echo "Error: " . $e->getMessage() . "\n";
-            
-            Model_ErrorLog::log(
-                'action_test_imap',
-                'IMAP connection test exception: ' . $e->getMessage(),
-                [],
-                $e->getTraceAsString(),
-                'imap_test_exception',
-                'connection_test'
-            );
-        }
-        echo "\n";
-       /*
-        // ────────────────────────────────────────────────
-        // Test Gmail credentials
-        // ────────────────────────────────────────────────
-        echo "── Gmail Credentials Test ──\n";
-        $gmail_creds = Helpers_Inneruse::get_gmail_pw();
-        print_r($gmail_creds);
-        echo "\n";
-        
-        // ────────────────────────────────────────────────
-        // Test Company Emails
-        // ────────────────────────────────────────────────
-        echo "── Company Email Configuration Test ──\n\n";
-        
-        $companies = [
-            1  => 'Mobilink/Jazz',
-            3  => 'Ufone',
-            4  => 'Zong',
-            6  => 'Telenor',
-            7  => 'Warid',
-            8  => 'SCOM',
-            11 => 'PTCL',
-            12 => 'International',
-            13 => 'NADRA'
-        ];
-        
-        foreach ($companies as $company_id => $company_name) {
-            echo "Company ID {$company_id} - {$company_name}:\n";
-            $email_config = Helpers_CompanyEmail::get_email($company_id);
-            print_r($email_config);
-            echo "\n";
-        }
-        
-        // Test company emails with specific request types
-        echo "\n── Company Emails with Request Types ──\n\n";
-        
-        // Ufone with different request types
-        echo "Ufone (Company ID 3) - Request Type 1 (MSISDN CDR):\n";
-        print_r(Helpers_CompanyEmail::get_email(3, 1));
-        echo "\nUfone (Company ID 3) - Request Type 4 (Location):\n";
-        print_r(Helpers_CompanyEmail::get_email(3, 4));
-        echo "\n";
-        
-        // Telenor with different request types
-        echo "Telenor (Company ID 6) - Request Type 1 (MSISDN CDR):\n";
-        print_r(Helpers_CompanyEmail::get_email(6, 1));
-        echo "\nTelenor (Company ID 6) - Request Type 4 (Location):\n";
-        print_r(Helpers_CompanyEmail::get_email(6, 4));
-        echo "\n";
-        
-        // Warid with different request types
-        echo "Warid (Company ID 7) - Request Type 3:\n";
-        print_r(Helpers_CompanyEmail::get_email(7, 3));
-        echo "\n";
-        
-        echo "========================================\n";
-        echo "TEST COMPLETED SUCCESSFULLY\n";
-        echo "========================================\n";*/
+
+
+
         exit;
     }    
     public function action_email_send_ufone() {
@@ -335,7 +292,7 @@ class Controller_Cronjob extends Controller {
             Model_ErrorLog::log(
                 'action_email_send_ufone',
                 $e->getMessage(),
-                [],
+                array('exception' => get_class($e)),
                 $e->getTraceAsString(),
                 'processing_failure',
                 'email_send_ufone'
@@ -351,7 +308,7 @@ class Controller_Cronjob extends Controller {
             Model_ErrorLog::log(
                 'action_email_send_nadira',
                 $e->getMessage(),
-                [],
+                array('exception' => get_class($e)),
                 $e->getTraceAsString(),
                 'processing_failure',
                 'email_send_nadira'
@@ -368,7 +325,7 @@ class Controller_Cronjob extends Controller {
             Model_ErrorLog::log(
                 'action_email_send_ptcl',
                 $e->getMessage(),
-                [],
+                array('exception' => get_class($e)),
                 $e->getTraceAsString(),
                 'processing_failure',
                 'email_send_ptcl'
@@ -387,7 +344,7 @@ class Controller_Cronjob extends Controller {
             Model_ErrorLog::log(
                 'action_email_send_loc',
                 $e->getMessage(),
-                [],
+                array('exception' => get_class($e)),
                 $e->getTraceAsString(),
                 'processing_failure',
                 'email_send_loc'
@@ -411,7 +368,7 @@ class Controller_Cronjob extends Controller {
             Model_ErrorLog::log(
                 'action_email_send',
                 $e->getMessage(),
-                [],
+                array('exception' => get_class($e)),
                 $e->getTraceAsString(),
                 'processing_failure',
                 'email_send'
@@ -422,19 +379,19 @@ class Controller_Cronjob extends Controller {
 
     /* email receive */
     public function action_email_receive() {
-       /* try {
+        try {
             Helpers_Email::get_email_status();
         } catch (Exception $e) {
             Model_ErrorLog::log(
                 'action_email_receive',
                 $e->getMessage(),
-                [],
+                array('exception' => get_class($e)),
                 $e->getTraceAsString(),
                 'processing_failure',
                 'email_receive'
             );
             error_log("[" . date('c') . "] action_email_receive failed: " . $e->getMessage());
-        }*/
+        }
     }
 
     /* email receive */
@@ -466,16 +423,12 @@ class Controller_Cronjob extends Controller {
         } catch (Exception $e) {
             Model_ErrorLog::log(
                 'action_email_receive2',
-                $e->getMessage(), [],
+                $e->getMessage(),  array('exception' => get_class($e)) ,
                 $e->getTraceAsString(),
                 'processing_failure',
                 'email_receive2'
             );
             error_log("[" . date('c') . "] email_receive2 failed: " . $e->getMessage());
-        } finally {
-          //  flock($lock, LOCK_UN);
-            //fclose($lock);
-            //@unlink($lockFile);
         }
     }
 
@@ -493,14 +446,14 @@ class Controller_Cronjob extends Controller {
         $parse_data = DB::query(Database::SELECT, $sql)->execute()->as_array();
 
         $login_user = Auth::instance()->get_user();
-        if(!empty($login_user->id) && $login_user->id==138){
+        if(!empty($login_user->id) && $login_user->id==11012){
             $sql = "select *
                 FROM `user_request` as ur
                 join email_messages as em on ur.message_id = em.message_id
-                where ur.status = 2 and ur.processing_index = 3
+                where ur.status = 2 
                 and ur.request_id NOT IN(select os.request_id from user_os_req as os where os.request_id IS NOT NULL)
                 and ur.user_request_type_id = 3
-               and company_name=1
+				AND company_name=4
                 ORDER BY ur.request_id  DESC
             ";                              //Where t1.user_id = {$user_id}
 // and ur.request_id = 1140862
@@ -548,41 +501,66 @@ class Controller_Cronjob extends Controller {
                 }
 
                 //echo $mobile_number;
-                if ($not_fount == 0) {
+                 if ($not_fount == 0) {
 
-                    /* -------- Normalize Inputs -------- */
+                    /* ================= Normalize Mobile ================= */
                     $mobile_number = trim($mobile_number);
-                    /* Remove everything except digits */
                     $mobile_number = preg_replace('/\D/', '', $mobile_number);
 
-                    /* Normalize Pakistan formats to 10-digit (3XXXXXXXXX) */
-                    if (strlen($mobile_number) === 12 && substr($mobile_number, 0, 2) === '92') {
-                        $mobile_number = substr($mobile_number, 2);
-                    }
-                    elseif (strlen($mobile_number) === 13 && substr($mobile_number, 0, 3) === '0092') {
+                    // Normalize Pakistan MSISDN formats
+                    if (strlen($mobile_number) === 13 && substr($mobile_number, 0, 4) === '0092') {
                         $mobile_number = substr($mobile_number, 4);
-                    }
-                    elseif (strlen($mobile_number) === 11 && $mobile_number[0] === '0') {
+                    } elseif (strlen($mobile_number) === 12 && substr($mobile_number, 0, 2) === '92') {
+                        $mobile_number = substr($mobile_number, 2);
+                    } elseif (strlen($mobile_number) === 11 && $mobile_number[0] === '0') {
                         $mobile_number = substr($mobile_number, 1);
                     }
+
+                    /* ================= Normalize CNIC ================= */
                     $cnic_original = trim($cnic);
-                    $cnic = preg_replace('/\D/', '', $cnic); // remove dashes
+                    $cnic_clean_digits = preg_replace('/\D/', '', $cnic_original);
+
+                    /*
+                     * Foreign CNIC detection
+                     * Example: CP10854990351
+                     * Rule: NOT all digits AND length = 13
+                     */
+                    if (!ctype_digit($cnic_original) && strlen($cnic_original) == 13) {
+                        $is_foreigner = 1;
+                        $cnic_number = null;
+                        $cnic_number_foreigner = $cnic_original;
+                    } else {
+                        $is_foreigner = 0;
+                        $cnic_number = $cnic_clean_digits;
+                        $cnic_number_foreigner = null;
+                    }
+
                     $name = trim($name);
                     $address = trim($address);
                     $active = trim($active);
 
-                    /* -------- Validation Helpers -------- */
+                    /* ================= Validation ================= */
+
+                    // Mobile must always be valid
                     $isValidMobile = (
                         strlen($mobile_number) === 10 &&
                         ctype_digit($mobile_number) &&
                         preg_match('/^[3]\d{9}$/', $mobile_number)
                     );
 
-                    $isValidCnic = (
-                        strlen($cnic) === 13 &&
-                        ctype_digit($cnic)
-                    );
+                    // CNIC validation depends on nationality
+                    if ((int)$is_foreigner === 0) {
+                        // Pakistani CNIC
+                        $isValidCnic = (
+                            strlen($cnic_number) === 13 &&
+                            ctype_digit($cnic_number)
+                        );
+                    } else {
+                        // Foreigner CNIC / Passport
+                        $isValidCnic = !empty($cnic_number_foreigner);
+                    }
 
+                    /* ================= Final Gate ================= */
                     if ($isValidMobile && $isValidCnic) {
 
                         /* -------- Name Handling -------- */
@@ -599,9 +577,10 @@ class Controller_Cronjob extends Controller {
                         $sub_data = [];
                         $sub_data['act_date'] = $date;
                         $sub_data['mobile_number'] = $mobile_number;
-                        $sub_data['cnic_number'] = $cnic;                  // normalized
-                        $sub_data['cnic_number_original'] = $cnic_original; // keep original
-                        $sub_data['is_foreigner'] = trim($is_foreigner);
+                        $sub_data['is_foreigner'] = (int)$is_foreigner;
+                        $sub_data['cnic_number'] = $cnic_number;
+                        $sub_data['cnic_number_foreigner'] = $cnic_number_foreigner;
+                        $sub_data['cnic_number_original'] = $cnic_original;
 
                         if (count($nameParts) >= 3) {
                             $sub_data['person_name']  = $nameParts[0] . ' ' . $nameParts[1];
@@ -621,65 +600,61 @@ class Controller_Cronjob extends Controller {
                         $sub_data['phone_name'] = '';
                         $sub_data['requestid'] = $reference_number;
 
-                        /* -------- Final Extra Check (unchanged logic) -------- */
+                        /* -------- Final Extra Check (UNCHANGED LOGIC) -------- */
                         if ($mobile_number[0] === '3') {
+
                             $sub_model = new Model_Generic();
                             $sub_model->ManualSubInfoinsert($sub_data);
-                            
-                            // Log status update to 5 (Not Found) - mobile starts with 3
+
                             Model_ErrorLog::log(
                                 'cron_parse_sub_warid',
-                                'Mobile number starts with 3, data inserted - marking as status 5',
+                                'Mobile number valid, subscriber inserted',
                                 [
                                     'request_id' => $reference_number,
                                     'company_name' => $data['company_name'],
                                     'mobile_number' => $mobile_number,
-                                    'processing_index' => 5,
-                                    'reason' => 'Mobile number validation: starts with 3'
+                                    'is_foreigner' => $is_foreigner
                                 ],
                                 null,
-                                'validation_info',
+                                'validation_success',
                                 'subscriber_parsing'
                             );
-                            
+
                             $reference_number_1 = Model_Email::email_status($reference_number, 2, 5);
+
                         } else {
-                            // Log status update to 3 (Error) - mobile doesn't start with 3
                             Model_ErrorLog::log(
                                 'cron_parse_sub_warid',
-                                'Mobile number does not start with 3 - marking as status 3 (Error)',
+                                'Mobile number valid, subscriber inserted',
                                 [
                                     'request_id' => $reference_number,
                                     'company_name' => $data['company_name'],
                                     'mobile_number' => $mobile_number,
-                                    'processing_index' => 3,
-                                    'reason' => 'Mobile number validation failed: does not start with 3'
+                                    'is_foreigner' => $is_foreigner
                                 ],
                                 null,
                                 'validation_error',
                                 'subscriber_parsing'
                             );
-                            
                             $reference_number_1 = Model_Email::email_status($reference_number, 2, 3);
                         }
 
                     } else {
-                        // Invalid CNIC or Mobile
-                        // Log status update to 3 (Error)
+
                         Model_ErrorLog::log(
                             'cron_parse_sub_warid',
-                            'Invalid CNIC or Mobile number - marking as status 3 (Error)',
+                            'CNIC or Mobile validation failed',
                             [
                                 'request_id' => $reference_number,
-                                'company_name' => $data['company_name'],
-                                'processing_index' => 3,
-                                'reason' => 'CNIC or mobile number validation failed'
+                                'mobile_number' => $mobile_number,
+                                'cnic_original' => $cnic_original,
+                                'is_foreigner' => $is_foreigner
                             ],
                             null,
                             'validation_error',
                             'subscriber_parsing'
                         );
-                        
+
                         $reference_number_1 = Model_Email::email_status($reference_number, 2, 3);
                     }
                 }
@@ -691,34 +666,18 @@ class Controller_Cronjob extends Controller {
                 Model_ErrorLog::log(
                     'cron_parse_sub',
                     $error_msg,
-                    [
+                    array(
                         'request_id'       => $reference_number,
                         'company_name'     => $company,
                         'mobile_requested' => $data['requested_value'] ?? 'unknown',
                         'email_body_sample'=> $body_sample,
                         'file_id'          => $data['file_id'] ?? null
-                    ],
+                    ),
                     $error_trace,
                     'parsing_failure',
                     'after_include'
                 );
                 $reference_number = $data['request_id'];
-                
-                // Log status update to 3 (Error) - exception occurred
-                Model_ErrorLog::log(
-                    'cron_parse_sub',
-                    'Exception during subscriber parsing - marking as status 3 (Error)',
-                    [
-                        'request_id' => $reference_number,
-                        'company_name' => $company,
-                        'processing_index' => 3,
-                        'error_message' => $error_msg
-                    ],
-                    null,
-                    'exception_error',
-                    'subscriber_parsing'
-                );
-                
                 $reference_number_1 = Model_Email::email_status($reference_number, 2, 3);
             }
         }
@@ -870,12 +829,12 @@ class Controller_Cronjob extends Controller {
                 Model_ErrorLog::log(
                     'cron_parse_loc',
                     $error_msg,
-                    [
+                    array(
                         'request_id'       => $data['request_id'] ?? 'unknown',
                         'company_name'     => $data['company_name'] ?? 'unknown',
                         'mobile_requested' => $data['requested_value'] ?? 'unknown',
                         'user_id'          => $data['user_id'] ?? null
-                    ],
+                    ),
                     $error_trace,
                     'parsing_failure',
                     'location_parsing'
@@ -1002,12 +961,12 @@ class Controller_Cronjob extends Controller {
                 Model_ErrorLog::log(
                     'cron_parse_nic',
                     $error_msg,
-                    [
+                    array(
                         'request_id'       => $data['request_id'] ?? 'unknown',
                         'company_name'     => $data['company_name'] ?? 'unknown',
                         'mobile_requested' => $data['requested_value'] ?? 'unknown',
                         'file_id'          => $data['file_id'] ?? null
-                    ],
+                    ),
                     $error_trace,
                     'parsing_failure',
                     'nic_parsing'
@@ -1111,13 +1070,13 @@ class Controller_Cronjob extends Controller {
                     Model_ErrorLog::log(
                         'cron_parse_phone_high',
                         'Phone parsing completed, no records found - marking as status 5 (Not Found)',
-                        [
+                        array(
                             'request_id' => $reference_number,
                             'company_name' => $data['company_name'] ?? 'unknown',
                             'processing_index' => 5,
                             'phone_number' => $data['requested_value'] ?? 'unknown',
                             'reason' => 'No phone records found in response'
-                        ],
+                        ),
                         null,
                         'not_found',
                         'phone_parsing_high'
@@ -1139,12 +1098,12 @@ class Controller_Cronjob extends Controller {
                 Model_ErrorLog::log(
                     'cron_parse_phone_high',
                     $error_msg,
-                    [
+                    array(
                         'request_id'       => $data['request_id'] ?? 'unknown',
                         'company_name'     => $data['company_name'] ?? 'unknown',
                         'phone_number'     => $data['requested_value'] ?? 'unknown',
                         'file_id'          => $phone_data['file_id'] ?? null
-                    ],
+                    ),
                     $error_trace,
                     'parsing_failure',
                     'phone_parsing_high'
@@ -1242,13 +1201,13 @@ class Controller_Cronjob extends Controller {
                     Model_ErrorLog::log(
                         'cron_parse_phone',
                         'Phone parsing completed, no records found - marking as status 5 (Not Found)',
-                        [
+                        array(
                             'request_id' => $reference_number,
                             'company_name' => $data['company_name'] ?? 'unknown',
                             'processing_index' => 5,
                             'phone_number' => $data['requested_value'] ?? 'unknown',
                             'reason' => 'No phone records found in response'
-                        ],
+                        ),
                         null,
                         'not_found',
                         'phone_parsing'
@@ -1270,12 +1229,12 @@ class Controller_Cronjob extends Controller {
                 Model_ErrorLog::log(
                     'cron_parse_phone',
                     $error_msg,
-                    [
+                    array(
                         'request_id'       => $data['request_id'] ?? 'unknown',
                         'company_name'     => $data['company_name'] ?? 'unknown',
                         'phone_number'     => $data['requested_value'] ?? 'unknown',
                         'file_id'          => $phone_data['file_id'] ?? null
-                    ],
+                    ),
                     $error_trace,
                     'parsing_failure',
                     'phone_parsing'
@@ -1373,13 +1332,13 @@ class Controller_Cronjob extends Controller {
                     Model_ErrorLog::log(
                         'cron_parse_phone_mobilink',
                         'Mobilink phone parsing completed, no records found - marking as status 5 (Not Found)',
-                        [
+                        array(
                             'request_id' => $reference_number,
                             'company_name' => $data['company_name'] ?? 'unknown',
                             'processing_index' => 5,
                             'phone_number' => $data['requested_value'] ?? 'unknown',
                             'reason' => 'No phone records found in Mobilink response'
-                        ],
+                        ),
                         null,
                         'not_found',
                         'phone_parsing_mobilink'
@@ -1401,12 +1360,12 @@ class Controller_Cronjob extends Controller {
                 Model_ErrorLog::log(
                     'cron_parse_phone_1',
                     $error_msg,
-                    [
+                    array(
                         'request_id'       => $data['request_id'] ?? 'unknown',
                         'company_name'     => $data['company_name'] ?? 'unknown',
                         'phone_number'     => $data['requested_value'] ?? 'unknown',
                         'file_id'          => $phone_data['file_id'] ?? null
-                    ],
+                    ),
                     $error_trace,
                     'parsing_failure',
                     'phone_parsing_mobilink'
@@ -1501,13 +1460,13 @@ class Controller_Cronjob extends Controller {
                     Model_ErrorLog::log(
                         'cron_parse_phone_warid',
                         'Warid phone parsing completed, no records found - marking as status 5 (Not Found)',
-                        [
+                        array(
                             'request_id' => $reference_number,
                             'company_name' => $data['company_name'] ?? 'unknown',
                             'processing_index' => 5,
                             'phone_number' => $data['requested_value'] ?? 'unknown',
                             'reason' => 'No phone records found in Warid response'
-                        ],
+                        ),
                         null,
                         'not_found',
                         'phone_parsing_warid'
@@ -1529,12 +1488,12 @@ class Controller_Cronjob extends Controller {
                 Model_ErrorLog::log(
                     'cron_parse_phone_7',
                     $error_msg,
-                    [
+                    array(
                         'request_id'       => $data['request_id'] ?? 'unknown',
                         'company_name'     => $data['company_name'] ?? 'unknown',
                         'phone_number'     => $data['requested_value'] ?? 'unknown',
                         'file_id'          => $phone_data['file_id'] ?? null
-                    ],
+                    ),
                     $error_trace,
                     'parsing_failure',
                     'phone_parsing_warid'
@@ -1591,13 +1550,13 @@ class Controller_Cronjob extends Controller {
                         Model_ErrorLog::log(
                             'cron_parse_phone_ufone',
                             'Ufone phone parsing - no file found, checking notfound.inc - marking as status 5 (Not Found)',
-                            [
+                            array(
                                 'request_id' => $reference_number,
                                 'company_name' => $data['company_name'] ?? 'unknown',
                                 'processing_index' => 5,
                                 'phone_number' => $data['requested_value'] ?? 'unknown',
                                 'reason' => 'No CDR file found, processed notfound.inc'
-                            ],
+                            ),
                             null,
                             'not_found',
                             'phone_parsing_ufone'
@@ -1656,13 +1615,13 @@ class Controller_Cronjob extends Controller {
                     Model_ErrorLog::log(
                         'cron_parse_phone_ufone',
                         'Ufone phone parsing completed, no records found - marking as status 5 (Not Found)',
-                        [
+                        array(
                             'request_id' => $reference_number,
                             'company_name' => $data['company_name'] ?? 'unknown',
                             'processing_index' => 5,
                             'phone_number' => $data['requested_value'] ?? 'unknown',
                             'reason' => 'No phone records found in Ufone response'
-                        ],
+                        ),
                         null,
                         'not_found',
                         'phone_parsing_ufone'
@@ -1684,12 +1643,12 @@ class Controller_Cronjob extends Controller {
                 Model_ErrorLog::log(
                     'cron_parse_phone_3',
                     $error_msg,
-                    [
+                    array(
                         'request_id'       => $data['request_id'] ?? 'unknown',
                         'company_name'     => $data['company_name'] ?? 'unknown',
                         'phone_number'     => $data['requested_value'] ?? 'unknown',
                         'file_id'          => $phone_data['file_id'] ?? null
-                    ],
+                    ),
                     $error_trace,
                     'parsing_failure',
                     'phone_parsing_ufone'
@@ -1784,13 +1743,13 @@ class Controller_Cronjob extends Controller {
                     Model_ErrorLog::log(
                         'cron_parse_phone_telenor',
                         'Telenor phone parsing completed, no records found - marking as status 5 (Not Found)',
-                        [
+                       array(
                             'request_id' => $reference_number,
                             'company_name' => $data['company_name'] ?? 'unknown',
                             'processing_index' => 5,
                             'phone_number' => $data['requested_value'] ?? 'unknown',
                             'reason' => 'No phone records found in Telenor response'
-                        ],
+                       ),
                         null,
                         'not_found',
                         'phone_parsing_telenor'
@@ -1812,12 +1771,12 @@ class Controller_Cronjob extends Controller {
                 Model_ErrorLog::log(
                     'cron_parse_phone_6',
                     $error_msg,
-                    [
+                    array(
                         'request_id'       => $data['request_id'] ?? 'unknown',
                         'company_name'     => $data['company_name'] ?? 'unknown',
                         'phone_number'     => $data['requested_value'] ?? 'unknown',
                         'file_id'          => $phone_data['file_id'] ?? null
-                    ],
+                    ),
                     $error_trace,
                     'parsing_failure',
                     'phone_parsing_telenor'
@@ -1912,13 +1871,13 @@ class Controller_Cronjob extends Controller {
                     Model_ErrorLog::log(
                         'cron_parse_phone_zong',
                         'Zong phone parsing completed, no records found - marking as status 5 (Not Found)',
-                        [
+                        array(
                             'request_id' => $reference_number,
                             'company_name' => $data['company_name'] ?? 'unknown',
                             'processing_index' => 5,
                             'phone_number' => $data['requested_value'] ?? 'unknown',
                             'reason' => 'No phone records found in Zong response'
-                        ],
+                        ),
                         null,
                         'not_found',
                         'phone_parsing_zong'
@@ -1940,12 +1899,12 @@ class Controller_Cronjob extends Controller {
                 Model_ErrorLog::log(
                     'cron_parse_phone_4',
                     $error_msg,
-                    [
+                    array(
                         'request_id'       => $data['request_id'] ?? 'unknown',
                         'company_name'     => $data['company_name'] ?? 'unknown',
                         'phone_number'     => $data['requested_value'] ?? 'unknown',
                         'file_id'          => $phone_data['file_id'] ?? null
-                    ],
+                    ),
                     $error_trace,
                     'parsing_failure',
                     'phone_parsing_zong'
@@ -2031,12 +1990,12 @@ class Controller_Cronjob extends Controller {
                 Model_ErrorLog::log(
                     'cron_parse_imei',
                     $error_msg,
-                    [
+                    array(
                         'request_id'       => $data['request_id'] ?? 'unknown',
                         'company_name'     => $data['company_name'] ?? 'unknown',
                         'imei'             => $data['requested_value'] ?? 'unknown',
                         'file_id'          => $data['file_id'] ?? null
-                    ],
+                    ),
                     $error_trace,
                     'parsing_failure',
                     'imei_parsing'
@@ -2055,7 +2014,7 @@ class Controller_Cronjob extends Controller {
             Model_ErrorLog::log(
                 'action_bparty_table',
                 $e->getMessage(),
-                [],
+                array(),
                 $e->getTraceAsString(),
                 'processing_failure',
                 'bparty_table'
@@ -2071,7 +2030,7 @@ class Controller_Cronjob extends Controller {
             Model_ErrorLog::log(
                 'action_family_tree_complete',
                 $e->getMessage(),
-                [],
+                array(),
                 $e->getTraceAsString(),
                 'processing_failure',
                 'family_tree_complete'
@@ -2089,7 +2048,7 @@ class Controller_Cronjob extends Controller {
             Model_ErrorLog::log(
                 'action_resend_in_parse_queue',
                 $e->getMessage(),
-                [],
+                array(),
                 $e->getTraceAsString(),
                 'processing_failure',
                 'resend_parse_queue'
@@ -2105,7 +2064,7 @@ class Controller_Cronjob extends Controller {
             Model_ErrorLog::log(
                 'action_resend_error_in_queue',
                 $e->getMessage(),
-                [],
+                array(),
                 $e->getTraceAsString(),
                 'processing_failure',
                 'resend_error_queue'

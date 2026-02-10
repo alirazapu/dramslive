@@ -380,7 +380,7 @@ if (!empty($_GET['accessmessage'])) {
                 }
             });
             var marquee = $(".marquee").html();
-            $(".marquee").html('<p><b>CTD Punjab,</b> We are delighted to welcome you here at AIES</p> <p> AIES is a unique and intelligent tool that performs in-depth analysis </p><p>Link Analysis is one of the most leading feature of the software</p><p>Efficiency CDR analysis from different perspective</p>');
+            $(".marquee").html('<p><b>CTD KPK,</b> We are delighted to welcome you here at AIES</p> <p> AIES is a unique and intelligent tool that performs in-depth analysis </p><p>Link Analysis is one of the most leading feature of the software</p><p>Efficiency CDR analysis from different perspective</p>');
             /*  $.ajax({
              url: "<?php //echo URL::site("Userdashboard/respone_check");  ?>",
              //type: 'POST',

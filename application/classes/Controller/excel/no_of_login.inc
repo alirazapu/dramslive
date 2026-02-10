@@ -51,7 +51,7 @@ if (isset($_POST['xport']) && $_POST['xport'] == 'excel') {
     $data1 = $data->no_of_login($post, 'false');
     $data = array(
         'Users' => array(
-            1 => array('', 'CTD Punjab ( User\'s Login Details)', '', ''),
+            1 => array('', 'CTD KPK ( User\'s Login Details)', '', ''),
             2 => array('User ID', 'User Name', 'User Type','Designation', 'Posting','Last Login', 'No of login'),
         ),
     );

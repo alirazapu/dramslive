@@ -124,7 +124,26 @@ class Controller_Admindatabank extends Controller_Working
             echo json_encode($output);
             exit();
         } catch (Exception $ex) {
-
+            Model_ErrorLog::log(
+                'ajaxusernadrarequests_databank',
+                'Failed to fetch user NADRA requests: ' . $ex->getMessage(),
+                [
+                    'user_logged_in' => Auth::instance()->logged_in() ? 'yes' : 'no'
+                ],
+                $ex->getTraceAsString(),
+                'ajax_request_error',
+                'data_fetch',
+                'error'
+            );
+            // Return error to AJAX call
+            echo json_encode([
+                'sEcho' => isset($_GET['sEcho']) ? intval($_GET['sEcho']) : 1,
+                'iTotalRecords' => 0,
+                'iTotalDisplayRecords' => 0,
+                'aaData' => [],
+                'error' => 'An error occurred while fetching data'
+            ]);
+            exit();
         }
     }
 

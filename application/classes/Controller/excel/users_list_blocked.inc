@@ -52,7 +52,7 @@ if (isset($_POST['xport']) && $_POST['xport'] == 'excel') {
     $data1 = $data->user_list_blocked($post, 'false');
     $data = array(
         'Users' => array(
-            1 => array( '', '', 'CTD Punjab (User List)', '', '', '', ''),
+            1 => array( '', '', 'CTD KPK (User List)', '', '', '', ''),
             2 => array('Full Name', 'User Type', 'Designation', 'Posting', 'Mobile','Block Reason'),
         ),
     );

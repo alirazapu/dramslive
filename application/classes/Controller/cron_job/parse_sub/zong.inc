@@ -59,7 +59,7 @@ $parse_val=$array_parse;
 $test_string = str_replace('-','', $first_string[0]);
 if((trim($test_string)== trim($parse_val[0])) && sizeof($parse_val)==1 )
 {
-    $parse_val = explode('CTD Punjab',strip_tags($first_string[1]));
+    $parse_val = explode('CTD KPK',strip_tags($first_string[1]));
     $parse_val = str_replace('CNIC','',  strtoupper($parse_val[1]));
     $parse_val = str_replace('*','',  strtoupper($parse_val));
     $parse_val = array_filter(explode(PHP_EOL,strip_tags($parse_val)));

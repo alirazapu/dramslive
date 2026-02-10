@@ -53,7 +53,7 @@ if(isset($_POST['xport']) && $_POST['xport']=='excel')
                     $data1 = $data->b_party($post, 'false', $pid);
                             $data = array(
                                      'Users' => array(
-                                             1 => array('','CTD Punjab (B Party)/'.$pname,'',''),
+                                             1 => array('','CTD KPK (B Party)/'.$pname,'',''),
                                              2 => array( 'B Party', 'SMS Count','Call Count','Total'),
                                      ),
 

@@ -67,11 +67,11 @@ define('DOCUMENT_ROOT', $doc_root . DS);
 define('PROJECT_ROOT',  $project_root);
 
 // Directory constants
-define('UFONE_FILES',   PROJECT_ROOT . 'dramsfiles' . DS . 'ufone_tem_files' . DS);
-define('UPLOADS_DIR',   PROJECT_ROOT . 'uploads' . DS);
-define('TEMPLATES_DIR', PROJECT_ROOT . 'templates' . DS);
-define('EXPORTS_DIR',   PROJECT_ROOT . 'exports' . DS);
-define('TEMP_DIR',      PROJECT_ROOT . 'temp' . DS);
+define('UFONE_FILES',   PROJECT_ROOT .  'drams' . DS . 'dramsfiles' . DS . 'ufone_tem_files' . DS);
+define('UPLOADS_DIR',   PROJECT_ROOT .  'drams' . DS . 'uploads' . DS);
+define('TEMPLATES_DIR', PROJECT_ROOT .  'drams' . DS . 'application' .DS. 'views' . DS. 'templates' . DS);
+define('EXPORTS_DIR',   PROJECT_ROOT .  'drams' . DS . 'dramsfiles' . DS. 'exports' . DS);
+define('TEMP_DIR',      PROJECT_ROOT  . 'drams' . DS . 'dramsfiles' . DS .'temp' . DS);
 
 define('FAMILYTREE_TERMP_IMAGES',   UPLOADS_DIR . 'familytree_temp_images' . DS);
 define('TRAVELHISTORY_TERMP_IMAGES', UPLOADS_DIR . 'travelhistory_temp_images' . DS);
@@ -132,6 +132,91 @@ Kohana::init([
 // Logging & Config
 Kohana::$log->attach(new Log_File(APPPATH . 'logs'));
 Kohana::$config->attach(new Config_File);
+
+// -----------------------------------------------------------------------------
+// Framework-Level Error & Exception Logging (Production)
+// -----------------------------------------------------------------------------
+if (Kohana::$environment === Kohana::PRODUCTION) {
+    // Custom error handler for production
+    set_error_handler(function($errno, $errstr, $errfile, $errline) {
+        // Don't log suppressed errors (@-operator)
+        if (!(error_reporting() & $errno)) {
+            return false;
+        }
+        
+        $error_types = [
+            E_ERROR => 'error',
+            E_WARNING => 'warning',
+            E_PARSE => 'error',
+            E_NOTICE => 'warning',
+            E_CORE_ERROR => 'error',
+            E_CORE_WARNING => 'warning',
+            E_COMPILE_ERROR => 'error',
+            E_COMPILE_WARNING => 'warning',
+            E_USER_ERROR => 'error',
+            E_USER_WARNING => 'warning',
+            E_USER_NOTICE => 'info',
+            E_STRICT => 'info',
+            E_RECOVERABLE_ERROR => 'error',
+            E_DEPRECATED => 'warning',
+            E_USER_DEPRECATED => 'warning',
+        ];
+        
+        $severity = isset($error_types[$errno]) ? $error_types[$errno] : 'error';
+        
+        // Log to Model_ErrorLog
+        Model_ErrorLog::log(
+            'php_error',
+            $errstr,
+            [
+                'file' => $errfile,
+                'line' => $errline,
+                'error_code' => $errno
+            ],
+            null,
+            'runtime_error',
+            'framework',
+            $severity
+        );
+        
+        // Don't execute PHP internal error handler
+        return true;
+    });
+    
+    // Custom exception handler for production
+    set_exception_handler(function($exception) {
+        // Fallback to error_log first, in case Model_ErrorLog fails
+        error_log("[" . date('c') . "] Uncaught Exception: " . $exception->getMessage());
+        error_log("File: " . $exception->getFile() . " Line: " . $exception->getLine());
+        
+        // Try to log to database, but don't fail if it doesn't work
+        try {
+            Model_ErrorLog::log(
+                'php_exception',
+                $exception->getMessage(),
+                [
+                    'file' => $exception->getFile(),
+                    'line' => $exception->getLine(),
+                    'exception_class' => get_class($exception)
+                ],
+                $exception->getTraceAsString(),
+                'uncaught_exception',
+                'framework',
+                'error'
+            );
+        } catch (Exception $logException) {
+            // If logging fails, just log to error_log
+            error_log("[" . date('c') . "] Failed to log exception to database: " . $logException->getMessage());
+        }
+        
+        // Show generic error page to user
+        if (!headers_sent()) {
+            header('HTTP/1.1 500 Internal Server Error');
+            echo '<h1>An error occurred</h1><p>The error has been logged and will be reviewed.</p>';
+        }
+        exit(1);
+    });
+}
 
 // Modules
 Kohana::modules([

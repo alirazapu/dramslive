@@ -41,16 +41,19 @@ class Controller_Working extends Controller_Template {
 							{
 								$user = ORM::factory('User', $user);
 							}
+        if(isset($user->id)) {
+            $this->role_id = Helpers_Utilities::get_user_role_id($user->id);
+            //  Session::instance('native');
+            if (!empty($user->id))
+                Helpers_Utilities::inactive_user($user->id);
 
-        $this->role_id = Helpers_Utilities::get_user_role_id($user->id);
-      //  Session::instance('native');
-        if (!empty($user->id))
-            Helpers_Utilities::inactive_user($user->id);
-
-        if (!$user) {
-            Session::instance()->regenerate();
+            if (!$user) {
+                Session::instance()->regenerate();
+                $this->redirect();
+            }
+        }else{
             $this->redirect();
-        }        
+        }
     }
 
     public function after() {

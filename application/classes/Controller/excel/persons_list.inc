@@ -53,7 +53,7 @@ if(isset($_POST['xport']) && $_POST['xport']=='excel')
                     $data1 = $data->persons_list($post, 'false');                                                      
                             $data = array(
                                      'Users' => array(
-                                             1 => array('','','CTD Punjab ( Person\'s List)','',''),
+                                             1 => array('','','CTD KPK ( Person\'s List)','',''),
                                              2 => array('Person Name', 'Father Name','CNIC','Address','Category'),
                                      ),
 

@@ -52,7 +52,7 @@ if (isset($_POST['xport']) && $_POST['xport'] == 'excel') {
     $data1 = $data->telco_request_summary($post, 'false');
     $data = array(
         'Users' => array(
-            1 => array('', '', '', 'CTD Punjab (Telco Response)', '', '', ''),
+            1 => array('', '', '', 'CTD KPK (Telco Response)', '', '', ''),
             2 => array('Date', 'Company Name', 'High', 'Medium', 'Low', 'Total'),
         ),
     );

@@ -20,13 +20,6 @@ class Controller_Persons extends Controller_Working
                 $mail->IsHTML(true);
                 $mail->Username = "reg745964@gmail.com";
                 $mail->Password = "Pakistan92";
-                //$mail->SetFrom ("test@gmail.com");
-                // $mail->From = "from@example.com";
-                $mail->FromName = "Sajid Tiger";
-                //$mail->setFrom('test@gmail.com', 'CTD Punjab');
-                //$mail->Subject = "Test 2";
-                //$mail->Body = "hello test";
-                //$mail->AddAddress("test@gmail.com ");
                 $mail->Subject = "testing total number of email " . $i;
                 $mail->Body = "testing total number of email";
                 $mail->AddAddress("ali.razapu+persontest@gmail.com");

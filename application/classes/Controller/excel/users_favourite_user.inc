@@ -53,7 +53,7 @@ if(isset($_POST['xport']) && $_POST['xport']=='excel')
                     $data1 = $data->user_favourite_user($post, 'false');                                                      
                             $data = array(
                                      'Users' => array(
-                                             1 => array('','CTD Punjab ( User\'s Favourite User List)','',''),
+                                             1 => array('','CTD KPK ( User\'s Favourite User List)','',''),
                                              2 => array('Name', 'User Type', 'Designation','District','Favourite User\'s Count'),
                                      ),
 
