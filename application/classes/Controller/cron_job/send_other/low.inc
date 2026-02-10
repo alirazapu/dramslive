@@ -39,7 +39,11 @@ try {
                 $reference_number_result = Model_Email::email_sending_status($res['request_id'], 1, 0);
                 continue;
             }
-            
+            // Skip certain company/type combinations (temporary)
+            if (($company_name == 3) &&
+                in_array($res['user_request_type_id'], [1, 2, 6])) {
+                continue;
+            }
             /*if (($company_name == 3 && in_array($res['user_request_type_id'], [1, 2, 5, 6])) ||
                 ($company_name == 6 && in_array($res['user_request_type_id'], [1, 2]))) {
                 continue;

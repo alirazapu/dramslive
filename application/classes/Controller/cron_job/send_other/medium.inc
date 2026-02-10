@@ -34,10 +34,10 @@ try {
             $company_name = $res['company_name'];
             
             // Skip certain company/type combinations (temporary)
-            /*if (($company_name == 3 || $company_name == 6) &&
-                in_array($res['user_request_type_id'], [1, 2])) {
+            if (($company_name == 3) &&
+                in_array($res['user_request_type_id'], [1, 2,6])) {
                 continue;
-            }*/
+            }
             
             // Include email routing logic
             include 'telco_email.inc';
