@@ -71,13 +71,22 @@ class Kohana_Auth_ORM extends Auth {
 	 */
 	protected function _login($user, $password, $remember, $type='students')
 	{
-		if ( ! is_object($user))
-		{
-			$username = $user;
 
-			// Load the user
-			$user = ORM::factory('User');
-			$user->where($user->unique_key($username), '=', $username)->find();
+		if (!is_object($user))
+		{
+    	$username = $user;
+
+		$user = ORM::factory('User')
+			->select('user.*')                              // all user columns
+			->select('roles_users.role_id')                 // role_id from pivot
+			->select(array('roles.id', 'role_id_from_roles'))
+			->select(array('roles.name', 'role_name'))      // role name
+			->join('roles_users', 'INNER')
+				->on('roles_users.user_id', '=', 'user.id')
+			->join('roles', 'INNER')
+				->on('roles.id', '=', 'roles_users.role_id')
+			->where('user.username', '=', $username)
+			->find();
 		}
 
 		if (is_string($password))
@@ -96,7 +105,7 @@ class Kohana_Auth_ORM extends Auth {
 6 = CIS + CTFU
  */
 		// If the passwords match, perform a login
-		if ($user->has('roles', ORM::factory('Role', array('name' => $type))) AND $user->password === $password AND ($user->login_sites==0 || $user->login_sites==2 || $user->login_sites==4 || $user->login_sites==5))
+		if ($user->has('roles', ORM::factory('Role', array('name' => $user->role_name))) AND $user->password === $password AND ($user->login_sites==0 || $user->login_sites==2 || $user->login_sites==4 || $user->login_sites==5))
 		{
 			if ($remember === TRUE)
 			{

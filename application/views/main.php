@@ -66,9 +66,9 @@
             <span class="glyphicon glyphicon-lock form-control-feedback"></span>
         </div>
 
-        <div class="form-group">
+        <!-- <div class="form-group">
             <label>Who You Are?</label>
-            <select name="type" class="form-control" required>
+            <select name="type" class="form-control" >
                 <option value="">Please Select Type</option>
                 <?php foreach ($roles as $role): ?>
                     <option value="<?= HTML::chars($role->name); ?>">
@@ -76,7 +76,7 @@
                     </option>
                 <?php endforeach; ?>
             </select>
-        </div>
+        </div> -->
 
         <div class="row">
             <div class="col-xs-12">
