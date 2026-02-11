@@ -18,3 +18,4 @@ httpd.conf
 user-dtsrc-202601151514.sql
 dramsfiles/*
 uploads/htaccess/index.php
+application/config/database.php
