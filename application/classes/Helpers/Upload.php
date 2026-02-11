@@ -1652,8 +1652,8 @@ abstract class Helpers_Upload {
        // print_r($request_subfolder_path); exit;
         if ((!is_dir($request_subfolder_path)) && !empty($request_subfolder_path)) {
             mkdir("{$request_subfolder_path}", 0777);
-            copy($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'dist'.DS.'uploads'.DS.'htaccess'.DS.'.htaccess', $person_subfolder_path.'/.htaccess');
-            copy($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'dist'.DS.'uploads'.DS.'htaccess'.DS.'index.php', $person_subfolder_path.'/index.php');
+            copy($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'dist'.DS.'uploads'.DS.'htaccess'.DS.'.htaccess', $request_subfolder_path.'/.htaccess');
+            copy($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'dist'.DS.'uploads'.DS.'htaccess'.DS.'index.php', $request_subfolder_path.'/index.php');
         }
         
 
