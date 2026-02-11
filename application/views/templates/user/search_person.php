@@ -299,7 +299,7 @@
             requestdata = requestdata1 + ' ' + requestdata2;
              }
         } else if (imeinumber !== '' && imeinumber !== 0) {
-            requestdata = '"Information not found, <a  href="#" onclick="requestimeicdr('+imeinumber+')"> Click To Request CDR Against IMEI </a>"';
+            requestdata = '"Information not found, <a  href="#" onclick="requestimeicdr(\'' + imeinumber + '\')"> Click To Request CDR Against IMEI </a>"';
         }
         $.fn.dataTableExt.oApi.fnStandingRedraw = function (oSettings) {
             if (oSettings.oFeatures.bServerSide === false) {
@@ -465,9 +465,9 @@
     $(this).each (function() { this.reset(); });
   }
  //function to call request page for IMEI
-    function requestimeicdr(imei) {    
+    function requestimeicdr(imei) {
         var request = "new";
-        var url = window.location.href;        
+        var url = window.location.href;
         var newForm = jQuery('<form name="custom_form_cdr_imei" id="custom_form_bd_cdr_imei" action="<?php echo URL::site("userrequest/requestcdrimei"); ?>" method="POST">');
         newForm.append(jQuery('<input>', {
             'name': 'imei',
