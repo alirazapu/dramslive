@@ -586,9 +586,10 @@ class Controller_User extends Controller_Working {
                         $person_name = Helpers_Person::get_person_name($person_id);
                         $person_father_name = Helpers_Person::get_person_father_name($person_id);
                         $person_cnic = Helpers_Person::get_person_cnic($person_id);
-                        $url_path = "http://www.ims.ctdpunjab.com/frontcat/pid?cnic=" . (int)trim($person_cnic);                                            
+                        /*$url_path = "http://www.ims.ctdpunjab.com/frontcat/pid?cnic=" . (int)trim($person_cnic);
                         $url = file_get_contents($url_path);
-                        $wms_pid = !empty($url)? $url:'Not Found';
+                        $wms_pid = !empty($url)? $url:'Not Found';*/
+                        $wms_pid ='Not Found';
                         $login_user = Auth::instance()->get_user();
 
                         $access = Helpers_Person::sensitive_person_acl($login_user->id, $person_id);
@@ -3366,9 +3367,10 @@ class Controller_User extends Controller_Working {
                         }
                         $phone_number= !empty($item['phone_number'])?$item['phone_number']:'N/A';
 
-                        $url_path = "http://www.ims.ctdpunjab.com/frontcat/pid?cnic=" . (int)trim($cnic);                                            
+                        /*$url_path = "http://www.ims.ctdpunjab.com/frontcat/pid?cnic=" . (int)trim($cnic);
                         $url = file_get_contents($url_path);
-                        $rst = !empty($url)? $url:'Not Found';
+                        $rst = !empty($url)? $url:'Not Found';*/
+                        $rst = 'Not Found';
                         $row = array(
                             $full_name,
                             $father_name,
@@ -3490,9 +3492,10 @@ class Controller_User extends Controller_Working {
                             $member_name_link = 'NO Access';
                         }
                         
-                        $url_path = "http://www.ims.ctdpunjab.com/frontcat/pid?cnic=" . (int)trim($cnic);                                            
+                       /* $url_path = "http://www.ims.ctdpunjab.com/frontcat/pid?cnic=" . (int)trim($cnic);
                         $url = file_get_contents($url_path);
-                        $rst = !empty($url)? $url:'Not Found';
+                        $rst = !empty($url)? $url:'Not Found';*/
+                        $rst ='Not Found';
                         $row = array(
                             $full_name,
                             $father_name,

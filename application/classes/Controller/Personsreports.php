@@ -1122,14 +1122,15 @@ class Controller_Personsreports extends Controller_Working {
 
                         ];
 
-                        $cURLConnection = curl_init('http://www.ctw.ctdpunjab.com/api/ctw_exist');
+                       /* $cURLConnection = curl_init('http://www.ctw.ctdpunjab.com/api/ctw_exist');
                         curl_setopt($cURLConnection, CURLOPT_POSTFIELDS, $data);
                         curl_setopt($cURLConnection, CURLOPT_RETURNTRANSFER, true);
                         $apiResponse = curl_exec($cURLConnection);
                         curl_close($cURLConnection);
                         $jsonArrayResponse = json_decode($apiResponse);
-                        $ctw_res = $jsonArrayResponse ;
+                        $ctw_res = $jsonArrayResponse ;*/
                         $cyber_link='';
+                        /*
                         if(!empty($ctw_res->url)){
                             foreach ($ctw_res->url as $i=> $res) {
 
@@ -1137,7 +1138,7 @@ class Controller_Personsreports extends Controller_Working {
 
                                }
                         }
-
+                        */
 
                         $last = ( isset($item['sim_last_used_at']) ) ? $item['sim_last_used_at'] : 'NA';
                         $contact_type = (!empty($item['contact_type']) ) ? $item['contact_type'] : '';

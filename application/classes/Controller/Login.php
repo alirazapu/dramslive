@@ -287,13 +287,14 @@ class Controller_Login extends Controller
                 'http' => array('user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'method' => 'GET')
             );
             $key = 1;
-            $urla = "http://www.smart.ctdpunjab.com/checklogin?uid={$uid}&pid={$key}";
-            $url = file_get_contents($urla, false, stream_context_create($arrContextOptions));
-            $content = $url; //file_get_contents($url);
-            $test_array = json_decode($content, true);
-            if (!empty($test_array) && $test_array == 1) {
+            //$urla = "http://www.smart.ctdpunjab.com/checklogin?uid={$uid}&pid={$key}";
+            //$url = file_get_contents($urla, false, stream_context_create($arrContextOptions));
+            //$content = $url; //file_get_contents($url);
+            //$test_array = json_decode($content, true);
+            /*if (!empty($test_array) && $test_array == 1) {
                 $enter = 1;
-            } else {
+            } else*/
+            {
                 $enter = 0;
             }
         }
@@ -302,7 +303,7 @@ class Controller_Login extends Controller
 //        exit;
 
         if ($enter == 0) {
-            header("Location: http://www.smart.ctdpunjab.com/dashboard");
+          //  header("Location: http://www.smart.ctdpunjab.com/dashboard");
             exit;
         }
         /* for Smart Code end */

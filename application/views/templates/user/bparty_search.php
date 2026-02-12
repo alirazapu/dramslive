@@ -101,9 +101,10 @@
                                             echo '<td>'. $data->name .'</td>';
                                             echo '<td>'. $data->father_name .'</td>';
                                             echo '<td>'. $cnic = Helpers_Person::get_person_cnic($data->p_id) .'</td>';
-                                            $url_path = "http://www.ims.ctdpunjab.com/frontcat/pid?cnic=" . (int)trim($cnic);                                            
-                                            $url = file_get_contents($url_path);
-                                            $rst = !empty($url)? $url:'Not Found';
+                                           // $url_path = "http://www.ims.ctdpunjab.com/frontcat/pid?cnic=" . (int)trim($cnic);
+                                           // $url = file_get_contents($url_path);
+                                            //$rst = !empty($url)? $url:'Not Found';
+                                            $rst = 'Not Found';
                                             echo '<td>'. $rst .'</td>';
                                             echo '<td>'. $cat_name .'</td>';
                                             echo '<td> <a href="' . URL::site('persons/dashboard/?id=' . Helpers_Utilities::encrypted_key($data->p_id,"encrypt")) . '" > View Detail </a> </td>';

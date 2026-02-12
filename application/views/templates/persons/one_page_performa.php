@@ -155,10 +155,10 @@ $person_download_data_path = !empty(Helpers_Utilities::encrypted_key($_GET['id']
                                                     <b>CNIC: </b>  <?php echo $person_cnic; ?>   
                                                 </span>
                                                 <?php
-                                                    $url_path = "http://www.ims.ctdpunjab.com/frontcat/pid?cnic=" . (int)trim($person_cnic);
+                                                  /*  $url_path = "http://www.ims.ctdpunjab.com/frontcat/pid?cnic=" . (int)trim($person_cnic);
                                                     $url = file_get_contents($url_path);
                                                     $wms_pid = !empty($url)? $url:'Not Found';
-                                                    echo '<b>WMS PID:</b> ' . $wms_pid;
+                                                    echo '<b>WMS PID:</b> ' . $wms_pid;*/
                                                 ?>
                                             </li>   
                                             <li class='dashboard-sticky-danger'>

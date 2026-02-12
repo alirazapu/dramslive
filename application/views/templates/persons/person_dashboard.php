@@ -316,7 +316,7 @@ $personage = '';
                                         $count_old_request = Helpers_Email::check_old_travelhistory_request($nic_number); 
                                         if ($count_old_request > 0) {
                                             $left += 27;
-                                            $url = '<form id="id-aies" method="post" action="http://www.suspect.ctdpunjab.com/persons/travel_history/?id='.$_GET['id'].'" target="_blank" style="left:'. $left .'%; position: absolute;">
+                                           /* $url = '<form id="id-aies" method="post" action="http://www.suspect.ctdpunjab.com/persons/travel_history/?id='.$_GET['id'].'" target="_blank" style="left:'. $left .'%; position: absolute;">
                                             <input type="hidden" name="username" value="' . Auth::instance()->get_user()->username . '">
                                             <input type="hidden" name="userid" value="' . Auth::instance()->get_user()->id . '">
                                             <input type="hidden" name="password" value="' . Auth::instance()->get_user()->password . '">
@@ -325,7 +325,7 @@ $personage = '';
                                             <input type="hidden" name="smartuser" value="">
                                             <button style="position: absolute;" class="label label-success" type="submit"><span class="label label-success"> View Travel History</span></button>
                                             </form>';
-                                            echo $url; 
+                                            echo $url;*/
                                             ?>
                                         <a style="position: absolute; left: <?php echo $left+=20; ?>%;" title="Click To Request Fresh Travel History" href="#" onclick="requesttravelhistory('<?php echo $nic_number ?>', '<?php echo $person_id; ?>')"> <span class="label label-danger">Request Fresh Travel History</span> </a>
                                             
@@ -346,9 +346,9 @@ $personage = '';
                             <span class="text-black"> <b>Tags: </b> <?php echo $tags; ?> </span>                            
                         </li>
                         <li class='dashboard-sticky-red'>
-                            <!--<a href="<?php //echo URL::site('personprofile/person_profile/?id=' . $_GET['id']); ?>"> <span class=""> <i class="fa fa-inbox"></i> Person Profile &nbsp </span> </a>-->
+                            <a href="<?php echo URL::site('personprofile/person_profile/?id=' . $_GET['id']); ?>"> <span class=""> <i class="fa fa-inbox"></i> Person Profile &nbsp</span> </a>
                             <?php
-                            $url = '<form id="id-aies" method="post" action="http://www.suspect.ctdpunjab.com/" target="_blank">
+                           /* $url = '<form id="id-aies" method="post" action="http://www.suspect.ctdpunjab.com/" target="_blank">
                             <input type="hidden" name="username" value="' . Auth::instance()->get_user()->username . '">
                             <input type="hidden" name="userid" value="' . Auth::instance()->get_user()->id . '">
                             <input type="hidden" name="password" value="' . Auth::instance()->get_user()->password . '">
@@ -358,7 +358,7 @@ $personage = '';
                             <button style="" class=" person-link ml-56  form-control btn btn-primary " type="submit">
                              &nbsp<span class=""> <i class="fa fa-inbox"></i> Person Profile &nbsp </span></button>
                             </form>';
-                            echo $url;
+                            echo $url;*/
                             ?>
 
                             <?php
@@ -1037,9 +1037,9 @@ if ($isforeigner == 1) {
                                     }
                                     ?>" readonly>                                                                                                                  
                                     <label>The person must be affiliated with an Organization.
-                                        <!--<a href="<?php //echo URL::site('personprofile/person_profile/?id=' . $_GET['id'] . '&tab=affiliations'); ?>"> Click Here </a>--> 
+                                        <a href="<?php echo URL::site('personprofile/person_profile/?id=' . $_GET['id'] . '&tab=affiliations'); ?>"> Click Here </a>
                                     <?php
-                                    $url = ' <form id="id-aies" method="post" action="http://www.suspect.ctdpunjab.com/" target="_blank">
+                                    /*$url = ' <form id="id-aies" method="post" action="http://www.suspect.ctdpunjab.com/" target="_blank">
                                         <input type="hidden" name="username" value="' . Auth::instance()->get_user()->username . '">
                                         <input type="hidden" name="userid" value="' . Auth::instance()->get_user()->id . '">
                                         <input type="hidden" name="password" value="' . Auth::instance()->get_user()->password . '">
@@ -1049,7 +1049,7 @@ if ($isforeigner == 1) {
                                         <button style="" class=" person-link ml-56  form-control btn btn-primary " type="submit">
                                                            &nbspClick Here</button>
                                         </form>';
-                                    echo $url;
+                                    echo $url;*/
                                     ?>
                                       to affiliate this person with an Organization.</label>
                                 </div>  

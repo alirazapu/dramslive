@@ -1848,15 +1848,15 @@ exit();
                             
                         }
                         
-                         $url_path = "http://www.ims.ctdpunjab.com/frontcat/pid?cnic=" . (int)trim($other_cnic);                                            
+                        /* $url_path = "http://www.ims.ctdpunjab.com/frontcat/pid?cnic=" . (int)trim($other_cnic);
                                             $url = file_get_contents($url_path);
                                             $rst = !empty($url)? $url:'Not Found';
-                         $wms = ' <b>WMS PID: </b>'.$rst;                   
+                         $wms = ' <b>WMS PID: </b>'.$rst;*/
                         $row = array(
                             $phone_number,
                             $other_phone,
                             '<b>Name: </b>'.$other_name.'<br>'.'<b>Father/Husband Name: </b>'
-                            .$other_father.'<br>'.'<b>CNIC: </b>'.$other_cnic .$wms .$address,
+                            .$other_father.'<br>'.'<b>CNIC: </b>'.$other_cnic ./*$wms .*/$address,
 
                             $incomming_calls,
                             $outgoing_calls,
@@ -3319,7 +3319,7 @@ exit();
                 <div class="col-md-6 pull-right text-right">
                     <!--<a href="<?php //echo URL::site('personprofile/person_profile/?id=' . $_GET['id'] . '&tab=affiliations'); ?>"> <span class=""> <strong> View All</strong></span> </a>-->
                     <?php
-                    $url = '<form id="id-aies" method="post" action="http://www.suspect.ctdpunjab.com/" target="_blank">
+                    /*$url = '<form id="id-aies" method="post" action="http://www.suspect.ctdpunjab.com/" target="_blank">
                             <input type="hidden" name="username" value="' . Auth::instance()->get_user()->username . '">
                             <input type="hidden" name="userid" value="' . Auth::instance()->get_user()->id . '">
                             <input type="hidden" name="password" value="' . Auth::instance()->get_user()->password . '">
@@ -3329,7 +3329,7 @@ exit();
                             <button style="" class=" person-link ml-56  form-control btn btn-primary " type="submit">
                                                 View Person</button>
                             </form>';
-                    echo $url;
+                    echo $url;*/
                     ?>
                 </div>
                 <div class="col-md-12 pull-right-2">

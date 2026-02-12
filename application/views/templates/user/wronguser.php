@@ -251,9 +251,7 @@ body{
             <br>
             <div class='_2' style="margin-bottom: 10px">Please try again</div>
             <hr>
-            <a class='btn' href='http://www.smart.ctdpunjab.com'>BACK TO SMART</a>
-            <!--<a class="btn md-trigger" data-toggle="modal" data-target="#subscribeModal"> Forget AIES Password</a>-->            
-            
+            <a class='btn' href='http://ctd.drams.com'>BACK TO Drams</a>
         </div>
     
 
