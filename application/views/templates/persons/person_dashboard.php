@@ -346,7 +346,7 @@ $personage = '';
                             <span class="text-black"> <b>Tags: </b> <?php echo $tags; ?> </span>                            
                         </li>
                         <li class='dashboard-sticky-red'>
-                            <a href="<?php echo URL::site('personprofile/person_profile/?id=' . $_GET['id']); ?>"> <span class=""> <i class="fa fa-inbox"></i> Person Profile &nbsp</span> </a>
+                           <!-- <a href="<?php echo URL::site('personprofile/person_profile/?id=' . $_GET['id']); ?>"> <span class=""> <i class="fa fa-inbox"></i> Person Profile &nbsp</span> </a>-->
                             <?php
                            /* $url = '<form id="id-aies" method="post" action="http://www.suspect.ctdpunjab.com/" target="_blank">
                             <input type="hidden" name="username" value="' . Auth::instance()->get_user()->username . '">
@@ -1037,7 +1037,7 @@ if ($isforeigner == 1) {
                                     }
                                     ?>" readonly>                                                                                                                  
                                     <label>The person must be affiliated with an Organization.
-                                        <a href="<?php echo URL::site('personprofile/person_profile/?id=' . $_GET['id'] . '&tab=affiliations'); ?>"> Click Here </a>
+                                        <!--<a href="<?php echo URL::site('personprofile/person_profile/?id=' . $_GET['id'] . '&tab=affiliations'); ?>"> Click Here </a>-->
                                     <?php
                                     /*$url = ' <form id="id-aies" method="post" action="http://www.suspect.ctdpunjab.com/" target="_blank">
                                         <input type="hidden" name="username" value="' . Auth::instance()->get_user()->username . '">
