@@ -646,13 +646,12 @@ class Model_Generic {
          * person_id
          * user_id
          */
-        $check_mb = (string)$data['mobile_number'];
-        
-        $check_mobile = $check_mb[0];
-        //$check_mobile = $check_mb;
-        
-        $mobile_numbers = !empty($data['mobile_number']) ? trim($data['mobile_number']) : 0;
-        
+        $check_mb = trim((string)$data['mobile_number'] ?? '');
+        $check_mobile = '';
+        if (strlen($check_mb) === 10 && $check_mb !== '') {
+            $check_mobile = $check_mb[0];
+        }
+        $mobile_numbers = $check_mb;
         if (!empty($mobile_numbers) && strlen($check_mb)==10 && $check_mobile == 3) {
             $phoneexist = Helpers_Person::check_person_mobile_number_exist($mobile_numbers);            
             $person_id = !empty($data['person_id']) ? $data['person_id'] : 0;
