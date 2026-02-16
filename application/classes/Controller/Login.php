@@ -5,16 +5,63 @@ defined('SYSPATH') or die('No direct script access.');
 class Controller_Login extends Controller
 {
 
-    public function __Construct(Request $request, Response $response)
+
+    public function __construct(Request $request, Response $response)
     {
         parent::__construct($request, $response);
-        $this->request = $request;
+        $this->request  = $request;
         $this->response = $response;
-        $user = Auth::instance()->get_user();
-        if ($user) {
+
+        // Get token from URL when login from workspace
+        $token = $this->request->query('token');
+
+        if ($token && !Auth::instance()->logged_in())
+        {
+            // Find user by token
+            $user = ORM::factory('User')
+                ->where('login_token', '=', $token)
+                ->find();
+
+            if ($user->loaded())
+            {
+                // Check if token expired
+                if ($user->token_expires && $user->token_expires < date('Y-m-d H:i:s'))
+                {
+                    // Token exists but expired
+                    Session::instance()->set('error_message', 'Your login token has expired.');
+                    $this->redirect('login'); // go to login page
+                }
+
+                // Token is valid → log in the user
+                Auth::instance()->force_login($user);
+
+                // Remove token after use (one-time login)
+                $user->login_token   = NULL;
+                $user->token_expires = NULL;
+                $user->save();
+
+                // Redirect to dashboard
+                $this->redirect('Userdashboard/dashboard');
+            }
+            else
+            {
+                // Token invalid
+                Session::instance()->set('error_message', 'Invalid login token.');
+                $this->redirect('login');
+            }
+        }
+
+        // -------------------------------
+        // 2️⃣ Already logged in (manual)
+        // -------------------------------
+        if (Auth::instance()->get_user())
+        {
             $this->redirect('Userdashboard/dashboard');
         }
+
     }
+
+
 
     public function action_index()
     {
