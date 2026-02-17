@@ -295,22 +295,13 @@ switch ($company) {
         break;  */
     case 4:        
         /* Zong CDR */
-        // Check for CDR Against Mobile Number format (Customer Msisdn based)
-        $compare_zong_cdr_call = ('Customer Msisdn' == $data[$row][0] && empty($data[$row][2]) && empty($data[$row][3])) ? 1 : 0;
-        
-        // Check for CDR Against IMEI Number format (Mobile No, IMEI, LAST_ACTIVITY_DATE)
-        $zong_cdr_imei = ['Mobile No', 'IMEI', 'LAST_ACTIVITY_DATE'];
-        $compare_zong_cdr_imei = array_diff(
-            array_map('strtoupper', $zong_cdr_imei),
-            array_map('strtoupper', array_map('trim', $data[$row]))
-        );
-        
-        // Check if neither format matches and there are multiple sheets
-        if (($compare_zong_cdr_call == 0) && (!empty($compare_zong_cdr_imei)) && ($total_Sheet > 1)) {            
+        //$compare_zong_cdr = array_diff($zong_cdr, $data[5]);      
+        //$compare_zong_cdr = ('Mobile' == $data[$row][0] && empty($data[$row][2]) && empty($data[$row][3])) ? 1 : 0;                
+        $compare_zong_cdr = ('Customer Msisdn' == $data[$row][0] && empty($data[$row][2]) && empty($data[$row][3])) ? 1 : 0;                
+        if (($compare_zong_cdr == 0) && ($total_Sheet > 1)) {            
             $continue = 'continue';
         } else {            
-            // Process CDR Against Mobile Number format
-            if (!empty($compare_zong_cdr_call) && $compare_zong_cdr_call == 1) {                
+            if (!empty($compare_zong_cdr) && $compare_zong_cdr == 1) {                
                 $flag = 'zong_cdr';
                 $index_no = 3;
                     $data[$index_no] = array_map("strtoupper", $data[$index_no]);
@@ -334,25 +325,6 @@ switch ($company) {
                     $lat = array_search('LAT', array_map('trim', $data[$index_no]));  
                     $cel_lac_index = array_search('LAC_ID', array_map('trim', $data[$index_no]));                    
                     $cell_site_index = array_search('CELL_ID', array_map('trim', $data[$index_no]));                     
-            
-            // Process CDR Against IMEI Number format
-            } elseif (empty($compare_zong_cdr_imei)) {
-                $flag = 'zong_cdr_partial';
-                $index_no = 0;
-                $data[$index_no] = array_map("strtoupper", $data[$index_no]);
-                $party_aindex = array_search('MOBILE NO', array_map('trim', $data[$index_no]));
-                $imei_index = array_search('IMEI', array_map('trim', $data[$index_no]));
-                $date_index = array_search('LAST_ACTIVITY_DATE', array_map('trim', $data[$index_no]));
-                // Initialize indices not used in IMEI format to avoid undefined variable errors
-                $party_bindex = false;
-                $time_index = false;
-                $duration_index = false;
-                $imsi_index = false;
-                $site_index = false;
-                $lng = false;
-                $lat = false;
-                $cel_lac_index = false;
-                $cell_site_index = false;
                 
             } else {
                 if (!empty($file_id))
@@ -366,8 +338,7 @@ switch ($company) {
                             'processing_index' => 3,
                             'file_id' => !empty($file_id) ? $file_id : null,
                             'company' => 'Zong',
-                            'row' => !empty($row) ? $row : null,
-                            'raw_header' => isset($data[$row]) ? $data[$row] : null
+                            'row' => !empty($row) ? $row : null
                         ),
                         null,
                         'validation_error',
