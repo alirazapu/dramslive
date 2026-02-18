@@ -561,6 +561,21 @@ abstract class Helpers_Upload {
                         echo $e->getMessage();
                     }
                     break;
+                case 'zong_cdr_partial':
+                    if ($company != 4) {
+                        if (!empty($file_id))
+                            $error_number = Model_Email::file_status($file_id, 6, 3);
+
+                        if (!empty($userrequestid))
+                            $reference_number = Model_Email::email_status($userrequestid, 2, 3);
+                        exit;
+                    }
+                    try {
+                        include 'parse_partially/zong_cdr.inc';
+                    } catch (Database_Exception $e) {
+                        echo $e->getMessage();
+                    }
+                    break;
                 case 'ufone_cdr':
                     if ($company != 3) {
                         if (!empty($file_id))
