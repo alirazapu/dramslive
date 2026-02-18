@@ -240,139 +240,101 @@ switch ($company) {
             }
         }
         break;
-  /*  case 7:        
-        /// Warid CDR 
-        $compare_warid_cdr = array_diff($warid_cdr, array_map('trim', $data[$row]));
-        if ((sizeof($compare_warid_cdr) == sizeof($warid_cdr)) && ($objPHPExcel->getSheetCount() > 1)) {
-            $continue = 'continue';
-        } else {
-            if (empty($compare_warid_cdr)) {
-                $flag = 'warid_cdr';
-                // Index Setting 
-                $data[$row] = array_map("strtoupper", $data[$row]);
-                $call_type_index = array_search('OPER', array_map('trim', $data[$row]));  //OPER column in Warid
-                $party_aindex = array_search('SUBNO', array_map('trim', $data[$row]));  //SUBNO in warid
-                $party_bindex = array_search('B_SUBNO', array_map('trim', $data[$row])); //B_SUBNO in warid
-                $date_index = array_search('A_TRANSDATE', array_map('trim', $data[$row]));
-                $time_index = array_search('TRANSTIME', array_map('trim', $data[$row]));
-                $duration_index = array_search('DURATION', array_map('trim', $data[$row]));
-                $imei_index = array_search('IMEI_NUMBER', array_map('trim', $data[$row]));
-                $imsi_index = array_search('IMSI', array_map('trim', $data[$row]));   // Yet not available 
-                $site_index = array_search('DESCRIPTION', array_map('trim', $data[$row]));
-                $cell_site_index = array_search('CELL_ID', array_map('trim', $data[$row]));
-                $cel_lac_index = array_search('LAC ID -A', array_map('trim', $data[$row]));
-            } else {
-                if (!empty($file_id))
-                    $error_number = Model_Email::file_status($file_id, 1, 3);
-                if(!empty($userrequestid)){
-                    Model_ErrorLog::log(
-                        'parse_cellmatch',
-                        'Invalid Warid CDR format - header validation failed',
-                        array(
-                            'request_id' => $userrequestid,
-                            'processing_index' => 3,
-                            'file_id' => !empty($file_id) ? $file_id : null,
-                            'company' => 'Warid',
-                            'row' => !empty($row) ? $row : null
-                        ),
-                        null,
-                        'validation_error',
-                        'cellmatch_parsing'
-                    );
-                    $reference_number = Model_Email::email_status($userrequestid, 2, 3);
-                }
-                exit;
-            }
-        }
+    case 4:
+        /* Zong Partial CDR - expects only 3 columns: Mobile No, IMEI, LAST_ACTIVITY_DATE */
 
-        break;  */
-    case 4:        
-        /* Zong CDR */
-        //$compare_zong_cdr = array_diff($zong_cdr, $data[5]);      
-        //$compare_zong_cdr = ('Mobile' == $data[$row][0] && empty($data[$row][2]) && empty($data[$row][3])) ? 1 : 0;                
-//        $compare_zong_cdr = ('Customer Msisdn' == $data[$row][0] && empty($data[$row][2]) && empty($data[$row][3])) ? 1 : 0;                
-//        if (($compare_zong_cdr == 0) && ($total_Sheet > 1)) {            
-//            $continue = 'continue';
-//            
-             $compare_zong_cdr = array_diff(
-					array_map('strtoupper', $zong_cdr),
-					array_map('strtoupper', array_map('trim', $data[$row]))
-				);
-				
+        // Normalize both arrays to uppercase for comparison
+        $compare_zong_cdr = array_diff(
+            array_map('strtoupper', $zong_cdr),
+            array_map('strtoupper', array_map('trim', $data[$row]))
+        );
+
         if ((sizeof($compare_zong_cdr) == sizeof($zong_cdr)) && ($objPHPExcel->getSheetCount() > 1)) {
             $continue = 'continue';
-        } else {            
+        } else {
             if (empty($compare_zong_cdr)) {
                 $flag = 'zong_cdr';
-                $index_no = 3;
-                    $data[$index_no] = array_map("strtoupper", $data[$index_no]);
-                    $call_type_index = array_search('CALL_TYPE', array_map('trim', $data[$index_no]));  //OPER column in Warid
-                    
-                    if(isset($call_type_index) && $call_type_index!=0)
-                    {
-                        $index_no = 5;
-                        $data[$index_no] = array_map("strtoupper", $data[$index_no]);
-                        $call_type_index = array_search('CALL_TYPE', array_map('trim', $data[$index_no]));  //OPER column in Warid
-                    } 
-                    $party_aindex = array_search('MOBILE NO', array_map('trim', $data[$index_no]));  //SUBNO in warid
-                    $party_bindex = array_search('BNUMBER', array_map('trim', $data[$index_no])); //B_SUBNO in warid
-                    $date_index = array_search('LAST_ACTIVITY_DATE', array_map('trim', $data[$index_no]));
-                    $time_index = array_search('MINS', array_map('trim', $data[$index_no]));
-                    $duration_index = array_search('SECS', array_map('trim', $data[$index_no]));
-                    $imei_index = array_search('IMEI', array_map('trim', $data[$index_no]));
-                    $imsi_index = array_search('IMSI', array_map('trim', $data[$index_no]));   // Yet not available 
-                    $site_index = array_search('SITE_ADDRESS', array_map('trim', $data[$index_no]));   
-                    $lng = array_search('LNG', array_map('trim', $data[$index_no]));   
-                    $lat = array_search('LAT', array_map('trim', $data[$index_no]));  
-                    $cel_lac_index = array_search('LAC_ID', array_map('trim', $data[$index_no]));                    
-                    $cell_site_index = array_search('CELL_ID', array_map('trim', $data[$index_no]));                     
-                
+
+                // Convert headers to uppercase for consistent matching
+                $data[$row] = array_map("strtoupper", array_map('trim', $data[$row]));
+
+                // For partial parsing, we only need these 3 indices
+                $party_aindex = array_search('MOBILE NO', $data[$row]);
+                if ($party_aindex === false) {
+                    $party_aindex = array_search('MSISDN', $data[$row]); // Fallback
+                }
+
+                $imei_index = array_search('IMEI', $data[$row]);
+
+                $date_index = array_search('LAST_ACTIVITY_DATE', $data[$row]);
+                if ($date_index === false) {
+                    $date_index = array_search('STRT_TM', $data[$row]); // Fallback
+                }
+
+                // Set other indices to null/false as they're not used in partial parsing
+                $call_type_index = false;
+                $party_bindex = false;
+                $time_index = false;
+                $duration_index = false;
+                $imsi_index = false;
+                $site_index = false;
+                $lng = false;
+                $lat = false;
+                $cel_lac_index = false;
+                $cell_site_index = false;
+
+                // Debug: Log what we found (remove after testing)
+                if (!empty($file_id)) {
+                    Model_ErrorLog::log(
+                        'parse_cellmatch_debug',
+                        'Zong partial CDR headers matched',
+                        array(
+                            'file_id' => $file_id,
+                            'party_aindex' => $party_aindex,
+                            'imei_index' => $imei_index,
+                            'date_index' => $date_index,
+                            'headers_found' => implode(', ', $data[$row])
+                        ),
+                        null,
+                        'info',
+                        'cellmatch_parsing'
+                    );
+                }
+
             } else {
-                $str ='';
-                $str =("Raw header: " . print_r($data[$row], true));
-                $str .=("Trimmed header: " . print_r(array_map('trim', $data[$row]), true));
-                $str .=("Diff result: " . print_r($compare_zong_cdr, true));
-                $str .=("Diff size: " . sizeof($compare_zong_cdr));
-                if (!empty($file_id))
-                {
+                // Log the mismatch details
+                $actual_headers = isset($data[$row]) ? implode(', ', array_map('trim', $data[$row])) : 'No headers found';
+                $expected_headers = implode(', ', $zong_cdr);
+                $missing_headers = implode(', ', $compare_zong_cdr);
+
+                if (!empty($file_id)) {
                     Model_ErrorLog::log(
                         'parse_cellmatch',
-                        $str,
+                        'Invalid Zong partial CDR format - header validation failed',
                         array(
-                            'request_id' => !empty($userrequestid)? $userrequestid : null,
+                            'request_id' => !empty($userrequestid) ? $userrequestid : null,
                             'processing_index' => 3,
-                            'file_id' => !empty($file_id) ? $file_id : null,
+                            'file_id' => $file_id,
                             'company' => 'Zong',
-                            'row' => !empty($row) ? $row : null
+                            'row' => !empty($row) ? $row : null,
+                            'expected_headers' => $expected_headers,
+                            'actual_headers' => $actual_headers,
+                            'missing_headers' => $missing_headers
                         ),
                         null,
                         'validation_error',
                         'cellmatch_parsing'
                     );
-                    $reference_number = Model_Email::email_status($userrequestid, 2, 3);
                     $error_number = Model_Email::file_status($file_id, 1, 3);
                 }
 
-                if(!empty($userrequestid)){
-                    Model_ErrorLog::log(
-                        'parse_cellmatch',
-                        $str,
-                        array(
-                            'request_id' => $userrequestid,
-                            'processing_index' => 3,
-                            'file_id' => !empty($file_id) ? $file_id : null,
-                            'company' => 'Zong',
-                            'row' => !empty($row) ? $row : null
-                        ),
-                        null,
-                        'validation_error',
-                        'cellmatch_parsing'
-                    );
+                if (!empty($userrequestid)) {
                     $reference_number = Model_Email::email_status($userrequestid, 2, 3);
                 }
                 exit;
             }
         }
+        break;
         //break;
 
     /* Warid Subscription */

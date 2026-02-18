@@ -476,142 +476,157 @@ abstract class Helpers_Upload {
                     //exit;
                 }
             }
-        }else {
-
-
+        }else
+        {
             $reader = ReaderFactory::create(Type::XLSX); // for XLSX files
-            //$reader = ReaderFactory::create(Type::CSV); // for CSV files
-            //$reader = ReaderFactory::create(Type::ODS); // for ODS files
             $filePath = $inputfilename;
             $reader->open($filePath);
-            $help = $reader;
-            $data = array();
+
+            // Count total sheets first
             $total_Sheet = 0;
-            foreach ($help->getSheetIterator() as $sheetIndex => $sheet) {
-                $total_Sheet +=1;
-                //  $sheets[]=$sheet;
-            }
-            $continue = '';
             foreach ($reader->getSheetIterator() as $sheet) {
+                $total_Sheet += 1;
+            }
+            $reader->close();
+
+            // Reopen to process
+            $reader->open($filePath);
+            $sheet_number = 0;
+            $data_found = false;
+
+            foreach ($reader->getSheetIterator() as $sheet) {
+                $sheet_number++;
+
+                // CRITICAL FIX: Reset data array for each sheet
+                $data = array();
+                $continue = '';
+
+                // Read all rows from current sheet
                 foreach ($sheet->getRowIterator() as $row) {
                     $data[] = $row;
-                    // do stuff with the row
                 }
-                /* Updated Code Here Start */
-                $row = 0;
-                if (empty($data[$row])) {
 
+                // Check if sheet has data
+                $row = 0;
+                if (empty($data[$row]) || empty($data[$row][0])) {
+                    // Empty sheet - skip if there are more sheets
                     if ($total_Sheet > 1) {
                         continue;
                     } else {
                         if (!empty($file_id))
-                            $error_number = Model_Email::file_status($file_id, 1, 3); // 1 company  format not match
-                    }
-                }
-
-
-                include 'parse/cellmatch.inc';
-                //                  elseif (empty($compare_warid_sub)) {
-                //                    $flag = 'warid_sub';                
-                if ($continue != 'continue') {
-
-                    if (empty($flag)) {
-                        if (!empty($file_id))
-                            $error_number = Model_Email::file_status($file_id, 1, 3); // 1 company  format not match
-
+                            $error_number = Model_Email::file_status($file_id, 1, 3);
                         if (!empty($userrequestid))
                             $reference_number = Model_Email::email_status($userrequestid, 2, 3);
+                        $reader->close();
                         exit;
                     }
-                    break;
                 }
+
+                // Check if this is a valid data sheet (has headers)
+                include 'parse/cellmatchPartially.inc';
+
+                // If continue flag is set, skip this sheet and try next
+                if ($continue == 'continue') {
+                    continue;
+                }
+
+                // If flag is empty, no valid format found
+                if (empty($flag)) {
+                    // If multiple sheets, try next sheet
+                    if ($total_Sheet > 1 && $sheet_number < $total_Sheet) {
+                        continue;
+                    }
+
+                    // No valid format found in any sheet
+                    if (!empty($file_id))
+                        $error_number = Model_Email::file_status($file_id, 1, 3);
+                    if (!empty($userrequestid))
+                        $reference_number = Model_Email::email_status($userrequestid, 2, 3);
+                    $reader->close();
+                    exit;
+                }
+
+                // Valid format found - process this sheet
+                $data_found = true;
+                break;
             }
+
             $reader->close();
-            ///
+
+            // Check if we found valid data
+            if (!$data_found || empty($flag)) {
+                if (!empty($file_id))
+                    $error_number = Model_Email::file_status($file_id, 1, 3);
+                if (!empty($userrequestid))
+                    $reference_number = Model_Email::email_status($userrequestid, 2, 3);
+                exit;
+            }
+
             /* Parsing Start */
-
             switch ($flag) {
-                case 'warid_cdr':
-                    if ($company != 7) {
-                        if (!empty($file_id))
-                            $error_number = Model_Email::file_status($file_id, 6, 3);
-
-                        if (!empty($userrequestid))
-                            $reference_number = Model_Email::email_status($userrequestid, 2, 3);
-                        exit;
-                    }
-                    try {
-                        include 'parse/warid_cdr.inc';
-                    } catch (Database_Exception $e) {
-                        echo $e->getMessage();
-                    }
-                    break;
                 case 'zong_cdr':
                     if ($company != 4) {
                         if (!empty($file_id))
                             $error_number = Model_Email::file_status($file_id, 6, 3);
-
                         if (!empty($userrequestid))
                             $reference_number = Model_Email::email_status($userrequestid, 2, 3);
                         exit;
                     }
                     try {
-                        include 'parse/zong_cdr.inc';
+                        include 'parse_partially/zong_cdr.inc';
                     } catch (Database_Exception $e) {
-                        echo $e->getMessage();
-                    }
-                    break;
-                case 'ufone_cdr':
-                    if ($company != 3) {
                         if (!empty($file_id))
-                            $error_number = Model_Email::file_status($file_id, 6, 3);
-
+                            $error_number = Model_Email::file_status($file_id, 0, 3);
                         if (!empty($userrequestid))
                             $reference_number = Model_Email::email_status($userrequestid, 2, 3);
+
+                        Model_ErrorLog::log(
+                            'parse_partially_zong',
+                            'Database exception during Zong partial CDR parsing: ' . $e->getMessage(),
+                            array(
+                                'request_id' => !empty($userrequestid) ? $userrequestid : null,
+                                'file_id' => !empty($file_id) ? $file_id : null,
+                                'exception' => $e->getMessage(),
+                                'trace' => $e->getTraceAsString()
+                            ),
+                            null,
+                            'database_error',
+                            'cdr_partial_parsing'
+                        );
                         exit;
-                    }
-                    try {
-                        include 'parse/ufone_cdr.inc';
-                    } catch (Database_Exception $e) {
-                        echo $e->getMessage();
-                    }
-                    break;
-                case 'telnor_cdr':
-                    if ($company != 6) {
+                    } catch (Exception $e) {
                         if (!empty($file_id))
-                            $error_number = Model_Email::file_status($file_id, 6, 3);
-
+                            $error_number = Model_Email::file_status($file_id, 0, 3);
                         if (!empty($userrequestid))
                             $reference_number = Model_Email::email_status($userrequestid, 2, 3);
-                        exit;
-                    }
-                    try {
-                        include 'parse/telnor_cdr.inc';
-                    } catch (Database_Exception $e) {
-                        echo $e->getMessage();
-                    }
-                    break;
-                case 'jazz_cdr':
-                    if ($company != 1) {
-                        if (!empty($file_id))
-                            $error_number = Model_Email::file_status($file_id, 6, 3);
 
-                        if (!empty($userrequestid))
-                            $reference_number = Model_Email::email_status($userrequestid, 2, 3);
+                        Model_ErrorLog::log(
+                            'parse_partially_zong',
+                            'Exception during Zong partial CDR parsing: ' . $e->getMessage(),
+                            array(
+                                'request_id' => !empty($userrequestid) ? $userrequestid : null,
+                                'file_id' => !empty($file_id) ? $file_id : null,
+                                'exception' => $e->getMessage(),
+                                'trace' => $e->getTraceAsString()
+                            ),
+                            null,
+                            'general_error',
+                            'cdr_partial_parsing'
+                        );
                         exit;
                     }
-                    try {
-                        include 'parse/jazz_cdr.inc';
-                    } catch (Database_Exception $e) {
-                        echo $e->getMessage();
-                    }
                     break;
+                default:
+                    if (!empty($file_id))
+                        $error_number = Model_Email::file_status($file_id, 1, 3);
+                    if (!empty($userrequestid))
+                        $reference_number = Model_Email::email_status($userrequestid, 2, 3);
+                    exit;
             }
-
 
             /* Parsing End */
 
-            //echo 'done';
+            // Log user activity
             if (!empty(Auth::instance()->get_user())) {
                 $login_user = Auth::instance()->get_user();
                 $login_id = $login_user->id;
@@ -620,15 +635,14 @@ abstract class Helpers_Upload {
             }
             $uid = $login_id;
             Helpers_Profile::user_activity_log($uid, 25, NULL, NULL, $person_id);
-            // change request status
+
+            // Change request status - only if parsing was successful
             if (!empty($userrequestid)) {
                 $reference_number = Model_Email::email_status($userrequestid, 2, 5);
-                //$this->redirect('userrequest/request_status');                 
             }
             if (!empty($file_id))
                 $error_number = Model_Email::file_status($file_id, 0, 2);
             exit;
-
             ////
         }
     }
