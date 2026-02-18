@@ -302,7 +302,7 @@ switch ($company) {
         if ((sizeof($compare_zong_cdr) == sizeof($zong_cdr)) && ($objPHPExcel->getSheetCount() > 1)) {
             $continue = 'continue';
         } else {            
-            if (!empty($compare_zong_cdr) && $compare_zong_cdr == 1) {                
+            if (empty($compare_zong_cdr)) {
                 $flag = 'zong_cdr';
                 $index_no = 3;
                     $data[$index_no] = array_map("strtoupper", $data[$index_no]);
@@ -328,13 +328,31 @@ switch ($company) {
                     $cell_site_index = array_search('CELL_ID', array_map('trim', $data[$index_no]));                     
                 
             } else {
+                $str ='';
+                $str =("Raw header: " . print_r($data[$row], true));
+                $str .=("Trimmed header: " . print_r(array_map('trim', $data[$row]), true));
+                $str .=("Diff result: " . print_r($compare_zong_cdr, true));
+                $str .=("Diff size: " . sizeof($compare_zong_cdr));
                 if (!empty($file_id))
+                {
+                    Model_ErrorLog::log(
+                        'parse_cellmatch',
+                        $str,
+                        array(
+                            'request_id' => !empty($userrequestid)? $userrequestid : null,
+                            'processing_index' => 3,
+                            'file_id' => !empty($file_id) ? $file_id : null,
+                            'company' => 'Zong',
+                            'row' => !empty($row) ? $row : null
+                        ),
+                        null,
+                        'validation_error',
+                        'cellmatch_parsing'
+                    );
+                    $reference_number = Model_Email::email_status($userrequestid, 2, 3);
                     $error_number = Model_Email::file_status($file_id, 1, 3);
-					$str ='';
-					$str =("Raw header: " . print_r($data[$row], true));
-					$str .=("Trimmed header: " . print_r(array_map('trim', $data[$row]), true));
-					$str .=("Diff result: " . print_r($compare_zong_cdr, true));
-					$str .=("Diff size: " . sizeof($compare_zong_cdr));
+                }
+
                 if(!empty($userrequestid)){
                     Model_ErrorLog::log(
                         'parse_cellmatch',
