@@ -117,6 +117,23 @@ abstract class Helpers_Requests {
         }
         return $region_district;
     }
+        public static function get_requests_by_sim($sim, $type = 1)
+    {
+        if (empty($sim)) {
+            return [];
+        }
+
+        $db = Database::instance();
+
+        $query = DB::select('*')
+            ->from('user_request')
+            ->where('requested_value', '=', $sim)
+            ->and_where('user_request_type_id', '=', $type)
+            ->execute($db)
+            ->as_array();
+
+        return $query; // returns array of rows
+    }
     
 
 }

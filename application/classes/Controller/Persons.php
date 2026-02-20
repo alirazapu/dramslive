@@ -3208,6 +3208,17 @@ exit();
                                     <a href="#" onclick="requestcdr(<?php echo $sim . ',' . $person_id; ?>)"><span
                                                 class="label label-primary">CDR</span></a><b></b>
                                 </span>
+                                <span>
+                                  <a href="#"
+                                    onclick="requestcdrdownload('<?php echo $sim; ?>','<?php echo $person_id; ?>'); return false;">
+                                    <span class="label label-warning">Download CDR</span>
+                                    </a>
+
+                                </span>
+
+
+
+
                             </div>
 
                             <div style="padding-left: 2px !important; padding-right: 2px !important;"
@@ -4155,6 +4166,51 @@ exit();
             exit;
         }
     }
+
+
+    
+public function action_get_cdr_data()
+{
+    $this->auto_render = FALSE;
+
+    if ($this->request->method() != HTTP_Request::POST) {
+        echo 2; // error
+        return;
+    }
+
+    $sim = $this->request->post('sim');
+    $person_id = $this->request->post('person_id');
+
+    if (empty($sim)) {
+        echo 2; // error
+        return;
+    }
+
+    // Call helper method
+    $requests = Helpers_Requests::get_requests_by_sim($sim, 1);
+
+    if (empty($requests)) {
+        echo "<div>No requests found for SIM: {$sim}</div>";
+        return;
+    }
+
+    // Build HTML
+    $html = "<div>";
+    $html .= "<p><strong>SIM:</strong> {$sim}</p>";
+    $html .= "<p><strong>Person ID:</strong> {$person_id}</p>";
+    $html .= "<h4>Requests:</h4>";
+    $html .= "<ul>";
+
+    foreach ($requests as $row) {
+        $html .= "<li><strong>Request ID:</strong> {$row['request_id']}, <strong>Company Name:</strong> {$row['company_name']}</li>";
+    }
+
+    $html .= "</ul></div>";
+
+    echo $html;
+}
+
+
 
 }
 
