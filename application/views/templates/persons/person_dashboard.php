@@ -1887,6 +1887,7 @@ echo $personID;
                     swal("System Error", "Contact Support Team.", "error");
                 }
                 $("#person_sims_count").html(msg);
+                
             }
         });
         //Person tags form submit through ajax call
@@ -2963,3 +2964,89 @@ echo $personID;
 
 </style>
 <div id="msgbox-area" class="msgbox-area"></div>
+
+<div id="cdrModal" style="display:none;">
+    <div id="cdrModalContent">
+        <h3>CDR Requested</h3>
+
+        <div id="modalBody">Loading...</div>
+
+        <br>
+        <button id="closeModalBtn">Close</button>
+    </div>
+</div>
+
+<script>
+function requestcdrdownload(sim, person_id)
+{
+    // Apply overlay style
+    $("#cdrModal").css({
+        position: "fixed",
+        top: "0",
+        left: "0",
+        width: "100%",
+        height: "100%",
+        background: "rgba(0,0,0,0.6)",
+        zIndex: "9999"
+    });
+
+    // Apply modal box style
+    $("#cdrModalContent").css({
+        background: "#fff",
+        width: "400px",
+        padding: "20px",
+        borderRadius: "5px",
+        position: "absolute",
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)"
+    });
+
+    $("#modalBody").html("Loading...");
+    $("#cdrModal").fadeIn();
+
+    $.ajax({
+        url: "<?php echo URL::site('Persons/get_cdr_data'); ?>",
+        type: "POST",
+        data: {
+            sim: sim,
+            person_id: person_id
+        },
+        cache: false,
+        dataType: "html",
+        success: function (msg)
+        {
+            //console.log("CDR Response:", msg);
+
+            if ($.trim(msg) == "2")
+            {
+                $("#modalBody").html(
+                    "<span style='color:red;'>System Error. Contact Support.</span>"
+                );
+            }
+            else
+            {
+                $("#modalBody").html(msg);
+            }
+        },
+        error: function ()
+        {
+            $("#modalBody").html(
+                "<span style='color:red;'>Server Error</span>"
+            );
+        }
+    });
+}
+
+// Close button
+$(document).on("click", "#closeModalBtn", function(){
+    $("#cdrModal").fadeOut();
+});
+
+// Close when clicking outside modal box
+$(document).on("click", "#cdrModal", function(e){
+    if(e.target.id === "cdrModal"){
+        $("#cdrModal").fadeOut();
+    }
+});
+</script>
