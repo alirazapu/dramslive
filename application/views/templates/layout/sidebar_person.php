@@ -9,17 +9,39 @@ if(!isset($_GET['id']))
 {     
  //  header("Location:" . URL::base() . "errors?_e=wrong_parameters");
   // exit;
-}            
+ }
+ try{
+    $sidebar_user = Auth::instance()->get_user();
+    $sidebar_user_name = Helpers_Utilities::get_user_name($sidebar_user->id);
+    $sidebar_user_initials = Helpers_Profile::get_first_letters($sidebar_user->id);
+ }  catch (Exception $ex){
+     $sidebar_user_name = '';
+     $sidebar_user_initials = '';
+ }
 ?>
 <!-- Left side column. contains the logo and sidebar -->
             <aside class="main-sidebar">
                 <!-- sidebar: style can be found in sidebar.less -->
                 <section class="sidebar">
                     <!-- Sidebar user panel -->
-                         
+                    <?php if(!empty($sidebar_user_name)){ ?>
+                    <div class="user-panel">
+                        <div class="pull-left image">
+                            <span class="name-letter">
+                                <?php echo $sidebar_user_initials; ?>
+                            </span>
+                        </div>
+                        <div class="pull-left info">
+                            <p>
+                                <?php echo $sidebar_user_name; ?>
+                            </p>
+                            <a href="#"><i class="fa fa-circle text-success"></i> Online</a>
+                        </div>
+                    </div>
+                    <?php } ?>     
                     <!-- sidebar menu: : style can be found in sidebar.less -->
                     <ul class="sidebar-menu">       
-						<li class="header"> <span id="date_time"></span></li>					
+ 						<li class="header"> <span id="date_time"></span></li>					
                         <li class="treeview">
                             <a href="<?php echo URL::site('Userdashboard/dashboard'); ?>">
                                 <i class="fa fa-rotate-left text-aqua"></i> <span>Back</span>            

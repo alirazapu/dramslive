@@ -9,7 +9,7 @@ return array
             'username'   => 'root',           
            'password'   => '',
             'persistent' => FALSE,
-            'database'   => 'aiesplus',
+            'database'   => 'aiesplusbk',
         ),
         'table_prefix' => '',
         'charset'      => 'utf8',

@@ -5,7 +5,7 @@
 //        'https://cdnjs.cloudflare.com/ajax/libs/ionicons/2.0.1/css/ionicons.min.css',
         URL::base() . 'dist/css/font-awesome.min.css?v=20100200400',
         URL::base() . 'dist/css/ionicons.min.css?v=20100200400',
-        URL::base() . 'dist/css/kpkhtml.min.css?v=20100200400',
+        URL::base() . 'dist/css/ctdhtml.min.css?v=20100200400',
         URL::base() . 'dist/css/new-style.css?v=20100200400',
         URL::base() . 'dist/css/skins/_all-skins.min.css?v=20100200400',
         URL::base() . 'dist/css/pre-loader.css?v=20100200400',
