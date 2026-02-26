@@ -244,8 +244,8 @@ $personage = '';
     </div>
     <!-- info row -->
     <div class="row invoice-info">
-        <div class="col-md-12">
-            <div class="box box-info box-solid">
+        <div class="col-md-6">
+            <div class="box box-danger box-solid">
                 <div class="box-header with-border">
                     <h3 class="box-title">Personal Information </h3>
                     <div class="box-tools pull-right">
@@ -377,8 +377,8 @@ $personage = '';
             <!-- /.box -->
 
         </div>
-        <div class="col-md-12">
-            <div class="box box-info box-solid">
+        <div class="col-md-6">
+            <div class="box box-success box-solid">
                 <div class="box-header with-border">
                     <h3 title="Total Own Name SIMs Plus Total SIMs Under Personal Use" class="box-title">SIMs Information</h3>
                     <div style="display:none;" id="custom-form"></div>
