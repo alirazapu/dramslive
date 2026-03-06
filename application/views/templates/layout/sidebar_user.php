@@ -6,6 +6,16 @@
  * and open the template in the editor.
  */
 $current_url = request::current()->controller();
+try {
+    $user = Auth::instance()->get_user();
+    $user_first_letter = Helpers_Profile::get_first_letters($user->id);
+    $user_name = Helpers_Utilities::get_user_name($user->id);
+
+
+} catch (Exception $ex) {
+    $user_first_letter='';
+    $user_name='';
+}
 ?>
 <!-- Left side column. contains the logo and sidebar -->
 <aside class="main-sidebar">
@@ -13,21 +23,15 @@ $current_url = request::current()->controller();
     <section class="sidebar">
         <!-- Sidebar user panel -->
         <div class="user-panel">
-<!--    <div class="pull-left image">
-          <span class="name-letter">-->
+            <div class="pull-left image">
+          <span class="name-letter">
                     <?php
-                    try {
-                        $user = Auth::instance()->get_user();
-                        $user_first_letter = Helpers_Profile::get_first_letters($user->id);
-                       // echo $user_first_letter;
-                    } catch (Exception $ex) {
-                        
-                    }
+                    echo $user_first_letter;
                     ?>
-<!--                </span>
-            </div>-->
+                </span>
+            </div>
             <div class="pull-left info">
-                <p></p>                
+                <p><?php echo $user_name?></p>
             </div>
         </div>     
         <!-- sidebar menu: : style can be found in sidebar.less -->

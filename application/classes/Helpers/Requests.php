@@ -117,24 +117,22 @@ abstract class Helpers_Requests {
         }
         return $region_district;
     }
-        public static function get_requests_by_sim($sim, $type = 1)
+    
+    public static function get_requests_by_sim($sim, $type = 1)
     {
         if (empty($sim)) {
             return [];
         }
-
         $db = Database::instance();
-
-        $query = DB::select('*')
+        $query = DB::select('files.*') // only files columns
             ->from('user_request')
-            ->where('requested_value', '=', $sim)
-            ->and_where('user_request_type_id', '=', $type)
+            ->join('files', 'LEFT') // or INNER if required
+            ->on('files.request_id', '=', 'user_request.request_id')
+            ->where('user_request.requested_value', '=', $sim)
+            ->and_where('user_request.user_request_type_id', '=', $type)->and_where('files.data_from_date', '<>','null')
             ->execute($db)
             ->as_array();
-
-        return $query; // returns array of rows
+        return $query;
     }
-    
-
 }
 ?>

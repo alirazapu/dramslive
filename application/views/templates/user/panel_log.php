@@ -100,6 +100,7 @@
                                             <optgroup label="Activities">                                    
                                                 <?php try{
                                                 $activity_list = Helpers_Utilities::get_user_activity_name();
+                                                
                                                 foreach ($activity_list as $list) {
                                                     ?>
                                                     <option <?php echo (!empty($search_post['activity']) && in_array($list->id, $search_post['activity'])) ? 'Selected' : ''; ?> value="<?php echo $list->id ?>"><?php echo $list->label ?></option>

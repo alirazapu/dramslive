@@ -397,8 +397,8 @@ $personage = '';
             </div>
             <!-- /.box -->
         </div>  
-        <div class="col-md-12">
-            <div class="box box-info box-solid">
+        <div class="col-md-6">
+            <div class="box box-warning box-solid">
                 <div class="box-header with-border">
                     <h3 title="Total Devices Used By This Person" class="box-title">Devices Information</h3>
                     <div class="box-tools pull-right">
@@ -415,8 +415,8 @@ $personage = '';
             </div>            
         </div>  
 <!--        Link With Project last 5 records-->
-        <div class="col-md-12">
-            <div class="box box-info box-solid">
+        <div class="col-md-6">
+            <div class="box box-warning box-solid">
                 <div class="box-header with-border">
                     <h3 title="Total Devices Used By This Person" class="box-title">Link With Projects (Last 5 Records)</h3>
                     <div class="box-tools pull-right">
@@ -434,7 +434,7 @@ $personage = '';
         </div>  
     </div>
     <div class="row invoice-info">
-        <div class="col-md-12">
+        <div class="col-md-8">
             <div class="box box-success collapsed-box">
                 <div class="box-header with-border">
                     <h3 class="box-title">Person Last Location</h3>
@@ -470,7 +470,7 @@ $personage = '';
                 <!-- /.box-body -->
             </div>
         </div>
-        <div class="col-md-12">
+        <div class="col-md-4">
             <div class="box box-success collapsed-box">
                 <div class="box-header with-border">
                     <h3 class="box-title">Person's Current Location History</h3>
@@ -501,7 +501,7 @@ echo Helpers_Layout::get_ajax_loader();
     <!-- Main row -->
     <div class="row">
         <!-- Left col -->
-        <div class="col-md-12">
+        <div class="col-md-8">
             <!-- MAP & BOX PANE -->
             <!-- TABLE: LATEST ORDERS -->
             <!-- AREA CHART -->
@@ -532,8 +532,8 @@ echo Helpers_Layout::get_ajax_loader();
             <!-- /.box -->
 
             <div class="row">
-                <div class="col-md-12">  
-                    <div class="box box-info box-solid collapsed-box">
+                <div class="col-md-6">
+                    <div class="box box-success box-solid collapsed-box">
                         <div class="box-header with-border">
                             <h3 class="box-title">Person Last Call & SMS</h3>                            
                             <div class="box-tools pull-right">
@@ -548,8 +548,8 @@ echo Helpers_Layout::get_ajax_loader();
                         </div>                        
                     </div>
                 </div>
-                <div class="col-md-12">
-                    <div class="box box-info box-solid collapsed-box">
+                <div class="col-md-6">
+                    <div class="box box-warning box-solid collapsed-box">
                         <div class="box-header with-border">
                             <h3 class="box-title">Favourite Person</h3>
                             <div class="box-tools pull-right">
@@ -565,7 +565,7 @@ echo Helpers_Layout::get_ajax_loader();
                     </div> 
                 </div>
                 <div class="col-md-12">  
-                    <div class="box box-info box-solid collapsed-box">
+                    <div class="box box-warning box-solid collapsed-box">
                         <div class="box-header with-border">
                             <h3 class="box-title">Other Numbers</h3>
                             <div class="box-tools pull-right">
@@ -584,7 +584,7 @@ echo Helpers_Layout::get_ajax_loader();
                     </div>
                 </div>
                 <div class="col-md-12">  
-                    <div class="box box-info box-solid collapsed-box">
+                    <div class="box box-danger box-solid collapsed-box">
                         <div class="box-header with-border">
                             <h3 class="box-title">Other Information</h3>
 
@@ -607,9 +607,9 @@ echo Helpers_Layout::get_ajax_loader();
         </div>
         <!-- /.col -->
 
-        <div class="col-md-12">
+        <div class="col-md-4">
             <!--Person Nadra Information-->
-            <div class="box box-info box-solid  collapsed-box">
+            <div class="box box-success box-solid  collapsed-box">
                 <div class="box-header with-border">
                     <h3 class="box-title">Person Nadra Profile</h3>
                     <div class="box-tools pull-right">
@@ -2962,91 +2962,114 @@ echo $personID;
     .vmove:hover { animation-play-state: paused; }
 
 
+
+.modal {
+    z-index: 1500 !important;
+}
+
+.modal-backdrop {
+    z-index: 1000 !important;
+    background: rgba(242, 242, 242, 0.4) !important;
+}
+
+body.modal-open {
+    overflow: auto !important;
+}
+
 </style>
 <div id="msgbox-area" class="msgbox-area"></div>
 
-<div id="cdrModal" style="display:none;">
-    <div id="cdrModalContent">
-        <h3>CDR Requested</h3>
+<!-- Pure JS CDR Modal -->
+<div class="modal fade" id="cdrModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
 
-        <div id="modalBody">Loading...</div>
+      <!-- Header -->
+      <div class="modal-header" style="background:#00C0EF; color:white;">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color:white;">
+          &times;
+        </button>
+        <h4 class="modal-title">CDR Files</h4>
+      </div>
 
-        <br>
-        <button id="closeModalBtn">Close</button>
+      <!-- Body -->
+      <div class="modal-body" id="modalBody">
+        <div class="text-center">
+          <i class="fa fa-spinner fa-spin" style="font-size:24px;"></i> Loading...
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+
     </div>
+  </div>
 </div>
-
 <script>
-function requestcdrdownload(sim, person_id)
-{
-    // Apply overlay style
-    $("#cdrModal").css({
-        position: "fixed",
-        top: "0",
-        left: "0",
-        width: "100%",
-        height: "100%",
-        background: "rgba(0,0,0,0.6)",
-        zIndex: "9999"
-    });
+    function requestcdrdownload(sim, person_id) {
+        // Show modal with loading
+        $("#modalBody").html('<div class="text-center"><i class="fa fa-spinner fa-spin" style="font-size:24px;"></i> Loading...</div>');
+        $("#cdrModal").modal("show");
 
-    // Apply modal box style
-    $("#cdrModalContent").css({
-        background: "#fff",
-        width: "400px",
-        padding: "20px",
-        borderRadius: "5px",
-        position: "absolute",
-        top: "50%",
-        left: "50%",
-        transform: "translate(-50%, -50%)"
-    });
+        $.ajax({
+            url: "<?php echo URL::site('Persons/get_cdr_data'); ?>",
+            type: "POST",
+            data: { sim: sim, person_id: person_id },
+            dataType: "json",
+            success: function(response) {
+                if (response.status !== 1) {
+                    $("#modalBody").html('<div class="alert alert-danger text-center">System Error. Contact Support.</div>');
+                    return;
+                }
 
-    $("#modalBody").html("Loading...");
-    $("#cdrModal").fadeIn();
+                if (!response.files || response.files.length === 0) {
+                    $("#modalBody").html('<div class="alert alert-warning text-center">No files found.</div>');
+                    return;
+                }
 
-    $.ajax({
-        url: "<?php echo URL::site('Persons/get_cdr_data'); ?>",
-        type: "POST",
-        data: {
-            sim: sim,
-            person_id: person_id
-        },
-        cache: false,
-        dataType: "html",
-        success: function (msg)
-        {
-            //console.log("CDR Response:", msg);
+                let html = `<h4>CDR Files for SIM: <span class="text-primary">${response.sim}</span></h4><hr>`;
 
-            if ($.trim(msg) == "2")
-            {
-                $("#modalBody").html(
-                    "<span style='color:red;'>System Error. Contact Support.</span>"
-                );
+                // Loop through files and create rows
+                response.files.forEach(function(file) {
+                    let downloadBtn = '';
+                    if (file.encrypted_id && file.file) {
+                        downloadBtn = `<form action="<?php echo URL::site('personprofile/download'); ?>" method="post" style="margin:0;">
+                            <input type="hidden" name="file" value="${file.file}">
+                            <input type="hidden" name="fid" value="${file.encrypted_id}">
+                            <input type="hidden" name="person_id" value="${response.person_id_enc}">
+                            <button type="submit" class="btn btn-primary btn-sm"><i class="fa fa-download"></i> Download</button>
+                        </form>`;
+                    }
+
+                    html += `
+                    <div class="row align-items-center mb-3 p-2" style="border-bottom:1px solid #ddd;">
+                        <div class="col-md-4">
+                            <strong><i class="fa fa-file-text-o"></i> ${file.file}</strong>
+                        </div>
+                      <div class="col-md-4">
+                                ${
+                                    file.data_from_date && file.data_to_date
+                                    ? file.data_from_date.split(' ')[0] + ' | ' + file.data_to_date.split(' ')[0]
+                                    : ''
+                                }
+                            </div>
+                        <div class="col-md-2">
+                            Records: ${file.no_of_record}
+                        </div>
+                        <div class="col-md-2 text-right">
+                            ${downloadBtn}
+                        </div>
+                    </div>`;
+                });
+
+                $("#modalBody").html(html);
+            },
+            error: function() {
+                $("#modalBody").html('<div class="alert alert-danger text-center">Server Error</div>');
             }
-            else
-            {
-                $("#modalBody").html(msg);
-            }
-        },
-        error: function ()
-        {
-            $("#modalBody").html(
-                "<span style='color:red;'>Server Error</span>"
-            );
-        }
-    });
-}
-
-// Close button
-$(document).on("click", "#closeModalBtn", function(){
-    $("#cdrModal").fadeOut();
-});
-
-// Close when clicking outside modal box
-$(document).on("click", "#cdrModal", function(e){
-    if(e.target.id === "cdrModal"){
-        $("#cdrModal").fadeOut();
+        });
     }
-});
+
 </script>

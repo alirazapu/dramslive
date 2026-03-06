@@ -1,5 +1,5 @@
 #particles-js {position: absolute;width: 100%;height: 160%;top: 0;background: rgba(0,0,0,.7); z-index:-1;}
-.login-page, .register-page{background-image:url(../img/kpk.svg); background-repeat:no-repeat; background-position:center center; background-size:cover; position:relative; width:100%; height:100%; z-index:1; overflow:hidden;}
+.login-page, .register-page{background-image:url(../img/account-bg.png); background-repeat:no-repeat; background-position:center center; background-size:cover; position:relative; width:100%; height:100%; z-index:1; overflow:hidden;}
 .login-box, .register-box {margin: auto;width: 360px;}
 .login-box {padding: 3% 0;}
 .register-box{padding: 1% 0;}
@@ -28,7 +28,7 @@
 }
 
 .login-box-body, .register-box-body {
-    border: 5px solid #00836a;
+    border: 5px solid #002f83;
 }
 
 .form-group .fa {
@@ -281,17 +281,17 @@ ul .dashboard-sticky-danger {
 }
 
 .table-striped > tbody > tr:nth-of-type(2n+1) {
-    background-color: #e0eaec !important;
+    background-color: #f2dfe0 !important;
 }
 .table-striped > tbody > tr:nth-of-type(1n+1) {
-    background-color: #d0d3d3;
+    background-color: #fcf8e3;
 }
 table.table-striped thead > tr > th , table.dataTable tfoot > tr > th , table.dataTable thead > tr > th {
-    background-color: #00c0ef;
+    background-color: lightblue;
 }
 .box-header.with-border {
     border-bottom: 1px solid #3c8dbc;
-    background-color: #00c0ef;
+    background-color: lightblue;
 }
 
 
@@ -1093,23 +1093,4 @@ body.loading .modalwait {
 .dashboard-sticky-red form .person-link.ml-56.form-control.btn.btn-primary {
     margin-top: -9px;
     margin-left: -16px;
-}
-
-
-#particles-js {
-    position: fixed;
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
-    z-index: 0;
-    background-image: url('../img/bg-login.jpg'); /* your old bg */
-    background-size: cover;
-    background-position: center;
-}
-
-/* Keep login box above particles */
-.login-box {
-    position: relative;
-    z-index: 2;
 }

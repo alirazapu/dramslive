@@ -3172,7 +3172,7 @@ exit();
                             </div>
 
                             <div style="padding-left: 2px !important; padding-right: 2px !important;"
-                                 class="col-md-2 col-sm-12">
+                                 class="col-md-1 col-sm-6">
                                 <?php /*
                                 $data = [
                                            'mob' => $sim,
@@ -3198,25 +3198,22 @@ exit();
                                   }  */ ?>
                             </div>
                             <div style="padding-left: 2px !important; padding-right: 2px !important;"
-                                 class="col-md-5 col-sm-12">
+                                 class="col-md-6 col-sm-12">
                                 <span class="pull-right text-black" title="Click To Request Data From Company">
+                                    <a href="#" onclick="requestcdrdownload('<?php echo $sim; ?>','<?php echo $person_id; ?>'); return false;">
+                                    <span class="label label-warning">Download</span>
+                                    </a>
 <!--                                    <a href="#" onclick="requestbranchlessbanking(<?php /* echo $sim . ',' . $person_id; */ ?>)"> <span class="label label-warning">Branchless Banking</span> </a>-->
                                     <a href="#" onclick="requestlocation(<?php echo $sim . ',' . $person_id; ?>)"> <span
                                                 class="label label-primary">Location</span> </a>
                                     <a href="#" onclick="external_search_model(<?php echo $sim . ',0'; ?>)"><span
                                                 class="label label-primary">Subscriber</span></a>
                                     <a href="#" onclick="requestcdr(<?php echo $sim . ',' . $person_id; ?>)"><span
-                                                class="label label-primary">CDR</span></a><b></b>
-                                </span>
-                                <span>
-                                  <a href="#"
-                                    onclick="requestcdrdownload('<?php echo $sim; ?>','<?php echo $person_id; ?>'); return false;">
-                                    <span class="label label-warning">Download CDR</span>
-                                    </a>
+                                                class="label label-primary">CDR</span></a>
+                                    
 
                                 </span>
-
-
+       
 
 
                             </div>
@@ -4167,47 +4164,43 @@ exit();
         }
     }
 
-
-    
 public function action_get_cdr_data()
 {
     $this->auto_render = FALSE;
 
     if ($this->request->method() != HTTP_Request::POST) {
-        echo 2; // error
+        echo json_encode(['status' => 0, 'message' => 'Invalid request']);
         return;
     }
 
-    $sim = $this->request->post('sim');
-    $person_id = $this->request->post('person_id');
+    $sim       = trim($this->request->post('sim'));
+    $person_id = trim($this->request->post('person_id'));
 
     if (empty($sim)) {
-        echo 2; // error
+        echo json_encode(['status' => 0, 'message' => 'SIM is required']);
         return;
     }
 
-    // Call helper method
-    $requests = Helpers_Requests::get_requests_by_sim($sim, 1);
+    // Get files (files.*)
+    $files = Helpers_Requests::get_requests_by_sim($sim, 1,'callcdr');
 
-    if (empty($requests)) {
-        echo "<div>No requests found for SIM: {$sim}</div>";
-        return;
+    // Add encrypted_id for each file using your helper
+    foreach ($files as &$file) {
+        if (!empty($file['id'])) {
+            $file['encrypted_id'] = Helpers_Utilities::encrypted_key($file['id'], 'encrypt');
+        }
     }
 
-    // Build HTML
-    $html = "<div>";
-    $html .= "<p><strong>SIM:</strong> {$sim}</p>";
-    $html .= "<p><strong>Person ID:</strong> {$person_id}</p>";
-    $html .= "<h4>Requests:</h4>";
-    $html .= "<ul>";
+    $person_id_encrypted = Helpers_Utilities::encrypted_key($person_id, 'encrypt');
 
-    foreach ($requests as $row) {
-        $html .= "<li><strong>Request ID:</strong> {$row['request_id']}, <strong>Company Name:</strong> {$row['company_name']}</li>";
-    }
+    echo json_encode([
+        'status'    => 1,
+        'sim'       => $sim,
+        'person_id_enc' => $person_id_encrypted,
+        'files'     => $files
+    ]);
 
-    $html .= "</ul></div>";
-
-    echo $html;
+    return;
 }
 
 

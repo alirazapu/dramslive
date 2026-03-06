@@ -1553,7 +1553,7 @@ class Controller_Userreports extends Controller_Working {
                             case 65: case 49: case 46:
                             case 45: case 43: case 42: case 40: case 39: case 37: case 36:
                             case 33: case 34: case 32: case 31: case 30: case 12: case 9 :
-                            case 22: case 23: case 24: case 25:
+                            case 22: case 23: case 24: case 25: case 90:
                                 $activity = ( isset($item['user_activity_type_id']) ) ? Helpers_Utilities::get_user_activity_name($item['user_activity_type_id']) : 'NA';
                                 $activity .= " [";
                                 $activity .= '<a href="' . URL::site('persons/dashboard/?id=' . Helpers_Utilities::encrypted_key($item['person_id'], "encrypt")) . '" > View Profile </a>';

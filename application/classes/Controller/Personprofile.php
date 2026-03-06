@@ -2049,7 +2049,7 @@ class Controller_Personprofile extends Controller_Working {
     public function action_download() {
         $login_user = Auth::instance()->get_user();
         $user_id    = !empty($login_user->id) ? $login_user->id : 0;
-
+        
         // Clean output buffers early
         while (ob_get_level() > 0) {
             ob_end_clean();
@@ -2068,7 +2068,11 @@ class Controller_Personprofile extends Controller_Working {
                 $decrypted_fid = Helpers_Utilities::encrypted_key($_POST['fid'], 'decrypt');
                 $target = Helpers_Upload::get_request_data_path($decrypted_fid,'save');
             }
-
+            if (!empty($_POST['person_id'])) {
+                $decrypted_pid = Helpers_Utilities::encrypted_key($_POST['person_id'], 'decrypt');
+                Helpers_Profile::user_activity_log($user_id, 90, NULL, NULL, $decrypted_pid);
+            }
+            
             $requested_file = !empty($_POST['file']) ? $_POST['file'] : (!empty($_GET['file']) ? $_GET['file'] : '');
             $file = rtrim($target, '/\\') . '/' . ltrim($requested_file, '/\\');
 

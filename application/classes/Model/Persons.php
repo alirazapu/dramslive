@@ -847,40 +847,7 @@ select * from (
 
     public static function short_code_analysis($data, $count, $pid)
     {
-        //echo "<pre>"; print_r($data['phone_number']) ; echo "</pre>"; exit;
-
-//        $searchsql_phone = '';
-//        $searchsql_ophone = '';
-//        if (!empty($data['phone_number'])) {
-//            $searchsql_phone = " and phone_number = {$data['phone_number']}";
-//        }
-//        if (!empty($data['otherphone'])) {
-//            //now this
-//            $o_person_phone = implode("' , '", $data['otherphone']);
-//            $searchsql_ophone = " and other_person_phone_number IN ('{$o_person_phone}')";
-//            // print_r($searchsql_ophone); exit;
-//        }
-
-        /* Sorted Data */
-//        $order_by_param = "tcalls";
-//        if (isset($data['iSortCol_0'])) {
-//            switch ($data['iSortCol_0']) {
-//                case "2":
-//                    $order_by_param = "tsms";
-//                    break;
-//                case "3":
-//                    $order_by_param = "tcalls";
-//                    break;
-//            }
-//        }
-
-        /* Order By */
-//        $order_by_type = "desc";
-//        if (isset($data['sSortDir_0']) && $data['sSortDir_0'] != "") {
-//            $order_by_type = $data['sSortDir_0'];
-//        }
-//        //if(!$need_for_count){
-//        $order_by = " order by " . $order_by_param . " " . $order_by_type . " ";
+       
         $limit = '';
         /* Starting and Ending Lenght (size) */
         if (isset($data['iDisplayStart']) && isset($data['iDisplayLength'])) {
@@ -894,22 +861,12 @@ select * from (
         } else {
             $search = "";
         }
-        // $limit="limit 1 to 10";
-
-        /* Group By */
-//        $groupby = "group by person_id";
-//        WHERE person_id=$pid
-
-//        {$searchsql_phone}
-//        {$searchsql_ophone}
-
+   
         $DB = Database::instance();
         $sc = "select code from telco_short_code";
         $results = $DB->query(Database::SELECT, $sc, false)->as_array();
         $s_code = implode(', ', array_values(array_column($results, 'code')));
-//        echo '<pre>';
-//        print_r($s_code);
-//        exit();
+
         $where = "where person_id= '{$pid}' ";
         $where1 = '';
         if (!empty($s_code)) {
@@ -924,21 +881,11 @@ select * from (
                     {$where}              
                     {$search}                                
                    ";
-//            echo '<pre>';
-//            print_r($sql);
-//            exit();
+
             $members = DB::query(Database::SELECT, $sql)->execute()->current();
             return $members['count'];
         }
-
-//        9sms_received_count + sms_sent_count) as tsms,
-//                             (calls_received_count + calls_made_count) as tcalls
-//        WHERE person_id=$pid
-//        {$searchsql_phone}
-//        {$searchsql_ophone}
-//        {$order_by}
-//        {$limit}
-        /*  Fetch all Records */ else {
+		else {
             $sql = "SELECT ps.* , (sms_received_count + sms_sent_count) as tsms,
                           (calls_received_count + calls_made_count) as tcalls, tsc.company_name
                          FROM person_summary ps
@@ -948,7 +895,6 @@ select * from (
                     {$search}
                     {$limit}                         
                     ";
-//            print_r($sql); exit;
             $members = $DB->query(Database::SELECT, $sql, FALSE);
             return $members;
         }

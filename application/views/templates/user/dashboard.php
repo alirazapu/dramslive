@@ -62,9 +62,9 @@ if (!empty($_GET['accessmessage'])) {
                 <h4><i class="icon fa fa-check"></i> <?php echo $_GET['accessmessage']; ?></h4>
             </div>
 <?php } ?>
-        <div class="col-lg-4 col-xs-6">
+        <div class="col-lg-3 col-xs-6">
             <!-- small box -->            
-            <div class="small-box bg-black">
+            <div class="small-box bg-red">
                 <div class="inner">
                     <h3><?php echo $black ?></h3>
                     <p>Total Black Person</p>
@@ -77,9 +77,9 @@ if (!empty($_GET['accessmessage'])) {
             </div>            
         </div>
         <!-- ./col -->
-        <div class="col-lg-4 col-xs-6">
+        <div class="col-lg-3 col-xs-6">
             <!-- small box -->
-            <div class="small-box bg-gray">
+            <div class="small-box bg-yellow">
                 <div class="inner">
                     <h3><?php echo $grey ?></h3>
                     <p>Total Gray Person</p>
@@ -92,9 +92,9 @@ if (!empty($_GET['accessmessage'])) {
             </div>
         </div>
         <!-- ./col -->
-        <div class="col-lg-4 col-xs-6">
+        <div class="col-lg-3 col-xs-6">
             <!-- small box -->
-            <div class="small-box bg-wh" style="border: 1px #d0c8c8 solid">
+            <div class="small-box bg-green" style="border: 1px #d0c8c8 solid">
                 <div class="inner">
                     <h3><?php echo $white ?></h3>
                     <p>Total White Person</p>
@@ -108,7 +108,7 @@ if (!empty($_GET['accessmessage'])) {
         </div>
         <!-- ./col -->
         <!-- ./col -->
-        <div class="col-lg-12 col-xs-6">
+        <div class="col-lg-3 col-xs-6">
             <!-- small box -->
             <div class="small-box bg-aqua-active">
                 <div class="inner">
