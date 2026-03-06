@@ -16,7 +16,9 @@
 
     <!-- Header Navbar: style can be found in header.less -->
     <nav class="navbar navbar-static-top">
-        
+        <a href="javascript:;" class="sidebar-toggle" data-toggle="offcanvas" role="button">
+            <span class="sr-only">Toggle navigation</span>
+        </a>
         <span class="logo-lg" style="margin: auto;color: white;font-size: 30px;font-weight: inherit;">
             Digital Records Analysis & Monitoring System
         </span>
