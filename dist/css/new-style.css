@@ -1,5 +1,5 @@
 #particles-js {position: absolute;width: 100%;height: 160%;top: 0;background: rgba(0,0,0,.7); z-index:-1;}
-.login-page, .register-page{background-image:url(../img/account-bg.png); background-repeat:no-repeat; background-position:center center; background-size:cover; position:relative; width:100%; height:100%; z-index:1; overflow:hidden;}
+.login-page, .register-page{background-image:url(../img/kpk.svg); background-repeat:no-repeat; background-position:center center; background-size:cover; position:relative; width:100%; height:100%; z-index:1; overflow:hidden;}
 .login-box, .register-box {margin: auto;width: 360px;}
 .login-box {padding: 3% 0;}
 .register-box{padding: 1% 0;}
@@ -1093,4 +1093,22 @@ body.loading .modalwait {
 .dashboard-sticky-red form .person-link.ml-56.form-control.btn.btn-primary {
     margin-top: -9px;
     margin-left: -16px;
+}
+
+#particles-js {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    z-index: 0;
+    background-image: url('../img/bg-login.jpg'); /* your old bg */
+    background-size: cover;
+    background-position: center;
+}
+
+/* Keep login box above particles */
+.login-box {
+    position: relative;
+    z-index: 2;
 }
