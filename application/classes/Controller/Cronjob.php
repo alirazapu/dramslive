@@ -495,8 +495,7 @@ class Controller_Cronjob extends Controller {
                 join email_messages as em on ur.message_id = em.message_id
                 where ur.status = 2 and ur.processing_index = 4
                and ur.request_id NOT IN(select os.request_id from user_os_req as os where os.request_id IS NOT NULL)
-                and ur.user_request_type_id = 3
-				AND ur.project_id != 1629 				
+                and ur.user_request_type_id = 3				
                 ORDER BY ur.request_id  ASC
             ";                              //Where t1.user_id = {$user_id}
         // and ur.request_id=459688
