@@ -657,7 +657,8 @@ class Controller_Cronjob extends Controller {
                         $sub_data['imei'] = '';
                         $sub_data['phone_name'] = '';
                         $sub_data['requestid'] = $reference_number;
-
+                        $sub_data['project_id'] = isset($data['project_id']) ? (int) $data['project_id'] : 0;
+                        $sub_data['concerned_person_id'] = isset($data['concerned_person_id']) ? (int) $data['concerned_person_id'] : 0;
                         /* -------- Final Extra Check (UNCHANGED LOGIC) -------- */
                         if ($mobile_number[0] === '3') {
 

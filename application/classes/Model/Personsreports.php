@@ -507,7 +507,7 @@ class Model_Personsreports {
   /* Person Devices */
     public static function person_devices($data, $count , $pid) {
         /* Sorted Data */
-        $order_by_param = "t1.phone_number";
+        $order_by_param = "t2.phone_number";
         if(isset($data['iSortCol_0'])){
             switch ($data['iSortCol_0']){
                 case "0":
@@ -520,10 +520,10 @@ class Model_Personsreports {
                     $order_by_param = "phonenumber";
                     break; 
                 case "3":
-                    $order_by_param = "t1.in_use_since";
+                    $order_by_param = "in_use_since";
                     break; 
                 case "4":
-                    $order_by_param = "t1.last_interaction_at";
+                    $order_by_param = "last_interaction_at";
                     break;  
             }
         }      
@@ -555,23 +555,30 @@ class Model_Personsreports {
         /* For Total Record Count */
         if($count=='true')
         {   
-            $sql = "SELECT COUNT(t1.imei_number) as count
-               FROM person_phone_device t1 
-               INNER JOIN person_device_numbers t2 ON t1.id = t2.device_id 
-               INNER JOIN person_phone_number as t3 ON t2.phone_number = t3.phone_number 
-               WHERE t3.person_id=$pid    
-                    {$search}";
+            $sql = "SELECT COUNT(*) as count FROM (
+                SELECT t1.id, t2.phone_number
+                   FROM person_phone_device t1 
+                   INNER JOIN person_device_numbers t2 ON t1.id = t2.device_id 
+                   INNER JOIN person_phone_number as t3 ON t2.phone_number = t3.phone_number 
+                   WHERE t3.person_id=$pid    
+                        {$search}
+                   GROUP BY t1.id, t2.phone_number
+                ) as device_count";
             $members = DB::query(Database::SELECT, $sql)->execute()->current();
             return $members['count'];
         }
         /*  Fetch all Records */
         else {
-            $sql = "SELECT t1.phone_name,t1.imei_number,t1.in_use_since,t1.last_interaction_at,t2.phone_number as phonenumber,t1.id as device_id,t1.person_id 
+            $sql = "SELECT t1.phone_name, t1.imei_number,
+                        MIN(t2.first_use) as in_use_since,
+                        MAX(t2.last_use) as last_interaction_at,
+                        t2.phone_number as phonenumber, t1.id as device_id, t1.person_id 
                 FROM person_phone_device t1 
                 INNER JOIN person_device_numbers t2 ON t1.id = t2.device_id 
                 INNER JOIN person_phone_number as t3 ON t2.phone_number = t3.phone_number 
                 WHERE t3.person_id=$pid
                     {$search}
+                GROUP BY t1.id, t2.phone_number, t1.phone_name, t1.imei_number, t1.person_id
                     {$order_by}
                     {$limit}"; 
             $members = $DB->query(Database::SELECT, $sql, FALSE);        

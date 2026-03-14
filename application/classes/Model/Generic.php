@@ -6,6 +6,15 @@ defined('SYSPATH') or die('No direct script access.');
  * module related with Manual Subscriber Entry   
  */
 class Model_Generic {
+
+    /**
+     * Project IDs that require the "use existing concerned_person_id" guard
+     * in ManualSubInfoinsert() instead of the default CNIC-based person
+     * creation path.  Add project IDs here if the same behaviour is needed
+     * for other projects in the future.
+     */
+    const PROJECTS_SKIP_CNIC_CREATE = [1629];
+
     /* Manual Subscriber Entry data insert */
 
     public static function imei_finder($imei) {
@@ -60,17 +69,101 @@ class Model_Generic {
          * project_id
          * reason
          */
-        $array_person['cnic_number'] = $data['cnic_number'];
-        $array_person['first_name'] = $data['person_name'];
-        $array_person['last_name'] = $data['person_name1'];
-        $array_person['father_name'] = '';
-        $array_person['address'] = $data['address'];
-        $array_person['is_foreigner'] = $data['is_foreigner'];
-        $array_person['project_id'] = $data['inputproject'][0];
-        $array_person['reason'] = '';
-        $array_person['user_id'] = $data['user_id'];
-        $content = new Model_Generic();
-        $person_id = $content->update_cnic_number($array_person);
+        // Determine project context (passed from cronjob when available)
+        $project_id_ctx        = isset($data['project_id'])         ? (int) $data['project_id']         : 0;
+        $concerned_person_id_ctx = isset($data['concerned_person_id']) ? (int) $data['concerned_person_id'] : 0;
+
+        if (in_array($project_id_ctx, self::PROJECTS_SKIP_CNIC_CREATE, true) && $concerned_person_id_ctx > 0) {
+            // ----------------------------------------------------------------
+            // Project-1629 guard: use the existing person referenced by the
+            // request's concerned_person_id.  Do NOT call update_cnic_number()
+            // because that function can create a new person and causes
+            // person_phone_number.sim_owner to drift away from person_id.
+            // ----------------------------------------------------------------
+            $person_id = $concerned_person_id_ctx;
+
+            Model_ErrorLog::log(
+                'ManualSubInfoinsert',
+                'Project-1629 guard: enriching existing person, skipping CNIC-based person creation',
+                [
+                    'request_id'          => isset($data['requestid'])        ? $data['requestid']        : null,
+                    'project_id'          => $project_id_ctx,
+                    'concerned_person_id' => $concerned_person_id_ctx,
+                    'requested_value'     => isset($data['mobile_number'])    ? $data['mobile_number']    : null,
+                    'company_name'        => isset($data['company_name_get']) ? $data['company_name_get'] : null,
+                ],
+                null,
+                'info',
+                'subscriber_insert_project1629'
+            );
+
+            // Fill blanks only in person_initiate (CNIC fields)
+            $existing_pi = DB::select()
+                ->from('person_initiate')
+                ->where('person_id', '=', $person_id)
+                ->limit(1)
+                ->execute()
+                ->current();
+
+            if ($existing_pi !== false) {
+                $pi_updates = [];
+                if (!empty($data['cnic_number']) &&
+                    // '0' is the sentinel stored when CNIC was not available at import time
+                    (empty($existing_pi['cnic_number']) || $existing_pi['cnic_number'] === '0')
+                ) {
+                    $pi_updates['cnic_number'] = $data['cnic_number'];
+                }
+                if (!empty($data['cnic_number_foreigner']) && empty($existing_pi['cnic_number_foreigner'])) {
+                    $pi_updates['cnic_number_foreigner'] = $data['cnic_number_foreigner'];
+                }
+                if (!empty($pi_updates)) {
+                    DB::update('person_initiate')
+                        ->set($pi_updates)
+                        ->where('person_id', '=', $person_id)
+                        ->execute();
+                }
+            }
+
+            // Fill blanks only in person (name / address)
+            $existing_person = DB::select()
+                ->from('person')
+                ->where('person_id', '=', $person_id)
+                ->limit(1)
+                ->execute()
+                ->current();
+
+            if ($existing_person !== false) {
+                $p_updates = [];
+                if (!empty($data['person_name']) && empty($existing_person['first_name'])) {
+                    $p_updates['first_name'] = ucwords(trim((string) $data['person_name']));
+                }
+                if (!empty($data['person_name1']) && empty($existing_person['last_name'])) {
+                    $p_updates['last_name'] = ucwords(trim((string) $data['person_name1']));
+                }
+                if (!empty($data['address']) && empty($existing_person['address'])) {
+                    $p_updates['address'] = ucwords(trim((string) $data['address']));
+                }
+                if (!empty($p_updates)) {
+                    DB::update('person')
+                        ->set($p_updates)
+                        ->where('person_id', '=', $person_id)
+                        ->execute();
+                }
+            }
+        } else {
+            // Default path: create or retrieve a person record via CNIC logic
+            $array_person['cnic_number'] = $data['cnic_number'];
+            $array_person['first_name'] = $data['person_name'];
+            $array_person['last_name'] = $data['person_name1'];
+            $array_person['father_name'] = '';
+            $array_person['address'] = $data['address'];
+            $array_person['is_foreigner'] = $data['is_foreigner'];
+            $array_person['project_id'] = $data['inputproject'][0];
+            $array_person['reason'] = '';
+            $array_person['user_id'] = $data['user_id'];
+            $content = new Model_Generic();
+            $person_id = $content->update_cnic_number($array_person);
+        }
 
         //update mobile details (subscriber)
         /* Parameters in array:
@@ -116,21 +209,25 @@ class Model_Generic {
         $content = new Model_Generic();
         $sub_update_status = $content->update_imei_mobile_number($array_imei);
 
-        // update person details
-        if ( isset($person_id) && !empty($person_id) &&
-            isset($data['person_name']) && isset($data['person_name1']) &&
-            !empty($data['person_name']) && !empty($data['person_name1']) &&
-            isset($data['address']) && !empty($data['address'])
-        ) {
-            DB::update('person')
-                ->set([
-                    'first_name' => ucwords(trim((string) $data['person_name'])),
-                    'last_name'  => ucwords(trim((string) $data['person_name1'])),
-                    'address'    => ucwords(trim((string) $data['address'])),
-                ])
-                ->where('person_id', '=', (int) $person_id)
-                ->execute();
+        // update person details (unconditional overwrite — default path only)
+        // For projects in PROJECTS_SKIP_CNIC_CREATE the fill-blanks update was already applied above.
+        if (!in_array($project_id_ctx, self::PROJECTS_SKIP_CNIC_CREATE, true)) {
+            if ( isset($person_id) && !empty($person_id) &&
+                isset($data['person_name']) && isset($data['person_name1']) &&
+                !empty($data['person_name']) && !empty($data['person_name1']) &&
+                isset($data['address']) && !empty($data['address'])
+            ) {
+                DB::update('person')
+                    ->set([
+                        'first_name' => ucwords(trim((string) $data['person_name'])),
+                        'last_name'  => ucwords(trim((string) $data['person_name1'])),
+                        'address'    => ucwords(trim((string) $data['address'])),
+                    ])
+                    ->where('person_id', '=', (int) $person_id)
+                    ->execute();
+            }
         }
+
         if (!empty($data['requestid'])) {
             $reference_number = Model_Email::email_status($data['requestid'], 2, 5);
             return -7;
