@@ -5,9 +5,205 @@ defined('SYSPATH') or die('No direct script access.');
  * module related user request  
  */
 class Model_Userrequest {
-    /* User request status Ajax Call */
 
+
+    /* For Admin,Technical support, executive show all request, for Regional tech and Reginal officer show regional all requests,
+     for District tech support and district officer show all district request and for field officer show only their own requests.*/
     public static function user_request_status($data, $count) {
+        $login_user = Auth::instance()->get_user();
+        $DB = Database::instance();
+        $permission = Helpers_Utilities::get_user_permission_for_requests($login_user->id);
+        $login_user_profile = Helpers_Profile::get_user_perofile($login_user->id);
+        // currently skiping the posting logic....
+        $posting = $login_user_profile->posted;
+
+        // ==========================
+        // Date filter
+        // ==========================
+        $search_date = '';
+        $data['enddate'] = $data['enddate'] ?? date("Y-m-d");
+        if (!empty($data['startdate'])) {
+            $start_date = date("Y-m-d", strtotime($data['startdate'])) . ' 00:00:00';
+            $end_date   = date("Y-m-d", strtotime($data['enddate'])) . ' 23:59:59';
+            $search_date = " AND t1.created_at BETWEEN '{$start_date}' AND '{$end_date}' ";
+        }
+
+        // ==========================
+        // Email datetime filter
+        // ==========================
+        $search_datetime = '';
+        if (!empty($data['e_status']) && !empty($data['starttime'])) {
+            $data['endtime'] = $data['endtime'] ?? date("Y-m-d H:i");
+            $start_datetime = date("Y-m-d H:i", strtotime($data['starttime'])) . ':00';
+            $end_datetime   = date("Y-m-d H:i", strtotime($data['endtime'])) . ':59';
+
+            if ($data['e_status'] == 1) {
+                $search_datetime = " AND em.message_date BETWEEN '{$start_datetime}' AND '{$end_datetime}' ";
+            } elseif ($data['e_status'] == 2) {
+                $search_datetime = " AND em.received_date BETWEEN '{$start_datetime}' AND '{$end_datetime}' ";
+            }
+        }
+
+        // ==========================
+        // Request type filter
+        // ==========================
+        $data['field'] = '';
+        if (!empty($data['request_type_new'])) {
+            $requesttype_value = implode(',', array_values($data['request_type_new']));
+            $data['field'] = " AND t1.user_request_type_id IN ({$requesttype_value})";
+        }
+
+        // ==========================
+        // MNC filter
+        // ==========================
+        $data['mnc'] = '';
+        if (!empty($data['mnc_new'])) {
+            $mnc_value = implode(',', array_values($data['mnc_new']));
+            $data['mnc'] = " AND t1.company_name IN ({$mnc_value})";
+        }
+
+        // ==========================
+        // Role / Permission logic
+        // ==========================
+        $where_clause = '';
+        $result = explode('-', $posting);
+        //print_r($login_user_profile);die();
+
+        // Main logic for showing Requests 
+        switch ($permission) {
+            case 'all': // Administrator or HQ/Dev Tech Support: see all requests
+                $where_clause = "WHERE 1"; // no restrictions
+                break;
+
+            case 'region': // Regional-level access
+                // Users in the same region
+                $where_clause = "WHERE t1.user_id IN (
+                    SELECT user_id FROM users_profile
+                    WHERE region_id = {$login_user_profile->region_id}
+                )";
+                break;
+
+            case 'district': // District-level access
+                // Users in the same district
+                $where_clause = "WHERE t1.user_id IN (
+                    SELECT user_id FROM users_profile
+                    WHERE district_id = {$login_user_profile->district_id}
+                )";
+                break;
+
+            case 'own': // Only their own requests
+            default:
+                $where_clause = "WHERE t1.user_id = {$login_user_profile->user_id}";
+                break;
+        }
+        // ==========================
+        // Email body filter
+        // ==========================
+        $where_body = !empty($data['txtbd']) ? " AND em.received_body LIKE '%{$data['txtbd']}%' " : '';
+
+        // ==========================
+        // User filter
+        // ==========================
+        $where_user = ' ';
+        if (!empty($data['user'])) {
+            $rs = $DB->query(Database::SELECT, "SELECT user_id FROM users_profile WHERE CONCAT(first_name, ' ', last_name) LIKE '%{$data['user']}%'", FALSE)->as_array();
+            $request_array = implode(',', array_column($rs, 'user_id'));
+            $where_user = !empty($request_array) ? " AND t1.user_id IN ({$request_array}) " : " AND t1.user_id = 'null' ";
+        }
+
+        // ==========================
+        // Person filter
+        // ==========================
+        $where_person = ' ';
+        if (!empty($data['person'])) {
+            $rs = $DB->query(Database::SELECT, "SELECT person_id FROM person WHERE CONCAT(first_name, ' ', last_name) LIKE '%{$data['person']}%'", FALSE)->as_array();
+            $request_array = implode(',', array_column($rs, 'person_id'));
+            $where_person = !empty($request_array) ? " AND t1.concerned_person_id IN ({$request_array}) " : " AND t1.concerned_person_id = '-1' ";
+        }
+
+        // ==========================
+        // Status, reply, processing filters
+        // ==========================
+        $and_status = '';
+        if (isset($data['e_status'])) {
+            switch ($data['e_status']) {
+                case 0: $and_status = " AND t1.status = 0 "; break;
+                case 1: $and_status = " AND t1.status = 1 "; break;
+                case 2: $and_status = " AND t1.status = 2 "; break;
+            }
+        }
+
+        $and_reply = '';
+        if (isset($data['r_status'])) {
+            switch ($data['r_status']) {
+                case 0: $and_reply = " AND t1.reply = 0 "; break;
+                case 1: $and_reply = " AND t1.reply = 1 "; break;
+            }
+        }
+
+        $and_processing = '';
+        if (isset($data['p_status'])) {
+            switch ($data['p_status']) {
+                case 3: $and_processing = " AND t1.processing_index = 3 "; break;
+                case 4: $and_processing = " AND t1.processing_index = 4 "; break;
+                case 5: $and_processing = " AND t1.processing_index = 5 "; break;
+            }
+        }
+
+        // ==========================
+        // Search filter
+        // ==========================
+        $search = '';
+        if (!empty($data['sSearch'])) {
+            $sSearch = preg_replace('/[^A-Za-z0-9\-]/', '', $data['sSearch']);
+            $users_array = $DB->query(Database::SELECT, "SELECT id FROM users WHERE username LIKE '%{$sSearch}%'", FALSE)->as_array();
+            $request_array = implode(',', array_column($users_array, 'id'));
+            $search = !empty($request_array)
+                ? " AND (t1.user_id IN ({$request_array}) OR t1.requested_value LIKE '%{$sSearch}%' OR t1.request_id LIKE '%{$sSearch}%')"
+                : " AND (t1.user_id IS NULL OR t1.requested_value LIKE '%{$sSearch}%' OR t1.request_id LIKE '%{$sSearch}%')";
+        }
+
+        // ==========================
+        // Count query
+        // ==========================
+        if ($count === 'true') {
+            $sql = "SELECT COUNT(*) AS count
+                    FROM user_request t1
+                    JOIN email_templates_type t2 ON t1.user_request_type_id = t2.id
+                    JOIN email_messages em ON em.message_id = t1.message_id
+                    {$where_clause} {$and_status} {$and_reply} {$and_processing} 
+                    {$where_body} {$where_user} {$where_person} {$search} {$data['field']} {$data['mnc']} {$search_date} {$search_datetime}";
+            $members = $DB->query(Database::SELECT, $sql, FALSE)->current();
+            return $members['count'];
+        }
+
+        // ==========================
+        // Fetch all records
+        // ==========================
+        $order_by_param = $data['iSortCol_0'] ?? 'created_at';
+        $order_by_type = $data['sSortDir_0'] ?? 'DESC';
+        $order_by = " ORDER BY {$order_by_param} {$order_by_type}";
+
+        $limit = (isset($data['iDisplayStart'], $data['iDisplayLength'])) 
+            ? " LIMIT {$data['iDisplayStart']}, {$data['iDisplayLength']}" 
+            : '';
+
+        $sql = "SELECT t1.reference_id, t1.reply, t1.company_name, t1.request_id, t1.user_request_type_id,
+                    t1.user_id, t2.email_type_name, t1.requested_value, t1.concerned_person_id,
+                    t1.created_at, t1.status, t1.processing_index, t1.request_priority,
+                    em.message_id, em.received_file_path, em.received_body, em.message_subject, em.sender_id
+                FROM user_request t1
+                JOIN email_templates_type t2 ON t1.user_request_type_id = t2.id
+                JOIN email_messages em ON em.message_id = t1.message_id
+                {$where_clause} {$and_status} {$and_reply} {$and_processing}
+                {$where_body} {$where_user} {$where_person} {$search} {$data['field']} {$data['mnc']} {$search_date} {$search_datetime}
+                {$order_by} {$limit}";
+
+        return $DB->query(Database::SELECT, $sql, FALSE);
+    }
+
+
+    public static function user_request_status_old($data, $count) {
 //        echo '<pre>';
 //        print_r($data);
 //        exit;
@@ -204,6 +400,8 @@ class Model_Userrequest {
         }
         $result = explode('-', $posting);
         //request status 
+       
+
         if ($permission == 2 || $permission == 3) {
             switch ($result[0]) {
                 case 'h':
@@ -325,7 +523,7 @@ class Model_Userrequest {
                                 {$search}
                                 {$order_by}    
                                 {$limit}";
-//           print_r($sql); exit;
+//          print_r($sql); exit;
 
             $members = $DB->query(Database::SELECT, $sql, FALSE);
             return $members;

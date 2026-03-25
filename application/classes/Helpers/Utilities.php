@@ -500,6 +500,40 @@ abstract class Helpers_Utilities {
     }
 
     //
+    public static function get_user_permission_for_requests($user_id) {
+    $user_id = Helpers_Utilities::remove_injection($user_id);
+    $DB = Database::instance();
+
+    // Get role_id
+    $sql = "SELECT role_id FROM roles_users WHERE user_id = {$user_id}";
+    $result = $DB->query(Database::SELECT, $sql, TRUE)->current();
+
+    if (!empty($result->role_id)) {
+        switch ($result->role_id) {
+            case 1: // Administrator
+            case 2: // Technical Support HQ
+            case 9: // Development Tech Support
+                return 'all'; // Can see all requests
+
+            case 3: // Executive
+            case 4: // Regional Technical Support
+            case 5: // Regional Officer
+                return 'region'; // Can see requests in their region
+
+            case 6: // District Technical Support
+            case 7: // District Officer
+                return 'district'; // Can see requests in their district
+
+            case 8: // Field Officer
+                return 'own'; // Can see only their own requests
+
+            default:
+                return 'own'; // Fallback: own requests
+        }
+    } else {
+        return 'own'; // No role: own requests
+    }
+}
     public static function get_user_permission($user_ud) {
         $user_ud = Helpers_Utilities::remove_injection($user_ud);
         $DB = Database::instance();
