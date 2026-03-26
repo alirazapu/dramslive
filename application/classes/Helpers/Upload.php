@@ -1156,31 +1156,40 @@ abstract class Helpers_Upload {
         if ($company != 4) {
             //  Read your Excel workbook
 			 set_time_limit(0);
-            ini_set('memory_limit', '2048M');
+			ini_set('memory_limit', '99999990024M');
             try {
                 $inputfiletype = PHPExcel_IOFactory::identify($inputfilename);
                 $objReader = PHPExcel_IOFactory::createReader($inputfiletype);
-				$cacheMethod = PHPExcel_CachedObjectStorageFactory::cache_to_discISAM;
+                $cacheMethod = PHPExcel_CachedObjectStorageFactory::cache_to_discISAM;
                 PHPExcel_Settings::setCacheStorageMethod($cacheMethod);
                 //read only data (without formating) for memory and time performance
                 $objReader->setReadDataOnly(true);
 
                 $objPHPExcel = $objReader->load($inputfilename);
             } catch (Exception $e) {
-             
+                //echo '<pre>';
+                //print_r($e); exit;
                 if (!empty($userrequestid)) {
                     $reference_number = Model_Email::email_status($userrequestid, 2, 3);
                 }
                 if (!empty($file_id))
                     $error_number = Model_Email::file_status($file_id, 0, 2);
-               throw new Exception('Error loading file "' . pathinfo($inputfilename, PATHINFO_BASENAME) . '": ' . $e->getMessage(), 0, $e);
+                die('Error loading file "' . pathinfo($inputfilename, PATHINFO_BASENAME) . '": ' . $e->getMessage());
             }
+
+            //  Get worksheet dimensions
+            // ini_set("precision", "15");
+            // set_time_limit(-1);
+            
+
             $excelData = array();
             $filePath = $inputfilename;
  
          //echo $filePath; exit;
             if ($filePath) {
-              
+               
+
+
                 foreach ($objPHPExcel->getWorksheetIterator() as $worksheet) {
                     $worksheetTitle = $worksheet->getTitle();
                     $highestRow = $worksheet->getHighestRow(); // e.g. 10

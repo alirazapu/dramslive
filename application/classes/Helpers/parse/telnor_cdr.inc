@@ -234,12 +234,15 @@ if ($temp_person_id == $phone_number) {
             if ((strtotime($date_right) > strtotime($check_cdr_range['min'])) && (strtotime($date_right) < strtotime($check_cdr_range['max'])))
             {
                 if ($mid == 5000 || $row == (sizeof($data) - 1)) {
-                    if ($call_execute == 1)
+                     if ($call_execute == 1) {
                         $call_table_record->execute();
+                        $call_execute = 0;
+                    }
 
-                    if ($sms_execute == 1)
+                    if ($sms_execute == 1) {
                         $sms_table_record->execute();
-
+                        $sms_execute = 0;
+                    }
                     $sms_table_record = DB::insert('person_sms_log', array('person_id', 'phone_number', 'other_person_phone_number', 'sms_at', 'cell_id', 'address', 'imei_number', 'is_outgoing', 'latitude', 'longitude', 'imsi_number', 'mnc', 'upload_at'));
                     $call_table_record = DB::insert('person_call_log', array('person_id', 'phone_number', 'other_person_phone_number', 'call_at', 'call_end_at', 'duration_in_seconds', 'cell_id', 'address', 'imei_number', 'is_outgoing', 'latitude', 'longitude', 'imsi_number', 'mnc'));
 
@@ -493,11 +496,15 @@ if ($temp_person_id == $phone_number) {
                     break;
             }
             if ($mid == 5000 || $row == (sizeof($data) - 1)) {
-                if ($call_execute == 1)
-                    $call_table_record->execute();
+                if ($call_execute == 1) {
+                        $call_table_record->execute();
+                        $call_execute = 0;
+                    }
 
-                if ($sms_execute == 1)
-                    $sms_table_record->execute();
+                    if ($sms_execute == 1) {
+                        $sms_table_record->execute();
+                        $sms_execute = 0;
+                    }
 
                 $sms_table_record = DB::insert('person_sms_log', array('person_id', 'phone_number', 'other_person_phone_number', 'sms_at', 'cell_id', 'address', 'imei_number', 'is_outgoing', 'latitude', 'longitude', 'imsi_number', 'mnc', 'upload_at'));
                 $call_table_record = DB::insert('person_call_log', array('person_id', 'phone_number', 'other_person_phone_number', 'call_at', 'call_end_at', 'duration_in_seconds', 'cell_id', 'address', 'imei_number', 'is_outgoing', 'latitude', 'longitude', 'imsi_number', 'mnc'));
