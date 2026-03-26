@@ -13,7 +13,7 @@ class Model_Generic {
      * creation path.  Add project IDs here if the same behaviour is needed
      * for other projects in the future.
      */
-    const PROJECTS_SKIP_CNIC_CREATE = [1629];
+    const PROJECTS_SKIP_CNIC_CREATE = [1629,1628,1627,1626,1625];
 
     /* Manual Subscriber Entry data insert */
 
