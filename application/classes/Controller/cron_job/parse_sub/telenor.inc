@@ -1,6 +1,10 @@
 <?php
 
-// Check if file exists, parse file first before falling back to email body
+// if email body have no data found then don't parse return no found 1 to cronjob file
+if (!empty($data['received_body']) && stripos($data['received_body'], 'No Data Found') !== false) {
+    $not_found_for_telenor = 1;
+}else{
+
 if(!empty($data['received_file_path']) && $data['received_file_path'] != 'na') {
     // File exists, parse it to extract subscriber information
     $ext = pathinfo($data['received_file_path'], PATHINFO_EXTENSION);
@@ -284,5 +288,6 @@ if ($not_fount!=1 && !$is_file){
             $is_foreigner= 1;
         }
 
+}
 }
 ?>

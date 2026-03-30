@@ -235,6 +235,9 @@ class Controller_Userrequest extends Controller_Working {
                                     case 7:
                                         $system_status_flag = '<span class="badge badge-pill badge-success">Marked Complete</span>';
                                         break;
+                                    case 8:
+                                        $system_status_flag = '<span class="label badge-success">No Data Found</span>';
+                                        break;
                                 }
                             } else {
                                 $system_status_flag = '<span class="badge badge-pill badge-warning">Response waiting</span>';

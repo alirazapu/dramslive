@@ -515,9 +515,6 @@ class Controller_Cronjob extends Controller {
 // and ur.request_id = 1140862
             $parse_data = DB::query(Database::SELECT, $sql)->execute()->as_array();
 
-//        echo '<pre>';
-//        print_r(count($parse_data));
-//        exit;
         }
         foreach ($parse_data as $data) {
             try {
@@ -531,6 +528,7 @@ class Controller_Cronjob extends Controller {
                 $date = '';
                 $status = '';
                 $not_fount = 0;
+                $not_found_for_telenor = 0;
                 $reference_number = $data['request_id'];
                 $data['file_id'] = Helpers_Upload::get_fileid_aginst_requestid($data['request_id']);
                 $login_user = Auth::instance()->get_user();
@@ -556,8 +554,14 @@ class Controller_Cronjob extends Controller {
                         break;
                 }
 
-                //echo $mobile_number;
-                 if ($not_fount == 0) {
+                //echo $data['company_name'];exit;
+               // echo $not_fount.'-'. $not_found_for_telenor;
+               // exit;
+                // if request is of telenor and not found is 1 (set in telenor sub) then else old logic for all other request
+                if($data['company_name'] == 6 && $not_found_for_telenor == 1){
+                        $reference_number_1 = Model_Email::email_status($reference_number, 2, 8);
+                }else{
+                        if ($not_fount == 0) {
 					/* ================= Normalize Mobile ================= */
                     $mobile_number = trim($mobile_number);
                     $mobile_number = preg_replace('/\D/', '', $mobile_number);
@@ -716,6 +720,7 @@ class Controller_Cronjob extends Controller {
 
                         $reference_number_1 = Model_Email::email_status($reference_number, 2, 3);
                     }
+                }  
                 }
 
             } catch (Exception $e) {
