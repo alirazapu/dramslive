@@ -1,6 +1,6 @@
 <?php
-
-if($data['received_file_path']!='na')
+    $not_found_for_telenor = 1;
+}elseif($data['received_file_path']!='na')
 {
     //print_r($data['received_file_path']);                            
     //$path = DOCROOT. 'uploads' . DIRECTORY_SEPARATOR. 'cdr' . DIRECTORY_SEPARATOR . 'mail' . DIRECTORY_SEPARATOR . $data['received_file_path'];
