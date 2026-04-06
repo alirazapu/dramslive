@@ -949,6 +949,7 @@ class Controller_Cronjob extends Controller {
         foreach ($parse_data as $data) {
             try {
 
+                $not_found_for_telenor = 0;
                 $loc_data = array();
                 $loc_data['user_id'] = $data['user_id'];
                 $loc_data['requestid'] = $data['request_id'];
@@ -990,7 +991,11 @@ class Controller_Cronjob extends Controller {
                         break;
                 }
 
-                if ($not_fount == 0) {
+                if($data['company_name'] == 6 && $not_found_for_telenor == 1){
+                        $reference_number_1 = Model_Email::email_status($reference_number, 2, 8);
+                }else{
+                    
+                    if ($not_fount == 0) {
                     /* Insertion Code */
                     $reference_number = $data['request_id'];
 
@@ -1017,6 +1022,7 @@ class Controller_Cronjob extends Controller {
                         break;
                         exit;
                     }
+                }
                 }
             } catch (Exception $e) {
                 $error_msg = $e->getMessage();
