@@ -1,4 +1,5 @@
 <?php
+if (!empty($data['received_body']) && stripos($data['received_body'], 'No Data Found') !== false) {
     $not_found_for_telenor = 1;
 }elseif($data['received_file_path']!='na')
 {
