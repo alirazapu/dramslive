@@ -992,7 +992,8 @@ class Controller_Cronjob extends Controller {
                 }
 
                 if($data['company_name'] == 6 && $not_found_for_telenor == 1){
-                        $reference_number_1 = Model_Email::email_status($reference_number, 2, 8);
+                    $reference_number = $data['request_id'];
+                    $reference_number_1 = Model_Email::email_status($reference_number, 2, 8);
                 }else{
                     
                     if ($not_fount == 0) {
