@@ -9,6 +9,8 @@ if ($not_fount != 1) {
 
 
     $data['received_body'] = str_replace('_', '', $data['received_body'][0]);
+    // Decode quoted-printable soft line breaks (=CRLF / =LF means line continuation)
+    $data['received_body'] = preg_replace('/=\r?\n\s*/', '', $data['received_body']);
     $data['received_body'] = preg_replace("/\r|\n/", "", $data['received_body']);
 
     $data['received_body'] = str_replace('*', '', $data['received_body']);
@@ -63,136 +65,196 @@ if ($not_fount != 1) {
         $reference_number = Model_Email::email_status($reference_number, 2, 5);
     } else {
 
+        // Detect new format: response starts directly with the mobile number (digits only).
+        // Old format: [status/active], [mobile], [name], [CNIC], [address], [date]
+        // New format: [mobile], [name], [CNIC], [address], [ISO-DOB + response info]
+        $first_field = trim($parse_val[0] ?? '');
+        $is_new_format = ctype_digit($first_field) && strlen($first_field) >= 10 && strlen($first_field) <= 13;
 
-        $i = 0;
-        if (strpos(strtoupper($parse_val[$i]), 'ACTIVE') !== false) {
-            $active = 'Active';
+        if ($is_new_format) {
+
+            // Field 0: mobile number
+            $mobile_number = substr($first_field, -10);
+
+            // Field 1: subscriber name
+            $name = trim($parse_val[1] ?? '');
+
+            // Field 2: CNIC (13-digit numeric or alphanumeric for foreigners)
+            $cnic_field = str_replace('-', '', trim($parse_val[2] ?? ''));
+            if (!ctype_digit($cnic_field) && strlen($cnic_field) == 13) {
+                $cnic_original = $cnic_field;
+                $cnic = $cnic_field;
+                $is_foreigner = 1;
+            } elseif (ctype_digit($cnic_field) && strlen($cnic_field) == 13) {
+                $cnic = $cnic_field;
+            }
+
+            // Field 3: address (complete)
+            $address = trim($parse_val[3] ?? '');
+
+            // Field 4: DOB in ISO format followed by response metadata
+            // e.g. "2011-10-06T00:00:00.000+05:00 04/10/2026 11:07:30 AM ..."
+            // After str_replace('.','',…) the milliseconds dot is removed but the
+            // date component before T is still intact.
+            $dob_field = trim($parse_val[4] ?? '');
+            if (!empty($dob_field)) {
+                $iso_raw = explode(' ', $dob_field)[0];
+                // Strip ISO time component (T…) to get a plain YYYY-MM-DD date
+                $iso_date_only = (strpos($iso_raw, 'T') !== false)
+                    ? explode('T', $iso_raw)[0]
+                    : $iso_raw;
+                $dp = explode('-', $iso_date_only);
+                if (count($dp) === 3) {
+                    $dy = (int)$dp[0];
+                    $dm = (int)$dp[1];
+                    $dd = (int)$dp[2];
+                    if ($dy >= 1900 && $dy <= 2100 && $dm >= 1 && $dm <= 12
+                        && $dd >= 1 && $dd <= 31 && checkdate($dm, $dd, $dy)) {
+                        $date = $iso_date_only;
+                    }
+                }
+            }
+
         } else {
-            $active = trim($parse_val[$i]);
-        }
+
+            // Old format: [status/active], [mobile], [name], [CNIC], ...
+            $i = 0;
+            if (strpos(strtoupper($parse_val[$i]), 'ACTIVE') !== false) {
+                $active = 'Active';
+            } else {
+                $active = trim($parse_val[$i]);
+            }
 
 
-        $i += 1;
-        $mobile_number = substr(trim($parse_val[$i]), -10);
-
-
-        $i += 1;
-        $name = trim($parse_val[$i]);
-
-
-        $i += 1;
-        $parse_val[$i] = str_replace('-', '', $parse_val[$i]);
-
-
-        if (!ctype_digit(trim($parse_val[$i])) && strlen(trim($parse_val[$i])) == 13) {
-            $cnic_original = trim($parse_val[$i]);
-            $cnic = trim($parse_val[$i]);
-            //$cnic = Helpers_Utilities::check_digit(trim($parse_val[$i]));
-            $is_foreigner = 1;
             $i += 1;
-        } else {
-            if (ctype_digit(trim($parse_val[$i])) && strlen(trim($parse_val[$i])) == 13) {
+            $mobile_number = substr(trim($parse_val[$i]), -10);
+
+
+            $i += 1;
+            $name = trim($parse_val[$i]);
+
+
+            $i += 1;
+            $parse_val[$i] = str_replace('-', '', $parse_val[$i]);
+
+
+            if (!ctype_digit(trim($parse_val[$i])) && strlen(trim($parse_val[$i])) == 13) {
+                $cnic_original = trim($parse_val[$i]);
                 $cnic = trim($parse_val[$i]);
+                //$cnic = Helpers_Utilities::check_digit(trim($parse_val[$i]));
+                $is_foreigner = 1;
                 $i += 1;
             } else {
-                $i += 1;
-                if (ctype_digit(trim($parse_val[$i]))) {
+                if (ctype_digit(trim($parse_val[$i])) && strlen(trim($parse_val[$i])) == 13) {
                     $cnic = trim($parse_val[$i]);
                     $i += 1;
+                } else {
+                    $i += 1;
+                    if (ctype_digit(trim($parse_val[$i]))) {
+                        $cnic = trim($parse_val[$i]);
+                        $i += 1;
+                    }
                 }
             }
-        }
 
 
-        if (empty($cnic)) {
+            if (empty($cnic)) {
 
-            foreach ($parse_val as $cnicval) {
+                foreach ($parse_val as $cnicval) {
 
-                if (!ctype_digit(trim($cnicval)) && strlen(trim($cnicval)) == 13) {
-                    $cnic_original = trim($cnicval);
-                    $cnic = trim($cnicval);
-                    $is_foreigner = 1;
-                    break;
-                } elseif (ctype_digit(trim($cnicval)) && strlen(trim($cnicval)) == 13) {
-                    $cnic = trim($cnicval);
-                    break;
+                    if (!ctype_digit(trim($cnicval)) && strlen(trim($cnicval)) == 13) {
+                        $cnic_original = trim($cnicval);
+                        $cnic = trim($cnicval);
+                        $is_foreigner = 1;
+                        break;
+                    } elseif (ctype_digit(trim($cnicval)) && strlen(trim($cnicval)) == 13) {
+                        $cnic = trim($cnicval);
+                        break;
+                    }
                 }
             }
-        }
-        //echo ' cnic ' . $cnic_original;
-        if (strpos($parse_val[$i], '/') !== false) {
+            //echo ' cnic ' . $cnic_original;
+            if (strpos($parse_val[$i], '/') !== false) {
 
-        }
+            }
 
 
-        if (strpos($parse_val[$i], '/') !== false && strpos($parse_val[$i], ':') !== false) {
+            if (strpos($parse_val[$i], '/') !== false && strpos($parse_val[$i], ':') !== false) {
 
-            list($d, $m, $y) = explode("/", $parse_val[$i]);
-            $yy = explode(" ", $y);
-            $y = $yy[0];
+                list($d, $m, $y) = explode("/", $parse_val[$i]);
+                $yy = explode(" ", $y);
+                $y = $yy[0];
 
-            if (checkdate($m, $d, $y)) {
-                $date = trim($parse_val[$i]);
-                $i += 1;
+                if (checkdate($m, $d, $y)) {
+                    $date = trim($parse_val[$i]);
+                    $i += 1;
 
+                } else {
+
+                    $status = trim($parse_val[$i]);
+                    $i += 1;
+                    $date = trim($parse_val[$i]);
+                    $i += 1;
+                }
+            } elseif ((strpos($parse_val[$i], '-') !== false) && (strpos($parse_val[$i], ':') !== false)) {
+
+                list($d, $m, $y) = explode("-", $parse_val[$i]);
+                $yy = explode(" ", $y);
+                $y = $yy[0];
+                if (checkdate($m, $d, $y)) {
+                    $date = trim($parse_val[$i]);
+                    $i += 1;
+
+                } else {
+
+                    $status = trim($parse_val[$i]);
+                    $i += 1;
+                    $date = trim($parse_val[$i]);
+                    $i += 1;
+                }
             } else {
 
-                $status = trim($parse_val[$i]);
-                $i += 1;
-                $date = trim($parse_val[$i]);
-                $i += 1;
-            }
-        } elseif ((strpos($parse_val[$i], '-') !== false) && (strpos($parse_val[$i], ':') !== false)) {
+                if (!empty($parse_val[$i])) {
+                    $address = $parse_val[$i];
+                }
+                if (!empty($parse_val[$i + 1])) {
+                    $address .= ' ' . $parse_val[$i + 1];
+                }
+                $i = $i + 1;
 
-            list($d, $m, $y) = explode("-", $parse_val[$i]);
-            $yy = explode(" ", $y);
-            $y = $yy[0];
-            if (checkdate($m, $d, $y)) {
-                $date = trim($parse_val[$i]);
-                $i += 1;
+                if (strpos($parse_val[$i] ?? '', '/') !== false) {
 
-            } else {
+                    $parse_val[$i] = str_replace("'", ' ', $parse_val[$i] ?? '');
 
-                $status = trim($parse_val[$i]);
-                $i += 1;
-                $date = trim($parse_val[$i]);
-                $i += 1;
-            }
-        } else {
+                    $strhlp = explode(" ", trim($parse_val[$i] ?? ''));
 
-            if (!empty($parse_val[$i])) {
-                $address = $parse_val[$i];
-            }
-            if (!empty($parse_val[$i + 1])) {
-                $address .= ' ' . $parse_val[$i + 1];
-            }
-            $i = $i + 1;  // ← was missing increment in original → bug
+                    if (count($strhlp) >= 2) {
+                        $date_part = $strhlp[0];           // e.g. "2024-04-22"
+                        $time_part = $strhlp[1] ?? '';     // optional
 
-            if (strpos($parse_val[$i] ?? '', '/') !== false) {
+                        // Strip ISO time component if present (e.g. "2011-10-06T00:00:00.000+05:00")
+                        if (strpos($date_part, 'T') !== false) {
+                            $date_part = explode('T', $date_part)[0];
+                            $time_part = '';
+                        }
 
-                $parse_val[$i] = str_replace("'", ' ', $parse_val[$i] ?? '');
+                        $date_parts = explode("-", $date_part);
 
-                $strhlp = explode(" ", trim($parse_val[$i] ?? ''));
+                        if (count($date_parts) === 3) {
+                            $y = (int) trim($date_parts[0]);
+                            $m = (int) trim($date_parts[1]);
+                            $d = (int) trim($date_parts[2]);
 
-                if (count($strhlp) >= 2) {
-                    $date_part = $strhlp[0];           // e.g. "2024-04-22"
-                    $time_part = $strhlp[1] ?? '';     // optional
-
-                    $date_parts = explode("-", $date_part);
-
-                    if (count($date_parts) === 3) {
-                        $y = (int) trim($date_parts[0]);
-                        $m = (int) trim($date_parts[1]);
-                        $d = (int) trim($date_parts[2]);
-
-                        if ($y >= 1900 && $y <= 2100 && $m >= 1 && $m <= 12 && $d >= 1 && $d <= 31) {
-                            if (checkdate($m, $d, $y)) {
-                                $date = trim($date_part . ($time_part ? ' ' . $time_part : ''));
+                            if ($y >= 1900 && $y <= 2100 && $m >= 1 && $m <= 12 && $d >= 1 && $d <= 31) {
+                                if (checkdate($m, $d, $y)) {
+                                    $date = trim($date_part . ($time_part ? ' ' . $time_part : ''));
+                                }
                             }
                         }
                     }
                 }
             }
+
         }
 
     }
