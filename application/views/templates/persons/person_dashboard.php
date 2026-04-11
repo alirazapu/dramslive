@@ -265,16 +265,15 @@ $personage = '';
                             <span class="text-black"> <b>Father/Husband Name: </b><?php echo $father_name; ?> </span>
                         </li>
                         <li class='dashboard-sticky-red'>
-
-                            <span class="text-black"> 
+                            <span class="text-black">
                                 <b>CNIC: </b>  <?php echo $nic_number; ?>   , &nbsp &nbsp &nbsp 
-                                
-                                    <b>DOB: </b> <?php echo $datofbirth; ?>   <b>
-                                        <?php if (!empty($datofbirth)) {  ?>
-                                        , Age: </b><?php echo $personage; ?>
-                                <?php }  ?>
+                                <b>DOB: </b> <?php echo $datofbirth; ?><b><?php if (!empty($datofbirth)) {  ?> , Age: </b><?php echo $personage; }?></b>
                             </span>
-
+                        </li>
+						<li class='dashboard-sticky-red'>
+                            <span class="text-black"> 
+                                <b>Address:</b> <?php echo (isset($address) && !empty($address))?$address:''; ?>
+                            </span>
                         </li>
                         <li class='dashboard-sticky-red'>
                             <?php

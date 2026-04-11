@@ -2991,6 +2991,11 @@ exit();
                 <?php
                 foreach ($totaldevices as $totaldevice) {
                     if ($dcount < 6) {
+						$imei = trim($totaldevice->imei_number ?? '');
+
+						if ($imei === '' || $imei === '0' || $imei === 0) {
+							continue;                    // ← This is the key fix
+						}
                         ?>
                         <li class="dashboard-sticky-danger">
                             <span class="text-black"> <b><?php echo $dcount . ":"; ?></b> <?php echo $totaldevice->phone_name; ?> </span><span
