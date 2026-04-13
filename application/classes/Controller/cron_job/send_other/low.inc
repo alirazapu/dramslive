@@ -28,7 +28,7 @@ try {
                 ->current();
             
             // Previous limit was 650, now 1200
-            if ($total_count['total'] > 1200 || $res['request_priority'] != 1) {
+            if ($total_count['total'] > 1450 || $res['request_priority'] != 1) {
                 continue;
             }
             

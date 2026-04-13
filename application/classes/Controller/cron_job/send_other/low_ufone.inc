@@ -16,7 +16,7 @@ $query = "select *
                 $sql = DB::query(Database::SELECT, $query);
                 $total_count = $sql->execute()->current();         
                 //echo $total_count['total'];                
-                if($total_count['total']<= 600)
+                if($total_count['total']<= 1600)
                 {             
                     
                     $company_name = $res['company_name'];                  
