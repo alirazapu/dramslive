@@ -601,6 +601,22 @@ echo Helpers_Layout::get_ajax_loader();
                         </div>                        
                     </div>
                 </div>
+                <div class="col-md-12">
+                    <div class="box box-primary box-solid collapsed-box">
+                        <div class="box-header with-border">
+                            <h3 class="box-title">External Databases Information</h3>
+                            <div class="box-tools pull-right">
+                                <button type="button" title="Show/Hide" id="external_databases" class="panelisopen btn btn-box-tool" data-widget="collapse"><i class="fa fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="box-body">
+                            <div id="person_external_databases_info">
+                                <?php echo Helpers_Layout::get_ajax_loader(); ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
             </div>
         </div>
@@ -2692,6 +2708,29 @@ echo $personID;
                             swal("System Error", "Contact Support Team.", "error");
                         }
                         $("#person_affiliations_and_social_links").html(msg);
+                    }
+                });
+            }
+        } else {
+            $(this).addClass("panelisopen");
+        }
+    });
+    $('#external_databases').click(function () {
+        if ($(this).hasClass("panelisopen")) {
+            $(this).removeClass("panelisopen");
+            if (!$(this).hasClass("already-done")) {
+                $.ajax({
+                    url: "<?php echo URL::site("Persons/person_external_databases"); ?>",
+                    data: {id: '<?php echo $_GET['id']; ?>'},
+                    cache: false,
+                    dataType: 'html',
+                    success: function (msg) {
+                        $("#external_databases").addClass("panelisopen");
+                        if (msg == 2)
+                        {
+                            swal("System Error", "Contact Support Team.", "error");
+                        }
+                        $("#person_external_databases_info").html(msg);
                     }
                 });
             }

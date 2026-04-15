@@ -3423,6 +3423,142 @@ exit();
         }
     }
 
+    public function action_person_external_databases()
+    {
+        try {
+            $_GET = Helpers_Utilities::remove_injection($_GET);
+            $person_id = (int)Helpers_Utilities::encrypted_key($_GET['id'], "decrypt");
+            $person_cnic = Helpers_Person::get_person_cnic($person_id);
+            $person_cnic = preg_replace('/\D+/', '', (string)$person_cnic);
+
+            if (empty($person_id) || empty($person_cnic)) {
+                ?>
+                <div class="col-md-12">
+                    <span><i class="fa fa-check margin-r-2"></i><strong> No CNIC available for external DB lookup</strong></span>
+                </div>
+                <?php
+                return;
+            }
+
+            $ctd_profile = Helpers_Person::get_person_external_profile_ctd_kpk($person_cnic);
+            $dl_profile = Helpers_Person::get_person_external_profile_driving_license($person_cnic);
+            $ecp_profile = Helpers_Person::get_person_external_profile_ecp($person_cnic);
+            $employee_profiles = Helpers_Person::get_person_external_profile_employee($person_cnic);
+
+            $dl_image = '';
+            if (!empty($dl_profile->imgObject)) {
+                $raw_img = is_resource($dl_profile->imgObject) ? stream_get_contents($dl_profile->imgObject) : $dl_profile->imgObject;
+                if (!empty($raw_img)) {
+                    $dl_image = 'data:image/jpeg;base64,' . base64_encode($raw_img);
+                }
+            }
+
+            $ecp_image = '';
+            if (!empty($ecp_profile->name_image_base64)) {
+                $ecp_image = $ecp_profile->name_image_base64;
+            } elseif (!empty($ecp_profile->father_image_base64)) {
+                $ecp_image = $ecp_profile->father_image_base64;
+            } elseif (!empty($ecp_profile->address_image_base64)) {
+                $ecp_image = $ecp_profile->address_image_base64;
+            }
+            if (!empty($ecp_image) && stripos($ecp_image, 'data:image') !== 0) {
+                $ecp_image = 'data:image/jpeg;base64,' . $ecp_image;
+            }
+            ?>
+            <div class="col-md-12" style="margin-bottom: 10px;">
+                <strong><i class="fa fa-database margin-r-5"></i>CNIC Lookup:</strong> <?php echo HTML::chars($person_cnic); ?>
+            </div>
+
+            <div class="col-md-6">
+                <div class="col-md-12"><strong><i class="fa fa-list margin-r-5"></i>CTD KPK Profile</strong></div>
+                <div class="col-md-12 pull-right-2"><hr class="style14" style="margin-top: 5px; margin-bottom: 5px"></div>
+                <?php if (!empty($ctd_profile)) { ?>
+                    <div class="col-md-12"><strong>Name:</strong> <?php echo HTML::chars(trim($ctd_profile->Name)); ?></div>
+                    <div class="col-md-12"><strong>Father/Husband:</strong> <?php echo HTML::chars(trim($ctd_profile->FatherHusbandName)); ?></div>
+                    <div class="col-md-12"><strong>CNIC:</strong> <?php echo HTML::chars($ctd_profile->CNIC); ?></div>
+                    <div class="col-md-12"><strong>Gender:</strong> <?php echo HTML::chars($ctd_profile->Gender); ?></div>
+                    <div class="col-md-12"><strong>Religion/Sect:</strong> <?php echo HTML::chars($ctd_profile->ReligionName . ' / ' . $ctd_profile->SectName); ?></div>
+                <?php } else { ?>
+                    <div class="col-md-12"><span><i class="fa fa-check margin-r-2"></i><strong> No Record Exist</strong></span></div>
+                <?php } ?>
+                <div class="col-md-12 pull-right-2"><hr class="style14" style="margin-top: 5px; margin-bottom: 5px"></div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="col-md-12"><strong><i class="fa fa-list margin-r-5"></i>Driving License (DLMS)</strong></div>
+                <div class="col-md-12 pull-right-2"><hr class="style14" style="margin-top: 5px; margin-bottom: 5px"></div>
+                <?php if (!empty($dl_profile)) { ?>
+                    <div class="col-md-12"><strong>Name:</strong> <?php echo HTML::chars(trim($dl_profile->FirstName . ' ' . $dl_profile->MiddleName . ' ' . $dl_profile->LastName)); ?></div>
+                    <div class="col-md-12"><strong>Father Name:</strong> <?php echo HTML::chars(trim($dl_profile->FatherName . ' ' . $dl_profile->FatherMName . ' ' . $dl_profile->FatherLName)); ?></div>
+                    <div class="col-md-12"><strong>License No:</strong> <?php echo HTML::chars($dl_profile->LicenseNo); ?></div>
+                    <div class="col-md-12"><strong>Expiry Date:</strong> <?php echo HTML::chars($dl_profile->LicenseExpiryDate); ?></div>
+                    <?php if (!empty($dl_image)) { ?>
+                        <div class="col-md-12" style="margin-top: 8px;">
+                            <img src="<?php echo $dl_image; ?>" alt="Driving License Photo" style="max-width: 120px; max-height: 120px; border: 1px solid #ddd; padding: 2px;">
+                        </div>
+                    <?php } ?>
+                <?php } else { ?>
+                    <div class="col-md-12"><span><i class="fa fa-check margin-r-2"></i><strong> No Record Exist</strong></span></div>
+                <?php } ?>
+                <div class="col-md-12 pull-right-2"><hr class="style14" style="margin-top: 5px; margin-bottom: 5px"></div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="col-md-12"><strong><i class="fa fa-list margin-r-5"></i>Election Commission</strong></div>
+                <div class="col-md-12 pull-right-2"><hr class="style14" style="margin-top: 5px; margin-bottom: 5px"></div>
+                <?php if (!empty($ecp_profile)) { ?>
+                    <div class="col-md-12"><strong>Name:</strong> <?php echo HTML::chars($ecp_profile->name_text); ?></div>
+                    <div class="col-md-12"><strong>Father:</strong> <?php echo HTML::chars($ecp_profile->father_text); ?></div>
+                    <div class="col-md-12"><strong>Age/Gender:</strong> <?php echo HTML::chars($ecp_profile->age . ' / ' . $ecp_profile->gender); ?></div>
+                    <div class="col-md-12"><strong>Family Number:</strong> <?php echo HTML::chars($ecp_profile->family_number); ?></div>
+                    <div class="col-md-12"><strong>Linked Numbers:</strong> <?php echo HTML::chars($ecp_profile->linked_numbers); ?></div>
+                    <?php if (!empty($ecp_image)) { ?>
+                        <div class="col-md-12" style="margin-top: 8px;">
+                            <img src="<?php echo $ecp_image; ?>" alt="ECP Image" style="max-width: 180px; max-height: 120px; border: 1px solid #ddd; padding: 2px;">
+                        </div>
+                    <?php } ?>
+                <?php } else { ?>
+                    <div class="col-md-12"><span><i class="fa fa-check margin-r-2"></i><strong> No Record Exist</strong></span></div>
+                <?php } ?>
+                <div class="col-md-12 pull-right-2"><hr class="style14" style="margin-top: 5px; margin-bottom: 5px"></div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="col-md-12"><strong><i class="fa fa-list margin-r-5"></i>Government Employee Data</strong></div>
+                <div class="col-md-12 pull-right-2"><hr class="style14" style="margin-top: 5px; margin-bottom: 5px"></div>
+                <?php
+                if (!empty($employee_profiles)) {
+                    foreach ($employee_profiles as $employee_profile) {
+                        ?>
+                        <div class="col-md-12">
+                            <strong><?php echo HTML::chars(trim($employee_profile->first_name . ' ' . $employee_profile->last_name)); ?></strong>
+                            (<?php echo HTML::chars($employee_profile->pers_no); ?>)
+                        </div>
+                        <div class="col-md-12">
+                            <span><strong>Father/Husband:</strong> <?php echo HTML::chars($employee_profile->father_husband_name); ?></span>
+                        </div>
+                        <div class="col-md-12">
+                            <span><strong>Job Title:</strong> <?php echo HTML::chars($employee_profile->job_title); ?></span>
+                        </div>
+                        <div class="col-md-12">
+                            <span><strong>Org Unit:</strong> <?php echo HTML::chars($employee_profile->org_unit_short_text); ?></span>
+                        </div>
+                        <div class="col-md-12 pull-right-2"><hr class="style14" style="margin-top: 5px; margin-bottom: 5px"></div>
+                        <?php
+                    }
+                } else {
+                    ?>
+                    <div class="col-md-12"><span><i class="fa fa-check margin-r-2"></i><strong> No Record Exist</strong></span></div>
+                    <?php
+                }
+                ?>
+            </div>
+            <?php
+        } catch (Exception $ex) {
+            echo json_encode(2);
+        }
+    }
+
     //person person_other_numbers
     public function action_person_other_numbers()
     {
@@ -4213,4 +4349,3 @@ public function action_get_cdr_data()
 }
 
 // End Persons Class
-
