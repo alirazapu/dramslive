@@ -2726,6 +2726,7 @@ echo $personID;
                     dataType: 'html',
                     success: function (msg) {
                         $("#external_databases").addClass("panelisopen");
+                        $("#external_databases").addClass("already-done");
                         if (msg == 2)
                         {
                             swal("System Error", "Contact Support Team.", "error");

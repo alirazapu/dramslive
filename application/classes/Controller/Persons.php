@@ -3444,6 +3444,26 @@ exit();
             $dl_profile = Helpers_Person::get_person_external_profile_driving_license($person_cnic);
             $ecp_profile = Helpers_Person::get_person_external_profile_ecp($person_cnic);
             $employee_profiles = Helpers_Person::get_person_external_profile_employee($person_cnic);
+            $join_name = function ($parts) {
+                $out = array();
+                foreach ((array)$parts as $part) {
+                    $part = trim((string)$part);
+                    if ($part !== '') {
+                        $out[] = $part;
+                    }
+                }
+                return implode(' ', $out);
+            };
+            $join_slash = function ($parts) {
+                $out = array();
+                foreach ((array)$parts as $part) {
+                    $part = trim((string)$part);
+                    if ($part !== '') {
+                        $out[] = $part;
+                    }
+                }
+                return implode(' / ', $out);
+            };
 
             $dl_image = '';
             if (!empty($dl_profile->imgObject)) {
@@ -3477,7 +3497,7 @@ exit();
                     <div class="col-md-12"><strong>Father/Husband:</strong> <?php echo HTML::chars(trim($ctd_profile->FatherHusbandName)); ?></div>
                     <div class="col-md-12"><strong>CNIC:</strong> <?php echo HTML::chars($ctd_profile->CNIC); ?></div>
                     <div class="col-md-12"><strong>Gender:</strong> <?php echo HTML::chars($ctd_profile->Gender); ?></div>
-                    <div class="col-md-12"><strong>Religion/Sect:</strong> <?php echo HTML::chars($ctd_profile->ReligionName . ' / ' . $ctd_profile->SectName); ?></div>
+                    <div class="col-md-12"><strong>Religion/Sect:</strong> <?php echo HTML::chars($join_slash(array($ctd_profile->ReligionName, $ctd_profile->SectName))); ?></div>
                 <?php } else { ?>
                     <div class="col-md-12"><span><i class="fa fa-check margin-r-2"></i><strong> No Record Exist</strong></span></div>
                 <?php } ?>
@@ -3488,8 +3508,8 @@ exit();
                 <div class="col-md-12"><strong><i class="fa fa-list margin-r-5"></i>Driving License (DLMS)</strong></div>
                 <div class="col-md-12 pull-right-2"><hr class="style14" style="margin-top: 5px; margin-bottom: 5px"></div>
                 <?php if (!empty($dl_profile)) { ?>
-                    <div class="col-md-12"><strong>Name:</strong> <?php echo HTML::chars(trim($dl_profile->FirstName . ' ' . $dl_profile->MiddleName . ' ' . $dl_profile->LastName)); ?></div>
-                    <div class="col-md-12"><strong>Father Name:</strong> <?php echo HTML::chars(trim($dl_profile->FatherName . ' ' . $dl_profile->FatherMName . ' ' . $dl_profile->FatherLName)); ?></div>
+                    <div class="col-md-12"><strong>Name:</strong> <?php echo HTML::chars($join_name(array($dl_profile->FirstName, $dl_profile->MiddleName, $dl_profile->LastName))); ?></div>
+                    <div class="col-md-12"><strong>Father Name:</strong> <?php echo HTML::chars($join_name(array($dl_profile->FatherName, $dl_profile->FatherMName, $dl_profile->FatherLName))); ?></div>
                     <div class="col-md-12"><strong>License No:</strong> <?php echo HTML::chars($dl_profile->LicenseNo); ?></div>
                     <div class="col-md-12"><strong>Expiry Date:</strong> <?php echo HTML::chars($dl_profile->LicenseExpiryDate); ?></div>
                     <?php if (!empty($dl_image)) { ?>
@@ -3531,7 +3551,7 @@ exit();
                     foreach ($employee_profiles as $employee_profile) {
                         ?>
                         <div class="col-md-12">
-                            <strong><?php echo HTML::chars(trim($employee_profile->first_name . ' ' . $employee_profile->last_name)); ?></strong>
+                            <strong><?php echo HTML::chars($join_name(array($employee_profile->first_name, $employee_profile->last_name))); ?></strong>
                             (<?php echo HTML::chars($employee_profile->pers_no); ?>)
                         </div>
                         <div class="col-md-12">
