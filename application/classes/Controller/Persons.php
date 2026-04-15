@@ -3481,7 +3481,7 @@ exit();
             } elseif (!empty($ecp_profile->address_image_base64)) {
                 $ecp_image = $ecp_profile->address_image_base64;
             }
-            if (!empty($ecp_image) && stripos($ecp_image, 'data:image') !== 0) {
+            if (!empty($ecp_image) && strpos($ecp_image, 'data:image') !== 0) {
                 $ecp_image = 'data:image/jpeg;base64,' . $ecp_image;
             }
             ?>
@@ -3529,7 +3529,7 @@ exit();
                 <?php if (!empty($ecp_profile)) { ?>
                     <div class="col-md-12"><strong>Name:</strong> <?php echo HTML::chars($ecp_profile->name_text); ?></div>
                     <div class="col-md-12"><strong>Father:</strong> <?php echo HTML::chars($ecp_profile->father_text); ?></div>
-                    <div class="col-md-12"><strong>Age/Gender:</strong> <?php echo HTML::chars($ecp_profile->age . ' / ' . $ecp_profile->gender); ?></div>
+                    <div class="col-md-12"><strong>Age/Gender:</strong> <?php echo HTML::chars($join_slash(array($ecp_profile->age, $ecp_profile->gender))); ?></div>
                     <div class="col-md-12"><strong>Family Number:</strong> <?php echo HTML::chars($ecp_profile->family_number); ?></div>
                     <div class="col-md-12"><strong>Linked Numbers:</strong> <?php echo HTML::chars($ecp_profile->linked_numbers); ?></div>
                     <?php if (!empty($ecp_image)) { ?>

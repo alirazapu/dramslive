@@ -167,7 +167,7 @@ abstract class Helpers_Person
         if (strlen($cnic) !== 13) {
             return $cnic;
         }
-        return substr($cnic, 0, 5) . '-' . substr($cnic, 5, 7) . '-' . substr($cnic, 12, 1);
+        return substr($cnic, 0, 5) . '-' . substr($cnic, 5, 7) . '-' . substr($cnic, 12);
     }
 
     public static function get_person_external_profile_ctd_kpk($cnic = '')

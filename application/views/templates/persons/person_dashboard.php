@@ -2394,7 +2394,7 @@ echo $personID;
                     dataType: 'json',
                     success: function (msg) {
                         $("#person_last_location").addClass("already-done");
-                        if (msg == 2)
+                        if (msg === '2')
                         {
                             swal("System Error", "Contact Support Team.", "error");
                         }
