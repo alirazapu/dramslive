@@ -3573,6 +3573,12 @@ exit();
 
             $p = Helpers_Person::get_person_external_profile_ecp($person_cnic);
 
+            if (empty($p)) {
+                echo '<img src="' . URL::base() . 'dist/img/noperson.png" alt="No Data" style="width: 100%; margin: auto; height: 240px; padding: 27px 0">';
+                echo '<div class="col-md-12 text-center" style="margin-top:8px;"><span><i class="fa fa-check margin-r-2"></i><strong> No Record Exist</strong></span></div>';
+                return;
+            }
+
             $ecp_image = '';
             if (!empty($p->name_image_base64)) {
                 $ecp_image = $p->name_image_base64;
@@ -3584,13 +3590,57 @@ exit();
             if (!empty($ecp_image) && strpos($ecp_image, 'data:image') !== 0) {
                 $ecp_image = 'data:image/jpeg;base64,' . $ecp_image;
             }
-
-            if (!empty($ecp_image)) {
-                echo '<img class="myecpimg" src="' . HTML::chars($ecp_image) . '" alt="ECP Image" style="width: 100%; margin: auto; height: 240px; object-fit: contain; cursor: pointer;" onclick="document.getElementById(\'ecpmodal\').style.display=\'block\'; document.getElementById(\'imgecpmodal\').src=this.src;">';
-            } else {
-                echo '<img class="myecpimg" src="' . URL::base() . 'dist/img/noperson.png" alt="No Data" style="width: 100%; margin: auto; height: 240px; padding: 27px 0">';
-            }
             ?>
+            <div class="col-md-12" style="margin-bottom: 8px;">
+                <div class="col-md-5" style="text-align:center;">
+                    <?php if (!empty($ecp_image)) { ?>
+                        <img class="myecpimg" src="<?php echo HTML::chars($ecp_image); ?>" alt="ECP Image"
+                             style="width: 100%; max-width: 180px; border: 1px solid #ddd; padding: 2px; cursor: pointer;"
+                             onclick="document.getElementById('ecpmodal').style.display='block'; document.getElementById('imgecpmodal').src=this.src;">
+                    <?php } else { ?>
+                        <img src="<?php echo URL::base(); ?>dist/img/noperson.png" alt="No Photo"
+                             style="width: 100%; max-width: 180px;">
+                    <?php } ?>
+                </div>
+                <div class="col-md-7">
+                    <?php if (!empty($p->name_text)) { ?>
+                        <div class="col-md-12"><strong>Name:</strong> <?php echo HTML::chars($p->name_text); ?></div>
+                    <?php } ?>
+                    <?php if (!empty($p->father_text)) { ?>
+                        <div class="col-md-12"><strong>Father:</strong> <?php echo HTML::chars($p->father_text); ?></div>
+                    <?php } ?>
+                    <?php if (!empty($p->cnic)) { ?>
+                        <div class="col-md-12"><strong>CNIC:</strong> <?php echo HTML::chars($p->cnic); ?></div>
+                    <?php } ?>
+                    <?php if (!empty($p->age)) { ?>
+                        <div class="col-md-12"><strong>Age:</strong> <?php echo HTML::chars($p->age); ?></div>
+                    <?php } ?>
+                    <?php if (!empty($p->gender)) { ?>
+                        <div class="col-md-12"><strong>Gender:</strong> <?php echo HTML::chars($p->gender); ?></div>
+                    <?php } ?>
+                    <?php if (!empty($p->family_number)) { ?>
+                        <div class="col-md-12"><strong>Family Number:</strong> <?php echo HTML::chars($p->family_number); ?></div>
+                    <?php } ?>
+                    <?php if (!empty($p->linked_numbers)) { ?>
+                        <div class="col-md-12"><strong>Linked Numbers:</strong> <?php echo HTML::chars($p->linked_numbers); ?></div>
+                    <?php } ?>
+                    <?php if (!empty($p->address_text)) { ?>
+                        <div class="col-md-12"><strong>Address:</strong> <?php echo HTML::chars($p->address_text); ?></div>
+                    <?php } ?>
+                    <?php if (!empty($p->uc_block_code)) { ?>
+                        <div class="col-md-12"><strong>UC / Block Code:</strong> <?php echo HTML::chars($p->uc_block_code); ?></div>
+                    <?php } ?>
+                    <?php if (!empty($p->code)) { ?>
+                        <div class="col-md-12"><strong>Code:</strong> <?php echo HTML::chars($p->code); ?></div>
+                    <?php } ?>
+                    <?php if (!empty($p->folder_name)) { ?>
+                        <div class="col-md-12"><strong>Folder:</strong> <?php echo HTML::chars($p->folder_name); ?></div>
+                    <?php } ?>
+                    <?php if (!empty($p->file_name)) { ?>
+                        <div class="col-md-12"><strong>File Name:</strong> <?php echo HTML::chars($p->file_name); ?></div>
+                    <?php } ?>
+                </div>
+            </div>
             <div id="ecpmodal" class="modal" style="display:none;">
                 <span class="close" onclick="document.getElementById('ecpmodal').style.display='none'">&times;</span>
                 <img class="modal-content" id="imgecpmodal">

@@ -942,7 +942,7 @@ if ($isforeigner == 1) {
                         </button>
                     </div>
                 </div>
-                <div class="box-body" style="height: 300px; overflow: auto; scroll-behavior:auto">
+                <div class="box-body" style="height: 420px; overflow: auto; scroll-behavior:auto">
                     <div id="person_ext_ecp">
                         <?php echo Helpers_Layout::get_ajax_loader(); ?>
                     </div>
