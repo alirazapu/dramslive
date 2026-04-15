@@ -223,6 +223,88 @@ abstract class Helpers_Person
         }
     }
 
+    public static function get_schedule_iv_by_cnic($cnic = '')
+    {
+        try {
+            $DB = Database::instance('ctd_kpk');
+            $cnic_digits = self::normalize_cnic_for_external_sources($cnic);
+            if (empty($cnic_digits)) {
+                return [];
+            }
+            $cnic_dash = self::format_cnic_with_dashes($cnic_digits);
+            $cnic_digits_esc = $DB->escape($cnic_digits);
+            $cnic_dash_esc = $DB->escape($cnic_dash);
+
+            $sql = "SELECT
+                        pp.PersonId, pp.Name, pp.FatherName, pp.CNIC,
+                        d.DistrictName,
+                        ps.PoliceStationName,
+                        cat.CategoryName,
+                        (CASE spd.Active WHEN 1 THEN 'Active' ELSE 'InActive' END) AS S4Status,
+                        spd.FirRefNo,
+                        spd.FirRefDate,
+                        (SELECT sd.DistrictName FROM sb_district sd WHERE sd.DistrictId = spd.Fir_District) AS S4Dist,
+                        schps.PoliceStationName AS SchPS,
+                        ns.NotificationStatus
+                    FROM dct_person_profile_status_detail spd
+                    LEFT JOIN dct_person_profile pp ON pp.PersonId = spd.PersonID
+                    LEFT JOIN sb_district d ON d.DistrictId = pp.PermAdrDistrict
+                    LEFT JOIN police_stations ps ON ps.PoliceStationId = pp.AdrPoliceStation
+                    LEFT JOIN police_stations schps ON schps.PoliceStationId = spd.FirPS
+                    LEFT JOIN dct_notification_status ns ON ns.NotificationStatusID = spd.PresentStatus
+                    LEFT JOIN dct_person_profile_schedule_iv_category cat ON cat.PoliticalcatID = spd.Category
+                    WHERE spd.PresentStatus = 2
+                      AND spd.Active IN (0, 1)
+                      AND spd.StatusID = (SELECT MAX(d2.StatusID)
+                                          FROM dct_person_profile_status_detail d2
+                                          WHERE d2.PersonID = spd.PersonID AND d2.PresentStatus = 2)
+                      AND pp.CNIC IN ({$cnic_digits_esc}, {$cnic_dash_esc})
+                    ORDER BY spd.FirRefDate DESC";
+
+            return $DB->query(Database::SELECT, $sql, TRUE)->as_array();
+        } catch (Exception $e) {
+            return [];
+        }
+    }
+
+    public static function get_accused_terrorism_activities_by_cnic($cnic = '')
+    {
+        try {
+            $DB = Database::instance('ctd_kpk');
+            $cnic_digits = self::normalize_cnic_for_external_sources($cnic);
+            if (empty($cnic_digits)) {
+                return [];
+            }
+            $cnic_dash = self::format_cnic_with_dashes($cnic_digits);
+            $cnic_digits_esc = $DB->escape($cnic_digits);
+            $cnic_dash_esc = $DB->escape($cnic_dash);
+
+            $sql = "SELECT DISTINCT
+                        pp.PersonId, pp.Name, pp.FatherName, pp.CNIC,
+                        ta.TerrorismAttackID, ta.FIRNumber, ta.FIRDate,
+                        occu_distt.DistrictName AS IncidentDistrict,
+                        ps.PoliceStationName,
+                        m.MotiveName,
+                        ta.SectionLaw,
+                        ns.NotificationStatus,
+                        sd.PreStatusDate
+                    FROM dsr_terrorism_attack ta
+                    LEFT JOIN sb_district occu_distt ON occu_distt.DistrictId = ta.District
+                    LEFT JOIN dct_person_profile_status_detail sd ON sd.ActivityID = ta.TerrorismAttackID
+                    LEFT JOIN dct_person_profile pp ON pp.PersonId = sd.PersonID
+                    LEFT JOIN dct_notification_status ns ON ns.NotificationStatusID = sd.PresentStatus
+                    LEFT JOIN police_stations ps ON ps.PoliceStationId = ta.FIRPoliceStation
+                    LEFT JOIN dsr_terrorism_attack_motive m ON m.MotiveID = ta.Motive
+                    WHERE sd.confession_status IS NULL
+                      AND pp.CNIC IN ({$cnic_digits_esc}, {$cnic_dash_esc})
+                    ORDER BY ta.FIRDate DESC";
+
+            return $DB->query(Database::SELECT, $sql, TRUE)->as_array();
+        } catch (Exception $e) {
+            return [];
+        }
+    }
+
     public static function get_person_external_profile_driving_license($cnic = '')
     {
         try {
