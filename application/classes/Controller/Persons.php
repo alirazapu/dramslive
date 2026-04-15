@@ -3423,12 +3423,41 @@ exit();
         }
     }
 
+    private static function ext_db_join_name(array $parts)
+    {
+        $out = array();
+        foreach ($parts as $part) {
+            $part = trim((string)$part);
+            if ($part !== '') {
+                $out[] = $part;
+            }
+        }
+        return implode(' ', $out);
+    }
+
+    private static function ext_db_join_slash(array $parts)
+    {
+        $out = array();
+        foreach ($parts as $part) {
+            $part = trim((string)$part);
+            if ($part !== '') {
+                $out[] = $part;
+            }
+        }
+        return implode(' / ', $out);
+    }
+
+    private static function ext_db_get_cnic($person_id)
+    {
+        return Helpers_Person::normalize_cnic_for_external_sources(Helpers_Person::get_person_cnic($person_id));
+    }
+
     public function action_ext_db_ctd_kpk()
     {
         try {
             $_GET = Helpers_Utilities::remove_injection($_GET);
             $person_id = (int)Helpers_Utilities::encrypted_key($_GET['id'], "decrypt");
-            $person_cnic = Helpers_Person::normalize_cnic_for_external_sources(Helpers_Person::get_person_cnic($person_id));
+            $person_cnic = self::ext_db_get_cnic($person_id);
 
             if (empty($person_id) || empty($person_cnic)) {
                 echo '<div class="col-md-12"><span><strong>No CNIC available for lookup</strong></span></div>';
@@ -3436,15 +3465,6 @@ exit();
             }
 
             $p = Helpers_Person::get_person_external_profile_ctd_kpk($person_cnic);
-
-            $join_slash = function ($parts) {
-                $out = array();
-                foreach ((array)$parts as $part) {
-                    $part = trim((string)$part);
-                    if ($part !== '') { $out[] = $part; }
-                }
-                return implode(' / ', $out);
-            };
 
             if (empty($p)) {
                 echo '<div class="col-md-12"><span><i class="fa fa-check margin-r-2"></i><strong> No Record Exist</strong></span></div>';
@@ -3457,7 +3477,7 @@ exit();
                 <div class="col-md-12"><strong>CNIC:</strong> <?php echo HTML::chars($p->CNIC); ?></div>
                 <div class="col-md-12"><strong>DOB:</strong> <?php echo HTML::chars($p->DOB); ?></div>
                 <div class="col-md-12"><strong>Gender:</strong> <?php echo HTML::chars($p->Gender); ?></div>
-                <div class="col-md-12"><strong>Religion / Sect:</strong> <?php echo HTML::chars($join_slash(array($p->ReligionName, $p->SectName))); ?></div>
+                <div class="col-md-12"><strong>Religion / Sect:</strong> <?php echo HTML::chars(self::ext_db_join_slash(array($p->ReligionName, $p->SectName))); ?></div>
                 <div class="col-md-12"><strong>Caste:</strong> <?php echo HTML::chars($p->CasteName); ?></div>
                 <div class="col-md-12 pull-right-2"><hr class="style14" style="margin-top: 5px; margin-bottom: 5px"></div>
             </div>
@@ -3491,7 +3511,7 @@ exit();
         try {
             $_GET = Helpers_Utilities::remove_injection($_GET);
             $person_id = (int)Helpers_Utilities::encrypted_key($_GET['id'], "decrypt");
-            $person_cnic = Helpers_Person::normalize_cnic_for_external_sources(Helpers_Person::get_person_cnic($person_id));
+            $person_cnic = self::ext_db_get_cnic($person_id);
 
             if (empty($person_id) || empty($person_cnic)) {
                 echo '<div class="col-md-12"><span><strong>No CNIC available for lookup</strong></span></div>';
@@ -3499,15 +3519,6 @@ exit();
             }
 
             $p = Helpers_Person::get_person_external_profile_driving_license($person_cnic);
-
-            $join_name = function ($parts) {
-                $out = array();
-                foreach ((array)$parts as $part) {
-                    $part = trim((string)$part);
-                    if ($part !== '') { $out[] = $part; }
-                }
-                return implode(' ', $out);
-            };
 
             if (empty($p)) {
                 echo '<div class="col-md-12"><span><i class="fa fa-check margin-r-2"></i><strong> No Record Exist</strong></span></div>';
@@ -3530,8 +3541,8 @@ exit();
                 <?php } ?>
             </div>
             <div class="col-md-8">
-                <div class="col-md-12"><strong>Name:</strong> <?php echo HTML::chars($join_name(array($p->FirstName, $p->MiddleName, $p->LastName))); ?></div>
-                <div class="col-md-12"><strong>Father Name:</strong> <?php echo HTML::chars($join_name(array($p->FatherName, $p->FatherMName, $p->FatherLName))); ?></div>
+                <div class="col-md-12"><strong>Name:</strong> <?php echo HTML::chars(self::ext_db_join_name(array($p->FirstName, $p->MiddleName, $p->LastName))); ?></div>
+                <div class="col-md-12"><strong>Father Name:</strong> <?php echo HTML::chars(self::ext_db_join_name(array($p->FatherName, $p->FatherMName, $p->FatherLName))); ?></div>
                 <div class="col-md-12"><strong>DOB:</strong> <?php echo HTML::chars($p->DOB); ?></div>
                 <div class="col-md-12"><strong>Birth Place:</strong> <?php echo HTML::chars($p->BirthPlace); ?></div>
                 <div class="col-md-12"><strong>Gender:</strong> <?php echo HTML::chars($p->Gender); ?></div>
@@ -3553,7 +3564,7 @@ exit();
         try {
             $_GET = Helpers_Utilities::remove_injection($_GET);
             $person_id = (int)Helpers_Utilities::encrypted_key($_GET['id'], "decrypt");
-            $person_cnic = Helpers_Person::normalize_cnic_for_external_sources(Helpers_Person::get_person_cnic($person_id));
+            $person_cnic = self::ext_db_get_cnic($person_id);
 
             if (empty($person_id) || empty($person_cnic)) {
                 echo '<img src="' . URL::base() . 'dist/img/noperson.png" alt="No Data" style="width: 100%; margin: auto; height: 240px; padding: 27px 0">';
@@ -3596,7 +3607,7 @@ exit();
         try {
             $_GET = Helpers_Utilities::remove_injection($_GET);
             $person_id = (int)Helpers_Utilities::encrypted_key($_GET['id'], "decrypt");
-            $person_cnic = Helpers_Person::normalize_cnic_for_external_sources(Helpers_Person::get_person_cnic($person_id));
+            $person_cnic = self::ext_db_get_cnic($person_id);
 
             if (empty($person_id) || empty($person_cnic)) {
                 echo '<div class="col-md-12"><span><strong>No CNIC available for lookup</strong></span></div>';
@@ -3604,15 +3615,6 @@ exit();
             }
 
             $employees = Helpers_Person::get_person_external_profile_employee($person_cnic);
-
-            $join_name = function ($parts) {
-                $out = array();
-                foreach ((array)$parts as $part) {
-                    $part = trim((string)$part);
-                    if ($part !== '') { $out[] = $part; }
-                }
-                return implode(' ', $out);
-            };
 
             if (empty($employees)) {
                 echo '<div class="col-md-12"><span><i class="fa fa-check margin-r-2"></i><strong> No Record Exist</strong></span></div>';
@@ -3623,7 +3625,7 @@ exit();
                 ?>
                 <div class="col-md-12" style="margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 8px;">
                     <div class="col-md-6">
-                        <div class="col-md-12"><strong>Name:</strong> <?php echo HTML::chars($join_name(array($e->first_name, $e->last_name))); ?></div>
+                        <div class="col-md-12"><strong>Name:</strong> <?php echo HTML::chars(self::ext_db_join_name(array($e->first_name, $e->last_name))); ?></div>
                         <div class="col-md-12"><strong>Father/Husband:</strong> <?php echo HTML::chars($e->father_husband_name); ?></div>
                         <div class="col-md-12"><strong>Pers No:</strong> <?php echo HTML::chars($e->pers_no); ?></div>
                         <div class="col-md-12"><strong>Job Title:</strong> <?php echo HTML::chars($e->job_title); ?></div>
