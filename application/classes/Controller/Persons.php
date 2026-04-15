@@ -3458,6 +3458,9 @@ exit();
             $_GET = Helpers_Utilities::remove_injection($_GET);
             $person_id = (int)Helpers_Utilities::encrypted_key($_GET['id'], "decrypt");
             $person_cnic = self::ext_db_get_cnic($person_id);
+            if (empty($person_cnic) && !empty($_GET['cnic'])) {
+                $person_cnic = Helpers_Person::normalize_cnic_for_external_sources($_GET['cnic']);
+            }
 
             if (empty($person_id) || empty($person_cnic)) {
                 echo '<div class="col-md-12"><span><strong>No CNIC available for lookup</strong></span></div>';
@@ -3512,6 +3515,9 @@ exit();
             $_GET = Helpers_Utilities::remove_injection($_GET);
             $person_id = (int)Helpers_Utilities::encrypted_key($_GET['id'], "decrypt");
             $person_cnic = self::ext_db_get_cnic($person_id);
+            if (empty($person_cnic) && !empty($_GET['cnic'])) {
+                $person_cnic = Helpers_Person::normalize_cnic_for_external_sources($_GET['cnic']);
+            }
 
             if (empty($person_id) || empty($person_cnic)) {
                 echo '<div class="col-md-12"><span><strong>No CNIC available for lookup</strong></span></div>';
@@ -3565,6 +3571,9 @@ exit();
             $_GET = Helpers_Utilities::remove_injection($_GET);
             $person_id = (int)Helpers_Utilities::encrypted_key($_GET['id'], "decrypt");
             $person_cnic = self::ext_db_get_cnic($person_id);
+            if (empty($person_cnic) && !empty($_GET['cnic'])) {
+                $person_cnic = Helpers_Person::normalize_cnic_for_external_sources($_GET['cnic']);
+            }
 
             if (empty($person_id) || empty($person_cnic)) {
                 echo '<img src="' . URL::base() . 'dist/img/noperson.png" alt="No Data" style="width: 100%; margin: auto; height: 240px; padding: 27px 0">';
@@ -3673,6 +3682,9 @@ exit();
             $_GET = Helpers_Utilities::remove_injection($_GET);
             $person_id = (int)Helpers_Utilities::encrypted_key($_GET['id'], "decrypt");
             $person_cnic = self::ext_db_get_cnic($person_id);
+            if (empty($person_cnic) && !empty($_GET['cnic'])) {
+                $person_cnic = Helpers_Person::normalize_cnic_for_external_sources($_GET['cnic']);
+            }
 
             if (empty($person_id) || empty($person_cnic)) {
                 echo '<div class="col-md-12"><span><strong>No CNIC available for lookup</strong></span></div>';

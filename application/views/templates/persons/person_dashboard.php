@@ -2768,7 +2768,7 @@ echo $personID;
             if (!$(this).hasClass("already-done")) {
                 $.ajax({
                     url: "<?php echo URL::site("Persons/ext_db_ctd_kpk"); ?>",
-                    data: {id: '<?php echo $_GET['id']; ?>'},
+                    data: {id: '<?php echo $_GET['id']; ?>', cnic: '<?php echo preg_replace('/\D/', '', $nic_number); ?>'},
                     cache: false,
                     dataType: 'html',
                     success: function (msg) {
@@ -2788,7 +2788,7 @@ echo $personID;
             if (!$(this).hasClass("already-done")) {
                 $.ajax({
                     url: "<?php echo URL::site("Persons/ext_db_dlms"); ?>",
-                    data: {id: '<?php echo $_GET['id']; ?>'},
+                    data: {id: '<?php echo $_GET['id']; ?>', cnic: '<?php echo preg_replace('/\D/', '', $nic_number); ?>'},
                     cache: false,
                     dataType: 'html',
                     success: function (msg) {
@@ -2808,7 +2808,7 @@ echo $personID;
             if (!$(this).hasClass("already-done")) {
                 $.ajax({
                     url: "<?php echo URL::site("Persons/ext_db_ecp"); ?>",
-                    data: {id: '<?php echo $_GET['id']; ?>'},
+                    data: {id: '<?php echo $_GET['id']; ?>', cnic: '<?php echo preg_replace('/\D/', '', $nic_number); ?>'},
                     cache: false,
                     dataType: 'html',
                     success: function (msg) {
@@ -2828,7 +2828,7 @@ echo $personID;
             if (!$(this).hasClass("already-done")) {
                 $.ajax({
                     url: "<?php echo URL::site("Persons/ext_db_employee"); ?>",
-                    data: {id: '<?php echo $_GET['id']; ?>'},
+                    data: {id: '<?php echo $_GET['id']; ?>', cnic: '<?php echo preg_replace('/\D/', '', $nic_number); ?>'},
                     cache: false,
                     dataType: 'html',
                     success: function (msg) {
