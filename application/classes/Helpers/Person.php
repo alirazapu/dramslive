@@ -304,7 +304,7 @@ abstract class Helpers_Person
             $DB = Database::instance('govt_emp_data');
             $cnic_digits = self::normalize_cnic_for_external_sources($cnic);
             if (empty($cnic_digits)) {
-                return array();
+                return NULL;
             }
             $cnic_esc = $DB->escape($cnic_digits);
             $sql = "SELECT pers_no, first_name, last_name, father_husband_name, position, job, job_title,
@@ -316,7 +316,7 @@ abstract class Helpers_Person
 
             return $DB->query(Database::SELECT, $sql, TRUE)->as_array();
         } catch (Exception $e) {
-            return array();
+            return NULL;
         }
     }
 

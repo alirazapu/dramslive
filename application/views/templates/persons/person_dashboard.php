@@ -2703,7 +2703,7 @@ echo $personID;
                     dataType: 'html',
                     success: function (msg) {
                         $("#other_information").addClass("panelisopen");
-                        if (msg == 2)
+                        if (msg === '2')
                         {
                             swal("System Error", "Contact Support Team.", "error");
                         }
@@ -2727,7 +2727,7 @@ echo $personID;
                     success: function (msg) {
                         $("#external_databases").addClass("panelisopen");
                         $("#external_databases").addClass("already-done");
-                        if (msg == 2)
+                        if (msg === '2')
                         {
                             swal("System Error", "Contact Support Team.", "error");
                         }
