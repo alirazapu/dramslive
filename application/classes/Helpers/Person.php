@@ -214,8 +214,7 @@ abstract class Helpers_Person
                 LEFT JOIN sb_country AS curr_country ON curr_country.CountryID = dct_person_profile.CurrAdrCountry
                 LEFT JOIN sb_city AS curr_city ON curr_city.CityId = dct_person_profile.CurrAdrCity
                 LEFT JOIN police_stations AS curr_ps ON curr_ps.PoliceStationId = dct_person_profile.CurrAdrPoliceStation
-                WHERE dct_person_profile.CNIC = {$cnic_digits_esc}
-                   OR dct_person_profile.CNIC = {$cnic_dash_esc}
+                WHERE dct_person_profile.CNIC IN ({$cnic_digits_esc}, {$cnic_dash_esc})
                 LIMIT 1";
 
             return $DB->query(Database::SELECT, $sql, TRUE)->current();
@@ -263,7 +262,7 @@ abstract class Helpers_Person
                     WHERE PersonID = p.PersonID
                       AND Category = 'Photograph'
                 ) AS i
-                WHERE p.CNIC = {$cnic_digits_esc} OR p.CNIC = {$cnic_dash_esc}
+                WHERE p.CNIC IN ({$cnic_digits_esc}, {$cnic_dash_esc})
                 ORDER BY ld.EntryDate DESC, p.EntryDate DESC";
 
             return $DB->query(Database::SELECT, $sql, TRUE)->current();
