@@ -3423,6 +3423,294 @@ exit();
         }
     }
 
+    private static function ext_db_join_name(array $parts)
+    {
+        $out = array();
+        foreach ($parts as $part) {
+            $part = trim((string)$part);
+            if ($part !== '') {
+                $out[] = $part;
+            }
+        }
+        return implode(' ', $out);
+    }
+
+    private static function ext_db_join_slash(array $parts)
+    {
+        $out = array();
+        foreach ($parts as $part) {
+            $part = trim((string)$part);
+            if ($part !== '') {
+                $out[] = $part;
+            }
+        }
+        return implode(' / ', $out);
+    }
+
+    private static function ext_db_get_cnic($person_id)
+    {
+        return Helpers_Person::normalize_cnic_for_external_sources(Helpers_Person::get_person_cnic($person_id));
+    }
+
+    public function action_ext_db_ctd_kpk()
+    {
+        try {
+            $_GET = Helpers_Utilities::remove_injection($_GET);
+            $person_id = (int)Helpers_Utilities::encrypted_key($_GET['id'], "decrypt");
+            $person_cnic = self::ext_db_get_cnic($person_id);
+
+            if (empty($person_id) || empty($person_cnic)) {
+                echo '<div class="col-md-12"><span><strong>No CNIC available for lookup</strong></span></div>';
+                return;
+            }
+
+            $p = Helpers_Person::get_person_external_profile_ctd_kpk($person_cnic);
+
+            if (empty($p)) {
+                echo '<div class="col-md-12"><span><i class="fa fa-check margin-r-2"></i><strong> No Record Exist</strong></span></div>';
+                return;
+            }
+            ?>
+            <div class="col-md-6">
+                <div class="col-md-12"><strong>Name:</strong> <?php echo HTML::chars(trim($p->Name)); ?></div>
+                <div class="col-md-12"><strong>Father/Husband:</strong> <?php echo HTML::chars(trim($p->FatherHusbandName)); ?></div>
+                <div class="col-md-12"><strong>CNIC:</strong> <?php echo HTML::chars($p->CNIC); ?></div>
+                <div class="col-md-12"><strong>DOB:</strong> <?php echo HTML::chars($p->DOB); ?></div>
+                <div class="col-md-12"><strong>Gender:</strong> <?php echo HTML::chars($p->Gender); ?></div>
+                <div class="col-md-12"><strong>Religion / Sect:</strong> <?php echo HTML::chars(self::ext_db_join_slash(array($p->ReligionName, $p->SectName))); ?></div>
+                <div class="col-md-12"><strong>Caste:</strong> <?php echo HTML::chars($p->CasteName); ?></div>
+                <div class="col-md-12 pull-right-2"><hr class="style14" style="margin-top: 5px; margin-bottom: 5px"></div>
+            </div>
+            <div class="col-md-6">
+                <div class="col-md-12"><strong><i class="fa fa-home margin-r-2"></i> Permanent Address</strong></div>
+                <div class="col-md-12 pull-right-2"><hr class="style14" style="margin-top: 5px; margin-bottom: 5px"></div>
+                <div class="col-md-12"><strong>Province:</strong> <?php echo HTML::chars($p->PermAdrProvinceName); ?></div>
+                <div class="col-md-12"><strong>District:</strong> <?php echo HTML::chars($p->DistrictName); ?></div>
+                <div class="col-md-12"><strong>Tehsil:</strong> <?php echo HTML::chars($p->TehsilName); ?></div>
+                <div class="col-md-12"><strong>City:</strong> <?php echo HTML::chars($p->PermAdrCityName); ?></div>
+                <div class="col-md-12"><strong>Police Station:</strong> <?php echo HTML::chars($p->AdrPoliceStationName); ?></div>
+                <div class="col-md-12"><strong>Country:</strong> <?php echo HTML::chars($p->PermAdrCountryName); ?></div>
+                <div class="col-md-12 pull-right-2"><hr class="style14" style="margin-top: 5px; margin-bottom: 5px"></div>
+                <div class="col-md-12"><strong><i class="fa fa-map-marker margin-r-2"></i> Current Address</strong></div>
+                <div class="col-md-12 pull-right-2"><hr class="style14" style="margin-top: 5px; margin-bottom: 5px"></div>
+                <div class="col-md-12"><strong>Province:</strong> <?php echo HTML::chars($p->CurrAdrProvinceName); ?></div>
+                <div class="col-md-12"><strong>District:</strong> <?php echo HTML::chars($p->CurrAdrDistrictName); ?></div>
+                <div class="col-md-12"><strong>Tehsil:</strong> <?php echo HTML::chars($p->CurrAdrTehsilName); ?></div>
+                <div class="col-md-12"><strong>City:</strong> <?php echo HTML::chars($p->CurrAdrCityName); ?></div>
+                <div class="col-md-12"><strong>Police Station:</strong> <?php echo HTML::chars($p->CurrAdrPoliceStationName); ?></div>
+                <div class="col-md-12"><strong>Country:</strong> <?php echo HTML::chars($p->CurrAdrCountryName); ?></div>
+            </div>
+            <?php
+        } catch (Exception $ex) {
+            echo json_encode(2);
+        }
+    }
+
+    public function action_ext_db_dlms()
+    {
+        try {
+            $_GET = Helpers_Utilities::remove_injection($_GET);
+            $person_id = (int)Helpers_Utilities::encrypted_key($_GET['id'], "decrypt");
+            $person_cnic = self::ext_db_get_cnic($person_id);
+
+            if (empty($person_id) || empty($person_cnic)) {
+                echo '<div class="col-md-12"><span><strong>No CNIC available for lookup</strong></span></div>';
+                return;
+            }
+
+            $p = Helpers_Person::get_person_external_profile_driving_license($person_cnic);
+
+            if (empty($p)) {
+                echo '<div class="col-md-12"><span><i class="fa fa-check margin-r-2"></i><strong> No Record Exist</strong></span></div>';
+                return;
+            }
+
+            $dl_image = '';
+            if (!empty($p->imgObject)) {
+                $raw_img = is_resource($p->imgObject) ? stream_get_contents($p->imgObject) : $p->imgObject;
+                if (!empty($raw_img)) {
+                    $dl_image = 'data:image/jpeg;base64,' . base64_encode($raw_img);
+                }
+            }
+            ?>
+            <div class="col-md-4">
+                <?php if (!empty($dl_image)) { ?>
+                    <img src="<?php echo HTML::chars($dl_image); ?>" alt="License Photo" style="width: 100%; max-width: 150px; border: 1px solid #ddd; padding: 2px; margin-bottom: 8px;">
+                <?php } else { ?>
+                    <img src="<?php echo URL::base(); ?>dist/img/avtar6.jpg" alt="No Photo" style="width: 100%; max-width: 150px; margin-bottom: 8px;">
+                <?php } ?>
+            </div>
+            <div class="col-md-8">
+                <div class="col-md-12"><strong>Name:</strong> <?php echo HTML::chars(self::ext_db_join_name(array($p->FirstName, $p->MiddleName, $p->LastName))); ?></div>
+                <div class="col-md-12"><strong>Father Name:</strong> <?php echo HTML::chars(self::ext_db_join_name(array($p->FatherName, $p->FatherMName, $p->FatherLName))); ?></div>
+                <div class="col-md-12"><strong>DOB:</strong> <?php echo HTML::chars($p->DOB); ?></div>
+                <div class="col-md-12"><strong>Birth Place:</strong> <?php echo HTML::chars($p->BirthPlace); ?></div>
+                <div class="col-md-12"><strong>Gender:</strong> <?php echo HTML::chars($p->Gender); ?></div>
+                <div class="col-md-12"><strong>Mobile:</strong> <?php echo HTML::chars($p->Mobile); ?></div>
+                <div class="col-md-12 pull-right-2"><hr class="style14" style="margin-top: 5px; margin-bottom: 5px"></div>
+                <div class="col-md-12"><strong>License No:</strong> <?php echo HTML::chars($p->LicenseNo); ?></div>
+                <div class="col-md-12"><strong>Issue Date:</strong> <?php echo HTML::chars($p->LicenseEntryDate); ?></div>
+                <div class="col-md-12"><strong>Expiry Date:</strong> <?php echo HTML::chars($p->LicenseExpiryDate); ?></div>
+                <div class="col-md-12"><strong>Entry Date:</strong> <?php echo HTML::chars($p->EntryDate); ?></div>
+            </div>
+            <?php
+        } catch (Exception $ex) {
+            echo json_encode(2);
+        }
+    }
+
+    public function action_ext_db_ecp()
+    {
+        try {
+            $_GET = Helpers_Utilities::remove_injection($_GET);
+            $person_id = (int)Helpers_Utilities::encrypted_key($_GET['id'], "decrypt");
+            $person_cnic = self::ext_db_get_cnic($person_id);
+
+            if (empty($person_id) || empty($person_cnic)) {
+                echo '<img src="' . URL::base() . 'dist/img/noperson.png" alt="No Data" style="width: 100%; margin: auto; height: 240px; padding: 27px 0">';
+                return;
+            }
+
+            $p = Helpers_Person::get_person_external_profile_ecp($person_cnic);
+
+            if (empty($p)) {
+                echo '<img src="' . URL::base() . 'dist/img/noperson.png" alt="No Data" style="width: 100%; margin: auto; height: 240px; padding: 27px 0">';
+                echo '<div class="col-md-12 text-center" style="margin-top:8px;"><span><i class="fa fa-check margin-r-2"></i><strong> No Record Exist</strong></span></div>';
+                return;
+            }
+
+            $ecp_image = '';
+            if (!empty($p->name_image_base64)) {
+                $ecp_image = $p->name_image_base64;
+            } elseif (!empty($p->father_image_base64)) {
+                $ecp_image = $p->father_image_base64;
+            } elseif (!empty($p->address_image_base64)) {
+                $ecp_image = $p->address_image_base64;
+            }
+            if (!empty($ecp_image) && strpos($ecp_image, 'data:image') !== 0) {
+                $ecp_image = 'data:image/jpeg;base64,' . $ecp_image;
+            }
+            $linked_numbers_list = [];
+            if (!empty($p->linked_numbers)) {
+                $linked_numbers_list = array_filter(array_map('trim', explode(',', $p->linked_numbers)));
+            }
+            ?>
+            <div class="col-md-6">
+                <?php if (!empty($p->name_text)) { ?>
+                    <div class="col-md-12"><strong>Name:</strong> <?php echo HTML::chars($p->name_text); ?></div>
+                <?php } ?>
+                <?php if (!empty($p->father_text)) { ?>
+                    <div class="col-md-12"><strong>Father:</strong> <?php echo HTML::chars($p->father_text); ?></div>
+                <?php } ?>
+                <?php if (!empty($p->cnic)) { ?>
+                    <div class="col-md-12"><strong>CNIC:</strong> <?php echo HTML::chars($p->cnic); ?></div>
+                <?php } ?>
+                <?php if (!empty($p->age)) { ?>
+                    <div class="col-md-12"><strong>Age:</strong> <?php echo HTML::chars($p->age); ?></div>
+                <?php } ?>
+                <?php if (!empty($p->gender)) { ?>
+                    <div class="col-md-12"><strong>Gender:</strong> <?php echo HTML::chars($p->gender); ?></div>
+                <?php } ?>
+                <?php if (!empty($p->family_number)) { ?>
+                    <div class="col-md-12"><strong>Family Number:</strong> <?php echo HTML::chars($p->family_number); ?></div>
+                <?php } ?>
+                <div class="col-md-12 pull-right-2"><hr class="style14" style="margin-top: 5px; margin-bottom: 5px"></div>
+            </div>
+            <div class="col-md-6">
+                <?php if (!empty($p->address_text)) { ?>
+                    <div class="col-md-12"><strong><i class="fa fa-home margin-r-2"></i> Address</strong></div>
+                    <div class="col-md-12 pull-right-2"><hr class="style14" style="margin-top: 5px; margin-bottom: 5px"></div>
+                    <div class="col-md-12"><?php echo HTML::chars($p->address_text); ?></div>
+                <?php } ?>
+                <?php if (!empty($p->uc_block_code)) { ?>
+                    <div class="col-md-12"><strong>UC / Block Code:</strong> <?php echo HTML::chars($p->uc_block_code); ?></div>
+                <?php } ?>
+                <?php if (!empty($p->code)) { ?>
+                    <div class="col-md-12"><strong>Code:</strong> <?php echo HTML::chars($p->code); ?></div>
+                <?php } ?>
+                <?php if (!empty($p->folder_name)) { ?>
+                    <div class="col-md-12"><strong>Folder:</strong> <?php echo HTML::chars($p->folder_name); ?></div>
+                <?php } ?>
+                <?php if (!empty($p->file_name)) { ?>
+                    <div class="col-md-12"><strong>File Name:</strong> <?php echo HTML::chars($p->file_name); ?></div>
+                <?php } ?>
+                <div class="col-md-12 pull-right-2"><hr class="style14" style="margin-top: 5px; margin-bottom: 5px"></div>
+            </div>
+            <?php if (!empty($linked_numbers_list)) { ?>
+                <div class="col-md-12">
+                    <div class="col-md-12 pull-right-2"><hr class="style14" style="margin-top: 5px; margin-bottom: 5px"></div>
+                    <div class="col-md-12"><strong><i class="fa fa-phone margin-r-2"></i> Linked Mobile Numbers</strong></div>
+                    <div class="col-md-12 pull-right-2"><hr class="style14" style="margin-top: 5px; margin-bottom: 5px"></div>
+                    <?php foreach ($linked_numbers_list as $num) { ?>
+                        <div class="col-md-3"><i class="fa fa-mobile margin-r-2"></i> <?php echo HTML::chars($num); ?></div>
+                    <?php } ?>
+                </div>
+            <?php } ?>
+            <?php if (!empty($ecp_image)) { ?>
+                <div class="col-md-12" style="margin-top: 10px;">
+                    <div class="col-md-12 pull-right-2"><hr class="style14" style="margin-top: 5px; margin-bottom: 5px"></div>
+                    <div class="col-md-12 text-center">
+                        <img class="myecpimg" src="<?php echo HTML::chars($ecp_image); ?>" alt="ECP Image"
+                             style="max-width: 200px; width: 100%; border: 1px solid #ddd; padding: 2px; cursor: pointer;"
+                             onclick="document.getElementById('ecpmodal').style.display='block'; document.getElementById('imgecpmodal').src=this.src;">
+                    </div>
+                </div>
+            <?php } ?>
+            <div id="ecpmodal" class="modal" style="display:none;">
+                <span class="close" onclick="document.getElementById('ecpmodal').style.display='none'">&times;</span>
+                <img class="modal-content" id="imgecpmodal">
+                <div id="captionecpmodal">Election Commission Image</div>
+            </div>
+            <?php
+        } catch (Exception $ex) {
+            echo json_encode(2);
+        }
+    }
+
+    public function action_ext_db_employee()
+    {
+        try {
+            $_GET = Helpers_Utilities::remove_injection($_GET);
+            $person_id = (int)Helpers_Utilities::encrypted_key($_GET['id'], "decrypt");
+            $person_cnic = self::ext_db_get_cnic($person_id);
+
+            if (empty($person_id) || empty($person_cnic)) {
+                echo '<div class="col-md-12"><span><strong>No CNIC available for lookup</strong></span></div>';
+                return;
+            }
+
+            $employees = Helpers_Person::get_person_external_profile_employee($person_cnic);
+
+            if (empty($employees)) {
+                echo '<div class="col-md-12"><span><i class="fa fa-check margin-r-2"></i><strong> No Record Exist</strong></span></div>';
+                return;
+            }
+
+            foreach ($employees as $e) {
+                ?>
+                <div class="col-md-12" style="margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 8px;">
+                    <div class="col-md-6">
+                        <div class="col-md-12"><strong>Name:</strong> <?php echo HTML::chars(self::ext_db_join_name(array($e->first_name, $e->last_name))); ?></div>
+                        <div class="col-md-12"><strong>Father/Husband:</strong> <?php echo HTML::chars($e->father_husband_name); ?></div>
+                        <div class="col-md-12"><strong>Pers No:</strong> <?php echo HTML::chars($e->pers_no); ?></div>
+                        <div class="col-md-12"><strong>Job Title:</strong> <?php echo HTML::chars($e->job_title); ?></div>
+                        <div class="col-md-12"><strong>Employee Group:</strong> <?php echo HTML::chars($e->employee_group); ?></div>
+                        <div class="col-md-12"><strong>Employee Sub-Group:</strong> <?php echo HTML::chars($e->employee_subgroup); ?></div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="col-md-12"><strong>Org Unit:</strong> <?php echo HTML::chars($e->org_unit_short_text); ?></div>
+                        <div class="col-md-12"><strong>Personnel Area:</strong> <?php echo HTML::chars($e->personnel_area); ?></div>
+                        <div class="col-md-12"><strong>Cost Center:</strong> <?php echo HTML::chars($e->cost_ctr); ?></div>
+                        <div class="col-md-12"><strong>Description:</strong> <?php echo HTML::chars($e->description); ?></div>
+                    </div>
+                </div>
+                <?php
+            }
+        } catch (Exception $ex) {
+            echo json_encode(2);
+        }
+    }
+
     //person person_other_numbers
     public function action_person_other_numbers()
     {
@@ -4213,4 +4501,3 @@ public function action_get_cdr_data()
 }
 
 // End Persons Class
-
