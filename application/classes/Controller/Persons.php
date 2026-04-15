@@ -3491,10 +3491,10 @@ exit();
                         <?php if (!empty($p)) { ?>
                             <div class="col-md-6">
                                 <div class="col-md-12"><strong>Name:</strong> <?php echo HTML::chars(trim($p->Name)); ?></div>
-                                <div class="col-md-12"><strong>Father/Husband:</strong> <?php echo HTML::chars(trim($p->FatherHusbandName)); ?></div>
+                                <div class="col-md-12"><strong>Father/Husband:</strong> <?php echo HTML::chars(trim(!empty($p->FatherName) ? $p->FatherName : $p->HusbandWife)); ?></div>
                                 <div class="col-md-12"><strong>CNIC:</strong> <?php echo HTML::chars($p->CNIC); ?></div>
                                 <div class="col-md-12"><strong>DOB:</strong> <?php echo HTML::chars($p->DOB); ?></div>
-                                <div class="col-md-12"><strong>Gender:</strong> <?php echo HTML::chars($p->Gender); ?></div>
+                                <div class="col-md-12"><strong>Gender:</strong> <?php $g = (int)$p->Gender; echo HTML::chars($g === 1 ? 'Male' : ($g === 2 ? 'Female' : 'Other')); ?></div>
                                 <div class="col-md-12"><strong>Religion / Sect:</strong> <?php echo HTML::chars(self::ext_db_join_slash(array($p->ReligionName, $p->SectName))); ?></div>
                                 <div class="col-md-12"><strong>Caste:</strong> <?php echo HTML::chars($p->CasteName); ?></div>
                             </div>
