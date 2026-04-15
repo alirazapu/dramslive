@@ -3689,42 +3689,46 @@ exit();
                 return;
             }
             ?>
-            <div class="table-responsive">
-                <table class="table table-bordered table-condensed table-striped" style="font-size:12px;">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Name</th>
-                            <th>CNIC</th>
-                            <th>FIR Number</th>
-                            <th>FIR Date</th>
-                            <th>Incident District</th>
-                            <th>Police Station</th>
-                            <th>Motive</th>
-                            <th>Section/Law</th>
-                            <th>Notification</th>
-                            <th>Pre Status Date</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($accused as $i => $row) { ?>
-                            <tr>
-                                <td><?php echo $i + 1; ?></td>
-                                <td><?php echo HTML::chars($row['Name']); ?></td>
-                                <td><?php echo HTML::chars($row['CNIC']); ?></td>
-                                <td><?php echo HTML::chars($row['FIRNumber']); ?></td>
-                                <td><?php echo HTML::chars($row['FIRDate']); ?></td>
-                                <td><?php echo HTML::chars($row['IncidentDistrict']); ?></td>
-                                <td><?php echo HTML::chars($row['PoliceStationName']); ?></td>
-                                <td><?php echo HTML::chars($row['MotiveName']); ?></td>
-                                <td><?php echo HTML::chars($row['SectionLaw']); ?></td>
-                                <td><?php echo HTML::chars($row['NotificationStatus']); ?></td>
-                                <td><?php echo HTML::chars($row['PreStatusDate']); ?></td>
-                            </tr>
-                        <?php } ?>
-                    </tbody>
+            <?php foreach ($accused as $i => $row) { ?>
+            <div class="col-md-12" <?php if ($i > 0) echo 'style="margin-top:10px;"'; ?>>
+                <table class="table table-bordered table-condensed" style="font-size:13px;">
+                    <tr class="active">
+                        <th colspan="4"><i class="fa fa-gavel margin-r-2"></i> Accused Record #<?php echo $i + 1; ?></th>
+                    </tr>
+                    <tr>
+                        <th style="width:15%">Name</th>
+                        <td style="width:35%"><?php echo HTML::chars($row['Name']); ?></td>
+                        <th style="width:15%">CNIC</th>
+                        <td style="width:35%"><?php echo HTML::chars($row['CNIC']); ?></td>
+                    </tr>
+                    <tr class="active"><th colspan="4"><i class="fa fa-file-text-o margin-r-2"></i> FIR Details</th></tr>
+                    <tr>
+                        <th>FIR Number</th>
+                        <td><?php echo HTML::chars($row['FIRNumber']); ?></td>
+                        <th>FIR Date</th>
+                        <td><?php echo HTML::chars($row['FIRDate']); ?></td>
+                    </tr>
+                    <tr>
+                        <th>Incident District</th>
+                        <td><?php echo HTML::chars($row['IncidentDistrict']); ?></td>
+                        <th>Police Station</th>
+                        <td><?php echo HTML::chars($row['PoliceStationName']); ?></td>
+                    </tr>
+                    <tr>
+                        <th>Motive</th>
+                        <td><?php echo HTML::chars($row['MotiveName']); ?></td>
+                        <th>Section / Law</th>
+                        <td><?php echo HTML::chars($row['SectionLaw']); ?></td>
+                    </tr>
+                    <tr>
+                        <th>Notification</th>
+                        <td><?php echo HTML::chars($row['NotificationStatus']); ?></td>
+                        <th>Pre Status Date</th>
+                        <td><?php echo HTML::chars($row['PreStatusDate']); ?></td>
+                    </tr>
                 </table>
             </div>
+            <?php } ?>
             <?php
         } catch (Exception $ex) {
             echo json_encode(2);
@@ -3834,16 +3838,24 @@ exit();
                 return;
             }
 
-            $ecp_image = '';
+            // Normalise each image field to a data-URI if not already one
+            $ecp_name_img = '';
             if (!empty($p->name_image_base64)) {
-                $ecp_image = $p->name_image_base64;
-            } elseif (!empty($p->father_image_base64)) {
-                $ecp_image = $p->father_image_base64;
-            } elseif (!empty($p->address_image_base64)) {
-                $ecp_image = $p->address_image_base64;
+                $ecp_name_img = (strpos($p->name_image_base64, 'data:image') === 0)
+                    ? $p->name_image_base64
+                    : 'data:image/jpeg;base64,' . $p->name_image_base64;
             }
-            if (!empty($ecp_image) && strpos($ecp_image, 'data:image') !== 0) {
-                $ecp_image = 'data:image/jpeg;base64,' . $ecp_image;
+            $ecp_father_img = '';
+            if (!empty($p->father_image_base64)) {
+                $ecp_father_img = (strpos($p->father_image_base64, 'data:image') === 0)
+                    ? $p->father_image_base64
+                    : 'data:image/jpeg;base64,' . $p->father_image_base64;
+            }
+            $ecp_address_img = '';
+            if (!empty($p->address_image_base64)) {
+                $ecp_address_img = (strpos($p->address_image_base64, 'data:image') === 0)
+                    ? $p->address_image_base64
+                    : 'data:image/jpeg;base64,' . $p->address_image_base64;
             }
             $linked_numbers_list = [];
             if (!empty($p->linked_numbers)) {
@@ -3851,13 +3863,25 @@ exit();
             }
             ?>
             <div class="col-md-12">
-                <table class="table table-bordered table-condensed" style="font-size:12px;">
+                <table class="table table-bordered table-condensed" style="font-size:13px;">
                     <tr class="active"><th colspan="4"><i class="fa fa-id-card-o margin-r-2"></i> Personal Information</th></tr>
                     <tr>
-                        <th style="width:15%">Name</th>
-                        <td style="width:35%"><?php echo HTML::chars($p->name_text); ?></td>
-                        <th style="width:15%">Father</th>
-                        <td style="width:35%"><?php echo HTML::chars($p->father_text); ?></td>
+                        <th style="width:10%">Name</th>
+                        <td style="width:40%">
+                            <?php if (!empty($p->name_text)) { echo HTML::chars($p->name_text); } elseif (!empty($ecp_name_img)) { ?>
+                                <img src="<?php echo HTML::chars($ecp_name_img); ?>" alt="Name Image"
+                                     style="max-width:220px; border:1px solid #ddd; padding:2px; cursor:pointer;"
+                                     onclick="document.getElementById('ecpmodal').style.display='block'; document.getElementById('imgecpmodal').src=this.src;">
+                            <?php } ?>
+                        </td>
+                        <th style="width:10%">Father</th>
+                        <td style="width:40%">
+                            <?php if (!empty($p->father_text)) { echo HTML::chars($p->father_text); } elseif (!empty($ecp_father_img)) { ?>
+                                <img src="<?php echo HTML::chars($ecp_father_img); ?>" alt="Father Image"
+                                     style="max-width:220px; border:1px solid #ddd; padding:2px; cursor:pointer;"
+                                     onclick="document.getElementById('ecpmodal').style.display='block'; document.getElementById('imgecpmodal').src=this.src;">
+                            <?php } ?>
+                        </td>
                     </tr>
                     <tr>
                         <th>CNIC</th>
@@ -3871,11 +3895,17 @@ exit();
                         <th>Family Number</th>
                         <td><?php echo HTML::chars($p->family_number); ?></td>
                     </tr>
-                    <?php if (!empty($p->address_text)) { ?>
+                    <?php if (!empty($p->address_text) || !empty($ecp_address_img)) { ?>
                     <tr class="active"><th colspan="4"><i class="fa fa-home margin-r-2"></i> Address</th></tr>
                     <tr>
                         <th>Address</th>
-                        <td colspan="3"><?php echo HTML::chars($p->address_text); ?></td>
+                        <td colspan="3">
+                            <?php if (!empty($p->address_text)) { echo HTML::chars($p->address_text); } elseif (!empty($ecp_address_img)) { ?>
+                                <img src="<?php echo HTML::chars($ecp_address_img); ?>" alt="Address Image"
+                                     style="max-width:400px; border:1px solid #ddd; padding:2px; cursor:pointer;"
+                                     onclick="document.getElementById('ecpmodal').style.display='block'; document.getElementById('imgecpmodal').src=this.src;">
+                            <?php } ?>
+                        </td>
                     </tr>
                     <?php } ?>
                     <?php if (!empty($p->uc_block_code) || !empty($p->code)) { ?>
@@ -3899,18 +3929,8 @@ exit();
                     <tr>
                         <td colspan="4">
                             <?php foreach ($linked_numbers_list as $num) { ?>
-                                <span class="label label-default" style="margin-right:4px; margin-bottom:2px; display:inline-block;"><i class="fa fa-mobile margin-r-2"></i> <?php echo HTML::chars($num); ?></span>
+                                <span style="display:inline-block; margin-right:12px; margin-bottom:4px; font-size:13px;"><i class="fa fa-mobile margin-r-2"></i> <?php echo HTML::chars($num); ?></span>
                             <?php } ?>
-                        </td>
-                    </tr>
-                    <?php } ?>
-                    <?php if (!empty($ecp_image)) { ?>
-                    <tr class="active"><th colspan="4"><i class="fa fa-image margin-r-2"></i> ECP Image</th></tr>
-                    <tr>
-                        <td colspan="4" class="text-center">
-                            <img class="myecpimg" src="<?php echo HTML::chars($ecp_image); ?>" alt="ECP Image"
-                                 style="max-width: 200px; width: 100%; border: 1px solid #ddd; padding: 2px; cursor: pointer;"
-                                 onclick="document.getElementById('ecpmodal').style.display='block'; document.getElementById('imgecpmodal').src=this.src;">
                         </td>
                     </tr>
                     <?php } ?>

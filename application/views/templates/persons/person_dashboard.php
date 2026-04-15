@@ -582,25 +582,7 @@ echo Helpers_Layout::get_ajax_loader();
                         </div>                        
                     </div>
                 </div>
-                <div class="col-md-12">  
-                    <div class="box box-danger box-solid collapsed-box">
-                        <div class="box-header with-border">
-                            <h3 class="box-title">Other Information</h3>
-
-                            <div class="box-tools pull-right">
-                                <button type="button" title="Show/Hide" id="other_information" class="panelisopen btn btn-box-tool" data-widget="collapse"><i class="fa fa-plus"></i>
-                                </button>                
-                            </div>
-                        </div>
-                        <div class="box-body" >
-                            <div  id="person_affiliations_and_social_links">    
-<?php
-echo Helpers_Layout::get_ajax_loader();
-?>                            
-                            </div> 
-                        </div>                        
-                    </div>
-                </div>
+                
 
             </div>
         </div>
@@ -893,7 +875,7 @@ if ($isforeigner == 1) {
 
     <!-- External Database Panels -->
     <div class="row">
-        <div class="col-md-12">
+        <div class="col-md-6">
             <div class="box box-warning box-solid collapsed-box">
                 <div class="box-header with-border">
                     <h3 class="box-title">FIR Management System (CTD KPK)</h3>
@@ -909,7 +891,7 @@ if ($isforeigner == 1) {
                 </div>
             </div>
         </div>
-        <div class="col-md-12">
+        <div class="col-md-6">
             <div class="box box-success box-solid collapsed-box">
                 <div class="box-header with-border">
                     <h3 class="box-title">Election Commission (ECP)</h3>
@@ -925,7 +907,10 @@ if ($isforeigner == 1) {
                 </div>
             </div>
         </div>
-        <div class="col-md-12">
+		</div>
+    <!-- /.External Database Panels -->
+<div class="row">
+        <div class="col-md-6">
             <div class="box box-info box-solid collapsed-box">
                 <div class="box-header with-border">
                     <h3 class="box-title">Driving License (DLMS)</h3>
@@ -941,7 +926,7 @@ if ($isforeigner == 1) {
                 </div>
             </div>
         </div>
-        <div class="col-md-12">
+        <div class="col-md-6">
             <div class="box box-danger box-solid collapsed-box">
                 <div class="box-header with-border">
                     <h3 class="box-title">Government Employee Data</h3>
@@ -959,7 +944,27 @@ if ($isforeigner == 1) {
         </div>
     </div>
     <!-- /.External Database Panels -->
+<div class="row">
+<div class="col-md-12">  
+                    <div class="box box-danger box-solid collapsed-box">
+                        <div class="box-header with-border">
+                            <h3 class="box-title">Other Information</h3>
 
+                            <div class="box-tools pull-right">
+                                <button type="button" title="Show/Hide" id="other_information" class="panelisopen btn btn-box-tool" data-widget="collapse"><i class="fa fa-plus"></i>
+                                </button>                
+                            </div>
+                        </div>
+                        <div class="box-body" >
+                            <div  id="person_affiliations_and_social_links">    
+<?php
+echo Helpers_Layout::get_ajax_loader();
+?>                            
+                            </div> 
+                        </div>                        
+                    </div>
+                </div>
+</div>
     <!-- /.row -->
 
 </section>
