@@ -3514,7 +3514,7 @@ exit();
                     <div class="col-md-12"><strong>Expiry Date:</strong> <?php echo HTML::chars($dl_profile->LicenseExpiryDate); ?></div>
                     <?php if (!empty($dl_image)) { ?>
                         <div class="col-md-12" style="margin-top: 8px;">
-                            <img src="<?php echo $dl_image; ?>" alt="Driving License Photo" style="max-width: 120px; max-height: 120px; border: 1px solid #ddd; padding: 2px;">
+                            <img src="<?php echo HTML::chars($dl_image); ?>" alt="Driving License Photo" style="max-width: 120px; max-height: 120px; border: 1px solid #ddd; padding: 2px;">
                         </div>
                     <?php } ?>
                 <?php } else { ?>
@@ -3534,7 +3534,7 @@ exit();
                     <div class="col-md-12"><strong>Linked Numbers:</strong> <?php echo HTML::chars($ecp_profile->linked_numbers); ?></div>
                     <?php if (!empty($ecp_image)) { ?>
                         <div class="col-md-12" style="margin-top: 8px;">
-                            <img src="<?php echo $ecp_image; ?>" alt="ECP Image" style="max-width: 180px; max-height: 120px; border: 1px solid #ddd; padding: 2px;">
+                            <img src="<?php echo HTML::chars($ecp_image); ?>" alt="ECP Image" style="max-width: 180px; max-height: 120px; border: 1px solid #ddd; padding: 2px;">
                         </div>
                     <?php } ?>
                 <?php } else { ?>
