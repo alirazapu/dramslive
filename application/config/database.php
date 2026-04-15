@@ -43,7 +43,7 @@ return array
     (
         'type'       => 'MySQLi',
         'connection' => array(
-            'hostname'   => '192.168.0.204',
+            'hostname'   => '192.168.5.204',
             'username'   => 'azmat',
             'password'   => 'azmat@123',
             'persistent' => FALSE,

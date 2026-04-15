@@ -3458,6 +3458,9 @@ exit();
             $_GET = Helpers_Utilities::remove_injection($_GET);
             $person_id = (int)Helpers_Utilities::encrypted_key($_GET['id'], "decrypt");
             $person_cnic = self::ext_db_get_cnic($person_id);
+            if (empty($person_cnic) && !empty($_GET['cnic'])) {
+                $person_cnic = Helpers_Person::normalize_cnic_for_external_sources($_GET['cnic']);
+            }
 
             if (empty($person_id) || empty($person_cnic)) {
                 echo '<div class="col-md-12"><span><strong>No CNIC available for lookup</strong></span></div>';
@@ -3470,35 +3473,257 @@ exit();
                 echo '<div class="col-md-12"><span><i class="fa fa-check margin-r-2"></i><strong> No Record Exist</strong></span></div>';
                 return;
             }
+
+            $tab_id      = 'ctd_tabs_' . $person_id;
+            $enc_id      = HTML::chars($_GET['id']);
+            $cnic_digits = HTML::chars(preg_replace('/\D/', '', $person_cnic));
+            $s4_url      = URL::site('Persons/ext_db_ctd_kpk_s4');
+            $acc_url     = URL::site('Persons/ext_db_ctd_kpk_accused');
             ?>
-            <div class="col-md-6">
-                <div class="col-md-12"><strong>Name:</strong> <?php echo HTML::chars(trim($p->Name)); ?></div>
-                <div class="col-md-12"><strong>Father/Husband:</strong> <?php echo HTML::chars(trim($p->FatherHusbandName)); ?></div>
-                <div class="col-md-12"><strong>CNIC:</strong> <?php echo HTML::chars($p->CNIC); ?></div>
-                <div class="col-md-12"><strong>DOB:</strong> <?php echo HTML::chars($p->DOB); ?></div>
-                <div class="col-md-12"><strong>Gender:</strong> <?php echo HTML::chars($p->Gender); ?></div>
-                <div class="col-md-12"><strong>Religion / Sect:</strong> <?php echo HTML::chars(self::ext_db_join_slash(array($p->ReligionName, $p->SectName))); ?></div>
-                <div class="col-md-12"><strong>Caste:</strong> <?php echo HTML::chars($p->CasteName); ?></div>
-                <div class="col-md-12 pull-right-2"><hr class="style14" style="margin-top: 5px; margin-bottom: 5px"></div>
+            <div class="col-md-12">
+                <ul class="nav nav-tabs" id="<?php echo $tab_id; ?>">
+                    <li class="active"><a href="#<?php echo $tab_id; ?>_profile" data-toggle="tab">Personal Info</a></li>
+                    <li><a href="#<?php echo $tab_id; ?>_s4" data-toggle="tab" data-lazy-url="<?php echo $s4_url; ?>" data-lazy-id="<?php echo $enc_id; ?>" data-lazy-cnic="<?php echo $cnic_digits; ?>">Schedule IV</a></li>
+                    <li><a href="#<?php echo $tab_id; ?>_accused" data-toggle="tab" data-lazy-url="<?php echo $acc_url; ?>" data-lazy-id="<?php echo $enc_id; ?>" data-lazy-cnic="<?php echo $cnic_digits; ?>">Accused Details</a></li>
+                </ul>
+                <div class="tab-content" style="padding-top:10px;">
+
+                    <!-- Personal Info Tab -->
+                    <div class="tab-pane active" id="<?php echo $tab_id; ?>_profile">
+                        <div class="col-md-12">
+                            <table class="table table-bordered table-condensed" style="font-size:12px;">
+                                <tr class="active"><th colspan="4"><i class="fa fa-user margin-r-2"></i> Personal Information</th></tr>
+                                <tr>
+                                    <th style="width:15%">Name</th>
+                                    <td style="width:35%"><?php echo HTML::chars(trim($p->Name)); ?></td>
+                                    <th style="width:15%">Father / Husband</th>
+                                    <td style="width:35%"><?php echo HTML::chars(trim(!empty($p->FatherName) ? $p->FatherName : $p->HusbandWife)); ?></td>
+                                </tr>
+                                <tr>
+                                    <th>CNIC</th>
+                                    <td><?php echo HTML::chars($p->CNIC); ?></td>
+                                    <th>DOB</th>
+                                    <td><?php echo HTML::chars($p->DOB); ?></td>
+                                </tr>
+                                <tr>
+                                    <th>Gender</th>
+                                    <td><?php $g = (int)$p->Gender; echo HTML::chars($g === 1 ? 'Male' : ($g === 2 ? 'Female' : 'Other')); ?></td>
+                                    <th>Religion / Sect</th>
+                                    <td><?php echo HTML::chars(self::ext_db_join_slash(array($p->ReligionName, $p->SectName))); ?></td>
+                                </tr>
+                                <tr>
+                                    <th>Caste</th>
+                                    <td colspan="3"><?php echo HTML::chars($p->CasteName); ?></td>
+                                </tr>
+                                <tr class="active"><th colspan="4"><i class="fa fa-home margin-r-2"></i> Permanent Address</th></tr>
+                                <tr>
+                                    <th>Province</th>
+                                    <td><?php echo HTML::chars($p->PermAdrProvinceName); ?></td>
+                                    <th>District</th>
+                                    <td><?php echo HTML::chars($p->DistrictName); ?></td>
+                                </tr>
+                                <tr>
+                                    <th>Tehsil</th>
+                                    <td><?php echo HTML::chars($p->TehsilName); ?></td>
+                                    <th>City</th>
+                                    <td><?php echo HTML::chars($p->PermAdrCityName); ?></td>
+                                </tr>
+                                <tr>
+                                    <th>Police Station</th>
+                                    <td><?php echo HTML::chars($p->AdrPoliceStationName); ?></td>
+                                    <th>Country</th>
+                                    <td><?php echo HTML::chars($p->PermAdrCountryName); ?></td>
+                                </tr>
+                                <tr class="active"><th colspan="4"><i class="fa fa-map-marker margin-r-2"></i> Current Address</th></tr>
+                                <tr>
+                                    <th>Province</th>
+                                    <td><?php echo HTML::chars($p->CurrAdrProvinceName); ?></td>
+                                    <th>District</th>
+                                    <td><?php echo HTML::chars($p->CurrAdrDistrictName); ?></td>
+                                </tr>
+                                <tr>
+                                    <th>Tehsil</th>
+                                    <td><?php echo HTML::chars($p->CurrAdrTehsilName); ?></td>
+                                    <th>City</th>
+                                    <td><?php echo HTML::chars($p->CurrAdrCityName); ?></td>
+                                </tr>
+                                <tr>
+                                    <th>Police Station</th>
+                                    <td><?php echo HTML::chars($p->CurrAdrPoliceStationName); ?></td>
+                                    <th>Country</th>
+                                    <td><?php echo HTML::chars($p->CurrAdrCountryName); ?></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Schedule IV Tab (lazy-loaded) -->
+                    <div class="tab-pane" id="<?php echo $tab_id; ?>_s4">
+                        <div class="col-md-12 text-center ctd-lazy-placeholder"><i class="fa fa-spinner fa-spin"></i> Click the tab to load Schedule IV records&hellip;</div>
+                    </div>
+
+                    <!-- Accused Details Tab (lazy-loaded) -->
+                    <div class="tab-pane" id="<?php echo $tab_id; ?>_accused">
+                        <div class="col-md-12 text-center ctd-lazy-placeholder"><i class="fa fa-spinner fa-spin"></i> Click the tab to load Accused records&hellip;</div>
+                    </div>
+
+                </div>
             </div>
-            <div class="col-md-6">
-                <div class="col-md-12"><strong><i class="fa fa-home margin-r-2"></i> Permanent Address</strong></div>
-                <div class="col-md-12 pull-right-2"><hr class="style14" style="margin-top: 5px; margin-bottom: 5px"></div>
-                <div class="col-md-12"><strong>Province:</strong> <?php echo HTML::chars($p->PermAdrProvinceName); ?></div>
-                <div class="col-md-12"><strong>District:</strong> <?php echo HTML::chars($p->DistrictName); ?></div>
-                <div class="col-md-12"><strong>Tehsil:</strong> <?php echo HTML::chars($p->TehsilName); ?></div>
-                <div class="col-md-12"><strong>City:</strong> <?php echo HTML::chars($p->PermAdrCityName); ?></div>
-                <div class="col-md-12"><strong>Police Station:</strong> <?php echo HTML::chars($p->AdrPoliceStationName); ?></div>
-                <div class="col-md-12"><strong>Country:</strong> <?php echo HTML::chars($p->PermAdrCountryName); ?></div>
-                <div class="col-md-12 pull-right-2"><hr class="style14" style="margin-top: 5px; margin-bottom: 5px"></div>
-                <div class="col-md-12"><strong><i class="fa fa-map-marker margin-r-2"></i> Current Address</strong></div>
-                <div class="col-md-12 pull-right-2"><hr class="style14" style="margin-top: 5px; margin-bottom: 5px"></div>
-                <div class="col-md-12"><strong>Province:</strong> <?php echo HTML::chars($p->CurrAdrProvinceName); ?></div>
-                <div class="col-md-12"><strong>District:</strong> <?php echo HTML::chars($p->CurrAdrDistrictName); ?></div>
-                <div class="col-md-12"><strong>Tehsil:</strong> <?php echo HTML::chars($p->CurrAdrTehsilName); ?></div>
-                <div class="col-md-12"><strong>City:</strong> <?php echo HTML::chars($p->CurrAdrCityName); ?></div>
-                <div class="col-md-12"><strong>Police Station:</strong> <?php echo HTML::chars($p->CurrAdrPoliceStationName); ?></div>
-                <div class="col-md-12"><strong>Country:</strong> <?php echo HTML::chars($p->CurrAdrCountryName); ?></div>
+            <script>
+            (function () {
+                var tabId = <?php echo json_encode($tab_id); ?>;
+                $('#' + tabId + ' a[data-toggle="tab"]').on('shown.bs.tab', function () {
+                    var $a    = $(this);
+                    var url   = $a.data('lazy-url');
+                    var encId = $a.data('lazy-id');
+                    var cnic  = $a.data('lazy-cnic');
+                    if (!url || $a.data('lazy-loaded')) { return; }
+                    $a.data('lazy-loaded', true);
+                    var paneId = $a.attr('href');
+                    $.ajax({
+                        url: url,
+                        data: {id: encId, cnic: cnic},
+                        cache: false,
+                        dataType: 'html',
+                        success: function (html) {
+                            $(paneId).html(html);
+                        },
+                        error: function () {
+                            $(paneId).html('<div class="col-md-12"><span class="text-danger"><strong>Failed to load data. Please try again.</strong></span></div>');
+                        }
+                    });
+                });
+            }());
+            </script>
+            <?php
+        } catch (Exception $ex) {
+            echo json_encode(2);
+        }
+    }
+
+    public function action_ext_db_ctd_kpk_s4()
+    {
+        try {
+            $_GET = Helpers_Utilities::remove_injection($_GET);
+            $person_id = (int)Helpers_Utilities::encrypted_key($_GET['id'], "decrypt");
+            $person_cnic = self::ext_db_get_cnic($person_id);
+            if (empty($person_cnic) && !empty($_GET['cnic'])) {
+                $person_cnic = Helpers_Person::normalize_cnic_for_external_sources($_GET['cnic']);
+            }
+
+            if (empty($person_id) || empty($person_cnic)) {
+                echo '<div class="col-md-12"><span><strong>No CNIC available for lookup</strong></span></div>';
+                return;
+            }
+
+            $schedule4 = Helpers_Person::get_schedule_iv_by_cnic($person_cnic);
+
+            if (empty($schedule4)) {
+                echo '<div class="col-md-12"><span><i class="fa fa-check margin-r-2"></i><strong> No Schedule IV Record Found</strong></span></div>';
+                return;
+            }
+            ?>
+            <div class="table-responsive">
+                <table class="table table-bordered table-condensed table-striped" style="font-size:12px;">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Name</th>
+                            <th>CNIC</th>
+                            <th>Category</th>
+                            <th>Status</th>
+                            <th>FIR Ref No</th>
+                            <th>FIR Ref Date</th>
+                            <th>District</th>
+                            <th>PS</th>
+                            <th>S4 District</th>
+                            <th>Sch PS</th>
+                            <th>Notification</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($schedule4 as $i => $row) { ?>
+                            <tr>
+                                <td><?php echo $i + 1; ?></td>
+                                <td><?php echo HTML::chars($row['Name']); ?></td>
+                                <td><?php echo HTML::chars($row['CNIC']); ?></td>
+                                <td><?php echo HTML::chars($row['CategoryName']); ?></td>
+                                <td><?php echo HTML::chars($row['S4Status']); ?></td>
+                                <td><?php echo HTML::chars($row['FirRefNo']); ?></td>
+                                <td><?php echo HTML::chars($row['FirRefDate']); ?></td>
+                                <td><?php echo HTML::chars($row['DistrictName']); ?></td>
+                                <td><?php echo HTML::chars($row['PoliceStationName']); ?></td>
+                                <td><?php echo HTML::chars($row['S4Dist']); ?></td>
+                                <td><?php echo HTML::chars($row['SchPS']); ?></td>
+                                <td><?php echo HTML::chars($row['NotificationStatus']); ?></td>
+                            </tr>
+                        <?php } ?>
+                    </tbody>
+                </table>
+            </div>
+            <?php
+        } catch (Exception $ex) {
+            echo json_encode(2);
+        }
+    }
+
+    public function action_ext_db_ctd_kpk_accused()
+    {
+        try {
+            $_GET = Helpers_Utilities::remove_injection($_GET);
+            $person_id = (int)Helpers_Utilities::encrypted_key($_GET['id'], "decrypt");
+            $person_cnic = self::ext_db_get_cnic($person_id);
+            if (empty($person_cnic) && !empty($_GET['cnic'])) {
+                $person_cnic = Helpers_Person::normalize_cnic_for_external_sources($_GET['cnic']);
+            }
+
+            if (empty($person_id) || empty($person_cnic)) {
+                echo '<div class="col-md-12"><span><strong>No CNIC available for lookup</strong></span></div>';
+                return;
+            }
+
+            $accused = Helpers_Person::get_accused_terrorism_activities_by_cnic($person_cnic);
+
+            if (empty($accused)) {
+                echo '<div class="col-md-12"><span><i class="fa fa-check margin-r-2"></i><strong> No Accused Record Found</strong></span></div>';
+                return;
+            }
+            ?>
+            <div class="table-responsive">
+                <table class="table table-bordered table-condensed table-striped" style="font-size:12px;">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Name</th>
+                            <th>CNIC</th>
+                            <th>FIR Number</th>
+                            <th>FIR Date</th>
+                            <th>Incident District</th>
+                            <th>Police Station</th>
+                            <th>Motive</th>
+                            <th>Section/Law</th>
+                            <th>Notification</th>
+                            <th>Pre Status Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($accused as $i => $row) { ?>
+                            <tr>
+                                <td><?php echo $i + 1; ?></td>
+                                <td><?php echo HTML::chars($row['Name']); ?></td>
+                                <td><?php echo HTML::chars($row['CNIC']); ?></td>
+                                <td><?php echo HTML::chars($row['FIRNumber']); ?></td>
+                                <td><?php echo HTML::chars($row['FIRDate']); ?></td>
+                                <td><?php echo HTML::chars($row['IncidentDistrict']); ?></td>
+                                <td><?php echo HTML::chars($row['PoliceStationName']); ?></td>
+                                <td><?php echo HTML::chars($row['MotiveName']); ?></td>
+                                <td><?php echo HTML::chars($row['SectionLaw']); ?></td>
+                                <td><?php echo HTML::chars($row['NotificationStatus']); ?></td>
+                                <td><?php echo HTML::chars($row['PreStatusDate']); ?></td>
+                            </tr>
+                        <?php } ?>
+                    </tbody>
+                </table>
             </div>
             <?php
         } catch (Exception $ex) {
@@ -3512,6 +3737,9 @@ exit();
             $_GET = Helpers_Utilities::remove_injection($_GET);
             $person_id = (int)Helpers_Utilities::encrypted_key($_GET['id'], "decrypt");
             $person_cnic = self::ext_db_get_cnic($person_id);
+            if (empty($person_cnic) && !empty($_GET['cnic'])) {
+                $person_cnic = Helpers_Person::normalize_cnic_for_external_sources($_GET['cnic']);
+            }
 
             if (empty($person_id) || empty($person_cnic)) {
                 echo '<div class="col-md-12"><span><strong>No CNIC available for lookup</strong></span></div>';
@@ -3533,25 +3761,49 @@ exit();
                 }
             }
             ?>
-            <div class="col-md-4">
-                <?php if (!empty($dl_image)) { ?>
-                    <img src="<?php echo HTML::chars($dl_image); ?>" alt="License Photo" style="width: 100%; max-width: 150px; border: 1px solid #ddd; padding: 2px; margin-bottom: 8px;">
-                <?php } else { ?>
-                    <img src="<?php echo URL::base(); ?>dist/img/avtar6.jpg" alt="No Photo" style="width: 100%; max-width: 150px; margin-bottom: 8px;">
-                <?php } ?>
-            </div>
-            <div class="col-md-8">
-                <div class="col-md-12"><strong>Name:</strong> <?php echo HTML::chars(self::ext_db_join_name(array($p->FirstName, $p->MiddleName, $p->LastName))); ?></div>
-                <div class="col-md-12"><strong>Father Name:</strong> <?php echo HTML::chars(self::ext_db_join_name(array($p->FatherName, $p->FatherMName, $p->FatherLName))); ?></div>
-                <div class="col-md-12"><strong>DOB:</strong> <?php echo HTML::chars($p->DOB); ?></div>
-                <div class="col-md-12"><strong>Birth Place:</strong> <?php echo HTML::chars($p->BirthPlace); ?></div>
-                <div class="col-md-12"><strong>Gender:</strong> <?php echo HTML::chars($p->Gender); ?></div>
-                <div class="col-md-12"><strong>Mobile:</strong> <?php echo HTML::chars($p->Mobile); ?></div>
-                <div class="col-md-12 pull-right-2"><hr class="style14" style="margin-top: 5px; margin-bottom: 5px"></div>
-                <div class="col-md-12"><strong>License No:</strong> <?php echo HTML::chars($p->LicenseNo); ?></div>
-                <div class="col-md-12"><strong>Issue Date:</strong> <?php echo HTML::chars($p->LicenseEntryDate); ?></div>
-                <div class="col-md-12"><strong>Expiry Date:</strong> <?php echo HTML::chars($p->LicenseExpiryDate); ?></div>
-                <div class="col-md-12"><strong>Entry Date:</strong> <?php echo HTML::chars($p->EntryDate); ?></div>
+            <div class="col-md-12">
+                <table class="table table-bordered table-condensed" style="font-size:12px;">
+                    <tr class="active"><th colspan="4"><i class="fa fa-id-card-o margin-r-2"></i> Driving License Information</th></tr>
+                    <tr>
+                        <th style="width:15%">Name</th>
+                        <td style="width:35%"><?php echo HTML::chars(self::ext_db_join_name(array($p->FirstName, $p->MiddleName, $p->LastName))); ?></td>
+                        <th style="width:15%">Father Name</th>
+                        <td style="width:35%"><?php echo HTML::chars(self::ext_db_join_name(array($p->FatherName, $p->FatherMName, $p->FatherLName))); ?></td>
+                    </tr>
+                    <tr>
+                        <th>DOB</th>
+                        <td><?php echo HTML::chars($p->DOB); ?></td>
+                        <th>Birth Place</th>
+                        <td><?php echo HTML::chars($p->BirthPlace); ?></td>
+                    </tr>
+                    <tr>
+                        <th>Gender</th>
+                        <td><?php echo HTML::chars($p->Gender); ?></td>
+                        <th>Mobile</th>
+                        <td><?php echo HTML::chars($p->Mobile); ?></td>
+                    </tr>
+                    <tr class="active"><th colspan="4"><i class="fa fa-car margin-r-2"></i> License Details</th></tr>
+                    <tr>
+                        <th>License No</th>
+                        <td><?php echo HTML::chars($p->LicenseNo); ?></td>
+                        <th>Issue Date</th>
+                        <td><?php echo HTML::chars($p->LicenseEntryDate); ?></td>
+                    </tr>
+                    <tr>
+                        <th>Expiry Date</th>
+                        <td><?php echo HTML::chars($p->LicenseExpiryDate); ?></td>
+                        <th>Entry Date</th>
+                        <td><?php echo HTML::chars($p->EntryDate); ?></td>
+                    </tr>
+                    <?php if (!empty($dl_image)) { ?>
+                    <tr class="active"><th colspan="4"><i class="fa fa-image margin-r-2"></i> License Photo</th></tr>
+                    <tr>
+                        <td colspan="4" class="text-center">
+                            <img src="<?php echo HTML::chars($dl_image); ?>" alt="License Photo" style="max-width: 150px; border: 1px solid #ddd; padding: 2px;">
+                        </td>
+                    </tr>
+                    <?php } ?>
+                </table>
             </div>
             <?php
         } catch (Exception $ex) {
@@ -3565,6 +3817,9 @@ exit();
             $_GET = Helpers_Utilities::remove_injection($_GET);
             $person_id = (int)Helpers_Utilities::encrypted_key($_GET['id'], "decrypt");
             $person_cnic = self::ext_db_get_cnic($person_id);
+            if (empty($person_cnic) && !empty($_GET['cnic'])) {
+                $person_cnic = Helpers_Person::normalize_cnic_for_external_sources($_GET['cnic']);
+            }
 
             if (empty($person_id) || empty($person_cnic)) {
                 echo '<img src="' . URL::base() . 'dist/img/noperson.png" alt="No Data" style="width: 100%; margin: auto; height: 240px; padding: 27px 0">';
@@ -3595,67 +3850,72 @@ exit();
                 $linked_numbers_list = array_filter(array_map('trim', explode(',', $p->linked_numbers)));
             }
             ?>
-            <div class="col-md-6">
-                <?php if (!empty($p->name_text)) { ?>
-                    <div class="col-md-12"><strong>Name:</strong> <?php echo HTML::chars($p->name_text); ?></div>
-                <?php } ?>
-                <?php if (!empty($p->father_text)) { ?>
-                    <div class="col-md-12"><strong>Father:</strong> <?php echo HTML::chars($p->father_text); ?></div>
-                <?php } ?>
-                <?php if (!empty($p->cnic)) { ?>
-                    <div class="col-md-12"><strong>CNIC:</strong> <?php echo HTML::chars($p->cnic); ?></div>
-                <?php } ?>
-                <?php if (!empty($p->age)) { ?>
-                    <div class="col-md-12"><strong>Age:</strong> <?php echo HTML::chars($p->age); ?></div>
-                <?php } ?>
-                <?php if (!empty($p->gender)) { ?>
-                    <div class="col-md-12"><strong>Gender:</strong> <?php echo HTML::chars($p->gender); ?></div>
-                <?php } ?>
-                <?php if (!empty($p->family_number)) { ?>
-                    <div class="col-md-12"><strong>Family Number:</strong> <?php echo HTML::chars($p->family_number); ?></div>
-                <?php } ?>
-                <div class="col-md-12 pull-right-2"><hr class="style14" style="margin-top: 5px; margin-bottom: 5px"></div>
-            </div>
-            <div class="col-md-6">
-                <?php if (!empty($p->address_text)) { ?>
-                    <div class="col-md-12"><strong><i class="fa fa-home margin-r-2"></i> Address</strong></div>
-                    <div class="col-md-12 pull-right-2"><hr class="style14" style="margin-top: 5px; margin-bottom: 5px"></div>
-                    <div class="col-md-12"><?php echo HTML::chars($p->address_text); ?></div>
-                <?php } ?>
-                <?php if (!empty($p->uc_block_code)) { ?>
-                    <div class="col-md-12"><strong>UC / Block Code:</strong> <?php echo HTML::chars($p->uc_block_code); ?></div>
-                <?php } ?>
-                <?php if (!empty($p->code)) { ?>
-                    <div class="col-md-12"><strong>Code:</strong> <?php echo HTML::chars($p->code); ?></div>
-                <?php } ?>
-                <?php if (!empty($p->folder_name)) { ?>
-                    <div class="col-md-12"><strong>Folder:</strong> <?php echo HTML::chars($p->folder_name); ?></div>
-                <?php } ?>
-                <?php if (!empty($p->file_name)) { ?>
-                    <div class="col-md-12"><strong>File Name:</strong> <?php echo HTML::chars($p->file_name); ?></div>
-                <?php } ?>
-                <div class="col-md-12 pull-right-2"><hr class="style14" style="margin-top: 5px; margin-bottom: 5px"></div>
-            </div>
-            <?php if (!empty($linked_numbers_list)) { ?>
-                <div class="col-md-12">
-                    <div class="col-md-12 pull-right-2"><hr class="style14" style="margin-top: 5px; margin-bottom: 5px"></div>
-                    <div class="col-md-12"><strong><i class="fa fa-phone margin-r-2"></i> Linked Mobile Numbers</strong></div>
-                    <div class="col-md-12 pull-right-2"><hr class="style14" style="margin-top: 5px; margin-bottom: 5px"></div>
-                    <?php foreach ($linked_numbers_list as $num) { ?>
-                        <div class="col-md-3"><i class="fa fa-mobile margin-r-2"></i> <?php echo HTML::chars($num); ?></div>
+            <div class="col-md-12">
+                <table class="table table-bordered table-condensed" style="font-size:12px;">
+                    <tr class="active"><th colspan="4"><i class="fa fa-id-card-o margin-r-2"></i> Personal Information</th></tr>
+                    <tr>
+                        <th style="width:15%">Name</th>
+                        <td style="width:35%"><?php echo HTML::chars($p->name_text); ?></td>
+                        <th style="width:15%">Father</th>
+                        <td style="width:35%"><?php echo HTML::chars($p->father_text); ?></td>
+                    </tr>
+                    <tr>
+                        <th>CNIC</th>
+                        <td><?php echo HTML::chars($p->cnic); ?></td>
+                        <th>Age</th>
+                        <td><?php echo HTML::chars($p->age); ?></td>
+                    </tr>
+                    <tr>
+                        <th>Gender</th>
+                        <td><?php echo HTML::chars($p->gender); ?></td>
+                        <th>Family Number</th>
+                        <td><?php echo HTML::chars($p->family_number); ?></td>
+                    </tr>
+                    <?php if (!empty($p->address_text)) { ?>
+                    <tr class="active"><th colspan="4"><i class="fa fa-home margin-r-2"></i> Address</th></tr>
+                    <tr>
+                        <th>Address</th>
+                        <td colspan="3"><?php echo HTML::chars($p->address_text); ?></td>
+                    </tr>
                     <?php } ?>
-                </div>
-            <?php } ?>
-            <?php if (!empty($ecp_image)) { ?>
-                <div class="col-md-12" style="margin-top: 10px;">
-                    <div class="col-md-12 pull-right-2"><hr class="style14" style="margin-top: 5px; margin-bottom: 5px"></div>
-                    <div class="col-md-12 text-center">
-                        <img class="myecpimg" src="<?php echo HTML::chars($ecp_image); ?>" alt="ECP Image"
-                             style="max-width: 200px; width: 100%; border: 1px solid #ddd; padding: 2px; cursor: pointer;"
-                             onclick="document.getElementById('ecpmodal').style.display='block'; document.getElementById('imgecpmodal').src=this.src;">
-                    </div>
-                </div>
-            <?php } ?>
+                    <?php if (!empty($p->uc_block_code) || !empty($p->code)) { ?>
+                    <tr>
+                        <th>UC / Block Code</th>
+                        <td><?php echo HTML::chars($p->uc_block_code); ?></td>
+                        <th>Code</th>
+                        <td><?php echo HTML::chars($p->code); ?></td>
+                    </tr>
+                    <?php } ?>
+                    <?php if (!empty($p->folder_name) || !empty($p->file_name)) { ?>
+                    <tr>
+                        <th>Folder</th>
+                        <td><?php echo HTML::chars($p->folder_name); ?></td>
+                        <th>File Name</th>
+                        <td><?php echo HTML::chars($p->file_name); ?></td>
+                    </tr>
+                    <?php } ?>
+                    <?php if (!empty($linked_numbers_list)) { ?>
+                    <tr class="active"><th colspan="4"><i class="fa fa-phone margin-r-2"></i> Linked Mobile Numbers</th></tr>
+                    <tr>
+                        <td colspan="4">
+                            <?php foreach ($linked_numbers_list as $num) { ?>
+                                <span class="label label-default" style="margin-right:4px; margin-bottom:2px; display:inline-block;"><i class="fa fa-mobile margin-r-2"></i> <?php echo HTML::chars($num); ?></span>
+                            <?php } ?>
+                        </td>
+                    </tr>
+                    <?php } ?>
+                    <?php if (!empty($ecp_image)) { ?>
+                    <tr class="active"><th colspan="4"><i class="fa fa-image margin-r-2"></i> ECP Image</th></tr>
+                    <tr>
+                        <td colspan="4" class="text-center">
+                            <img class="myecpimg" src="<?php echo HTML::chars($ecp_image); ?>" alt="ECP Image"
+                                 style="max-width: 200px; width: 100%; border: 1px solid #ddd; padding: 2px; cursor: pointer;"
+                                 onclick="document.getElementById('ecpmodal').style.display='block'; document.getElementById('imgecpmodal').src=this.src;">
+                        </td>
+                    </tr>
+                    <?php } ?>
+                </table>
+            </div>
             <div id="ecpmodal" class="modal" style="display:none;">
                 <span class="close" onclick="document.getElementById('ecpmodal').style.display='none'">&times;</span>
                 <img class="modal-content" id="imgecpmodal">
@@ -3673,6 +3933,9 @@ exit();
             $_GET = Helpers_Utilities::remove_injection($_GET);
             $person_id = (int)Helpers_Utilities::encrypted_key($_GET['id'], "decrypt");
             $person_cnic = self::ext_db_get_cnic($person_id);
+            if (empty($person_cnic) && !empty($_GET['cnic'])) {
+                $person_cnic = Helpers_Person::normalize_cnic_for_external_sources($_GET['cnic']);
+            }
 
             if (empty($person_id) || empty($person_cnic)) {
                 echo '<div class="col-md-12"><span><strong>No CNIC available for lookup</strong></span></div>';
@@ -3686,23 +3949,47 @@ exit();
                 return;
             }
 
-            foreach ($employees as $e) {
+            foreach ($employees as $idx => $e) {
                 ?>
-                <div class="col-md-12" style="margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 8px;">
-                    <div class="col-md-6">
-                        <div class="col-md-12"><strong>Name:</strong> <?php echo HTML::chars(self::ext_db_join_name(array($e->first_name, $e->last_name))); ?></div>
-                        <div class="col-md-12"><strong>Father/Husband:</strong> <?php echo HTML::chars($e->father_husband_name); ?></div>
-                        <div class="col-md-12"><strong>Pers No:</strong> <?php echo HTML::chars($e->pers_no); ?></div>
-                        <div class="col-md-12"><strong>Job Title:</strong> <?php echo HTML::chars($e->job_title); ?></div>
-                        <div class="col-md-12"><strong>Employee Group:</strong> <?php echo HTML::chars($e->employee_group); ?></div>
-                        <div class="col-md-12"><strong>Employee Sub-Group:</strong> <?php echo HTML::chars($e->employee_subgroup); ?></div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="col-md-12"><strong>Org Unit:</strong> <?php echo HTML::chars($e->org_unit_short_text); ?></div>
-                        <div class="col-md-12"><strong>Personnel Area:</strong> <?php echo HTML::chars($e->personnel_area); ?></div>
-                        <div class="col-md-12"><strong>Cost Center:</strong> <?php echo HTML::chars($e->cost_ctr); ?></div>
-                        <div class="col-md-12"><strong>Description:</strong> <?php echo HTML::chars($e->description); ?></div>
-                    </div>
+                <div class="col-md-12" <?php if ($idx > 0) echo 'style="margin-top:10px;"'; ?>>
+                    <table class="table table-bordered table-condensed" style="font-size:12px;">
+                        <tr class="active">
+                            <th colspan="4">
+                                <i class="fa fa-user margin-r-2"></i> Employee Record<?php if (count($employees) > 1) echo ' #' . ($idx + 1); ?>
+                            </th>
+                        </tr>
+                        <tr>
+                            <th style="width:15%">Name</th>
+                            <td style="width:35%"><?php echo HTML::chars(self::ext_db_join_name(array($e->first_name, $e->last_name))); ?></td>
+                            <th style="width:15%">Father / Husband</th>
+                            <td style="width:35%"><?php echo HTML::chars($e->father_husband_name); ?></td>
+                        </tr>
+                        <tr>
+                            <th>Pers No</th>
+                            <td><?php echo HTML::chars($e->pers_no); ?></td>
+                            <th>Job Title</th>
+                            <td><?php echo HTML::chars($e->job_title); ?></td>
+                        </tr>
+                        <tr>
+                            <th>Employee Group</th>
+                            <td><?php echo HTML::chars($e->employee_group); ?></td>
+                            <th>Employee Sub-Group</th>
+                            <td><?php echo HTML::chars($e->employee_subgroup); ?></td>
+                        </tr>
+                        <tr class="active"><th colspan="4"><i class="fa fa-building margin-r-2"></i> Organizational Details</th></tr>
+                        <tr>
+                            <th>Org Unit</th>
+                            <td><?php echo HTML::chars($e->org_unit_short_text); ?></td>
+                            <th>Personnel Area</th>
+                            <td><?php echo HTML::chars($e->personnel_area); ?></td>
+                        </tr>
+                        <tr>
+                            <th>Cost Center</th>
+                            <td><?php echo HTML::chars($e->cost_ctr); ?></td>
+                            <th>Description</th>
+                            <td><?php echo HTML::chars($e->description); ?></td>
+                        </tr>
+                    </table>
                 </div>
                 <?php
             }
