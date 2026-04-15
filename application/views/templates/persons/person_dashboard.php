@@ -601,54 +601,6 @@ echo Helpers_Layout::get_ajax_loader();
                         </div>                        
                     </div>
                 </div>
-                <div class="col-md-12">
-                    <div class="box box-warning box-solid collapsed-box">
-                        <div class="box-header with-border">
-                            <h3 class="box-title">FIR Management System (CTD KPK)</h3>
-                            <div class="box-tools pull-right">
-                                <button type="button" title="Show/Hide" id="ext_db_ctd_kpk" class="panelisopen btn btn-box-tool" data-widget="collapse"><i class="fa fa-plus"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="box-body">
-                            <div id="person_ext_ctd_kpk">
-                                <?php echo Helpers_Layout::get_ajax_loader(); ?>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-12">
-                    <div class="box box-info box-solid collapsed-box">
-                        <div class="box-header with-border">
-                            <h3 class="box-title">Driving License (DLMS)</h3>
-                            <div class="box-tools pull-right">
-                                <button type="button" title="Show/Hide" id="ext_db_dlms" class="panelisopen btn btn-box-tool" data-widget="collapse"><i class="fa fa-plus"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="box-body">
-                            <div id="person_ext_dlms">
-                                <?php echo Helpers_Layout::get_ajax_loader(); ?>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-12">
-                    <div class="box box-danger box-solid collapsed-box">
-                        <div class="box-header with-border">
-                            <h3 class="box-title">Government Employee Data</h3>
-                            <div class="box-tools pull-right">
-                                <button type="button" title="Show/Hide" id="ext_db_employee" class="panelisopen btn btn-box-tool" data-widget="collapse"><i class="fa fa-plus"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="box-body">
-                            <div id="person_ext_employee">
-                                <?php echo Helpers_Layout::get_ajax_loader(); ?>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
             </div>
         </div>
@@ -934,7 +886,31 @@ if ($isforeigner == 1) {
                 </div>
             </div>
 
-            <div class="box box-success collapsed-box">
+        </div>
+        <!-- /.col -->
+    </div>
+    <!-- /.row -->
+
+    <!-- External Database Panels -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="box box-warning box-solid collapsed-box">
+                <div class="box-header with-border">
+                    <h3 class="box-title">FIR Management System (CTD KPK)</h3>
+                    <div class="box-tools pull-right">
+                        <button type="button" title="Show/Hide" id="ext_db_ctd_kpk" class="panelisopen btn btn-box-tool" data-widget="collapse"><i class="fa fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="box-body">
+                    <div id="person_ext_ctd_kpk">
+                        <?php echo Helpers_Layout::get_ajax_loader(); ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-12">
+            <div class="box box-success box-solid collapsed-box">
                 <div class="box-header with-border">
                     <h3 class="box-title">Election Commission (ECP)</h3>
                     <div class="box-tools pull-right">
@@ -942,17 +918,47 @@ if ($isforeigner == 1) {
                         </button>
                     </div>
                 </div>
-                <div class="box-body" style="height: 420px; overflow: auto; scroll-behavior:auto">
+                <div class="box-body">
                     <div id="person_ext_ecp">
                         <?php echo Helpers_Layout::get_ajax_loader(); ?>
                     </div>
                 </div>
             </div>
-
         </div>
-        <!-- /.col -->
+        <div class="col-md-12">
+            <div class="box box-info box-solid collapsed-box">
+                <div class="box-header with-border">
+                    <h3 class="box-title">Driving License (DLMS)</h3>
+                    <div class="box-tools pull-right">
+                        <button type="button" title="Show/Hide" id="ext_db_dlms" class="panelisopen btn btn-box-tool" data-widget="collapse"><i class="fa fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="box-body">
+                    <div id="person_ext_dlms">
+                        <?php echo Helpers_Layout::get_ajax_loader(); ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-12">
+            <div class="box box-danger box-solid collapsed-box">
+                <div class="box-header with-border">
+                    <h3 class="box-title">Government Employee Data</h3>
+                    <div class="box-tools pull-right">
+                        <button type="button" title="Show/Hide" id="ext_db_employee" class="panelisopen btn btn-box-tool" data-widget="collapse"><i class="fa fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="box-body">
+                    <div id="person_ext_employee">
+                        <?php echo Helpers_Layout::get_ajax_loader(); ?>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    <!-- /.row -->
+    <!-- /.External Database Panels -->
 
     <!-- /.row -->
 
