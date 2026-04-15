@@ -602,16 +602,48 @@ echo Helpers_Layout::get_ajax_loader();
                     </div>
                 </div>
                 <div class="col-md-12">
-                    <div class="box box-primary box-solid collapsed-box">
+                    <div class="box box-warning box-solid collapsed-box">
                         <div class="box-header with-border">
-                            <h3 class="box-title">External Databases Information</h3>
+                            <h3 class="box-title">CTD KPK Profile</h3>
                             <div class="box-tools pull-right">
-                                <button type="button" title="Show/Hide" id="external_databases" class="panelisopen btn btn-box-tool" data-widget="collapse"><i class="fa fa-plus"></i>
+                                <button type="button" title="Show/Hide" id="ext_db_ctd_kpk" class="panelisopen btn btn-box-tool" data-widget="collapse"><i class="fa fa-plus"></i>
                                 </button>
                             </div>
                         </div>
                         <div class="box-body">
-                            <div id="person_external_databases_info">
+                            <div id="person_ext_ctd_kpk">
+                                <?php echo Helpers_Layout::get_ajax_loader(); ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-12">
+                    <div class="box box-info box-solid collapsed-box">
+                        <div class="box-header with-border">
+                            <h3 class="box-title">Driving License (DLMS)</h3>
+                            <div class="box-tools pull-right">
+                                <button type="button" title="Show/Hide" id="ext_db_dlms" class="panelisopen btn btn-box-tool" data-widget="collapse"><i class="fa fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="box-body">
+                            <div id="person_ext_dlms">
+                                <?php echo Helpers_Layout::get_ajax_loader(); ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-12">
+                    <div class="box box-danger box-solid collapsed-box">
+                        <div class="box-header with-border">
+                            <h3 class="box-title">Government Employee Data</h3>
+                            <div class="box-tools pull-right">
+                                <button type="button" title="Show/Hide" id="ext_db_employee" class="panelisopen btn btn-box-tool" data-widget="collapse"><i class="fa fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="box-body">
+                            <div id="person_ext_employee">
                                 <?php echo Helpers_Layout::get_ajax_loader(); ?>
                             </div>
                         </div>
@@ -898,6 +930,21 @@ if ($isforeigner == 1) {
 
                         <!-- Modal Caption (Image Text) -->
                         <div id="captionfamtree">Person Family Tree</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="box box-success collapsed-box">
+                <div class="box-header with-border">
+                    <h3 class="box-title">Election Commission (ECP)</h3>
+                    <div class="box-tools pull-right">
+                        <button type="button" title="Show/Hide" id="ext_db_ecp" class="panelisopen btn btn-box-tool" data-widget="collapse"><i class="fa fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="box-body" style="height: 300px; overflow: auto; scroll-behavior:auto">
+                    <div id="person_ext_ecp">
+                        <?php echo Helpers_Layout::get_ajax_loader(); ?>
                     </div>
                 </div>
             </div>
@@ -2715,23 +2762,79 @@ echo $personID;
             $(this).addClass("panelisopen");
         }
     });
-    $('#external_databases').click(function () {
+    $('#ext_db_ctd_kpk').click(function () {
         if ($(this).hasClass("panelisopen")) {
             $(this).removeClass("panelisopen");
             if (!$(this).hasClass("already-done")) {
                 $.ajax({
-                    url: "<?php echo URL::site("Persons/person_external_databases"); ?>",
+                    url: "<?php echo URL::site("Persons/ext_db_ctd_kpk"); ?>",
                     data: {id: '<?php echo $_GET['id']; ?>'},
                     cache: false,
                     dataType: 'html',
                     success: function (msg) {
-                        $("#external_databases").addClass("panelisopen");
-                        $("#external_databases").addClass("already-done");
-                        if (msg === '2')
-                        {
-                            swal("System Error", "Contact Support Team.", "error");
-                        }
-                        $("#person_external_databases_info").html(msg);
+                        $("#ext_db_ctd_kpk").addClass("panelisopen").addClass("already-done");
+                        if (msg === '2') { swal("System Error", "Contact Support Team.", "error"); }
+                        $("#person_ext_ctd_kpk").html(msg);
+                    }
+                });
+            }
+        } else {
+            $(this).addClass("panelisopen");
+        }
+    });
+    $('#ext_db_dlms').click(function () {
+        if ($(this).hasClass("panelisopen")) {
+            $(this).removeClass("panelisopen");
+            if (!$(this).hasClass("already-done")) {
+                $.ajax({
+                    url: "<?php echo URL::site("Persons/ext_db_dlms"); ?>",
+                    data: {id: '<?php echo $_GET['id']; ?>'},
+                    cache: false,
+                    dataType: 'html',
+                    success: function (msg) {
+                        $("#ext_db_dlms").addClass("panelisopen").addClass("already-done");
+                        if (msg === '2') { swal("System Error", "Contact Support Team.", "error"); }
+                        $("#person_ext_dlms").html(msg);
+                    }
+                });
+            }
+        } else {
+            $(this).addClass("panelisopen");
+        }
+    });
+    $('#ext_db_ecp').click(function () {
+        if ($(this).hasClass("panelisopen")) {
+            $(this).removeClass("panelisopen");
+            if (!$(this).hasClass("already-done")) {
+                $.ajax({
+                    url: "<?php echo URL::site("Persons/ext_db_ecp"); ?>",
+                    data: {id: '<?php echo $_GET['id']; ?>'},
+                    cache: false,
+                    dataType: 'html',
+                    success: function (msg) {
+                        $("#ext_db_ecp").addClass("panelisopen").addClass("already-done");
+                        if (msg === '2') { swal("System Error", "Contact Support Team.", "error"); }
+                        $("#person_ext_ecp").html(msg);
+                    }
+                });
+            }
+        } else {
+            $(this).addClass("panelisopen");
+        }
+    });
+    $('#ext_db_employee').click(function () {
+        if ($(this).hasClass("panelisopen")) {
+            $(this).removeClass("panelisopen");
+            if (!$(this).hasClass("already-done")) {
+                $.ajax({
+                    url: "<?php echo URL::site("Persons/ext_db_employee"); ?>",
+                    data: {id: '<?php echo $_GET['id']; ?>'},
+                    cache: false,
+                    dataType: 'html',
+                    success: function (msg) {
+                        $("#ext_db_employee").addClass("panelisopen").addClass("already-done");
+                        if (msg === '2') { swal("System Error", "Contact Support Team.", "error"); }
+                        $("#person_ext_employee").html(msg);
                     }
                 });
             }
