@@ -2622,7 +2622,7 @@ echo $personID;
                     dataType: 'html',
                     success: function (msg) {
                         $('#person_last_cm').addClass("panelisopen");
-                        if (msg == 2)
+                        if (msg === '2')
                         {
                             swal("System Error", "Contact Support Team.", "error");
                         }
