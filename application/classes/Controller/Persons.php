@@ -3429,7 +3429,7 @@ exit();
             $_GET = Helpers_Utilities::remove_injection($_GET);
             $person_id = (int)Helpers_Utilities::encrypted_key($_GET['id'], "decrypt");
             $person_cnic = Helpers_Person::get_person_cnic($person_id);
-            $person_cnic = preg_replace('/\D+/', '', (string)$person_cnic);
+            $person_cnic = Helpers_Person::normalize_cnic_for_external_sources($person_cnic);
 
             if (empty($person_id) || empty($person_cnic)) {
                 ?>

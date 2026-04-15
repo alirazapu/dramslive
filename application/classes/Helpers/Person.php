@@ -156,7 +156,7 @@ abstract class Helpers_Person
         return $cnic;
     }
 
-    private static function normalize_cnic_for_external_sources($cnic = '')
+    public static function normalize_cnic_for_external_sources($cnic = '')
     {
         return preg_replace('/\D+/', '', (string)$cnic);
     }
@@ -167,6 +167,7 @@ abstract class Helpers_Person
         if (strlen($cnic) !== 13) {
             return $cnic;
         }
+        // CNIC format: XXXXX-XXXXXXX-X
         return substr($cnic, 0, 5) . '-' . substr($cnic, 5, 7) . '-' . substr($cnic, 12, 1);
     }
 

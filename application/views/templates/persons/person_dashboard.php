@@ -2493,7 +2493,7 @@ echo $personID;
                     success: function (msg) {
                         $("#call_sms_log").addClass("panelisopen");
 
-                        if (msg == 2)
+                        if (msg === '2')
                         {
                             swal("System Error", "Contact Support Team.", "error");
                         }
