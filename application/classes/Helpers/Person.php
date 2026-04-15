@@ -261,7 +261,7 @@ abstract class Helpers_Person
                       AND pp.CNIC IN ({$cnic_digits_esc}, {$cnic_dash_esc})
                     ORDER BY spd.FirRefDate DESC";
 
-            return $DB->query(Database::SELECT, $sql, TRUE)->as_array();
+            return $DB->query(Database::SELECT, $sql, FALSE)->as_array();
         } catch (Exception $e) {
             return [];
         }
@@ -299,7 +299,7 @@ abstract class Helpers_Person
                       AND pp.CNIC IN ({$cnic_digits_esc}, {$cnic_dash_esc})
                     ORDER BY ta.FIRDate DESC";
 
-            return $DB->query(Database::SELECT, $sql, TRUE)->as_array();
+            return $DB->query(Database::SELECT, $sql, FALSE)->as_array();
         } catch (Exception $e) {
             return [];
         }
