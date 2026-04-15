@@ -604,7 +604,7 @@ echo Helpers_Layout::get_ajax_loader();
                 <div class="col-md-12">
                     <div class="box box-warning box-solid collapsed-box">
                         <div class="box-header with-border">
-                            <h3 class="box-title">CTD KPK Profile</h3>
+                            <h3 class="box-title">FIR Management System (CTD KPK)</h3>
                             <div class="box-tools pull-right">
                                 <button type="button" title="Show/Hide" id="ext_db_ctd_kpk" class="panelisopen btn btn-box-tool" data-widget="collapse"><i class="fa fa-plus"></i>
                                 </button>

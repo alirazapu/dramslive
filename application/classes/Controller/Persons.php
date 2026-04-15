@@ -3592,17 +3592,7 @@ exit();
             }
             ?>
             <div class="col-md-12" style="margin-bottom: 8px;">
-                <div class="col-md-5" style="text-align:center;">
-                    <?php if (!empty($ecp_image)) { ?>
-                        <img class="myecpimg" src="<?php echo HTML::chars($ecp_image); ?>" alt="ECP Image"
-                             style="width: 100%; max-width: 180px; border: 1px solid #ddd; padding: 2px; cursor: pointer;"
-                             onclick="document.getElementById('ecpmodal').style.display='block'; document.getElementById('imgecpmodal').src=this.src;">
-                    <?php } else { ?>
-                        <img src="<?php echo URL::base(); ?>dist/img/noperson.png" alt="No Photo"
-                             style="width: 100%; max-width: 180px;">
-                    <?php } ?>
-                </div>
-                <div class="col-md-7">
+                <div class="col-md-8">
                     <?php if (!empty($p->name_text)) { ?>
                         <div class="col-md-12"><strong>Name:</strong> <?php echo HTML::chars($p->name_text); ?></div>
                     <?php } ?>
@@ -3638,6 +3628,16 @@ exit();
                     <?php } ?>
                     <?php if (!empty($p->file_name)) { ?>
                         <div class="col-md-12"><strong>File Name:</strong> <?php echo HTML::chars($p->file_name); ?></div>
+                    <?php } ?>
+                </div>
+                <div class="col-md-4" style="text-align:center;">
+                    <?php if (!empty($ecp_image)) { ?>
+                        <img class="myecpimg" src="<?php echo HTML::chars($ecp_image); ?>" alt="ECP Image"
+                             style="width: 100%; border: 1px solid #ddd; padding: 2px; cursor: pointer;"
+                             onclick="document.getElementById('ecpmodal').style.display='block'; document.getElementById('imgecpmodal').src=this.src;">
+                    <?php } else { ?>
+                        <img src="<?php echo URL::base(); ?>dist/img/noperson.png" alt="No Photo"
+                             style="width: 100%;">
                     <?php } ?>
                 </div>
             </div>
