@@ -3833,8 +3833,7 @@ exit();
             $p = Helpers_Person::get_person_external_profile_ecp($person_cnic);
 
             if (empty($p)) {
-                echo '<img src="' . URL::base() . 'dist/img/noperson.png" alt="No Data" style="width: 100%; margin: auto; height: 240px; padding: 27px 0">';
-                echo '<div class="col-md-12 text-center" style="margin-top:8px;"><span><i class="fa fa-check margin-r-2"></i><strong> No Record Exist</strong></span></div>';
+                echo '<div class="col-md-12 text-left"><span><i class="fa fa-check margin-r-2"></i><strong> No Record Exist</strong></span></div>';
                 return;
             }
 
