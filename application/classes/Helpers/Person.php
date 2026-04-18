@@ -156,6 +156,251 @@ abstract class Helpers_Person
         return $cnic;
     }
 
+    public static function normalize_cnic_for_external_sources($cnic = '')
+    {
+        return preg_replace('/\D+/', '', (string)$cnic);
+    }
+
+    private static function format_cnic_with_dashes($cnic = '')
+    {
+        $cnic = self::normalize_cnic_for_external_sources($cnic);
+        if (strlen($cnic) !== 13) {
+            return $cnic;
+        }
+        // CNIC format: XXXXX-XXXXXXX-X
+        return substr($cnic, 0, 5) . '-' . substr($cnic, 5, 7) . '-' . substr($cnic, 12, 1);
+    }
+
+    public static function get_person_external_profile_ctd_kpk($cnic = '')
+    {
+        try {
+            $DB = Database::instance('ctd_kpk');
+            $cnic_digits = self::normalize_cnic_for_external_sources($cnic);
+            if (empty($cnic_digits)) {
+                return NULL;
+            }
+
+            $cnic_dash = self::format_cnic_with_dashes($cnic_digits);
+            $cnic_digits_esc = $DB->escape($cnic_digits);
+            $cnic_dash_esc = $DB->escape($cnic_dash);
+
+            $sql = "SELECT dct_person_profile.*,
+                    sb_district.DistrictName, sb_tehsil.TehsilName,
+                    sb_religion.ReligionTitle AS ReligionName, sects_details.SectTitle AS SectName,
+                    caste.Caste AS CasteName,
+                    perm_province.ProvinceName AS PermAdrProvinceName,
+                    perm_country.CountryName AS PermAdrCountryName,
+                    perm_city.CityName AS PermAdrCityName,
+                    perm_ps.PoliceStationName AS AdrPoliceStationName,
+                    curr_district.DistrictName AS CurrAdrDistrictName,
+                    curr_tehsil.TehsilName AS CurrAdrTehsilName,
+                    curr_province.ProvinceName AS CurrAdrProvinceName,
+                    curr_country.CountryName AS CurrAdrCountryName,
+                    curr_city.CityName AS CurrAdrCityName,
+                    curr_ps.PoliceStationName AS CurrAdrPoliceStationName
+                FROM dct_person_profile
+                LEFT JOIN sb_district ON sb_district.DistrictId = dct_person_profile.PermAdrDistrict
+                LEFT JOIN sb_tehsil ON sb_tehsil.TehsilId = dct_person_profile.PermAdrTehsil
+                LEFT JOIN sb_religion ON sb_religion.ReligionID = dct_person_profile.Religion
+                LEFT JOIN sects_details ON sects_details.SectID = dct_person_profile.Sect
+                LEFT JOIN caste ON caste.CasteID = dct_person_profile.Caste
+                LEFT JOIN sb_province AS perm_province ON perm_province.ProvinceId = dct_person_profile.PermAdrProvince
+                LEFT JOIN sb_country AS perm_country ON perm_country.CountryID = dct_person_profile.PermAdrCountry
+                LEFT JOIN sb_city AS perm_city ON perm_city.CityId = dct_person_profile.PermAdrCity
+                LEFT JOIN police_stations AS perm_ps ON perm_ps.PoliceStationId = dct_person_profile.AdrPoliceStation
+                LEFT JOIN sb_district AS curr_district ON curr_district.DistrictId = dct_person_profile.CurrAdrDistrict
+                LEFT JOIN sb_tehsil AS curr_tehsil ON curr_tehsil.TehsilId = dct_person_profile.CurrAdrTehsil
+                LEFT JOIN sb_province AS curr_province ON curr_province.ProvinceId = dct_person_profile.CurrAdrProvince
+                LEFT JOIN sb_country AS curr_country ON curr_country.CountryID = dct_person_profile.CurrAdrCountry
+                LEFT JOIN sb_city AS curr_city ON curr_city.CityId = dct_person_profile.CurrAdrCity
+                LEFT JOIN police_stations AS curr_ps ON curr_ps.PoliceStationId = dct_person_profile.CurrAdrPoliceStation
+                WHERE dct_person_profile.CNIC IN ({$cnic_digits_esc}, {$cnic_dash_esc})
+                LIMIT 1";
+
+            return $DB->query(Database::SELECT, $sql, TRUE)->current();
+        } catch (Exception $e) {
+            return NULL;
+        }
+    }
+
+    public static function get_schedule_iv_by_cnic($cnic = '')
+    {
+        try {
+            $DB = Database::instance('ctd_kpk');
+            $cnic_digits = self::normalize_cnic_for_external_sources($cnic);
+            if (empty($cnic_digits)) {
+                return [];
+            }
+            $cnic_dash = self::format_cnic_with_dashes($cnic_digits);
+            $cnic_digits_esc = $DB->escape($cnic_digits);
+            $cnic_dash_esc = $DB->escape($cnic_dash);
+
+            $sql = "SELECT
+                        pp.PersonId, pp.Name, pp.FatherName, pp.CNIC,
+                        d.DistrictName,
+                        ps.PoliceStationName,
+                        cat.CategoryName,
+                        (CASE spd.Active WHEN 1 THEN 'Active' ELSE 'InActive' END) AS S4Status,
+                        spd.FirRefNo,
+                        spd.FirRefDate,
+                        (SELECT sd.DistrictName FROM sb_district sd WHERE sd.DistrictId = spd.Fir_District) AS S4Dist,
+                        schps.PoliceStationName AS SchPS,
+                        ns.NotificationStatus
+                    FROM dct_person_profile_status_detail spd
+                    LEFT JOIN dct_person_profile pp ON pp.PersonId = spd.PersonID
+                    LEFT JOIN sb_district d ON d.DistrictId = pp.PermAdrDistrict
+                    LEFT JOIN police_stations ps ON ps.PoliceStationId = pp.AdrPoliceStation
+                    LEFT JOIN police_stations schps ON schps.PoliceStationId = spd.FirPS
+                    LEFT JOIN dct_notification_status ns ON ns.NotificationStatusID = spd.PresentStatus
+                    LEFT JOIN dct_person_profile_schedule_iv_category cat ON cat.PoliticalcatID = spd.Category
+                    WHERE spd.PresentStatus = 2
+                      AND spd.Active IN (0, 1)
+                      AND spd.StatusID = (SELECT MAX(d2.StatusID)
+                                          FROM dct_person_profile_status_detail d2
+                                          WHERE d2.PersonID = spd.PersonID AND d2.PresentStatus = 2)
+                      AND pp.CNIC IN ({$cnic_digits_esc}, {$cnic_dash_esc})
+                    ORDER BY spd.FirRefDate DESC";
+
+            return $DB->query(Database::SELECT, $sql, FALSE)->as_array();
+        } catch (Exception $e) {
+            return [];
+        }
+    }
+
+    public static function get_accused_terrorism_activities_by_cnic($cnic = '')
+    {
+        try {
+            $DB = Database::instance('ctd_kpk');
+            $cnic_digits = self::normalize_cnic_for_external_sources($cnic);
+            if (empty($cnic_digits)) {
+                return [];
+            }
+            $cnic_dash = self::format_cnic_with_dashes($cnic_digits);
+            $cnic_digits_esc = $DB->escape($cnic_digits);
+            $cnic_dash_esc = $DB->escape($cnic_dash);
+
+            $sql = "SELECT DISTINCT
+                        pp.PersonId, pp.Name, pp.FatherName, pp.CNIC,
+                        ta.TerrorismAttackID, ta.FIRNumber, ta.FIRDate,
+                        occu_distt.DistrictName AS IncidentDistrict,
+                        ps.PoliceStationName,
+                        m.MotiveName,
+                        ta.SectionLaw,
+                        ns.NotificationStatus,
+                        sd.PreStatusDate
+                    FROM dsr_terrorism_attack ta
+                    LEFT JOIN sb_district occu_distt ON occu_distt.DistrictId = ta.District
+                    LEFT JOIN dct_person_profile_status_detail sd ON sd.ActivityID = ta.TerrorismAttackID
+                    LEFT JOIN dct_person_profile pp ON pp.PersonId = sd.PersonID
+                    LEFT JOIN dct_notification_status ns ON ns.NotificationStatusID = sd.PresentStatus
+                    LEFT JOIN police_stations ps ON ps.PoliceStationId = ta.FIRPoliceStation
+                    LEFT JOIN dsr_terrorism_attack_motive m ON m.MotiveID = ta.Motive
+                    WHERE sd.confession_status IS NULL
+                      AND pp.CNIC IN ({$cnic_digits_esc}, {$cnic_dash_esc})
+                    ORDER BY ta.FIRDate DESC";
+
+            return $DB->query(Database::SELECT, $sql, FALSE)->as_array();
+        } catch (Exception $e) {
+            return [];
+        }
+    }
+
+    public static function get_person_external_profile_driving_license($cnic = '')
+    {
+        try {
+            $DB = Database::instance('dlms_sqlsrv');
+            $cnic_digits = self::normalize_cnic_for_external_sources($cnic);
+            if (empty($cnic_digits)) {
+                return NULL;
+            }
+
+            $cnic_dash = self::format_cnic_with_dashes($cnic_digits);
+            $cnic_digits_esc = $DB->escape($cnic_digits);
+            $cnic_dash_esc = $DB->escape($cnic_dash);
+
+            $sql = "SELECT TOP (1)
+                    p.PersonID,
+                    p.FirstName,
+                    p.MiddleName,
+                    p.LastName,
+                    p.FatherFName AS FatherName,
+                    p.FatherMName,
+                    p.FatherLName,
+                    p.DOB,
+                    p.BirthPlace,
+                    p.Gender,
+                    p.Mobile,
+                    p.EntryDate,
+                    i.imgObject,
+                    ld.LicenseNo,
+                    ld.EntryDate AS LicenseEntryDate,
+                    ld.ExpiryDate AS LicenseExpiryDate
+                FROM License_Person AS p
+                LEFT JOIN License_Details AS ld
+                    ON ld.PersonID = p.PersonID
+                OUTER APPLY (
+                    SELECT TOP 1 imgObject
+                    FROM License_Person_Images
+                    WHERE PersonID = p.PersonID
+                      AND Category = 'Photograph'
+                ) AS i
+                WHERE p.CNIC IN ({$cnic_digits_esc}, {$cnic_dash_esc})
+                ORDER BY ld.EntryDate DESC, p.EntryDate DESC";
+
+            return $DB->query(Database::SELECT, $sql, TRUE)->current();
+        } catch (Exception $e) {
+            return NULL;
+        }
+    }
+
+    public static function get_person_external_profile_ecp($cnic = '')
+    {
+        try {
+            $DB = Database::instance('ecp');
+            $cnic_digits = self::normalize_cnic_for_external_sources($cnic);
+            if (empty($cnic_digits)) {
+                return NULL;
+            }
+
+            $cnic_esc = $DB->escape($cnic_digits);
+            $sql = "SELECT p.id, p.cnic, p.age, p.gender, p.father_text, p.name_text, p.address_text, p.code,
+                        p.family_number, p.file_name, p.folder_name, p.uc_block_code, p.address_image_base64,
+                        p.father_image_base64, p.name_image_base64,
+                        (SELECT GROUP_CONCAT(n.number ORDER BY n.number SEPARATOR ', ')
+                         FROM ecp_person_numbers n
+                         WHERE n.ecp_person_id = p.id) AS linked_numbers
+                    FROM ecp_persons p
+                    WHERE p.cnic = {$cnic_esc}
+                    LIMIT 1";
+
+            return $DB->query(Database::SELECT, $sql, TRUE)->current();
+        } catch (Exception $e) {
+            return NULL;
+        }
+    }
+
+    public static function get_person_external_profile_employee($cnic = '')
+    {
+        try {
+            $DB = Database::instance('govt_emp_data');
+            $cnic_digits = self::normalize_cnic_for_external_sources($cnic);
+            if (empty($cnic_digits)) {
+                return NULL;
+            }
+            $cnic_esc = $DB->escape($cnic_digits);
+            $sql = "SELECT pers_no, first_name, last_name, father_husband_name, position, job, job_title,
+                        cost_ctr, description, national_id, org_unit, org_unit_short_text,
+                        personnel_area, employee_group, employee_subgroup
+                    FROM employee_data
+                    WHERE national_id = {$cnic_esc}
+                    LIMIT 10";
+
+            return $DB->query(Database::SELECT, $sql, TRUE)->as_array();
+        } catch (Exception $e) {
+            return NULL;
+        }
+    }
+
     /* get person url link by person id */
     public static function get_person_link($person_id)
     {

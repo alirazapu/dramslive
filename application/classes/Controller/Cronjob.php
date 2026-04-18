@@ -1751,6 +1751,7 @@ class Controller_Cronjob extends Controller {
 
         foreach ($parse_data as $data) {
             try {
+                $not_found_for_telenor = 0;
                 $phone_data['company_name'] = $data['company_name'];
                 $phone_data['phone_number'] = $data['requested_value'];
              echo    $phone_data['userrequestid'] = $data['request_id'];
@@ -1807,30 +1808,35 @@ class Controller_Cronjob extends Controller {
                         break;
                 }
 
-                if ($not_fount != 1) {
-                    /* Insertion Code */
+                if($data['company_name'] == 6 && $not_found_for_telenor == 1){
                     $reference_number = $data['request_id'];
+                    $reference_number_1 = Model_Email::email_status($reference_number, 2, 8);
+                }else{
+                    if ($not_fount != 1) {
+                        /* Insertion Code */
+                        $reference_number = $data['request_id'];
 
-                    Model_ErrorLog::log(
-                        'cron_parse_phone_telenor',
-                        'Telenor phone parsing completed, no records found - marking as status 5 (Not Found)',
-                       array(
-                            'request_id' => $reference_number,
-                            'company_name' => $data['company_name'] ?? 'unknown',
-                            'processing_index' => 5,
-                            'phone_number' => $data['requested_value'] ?? 'unknown',
-                            'reason' => 'No phone records found in Telenor response'
-                       ),
-                        null,
-                        'not_found',
-                        'phone_parsing_telenor','success'
-                    );
-                    
-                    $reference_number = Model_Email::email_status($reference_number, 2, 5);
-                    /* if(strlen($loc_data['cnicsims'])==13 && ctype_digit($loc_data['cnicsims']))
-                      { */
-                    $sub_model = new Model_Generic();
-                    //  $sub_model_result = $sub_model->Manualcnicsimsinsert($loc_data);
+                        Model_ErrorLog::log(
+                            'cron_parse_phone_telenor',
+                            'Telenor phone parsing completed, no records found - marking as status 5 (Not Found)',
+                        array(
+                                'request_id' => $reference_number,
+                                'company_name' => $data['company_name'] ?? 'unknown',
+                                'processing_index' => 5,
+                                'phone_number' => $data['requested_value'] ?? 'unknown',
+                                'reason' => 'No phone records found in Telenor response'
+                        ),
+                            null,
+                            'not_found',
+                            'phone_parsing_telenor','success'
+                        );
+                        
+                        $reference_number = Model_Email::email_status($reference_number, 2, 5);
+                        /* if(strlen($loc_data['cnicsims'])==13 && ctype_digit($loc_data['cnicsims']))
+                        { */
+                        $sub_model = new Model_Generic();
+                        //  $sub_model_result = $sub_model->Manualcnicsimsinsert($loc_data);
+                    }
                 }
                 /* }else{                    
                   $reference_number = Model_Email::email_status($reference_number, 2, 3);
