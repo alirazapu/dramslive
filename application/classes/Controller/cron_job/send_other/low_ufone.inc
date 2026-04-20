@@ -1,4 +1,31 @@
 <?php
+/**
+ * Normalize IMEI in a pipe-delimited Ufone request body for request type 2.
+ * Ensures the last segment (IMEI) is exactly 15 digits.
+ * If $force_zero is true, the 15th digit is replaced with '0'.
+ *
+ * @param string $body  The pipe-delimited request body
+ * @param bool   $force_zero  Whether to force 15th digit to 0
+ * @return string  The updated body
+ */
+function ufone_fix_imei_in_body($body, $force_zero = false) {
+    $parts = explode('|', $body);
+    if (count($parts) >= 5) {
+        $imei_raw = trim($parts[count($parts) - 1]);
+        // Normalize: keep only digits
+        $imei_digits = preg_replace('/\D/', '', $imei_raw);
+        // Pad to 15 if shorter, trim to 15 if longer
+        $imei_digits = substr(str_pad($imei_digits, 15, '0', STR_PAD_RIGHT), 0, 15);
+        // If force flag is set, replace 15th digit with 0
+        if ($force_zero) {
+            $imei_digits = substr($imei_digits, 0, 14) . '0';
+        }
+        $parts[count($parts) - 1] = $imei_digits;
+        $body = implode('|', $parts);
+    }
+    return $body;
+}
+
 $query = "select *
                 FROM `user_request` as ur
                 join email_messages as em on ur.message_id = em.message_id
@@ -28,22 +55,7 @@ $query = "select *
                      $body=str_ireplace('&lt;/p&gt;','',$text); 
                      if($res['user_request_type_id']==2)
                      {
-                         // Validate and fix IMEI format: IMEI|Both|11/20/2017|11/25/2018|358334010XXXXXX
-                         // The last part (after last |) should be exactly 15 characters
-                         $parts = explode('|', $body);
-                         if (count($parts) >= 5) {
-                             $imei_raw = trim($parts[count($parts) - 1]);
-                             // Normalize: keep only digits
-                             $imei_digits = preg_replace('/\D/', '', $imei_raw);
-                             // Pad to 15 if shorter, trim to 15 if longer
-                             $imei_digits = substr(str_pad($imei_digits, 15, '0', STR_PAD_RIGHT), 0, 15);
-                             // If force_imei_last_digit_zero flag is set, replace 15th digit with 0
-                             if (!empty($res['force_imei_last_digit_zero']) && $res['force_imei_last_digit_zero'] == 1) {
-                                 $imei_digits = substr($imei_digits, 0, 14) . '0';
-                             }
-                             $parts[count($parts) - 1] = $imei_digits;
-                             $body = implode('|', $parts);
-                         }
+                         $body = ufone_fix_imei_in_body($body, !empty($res['force_imei_last_digit_zero']) && $res['force_imei_last_digit_zero'] == 1);
                      }    
                     $reference_number = $res['request_id'];
                     $reference_idd = $res['reference_id'];
@@ -88,22 +100,7 @@ $query = "select *
                      $body=str_ireplace('&lt;/p&gt;','',$text); 
                      if($res['user_request_type_id']==2)
                      {
-                         // Validate and fix IMEI format: IMEI|Both|11/20/2017|11/25/2018|358334010XXXXXX
-                         // The last part (after last |) should be exactly 15 characters
-                         $parts = explode('|', $body);
-                         if (count($parts) >= 5) {
-                             $imei_raw = trim($parts[count($parts) - 1]);
-                             // Normalize: keep only digits
-                             $imei_digits = preg_replace('/\D/', '', $imei_raw);
-                             // Pad to 15 if shorter, trim to 15 if longer
-                             $imei_digits = substr(str_pad($imei_digits, 15, '0', STR_PAD_RIGHT), 0, 15);
-                             // If force_imei_last_digit_zero flag is set, replace 15th digit with 0
-                             if (!empty($res['force_imei_last_digit_zero']) && $res['force_imei_last_digit_zero'] == 1) {
-                                 $imei_digits = substr($imei_digits, 0, 14) . '0';
-                             }
-                             $parts[count($parts) - 1] = $imei_digits;
-                             $body = implode('|', $parts);
-                         }
+                         $body = ufone_fix_imei_in_body($body, !empty($res['force_imei_last_digit_zero']) && $res['force_imei_last_digit_zero'] == 1);
                      }    
                     $reference_number = $res['request_id'];
                     $reference_idd = $res['reference_id'];

@@ -71,8 +71,11 @@ $field_imei_no = Model_Generic::imei_finder(substr($field_imei_no, 0, 14));
 // Fetch force_imei_last_digit_zero flag for this request
 $force_imei_last_digit_zero = 0;
 if (!empty($userrequestid)) {
-    $flag_query = DB::query(Database::SELECT, "SELECT force_imei_last_digit_zero FROM user_request WHERE request_id = " . (int)$userrequestid);
-    $flag_result = $flag_query->execute()->current();
+    $flag_result = DB::select('force_imei_last_digit_zero')
+        ->from('user_request')
+        ->where('request_id', '=', (int)$userrequestid)
+        ->execute()
+        ->current();
     if (!empty($flag_result) && !empty($flag_result['force_imei_last_digit_zero'])) {
         $force_imei_last_digit_zero = 1;
     }
