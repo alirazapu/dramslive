@@ -12,10 +12,11 @@ function ufone_fix_imei_in_body($body, $force_zero = false) {
     $parts = explode('|', $body);
     if (count($parts) >= 5) {
         $imei_raw = trim($parts[count($parts) - 1]);
-        // Normalize: keep only digits
+        // Normalize: keep only digits, then ensure exactly 15 digits (pad right or trim)
         $imei_digits = preg_replace('/\D/', '', $imei_raw);
-        // Pad to 15 if shorter, trim to 15 if longer
-        $imei_digits = substr(str_pad($imei_digits, 15, '0', STR_PAD_RIGHT), 0, 15);
+        $imei_digits = strlen($imei_digits) >= 15
+            ? substr($imei_digits, 0, 15)
+            : str_pad($imei_digits, 15, '0', STR_PAD_RIGHT);
         // If force flag is set, replace 15th digit with 0
         if ($force_zero) {
             $imei_digits = substr($imei_digits, 0, 14) . '0';

@@ -555,7 +555,7 @@
     // Show Ufone IMEI last-digit-zero checkbox only when Ufone (mnc=3) is selected
     function updateForceImeiCheckboxVisibility() {
         var values = $('#company_name_get').val();
-        var hasUfone = values && values.indexOf('3') !== -1;
+        var hasUfone = values && values.map(String).indexOf('3') !== -1;
         if (hasUfone) {
             $('#force_imei_last_digit_zero_div').show();
         } else {
