@@ -67,7 +67,25 @@ if(!empty(Auth::instance()->get_user()))
  */
 
 $field_imei_no = Model_Generic::imei_finder(substr($field_imei_no, 0, 14));
-if ($field_imei_no == $imei) {
+
+// Fetch force_imei_last_digit_zero flag for this request
+$force_imei_last_digit_zero = 0;
+if (!empty($userrequestid)) {
+    $flag_query = DB::query(Database::SELECT, "SELECT force_imei_last_digit_zero FROM user_request WHERE request_id = " . (int)$userrequestid);
+    $flag_result = $flag_query->execute()->current();
+    if (!empty($flag_result) && !empty($flag_result['force_imei_last_digit_zero'])) {
+        $force_imei_last_digit_zero = 1;
+    }
+}
+
+// When force_imei_last_digit_zero is set, compare only first 14 digits to accept Ufone CDR that has 15th digit=0
+if ($force_imei_last_digit_zero == 1) {
+    $imei_match = (substr($field_imei_no, 0, 14) === substr($imei, 0, 14));
+} else {
+    $imei_match = ($field_imei_no == $imei);
+}
+
+if ($imei_match) {
     /* IMEI file */
     Model_Parse::update_file_against_phone($file_id, $imei, $total_record, $from, $to, $upload_status, $request_type);
     /* 4.	Get device id from Person_phone_device */
@@ -102,7 +120,12 @@ if ($field_imei_no == $imei) {
             $imei_new = str_pad($imei_new, 15, '0', STR_PAD_RIGHT);
             $imei_new = Helpers_Utilities::find_imei_last_digit($imei_new);
             
-            if($imei!=$imei_new)
+            if($force_imei_last_digit_zero == 1) {
+                $row_imei_mismatch = (substr($imei, 0, 14) !== substr($imei_new, 0, 14));
+            } else {
+                $row_imei_mismatch = ($imei != $imei_new);
+            }
+            if($row_imei_mismatch)
             {
                 if(!empty($userrequestid)){
                     Model_ErrorLog::log(

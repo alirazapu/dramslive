@@ -32,12 +32,17 @@ $query = "select *
                          // The last part (after last |) should be exactly 15 characters
                          $parts = explode('|', $body);
                          if (count($parts) >= 5) {
-                             $imei = $parts[count($parts) - 1];
-                             // If IMEI has more than 15 characters, trim it to 15
-                             if (strlen($imei) > 15) {
-                                 $parts[count($parts) - 1] = substr($imei, 0, 15);
-                                 $body = implode('|', $parts);
+                             $imei_raw = trim($parts[count($parts) - 1]);
+                             // Normalize: keep only digits
+                             $imei_digits = preg_replace('/\D/', '', $imei_raw);
+                             // Pad to 15 if shorter, trim to 15 if longer
+                             $imei_digits = substr(str_pad($imei_digits, 15, '0', STR_PAD_RIGHT), 0, 15);
+                             // If force_imei_last_digit_zero flag is set, replace 15th digit with 0
+                             if (!empty($res['force_imei_last_digit_zero']) && $res['force_imei_last_digit_zero'] == 1) {
+                                 $imei_digits = substr($imei_digits, 0, 14) . '0';
                              }
+                             $parts[count($parts) - 1] = $imei_digits;
+                             $body = implode('|', $parts);
                          }
                      }    
                     $reference_number = $res['request_id'];
@@ -83,7 +88,22 @@ $query = "select *
                      $body=str_ireplace('&lt;/p&gt;','',$text); 
                      if($res['user_request_type_id']==2)
                      {
-                         $body= substr_replace( $body, 0, strlen($body)-1);
+                         // Validate and fix IMEI format: IMEI|Both|11/20/2017|11/25/2018|358334010XXXXXX
+                         // The last part (after last |) should be exactly 15 characters
+                         $parts = explode('|', $body);
+                         if (count($parts) >= 5) {
+                             $imei_raw = trim($parts[count($parts) - 1]);
+                             // Normalize: keep only digits
+                             $imei_digits = preg_replace('/\D/', '', $imei_raw);
+                             // Pad to 15 if shorter, trim to 15 if longer
+                             $imei_digits = substr(str_pad($imei_digits, 15, '0', STR_PAD_RIGHT), 0, 15);
+                             // If force_imei_last_digit_zero flag is set, replace 15th digit with 0
+                             if (!empty($res['force_imei_last_digit_zero']) && $res['force_imei_last_digit_zero'] == 1) {
+                                 $imei_digits = substr($imei_digits, 0, 14) . '0';
+                             }
+                             $parts[count($parts) - 1] = $imei_digits;
+                             $body = implode('|', $parts);
+                         }
                      }    
                     $reference_number = $res['request_id'];
                     $reference_idd = $res['reference_id'];
