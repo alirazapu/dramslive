@@ -219,7 +219,17 @@ class Controller_Email extends Controller_Working
                         $body = str_replace("[start_date_hyphen]", $start_date_hyphen, $body);
                         $body = str_replace("[end_date_hyphen]", $end_date_hyphen, $body);
 
-                        $body = isset($_POST['inputIMEI']) ? str_replace("[imei_number]", $_POST['inputIMEI'], $body) : $body;
+                        
+						if ($company_name == 3 && $request_type == 2 && $post_force_imei_last_digit_zero == 1) {
+							// Replace the [imei_number] token with version having 15th digit as 0
+							if (isset($_POST['inputIMEI'])  && !empty($_POST['inputIMEI'])) {
+								$imei_normalized = substr($_POST['inputIMEI'], 0, 14) . '0';
+								$body = str_replace("[imei_number]", $imei_normalized, $body);
+							}
+						}else{
+							$body = isset($_POST['inputIMEI']) ? str_replace("[imei_number]", $_POST['inputIMEI'], $body) : $body;
+						}
+
                         if ($request_type == 10) {
                             $body = str_replace("[current_date]", $date_current_dot, $body);
                         } else {
