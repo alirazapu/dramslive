@@ -1217,7 +1217,7 @@ class Controller_Persons extends Controller_Working
                             
                             $search_type = 'msisdn';
                             $search_value = $other_phone;
-                            include 'user_functions/subscriber_api_key.inc';
+                            //include 'user_functions/subscriber_api_key.inc';
                             
                             if(!empty($test_array['data'])) {
                                 //$rst_resp = '';
