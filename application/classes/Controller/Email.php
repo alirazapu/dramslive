@@ -49,6 +49,7 @@ class Controller_Email extends Controller_Working
                 $concerned_person_id = (!empty($_POST['person_id']) ? $_POST['person_id'] : '');
                 $endDate = (!empty($_POST['endDate']) ? $_POST['endDate'] : '');
                 $startDate = (!empty($_POST['startDate']) ? $_POST['startDate'] : '');
+                $post_force_imei_last_digit_zero = (!empty($_POST['force_imei_last_digit_zero']) && $_POST['force_imei_last_digit_zero'] == 1) ? 1 : 0;
                 foreach ($company_names as $company_name) {
 
                     try {
@@ -195,7 +196,7 @@ class Controller_Email extends Controller_Working
                             }
                         } while ($GLOBALS['id_generator'] == 1);
 
-                        $reference_number = Model_Email::user_request($reference_id, $user_id, $request_type, $company_name, $status, $requested_value, $concerned_person_id, $projectids, $startDate, $endDate, $reason);
+                        $reference_number = Model_Email::user_request($reference_id, $user_id, $request_type, $company_name, $status, $requested_value, $concerned_person_id, $projectids, $startDate, $endDate, $reason, ($company_name == 3 && $request_type == 2 && $post_force_imei_last_digit_zero == 1) ? 1 : 0);
 
                         $template_data = Model_Email::get_email_tempalte($request_type, $company_name);
 

@@ -147,6 +147,17 @@
                                     <textarea class="form-control" name="inputreason" id="inputreason"  placeholder="Enter Reason For Request" ></textarea>                                                          
                                 </div>
                             </div>
+                            <div class="col-sm-12" id="force_imei_last_digit_zero_div" style="display:none;">
+                                <div class="form-group">
+                                    <div class="checkbox">
+                                        <label>
+                                            <input type="checkbox" name="force_imei_last_digit_zero" id="force_imei_last_digit_zero" value="1">
+                                            <strong>Ufone only:</strong> Replace IMEI 15th digit with <strong>0</strong> when sending request email
+                                            <small class="text-muted">(First 14 digits kept as-is; 15th digit forced to 0 for Ufone CDR Against IMEI requests)</small>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="form-group" id="submit_div">
                                 <div class="col-sm-12">
                                     <button  id="userrequestbtn" type="button" onclick="submitrequestform()" class="btn btn-primary pull-right" style="margin-top:10px" >Submit</button>
@@ -540,5 +551,22 @@
         var result = (new Date(newDate).getTime()); //will alert 1330210800000
         return (Date.parse(newDate)); //will alert 1330210800000
     }
+
+    // Show Ufone IMEI last-digit-zero checkbox only when Ufone (mnc=3) is selected
+    function updateForceImeiCheckboxVisibility() {
+        var values = $('#company_name_get').val();
+        var hasUfone = values && values.map(String).indexOf('3') !== -1;
+        if (hasUfone) {
+            $('#force_imei_last_digit_zero_div').show();
+        } else {
+            $('#force_imei_last_digit_zero_div').hide();
+            $('#force_imei_last_digit_zero').prop('checked', false);
+        }
+    }
+    $(document).ready(function () {
+        $('#company_name_get').on('change', function () {
+            updateForceImeiCheckboxVisibility();
+        });
+    });
 
 </script>
