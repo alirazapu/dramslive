@@ -72,7 +72,7 @@ if(!isset($_GET['id']))
                                 <li class="<?php echo ($menu_name=='cdr_summary' || $menu_name=='cdr_report_Detail')?'active':''; ?>"><a href="<?php echo URL::site('persons/cdr_summary/?id=' . $_GET['id']); ?>"><i class="fa fa-circle-o text-yellow"></i> CDR Summary </a></li>
                                 <li class="<?php echo ($menu_name=='shortcode_analysis' )?'active':''; ?>"><a href="<?php echo URL::site('persons/shortcode_analysis/?id=' . $_GET['id']); ?>"><i class="fa fa-circle-o text-yellow"></i> Short Code Analysis </a></li>
                                 <li class="<?php echo ($menu_name=='b_party' )?'active':''; ?>"><a href="<?php echo URL::site('persons/b_party/?id=' . $_GET['id']); ?>"><i class="fa fa-circle-o text-yellow"></i> B-Party Summary </a></li>
-                                <li class="<?php echo ($menu_name=='bparty_subscriber' )?'active':''; ?>"><a href="<?php echo URL::site('persons/bparty_subscriber/?id=' . $_GET['id']); ?>"><i class="fa fa-circle-o text-yellow"></i> B-Party Subscriber(Slow) </a></li>
+                                <li class="<?php echo ($menu_name=='bparty_subscriber' )?'active':''; ?>"><a href="<?php echo URL::site('persons/bparty_subscriber/?id=' . $_GET['id']); ?>"><i class="fa fa-circle-o text-yellow"></i> B-Party Subscriber </a></li>
 
                             </ul>
                         </li>
