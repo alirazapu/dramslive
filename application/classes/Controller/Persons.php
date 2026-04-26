@@ -1213,34 +1213,23 @@ class Controller_Persons extends Controller_Working
                        // $other_phone1 = empty($person_profile_id) ? '<a href="#" class="text-primary" title="Check subscriber" onclick="external_search_model(' . $other_phone . ')">' . $other_phone . '</a>' : $other_phone;
                         $rst_resp=$other_phone;
                         
-                        if(empty($person_profile_id)) {
-                            
-                            $search_type = 'msisdn';
-                            $search_value = $other_phone;
-                            //include 'user_functions/subscriber_api_key.inc';
-                            
-                            if(!empty($test_array['data'])) {
-                                //$rst_resp = '';
-                                foreach ($test_array['data'] as $result) {
-                                    if (!empty($result)) {
-                                        if (!empty($result['ADDRESS1']) && $result['BVS']=='VERIFIED') {
-                                            $rst_resp .= !empty($result['CNIC']) ? '<br><b> CNIC: '.$result['CNIC'] : 'NA';
-                                            $rst_resp .= !empty($result['FIRSTNAME']) ? '<br><b> Name: '.$result['FIRSTNAME'] : 'NA';
-                                            $address1 = !empty($result['ADDRESS1']) ? $result['ADDRESS1'] : '';
-                                            $address2 = !empty($result['ADDRESS2']) ? $result['ADDRESS2'] : '';
-                                            $address3 = !empty($result['ADDRESS3']) ? $result['ADDRESS3'] : '';
-                                            $address4 = !empty($result['ADDRESS4']) ? $result['ADDRESS4'] : '';
-                                            $resident_contact = !empty($result['RESCONTACT']) ? $result['RESCONTACT'] : '';
-                                            $phone_office = !empty($result['PHONE_OFFICE']) ? $result['PHONE_OFFICE'] : '';
-                                            $rst_resp .='<br><b>Address: </b>'. $address1 . " " . $address2 . " " . $address3 . " " . $address4 . ", Home#" . $resident_contact . ", Office#" . $phone_office;
-                                            break;
-                                        }
-                                    }
-                                }
+                        if (empty($person_profile_id)) {
+                            $sub = Helpers_Subscriber::search('msisdn', $other_phone);
+                            $row = (!empty($sub['status']) && !empty($sub['data'])) ? (array) $sub['data'] : array();
 
+                            $cnic    = !empty($row['cnic'])       ? $row['cnic']       : '';
+                            $name    = !empty($row['name'])       ? $row['name']       : '';
+                            $address = !empty($row['address'])    ? $row['address']    : '';
+                            $bvs     = !empty($row['bvs_status']) ? $row['bvs_status'] : '';
+
+                            if ($cnic !== '' || $name !== '' || $address !== '') {
+                                if ($cnic !== '')    $rst_resp .= '<br><b>CNIC: </b>'    . $cnic;
+                                if ($name !== '')    $rst_resp .= '<br><b>Name: </b>'    . $name;
+                                if ($address !== '') $rst_resp .= '<br><b>Address: </b>' . $address;
+                                if ($bvs !== '')     $rst_resp .= ' <i>(' . $bvs . ')</i>';
+                            } else {
+                                $rst_resp = $other_phone . '<p style="color: red"><b>(Not Found)</b></p>';
                             }
-                            else
-                                $rst_resp=$other_phone.'<p style="color: red"><b>(Not Found)</b></p>';
                         }
 
                         $incomingsms = (isset($item['sms_received_count'])) ? $item['sms_received_count'] : 0;
