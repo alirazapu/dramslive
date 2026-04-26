@@ -1209,7 +1209,7 @@ class Controller_Persons extends Controller_Working
 
                         $person_profile_id = Helpers_Utilities::search_pid_of_mobile($other_phone);
                         $person_profile_enc = !empty($person_profile_id) ? Helpers_Utilities::encrypted_key($person_profile_id, 'encrypt') : 0;
-                        $person_profile_link = !empty($person_profile_enc) ? '<a href="' . URL::site('persons/dashboard/?id=' . $person_profile_enc) . '" class="text-primary" title="Go to Profile" target="_blank"> [View Profile]</a>' : ' ';
+                        $person_profile_link = !empty($person_profile_enc) ? '<a href="' . URL::site('persons/dashboard/?id=' . $person_profile_enc) . '" class="text-primary" title="Go to Profile" target="_blank"> <i class="fa fa-eye"></i></a>' : ' ';
                        // $other_phone1 = empty($person_profile_id) ? '<a href="#" class="text-primary" title="Check subscriber" onclick="external_search_model(' . $other_phone . ')">' . $other_phone . '</a>' : $other_phone;
                         $rst_resp=$other_phone;
                         
