@@ -89,19 +89,46 @@ if ($not_fount != 1) {
                 $cnic = $cnic_field;
             }
 
-            // Field 3: address (complete)
-            $address = trim($parse_val[3] ?? '');
+            // Field 3: address — but the new Mobilink format does NOT put a
+            // comma between the address and the DOB+metadata trailer, so the
+            // whole tail (ISO DOB, email send-time, sender email, originating
+            // MSISDN, FIR id) gets concatenated onto the address. Example bad
+            // input:
+            //   "Khyber Agency Pakistan 2014-05-11t00:00:00000+05:0004/24/2026
+            //    2:14:16 Amdcs@ctkpmailcom923045242005fir 1039508"
+            // Strategy: pull the DOB out first, then chop everything from the
+            // first "trailer marker" onwards.
+            $raw_field3 = trim($parse_val[3] ?? '');
 
-            // Field 4: DOB in ISO format followed by response metadata
-            // e.g. "2011-10-06T00:00:00.000+05:00 04/10/2026 11:07:30 AM ..."
-            // After str_replace('.','',…) the milliseconds dot is removed but the
-            // date component before T is still intact.
+            // Extract DOB if it's hidden inside the address trailer.
+            // The earlier str_replace('.', '', …) at line 20 has already removed
+            // the milliseconds dot, so the pattern is YYYY-M[M]-D[D]T (case-insensitive).
+            $dob_pattern = '/(\d{4})-(\d{1,2})-(\d{1,2})[Tt]/';
+            if (empty($date) && preg_match($dob_pattern, $raw_field3, $dm_match)) {
+                $dy = (int) $dm_match[1];
+                $dm = (int) $dm_match[2];
+                $dd = (int) $dm_match[3];
+                if ($dy >= 1900 && $dy <= 2100 && $dm >= 1 && $dm <= 12
+                    && $dd >= 1 && $dd <= 31 && checkdate($dm, $dd, $dy)) {
+                    $date = sprintf('%04d-%02d-%02d', $dy, $dm, $dd);
+                }
+            }
+
+            // Strip the trailer. Markers we cut from:
+            //   - ISO timestamp:    "YYYY-M[M]-D[D]T..."
+            //   - US date+time:     "MM/DD/YYYY HH:MM[:SS] [AM|PM]..."
+            // The leading \s* swallows the space that separates the address
+            // from the trailer. The .*$ greedily eats everything after.
+            $trailer_pattern = '/\s*(?:\d{4}-\d{1,2}-\d{1,2}[Tt]|\d{1,2}\/\d{1,2}\/\d{4}\s+\d{1,2}:\d{2}).*$/';
+            $address = trim(preg_replace($trailer_pattern, '', $raw_field3));
+
+            // Field 4 fallback: if no date was extracted above and a separate
+            // field 4 exists, try the original field-4 ISO-date logic.
             $dob_field = trim($parse_val[4] ?? '');
-            if (!empty($dob_field)) {
+            if (empty($date) && !empty($dob_field)) {
                 $iso_raw = explode(' ', $dob_field)[0];
-                // Strip ISO time component (T…) to get a plain YYYY-MM-DD date
-                $iso_date_only = (strpos($iso_raw, 'T') !== false)
-                    ? explode('T', $iso_raw)[0]
+                $iso_date_only = (strpos($iso_raw, 'T') !== false || strpos($iso_raw, 't') !== false)
+                    ? preg_split('/[Tt]/', $iso_raw, 2)[0]
                     : $iso_raw;
                 $dp = explode('-', $iso_date_only);
                 if (count($dp) === 3) {

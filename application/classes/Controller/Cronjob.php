@@ -598,6 +598,19 @@ class Controller_Cronjob extends Controller {
                     $address = trim($address);
                     $active = trim($active);
 
+                    // Defensive trailer strip: if a per-company parser missed cleaning
+                    // the address (e.g. when telco response glues DOB + email metadata
+                    // + sender MSISDN + FIR id onto the end of the address with no
+                    // separator), chop everything from the first datetime marker on.
+                    // This is a no-op for clean addresses.
+                    if($data['company_name']==1 || $data['company_name']==7) {
+                        $address = trim(preg_replace(
+                            '/\s*(?:\d{4}-\d{1,2}-\d{1,2}[Tt]|\d{1,2}\/\d{1,2}\/\d{4}\s+\d{1,2}:\d{2}).*$/',
+                            '',
+                            $address
+                        ));
+                    }
+
                     /* ================= Validation ================= */
 
                     // Mobile must always be valid
