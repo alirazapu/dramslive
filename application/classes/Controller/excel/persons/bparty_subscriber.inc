@@ -104,26 +104,6 @@ if (isset($_POST['xport']) && $_POST['xport'] == 'excel') {
     }
 
     $XLSX->setData($data, 1);
-
-    // Force every cell in the populated range to TEXT.
-    // Why: setData() -> setCellValueByColumnAndRow() auto-types numeric strings,
-    // so 13-digit CNICs (and similar) get stored as floats and Excel displays them
-    // as scientific notation (e.g. 3540504663891 -> 3.54E+12). Re-binding as
-    // TYPE_STRING + format '@' preserves the original digits across all columns.
-    $last_row = max(2, $i - 1);
-    $range    = 'A1:I' . $last_row;
-    $as->getStyle($range)->getNumberFormat()->setFormatCode(PHPExcel_Style_NumberFormat::FORMAT_TEXT);
-    foreach ($as->getRowIterator(1, $last_row) as $rowObj) {
-        $cellIterator = $rowObj->getCellIterator();
-        $cellIterator->setIterateOnlyExistingCells(true);
-        foreach ($cellIterator as $cell) {
-            $val = $cell->getValue();
-            if ($val !== null && $val !== '') {
-                $cell->setValueExplicit((string) $val, PHPExcel_Cell_DataType::TYPE_STRING);
-            }
-        }
-    }
-
     $name = 'ExcelReport';
     $doc  = 'excel'; //excel or pdf
     $file = $XLSX->save(array('path' => 'dist/files/', 'name' => $name), $doc);
