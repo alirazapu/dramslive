@@ -39,7 +39,9 @@ if (isset($_POST['xport']) && $_POST['xport'] == 'excel') {
     $as->getDefaultColumnDimension()->setWidth(20);
 
     $pname = Helpers_Person::get_person_name($pid);
-    $data1 = $data->cdr_summary($post, 'false', $pid);
+    // 4th arg `true` = restrict to valid Pakistani mobile MSISDNs only
+    // (drops empty / NULL / short codes / landlines), so the export matches the on-screen view.
+    $data1 = $data->cdr_summary($post, 'false', $pid, true);
 
     $data = array(
         'Users' => array(
@@ -68,6 +70,10 @@ if (isset($_POST['xport']) && $_POST['xport'] == 'excel') {
                 $name    = !empty($row['name'])       ? $row['name']       : '';
                 $address = !empty($row['address'])    ? $row['address']    : '';
                 $bvs     = !empty($row['bvs_status']) ? $row['bvs_status'] : '';
+
+                // Telco data is screaming caps — render in Word case to match the on-screen view.
+                if ($name !== '')    $name    = ucwords(strtolower($name),    " \t\r\n\f\v.-");
+                if ($address !== '') $address = ucwords(strtolower($address), " \t\r\n\f\v.-");
             } else {
                 $bvs = 'Not Found';
             }

@@ -1190,8 +1190,10 @@ class Controller_Persons extends Controller_Working
                 }
                 $post = Helpers_Utilities::remove_injection($post);
                 $data = new Model_Persons;
-                $rows_count = $data->cdr_summary($post, 'true', $pid);
-                $profiles = $data->cdr_summary($post, 'false', $pid);
+                // 4th arg `true` = restrict to valid Pakistani mobile MSISDNs only
+                // (drops empty / NULL / short codes / landlines from this view + its export).
+                $rows_count = $data->cdr_summary($post, 'true', $pid, true);
+                $profiles = $data->cdr_summary($post, 'false', $pid, true);
 
                 if (isset($profiles) && sizeof($profiles) <= 0) {
                     $output['iTotalRecords'] = 0;
@@ -1221,6 +1223,11 @@ class Controller_Persons extends Controller_Working
                             $name    = !empty($row['name'])       ? $row['name']       : '';
                             $address = !empty($row['address'])    ? $row['address']    : '';
                             $bvs     = !empty($row['bvs_status']) ? $row['bvs_status'] : '';
+
+                            // Telco data lands in screaming caps — render it in Word case for readability.
+                            // Periods kept as delimiters so acronyms like G.P.O stay capitalised.
+                            if ($name !== '')    $name    = ucwords(strtolower($name),    " \t\r\n\f\v.-");
+                            if ($address !== '') $address = ucwords(strtolower($address), " \t\r\n\f\v.-");
 
                             if ($cnic !== '' || $name !== '' || $address !== '') {
                                 if ($cnic !== '')    $rst_resp .= '<br><b>CNIC: </b>'    . $cnic;

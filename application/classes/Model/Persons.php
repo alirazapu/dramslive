@@ -766,7 +766,7 @@ select * from (
 
     /* cdr summary */
 
-    public static function cdr_summary($data, $count, $pid)
+    public static function cdr_summary($data, $count, $pid, $valid_bparty_only = false)
     {
         //echo "<pre>"; print_r($data['phone_number']) ; echo "</pre>"; exit;
         $searchsql_phone = '';
@@ -779,6 +779,15 @@ select * from (
             $o_person_phone = implode("' , '", $data['otherphone']);
             $searchsql_ophone = " and other_person_phone_number IN ('{$o_person_phone}')";
             // print_r($searchsql_ophone); exit;
+        }
+        // Restrict to valid Pakistani mobile MSISDNs only (drops empty, NULL, short codes, landlines).
+        // Accepts: 3XXXXXXXXX (10), 03XXXXXXXXX (11), 923XXXXXXXXX (12).
+        // Folded into $searchsql_ophone so the SQL templates below don't change
+        // (identical templates exist in the sibling b_party() method, which we don't touch).
+        if ($valid_bparty_only) {
+            $searchsql_ophone .= " and other_person_phone_number IS NOT NULL"
+                . " and other_person_phone_number != ''"
+                . " and other_person_phone_number REGEXP '^(3[0-9]{9}|03[0-9]{9}|923[0-9]{9})$' ";
         }
         /* Sorted Data */
         $order_by_param = "tcalls";
