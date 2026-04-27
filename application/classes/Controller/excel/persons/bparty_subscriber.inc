@@ -21,7 +21,7 @@ if (isset($_POST['xport']) && $_POST['xport'] == 'excel') {
     $styleArray = array(
         'font' => array(
             'name' => 'Arial',
-            'size' => '111',
+            'size' => 14,
         ),
         'borders' => array(
             'left'     => array('style' => PHPExcel_Style_Border::BORDER_THIN),
