@@ -123,9 +123,30 @@ if (isset($_POST['xport']) && $_POST['xport'] == 'excel') {
         ->getNumberFormat()
         ->setFormatCode(PHPExcel_Style_NumberFormat::FORMAT_TEXT);
 
-    $name = 'ExcelReport';
-    $doc  = 'excel'; //excel or pdf
-    $file = $XLSX->save(array('path' => 'dist/files/', 'name' => $name), $doc);
+    // Build a filesystem-safe download name from the person's name.
+    // Strips characters that misbehave in HTTP filename quoting / Windows file names,
+    // collapses whitespace, falls back to a generic label when the name is empty.
+    $person_name_safe = trim(preg_replace('/\s+/', ' ',
+        preg_replace('/[^A-Za-z0-9 ._-]/', '', (string) $pname)
+    ));
+    if ($person_name_safe === '') {
+        $person_name_safe = 'BParty Subscriber Report';
+    }
+    $download_name = "Person's Portal " . $person_name_safe;
+
+    $doc = 'excel'; //excel or pdf
+
+    // The Spreadsheet wrapper's save() hard-codes Content-Disposition: filename="Report.xlsx".
+    // We can't pass a name through to it, so instead we capture the XLSX body via output
+    // buffering, then re-emit Content-Disposition with our chosen filename before flushing.
+    // header() replacements are accepted as long as no body bytes have been sent yet, which
+    // is true while ob_start() is buffering.
+    ob_start();
+    $XLSX->save(array('path' => 'dist/files/', 'name' => $download_name), $doc);
+    $body = ob_get_clean();
+
+    header('Content-Disposition: attachment; filename="' . $download_name . '.xlsx"');
+    echo $body;
     exit();
     //excel file generated
 }

@@ -256,10 +256,25 @@
 
     }
 
+    // Previously-submitted B-party numbers, sent only on the first AJAX call so that
+    // after Search/Export the dropdown re-mounts with the user's prior selection
+    // pre-checked. Subsequent calls (from #phone_number onchange) skip this so the
+    // user gets a fresh list when they switch A-party numbers.
+    var initialOtherPhones = "<?php
+        $sel = (!empty($search_post['otherphone']) && is_array($search_post['otherphone']))
+            ? $search_post['otherphone']
+            : array();
+        echo htmlspecialchars(implode(',', $sel), ENT_QUOTES, 'UTF-8');
+    ?>";
+
     function person_bparty() {
 
         var phonenumber = $('#phone_number').val();
-        var searchresults = {phone: phonenumber}
+        var searchresults = {phone: phonenumber};
+        if (initialOtherPhones) {
+            searchresults.otherphonenumbers = initialOtherPhones;
+            initialOtherPhones = ''; // consume on first call only
+        }
         $.ajax({
             url: "<?php echo URL::site("Persons/other_person_phone_number/?id=".$_GET['id']); ?>",
             type: 'POST',
@@ -269,11 +284,14 @@
             dataType: 'html',
             success: function (data)
             {
-                if (data == 2) 
+                if (data == 2)
 			{
 			swal("System Error", "Contact Support Team.", "error");
 			}
                 $("#otherphone").html(data);
+                // Refresh select2 so the `selected` options coming back from the
+                // server actually render as chips instead of staying invisible.
+                $("#otherphone").trigger('change');
             }
         });
     }
