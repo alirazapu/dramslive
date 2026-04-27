@@ -78,7 +78,7 @@
                 <div class="box">
                     <div class="box-header">
                         <h3 class="box-title"><i class="fa fa-mobile-phone"></i> B-Party Subscriber of <?php echo Helpers_Person::get_person_name($person_id); ?></h3>
-<!--                    <a title="Export to Excel" href="javascript:excel()" class="btn btn-danger btn-small" style="float: right;"><i class="fa fa-file-excel-o"></i>  Export</a>                        -->
+                    <a title="Export to Excel" href="javascript:excel()" class="btn btn-danger btn-small" style="float: right;"><i class="fa fa-file-excel-o"></i>  Export</a>
                     </div>
                     <!-- /.box-header -->
                     <div class="box-body">

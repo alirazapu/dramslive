@@ -997,7 +997,7 @@ class Controller_Persons extends Controller_Working
             $pid = (int)Helpers_Utilities::encrypted_key($_GET['id'], "decrypt");
             if ($pid != 0) {
                 /* Export to excel file include */
-               // include 'excel/persons/cdr_summary.inc';
+                include 'excel/persons/bparty_subscriber.inc';
                 include 'persons_functions/bparty_subscriber.inc';
             } else {
                 header("Location:" . url::base() . "errors?_e=wrong_parameters");
