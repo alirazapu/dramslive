@@ -489,6 +489,37 @@ abstract class Helpers_Email
     {
         $filename = '';
 
+        /* ===================== SAFETY GUARDS ===================== */
+
+        // Execution limit (cron-safe).
+        ini_set('max_execution_time', 240);
+        set_time_limit(240);
+
+        // Runtime lock — shared with receive_email() because both connect to
+        // the same Gmail account. If either method is running, the other
+        // exits immediately rather than racing on the same mailbox (which
+        // would cause double Seen-flagging and duplicate row updates).
+        $lockFile = DOCROOT . 'application/logs/gmail_imap_receive2.lock';
+        $lockFp   = fopen($lockFile, 'c');
+
+        if (!flock($lockFp, LOCK_EX | LOCK_NB)) {
+            error_log('[' . date('c') . '] IMAP (backup) already running, exiting.');
+            return 0;
+        }
+
+        // Cooldown after failure (5 minutes) — also shared with receive_email()
+        // so an upstream Gmail outage causes both methods to back off together
+        // instead of hammering the failing connection.
+        $cooldownFile = DOCROOT . 'application/logs/gmail_imap_fail.cooldown';
+        if (file_exists($cooldownFile) && (time() - filemtime($cooldownFile)) < 300) {
+            error_log('[' . date('c') . '] IMAP (backup) cooldown active, skipping run.');
+            flock($lockFp, LOCK_UN);
+            fclose($lockFp);
+            return 0;
+        }
+
+        /* ===================== GMAIL SETTINGS ===================== */
+
         // Credentials come from the same config-driven source that receive_email()
         // uses — Helpers_Inneruse::get_gmail_pw()['receive']. The previous hardcoded
         // kpkctd@gmail.com / wjlrthkqsmansnqe pair drifted out of sync with the
@@ -498,10 +529,23 @@ abstract class Helpers_Email
         $gmail_pw  = Helpers_Inneruse::get_gmail_pw();
         $username  = isset($gmail_pw['receive']['user'])     ? $gmail_pw['receive']['user']     : '';
         $password  = isset($gmail_pw['receive']['password']) ? $gmail_pw['receive']['password'] : '';
-        $inbox     = imap_open($hostname, $username, $password);
+
+        // IMAP timeouts so a hung Gmail connection can't pin the cron worker.
+        imap_timeout(IMAP_OPENTIMEOUT,  20);
+        imap_timeout(IMAP_READTIMEOUT,  60);
+        imap_timeout(IMAP_WRITETIMEOUT, 60);
+        imap_timeout(IMAP_CLOSETIMEOUT, 20);
+
+        $inbox = @imap_open($hostname, $username, $password, 0, 1);
         if (!$inbox) {
             // Log IMAP connection failure
             $error = imap_last_error();
+            imap_errors();
+            imap_alerts();
+
+            // Start cooldown — both methods will skip for the next 5 minutes.
+            file_put_contents($cooldownFile, time());
+
             Model_ErrorLog::log(
                 'receive_email_backup',
                 'IMAP connection failed (backup): ' . $error,
@@ -516,7 +560,12 @@ abstract class Helpers_Email
                 'error'
             );
             error_log("[" . date('c') . "] receive_email_backup: IMAP connection FAILED for $username: " . $error);
-            die('Cannot connect to Gmail: ' . $error);
+
+            // Release the lock and bail gracefully (was: die() — which left
+            // the lock held and dumped a fatal error to the cron output).
+            flock($lockFp, LOCK_UN);
+            fclose($lockFp);
+            return 0;
         }
 
 
@@ -771,12 +820,17 @@ abstract class Helpers_Email
 
         /* close the connection */
         imap_close($inbox);
+
+        // Release the runtime lock so the next scheduled cron tick can run.
+        flock($lockFp, LOCK_UN);
+        fclose($lockFp);
+
         return 1;
 
     }
 
     /*
-     *  
+     *
      */
     public static function get_email_status()
     {
