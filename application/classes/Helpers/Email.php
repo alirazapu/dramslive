@@ -201,19 +201,26 @@ abstract class Helpers_Email
                 imap_clearflag_full($inbox, $email_number, '\\Seen');  //Seen
                 continue;
             }
-            // Subject + body matching with admin_request fallback. See
-            // Helpers_Email::extract_reference_from_email() and ::find_request_by_reference()
-            // for the full rationale.
-            $query_subject_final = Helpers_Email::extract_reference_from_email(
+            // Token-priority routing: ADM- and QRM markers in subject OR body
+            // identify admin requests (both /admin_custom_request_form and
+            // /admin_request_sent_form embed 'ADM-<reference_id>'). Without a
+            // marker we fall back to the FIR/DD body footer or to subject
+            // digits and default to user_request lookup. See
+            // Helpers_Email::extract_reference_from_email and
+            // ::find_request_by_reference for full details.
+            $extracted = Helpers_Email::extract_reference_from_email(
                 $overview[0]->subject,
                 $message
             );
+            $query_subject_final = $extracted['reference_id'];
+            $source_hint         = $extracted['source'];
+
             if (empty($query_subject_final)) {
                 imap_clearflag_full($inbox, $email_number, '\\Seen');
                 continue;
             }
             $query_subject_final = Helpers_Email::emailreadstatuscheckUpdate($email_number, $query_subject_final);
-            $members = Helpers_Email::find_request_by_reference($query_subject_final);
+            $members = Helpers_Email::find_request_by_reference($query_subject_final, $source_hint);
             if (empty($members)) {
                 $members = '';
             }
@@ -458,8 +465,9 @@ abstract class Helpers_Email
                     $process_index = 4;
                 }
                 $source = isset($members['source']) ? $members['source'] : 'user';
-                // Admin requests don't use the files table — skip file_record insert for them.
-                if ($source !== 'admin' && !empty($file_id) && $file_name != 'na' && $is_file_exist == 0) {
+                // Admin replies can carry attachments too — keep the files-table
+                // record for both sources.
+                if (!empty($file_id) && $file_name != 'na' && $is_file_exist == 0) {
                     Helpers_Upload::insert_file_record($file_name, $members['user_id'], $members['user_request_type_id'], $members['company_name'], $members['requested_value'], $members['request_id'], $members['reason'], $file_id);
                 }
                 Helpers_Email::change_status_raw($file_name, $body_raw, $body, $members['message_id'], $members['request_id'], $is_file_exist, null, $source);
@@ -545,21 +553,19 @@ abstract class Helpers_Email
                     $message = imap_fetchbody($inbox, $email_number, 2);
                 $check_match = trim(str_replace("Re:", "", $overview[0]->subject));
 
-                $string_replace = str_replace("/", " /", $overview[0]->subject);
-
-                // Subject + body matching: try subject first, fall back to body
-                // for replies that lost the reference (e.g. recipient typed a
-                // fresh subject like "Subs Data"). 'QRM' subjects are still
-                // out of scope, but 'ADM-' is now valid (admin custom requests).
-                if (strpos($overview[0]->subject, 'QRM') !== false) {
-                    $status = imap_setflag_full($inbox, $email_number, "\Seen \Flagged");
-                    continue;
-                }
-
-                $query_subject_final = Helpers_Email::extract_reference_from_email(
+                // Token-priority routing: ADM- and QRM markers in subject OR
+                // body identify admin requests (both /admin_custom_request_form
+                // and /admin_request_sent_form embed 'ADM-<reference_id>' in
+                // the outgoing subject and body). Without a marker, fall back
+                // to the FIR/DD body footer or to subject digits, and default
+                // to user_request lookup. See Helpers_Email::extract_reference_from_email
+                // and ::find_request_by_reference for full details.
+                $extracted = Helpers_Email::extract_reference_from_email(
                     $overview[0]->subject,
                     $message
                 );
+                $query_subject_final = $extracted['reference_id'];
+                $source_hint         = $extracted['source'];
 
                 if (empty($query_subject_final) || $query_subject_final < 1000) {
                     $status = imap_setflag_full($inbox, $email_number, "\Seen \Flagged");
@@ -568,10 +574,9 @@ abstract class Helpers_Email
 
                 $query_subject_final = Helpers_Email::emailreadstatuscheckUpdate($email_number, $query_subject_final);
 
-                // Look up the request — checks user_request first, then admin_request.
-                // The returned row carries a 'source' field ('user'|'admin') used
-                // later when we update status, so we hit the right tables.
-                $members = Helpers_Email::find_request_by_reference($query_subject_final);
+                // Look up the request — admin first when the source hint says
+                // so (ADM-/QRM token), otherwise user_request first.
+                $members = Helpers_Email::find_request_by_reference($query_subject_final, $source_hint);
                 if (empty($members)) {
                     $members = '';
                 }
@@ -744,9 +749,9 @@ abstract class Helpers_Email
 
                     //Helpers_Email::change_status_raw($file_name, $body_raw, $body, $members['message_id'], $members['request_id'], $process_index);
                     $source = isset($members['source']) ? $members['source'] : 'user';
-                    // Admin requests don't use the files table — only insert
-                    // a file record on the user-request path.
-                    if ($source !== 'admin' && !empty($file_id) && $file_name != 'na' && $is_file_exist == 0) {
+                    // Admin replies can carry attachments too — keep the files-table
+                    // record for both sources.
+                    if (!empty($file_id) && $file_name != 'na' && $is_file_exist == 0) {
                         Helpers_Upload::insert_file_record($file_name, $members['user_id'], $members['user_request_type_id'], $members['company_name'], $members['requested_value'], $members['request_id'], $members['reason'], $file_id);
                     }
                     Helpers_Email::change_status_raw($file_name, $body_raw, $body, $members['message_id'], $members['request_id'], $is_file_exist, null, $source);
@@ -812,99 +817,129 @@ abstract class Helpers_Email
     /**
      * Resolve a reference_id to the originating request row.
      *
-     * Checks user_request first (regular flow), then admin_request (custom
-     * admin requests submitted via /Adminrequest/admin_custom_request_form).
-     * Returns a row that has the same shape callers already consume, plus a
-     * 'source' marker ('user' or 'admin') so downstream code can update the
-     * correct tables.
+     * @param int         $reference_id  Numeric reference id extracted from the email.
+     * @param string|null $source_hint   'admin' when the email carried ADM-/QRM
+     *                                   (admin custom or single request); null
+     *                                   defaults to user-request-first ordering.
      *
-     * Returns null when no matching request is found in either table.
+     * Returns the matched row plus a 'source' field ('user'|'admin') so callers
+     * know which set of tables to update on reply (user_request/email_messages
+     * vs admin_request/admin_email_messages). Returns null when nothing matches.
      */
-    public static function find_request_by_reference($reference_id)
+    public static function find_request_by_reference($reference_id, $source_hint = null)
     {
         $reference_id = (int) $reference_id;
         if ($reference_id < 1) {
             return null;
         }
 
-        // 1) Default path: user_request awaiting a reply.
-        //    These rows have status=1 (sent) and processing_index=0 (no reply yet).
-        $sql_user = "SELECT 'user' as source, t1.request_id, t1.reason, t1.user_id,
-                            t1.user_request_type_id, t2.email_type_name, t1.requested_value,
-                            t1.concerned_person_id, t1.company_name, t1.created_at,
-                            t1.status, t1.processing_index,
-                            em.message_id, em.message_subject, em.sender_id
-                     FROM user_request as t1
-                     JOIN email_templates_type as t2 ON t1.user_request_type_id = t2.id
-                     JOIN email_messages as em ON em.message_id = t1.message_id
-                     WHERE t1.user_request_type_id != 8
-                       AND t1.status = 1 AND t1.processing_index = 0
-                       AND t1.reference_id = {$reference_id}
-                     LIMIT 1";
-        $row = DB::query(Database::SELECT, $sql_user)->execute()->current();
-        if (!empty($row)) {
-            return $row;
+        if ($source_hint === 'admin') {
+            // Token said admin — try admin first, fall back to user as a safety net.
+            $row = self::_query_admin_request($reference_id);
+            if (!empty($row)) return $row;
+            return self::_query_user_request($reference_id);
         }
 
-        // 2) Admin-custom-request path. After Model_AdminRequest::admin_email_sended()
-        //    these rows are status=1 (sent) and processing_index=7 (awaiting reply).
-        //    LEFT JOIN email_templates_type because admin requests can use ad-hoc
-        //    request_type_ids that may not have a matching template row.
-        $sql_admin = "SELECT 'admin' as source, t1.request_id, t1.reason, t1.user_id,
-                             t1.user_request_type_id,
-                             COALESCE(t2.email_type_name, '') as email_type_name,
-                             t1.requested_value, NULL as concerned_person_id, t1.company_name,
-                             t1.created_at, t1.status, t1.processing_index,
-                             em.message_id, em.message_subject, em.sender_id
-                      FROM admin_request as t1
-                      LEFT JOIN email_templates_type as t2 ON t1.user_request_type_id = t2.id
-                      JOIN admin_email_messages as em ON em.message_id = t1.message_id
-                      WHERE t1.status = 1 AND t1.processing_index = 7
-                        AND t1.reference_id = {$reference_id}
-                      LIMIT 1";
-        $row = DB::query(Database::SELECT, $sql_admin)->execute()->current();
-        if (!empty($row)) {
-            return $row;
-        }
-
-        return null;
+        // Default ordering: user_request first (high-volume path), admin second.
+        $row = self::_query_user_request($reference_id);
+        if (!empty($row)) return $row;
+        return self::_query_admin_request($reference_id);
     }
 
     /**
-     * Extract the request reference_id from an incoming email.
+     * Query user_request awaiting a reply: status=1 (sent), processing_index=0.
+     */
+    private static function _query_user_request($reference_id)
+    {
+        $sql = "SELECT 'user' as source, t1.request_id, t1.reason, t1.user_id,
+                       t1.user_request_type_id, t2.email_type_name, t1.requested_value,
+                       t1.concerned_person_id, t1.company_name, t1.created_at,
+                       t1.status, t1.processing_index,
+                       em.message_id, em.message_subject, em.sender_id
+                FROM user_request as t1
+                JOIN email_templates_type as t2 ON t1.user_request_type_id = t2.id
+                JOIN email_messages as em ON em.message_id = t1.message_id
+                WHERE t1.user_request_type_id != 8
+                  AND t1.status = 1 AND t1.processing_index = 0
+                  AND t1.reference_id = {$reference_id}
+                LIMIT 1";
+        $row = DB::query(Database::SELECT, $sql)->execute()->current();
+        return !empty($row) ? $row : null;
+    }
+
+    /**
+     * Query admin_request awaiting a reply: status=1 (sent), processing_index=7.
+     * Covers BOTH admin routes — Adminrequest/admin_custom_request_form
+     * (action_admincustomsend) and Adminrequest/admin_request_sent_form
+     * (action_adminsend) — because both go through the same
+     * Model_AdminRequest::admin_request() insert and the same
+     * Model_AdminRequest::admin_email_sended(...,7,1) status update.
+     * LEFT JOIN email_templates_type because admin requests can use ad-hoc
+     * request_type_ids that may not have a matching template row.
+     */
+    private static function _query_admin_request($reference_id)
+    {
+        $sql = "SELECT 'admin' as source, t1.request_id, t1.reason, t1.user_id,
+                       t1.user_request_type_id,
+                       COALESCE(t2.email_type_name, '') as email_type_name,
+                       t1.requested_value, NULL as concerned_person_id, t1.company_name,
+                       t1.created_at, t1.status, t1.processing_index,
+                       em.message_id, em.message_subject, em.sender_id
+                FROM admin_request as t1
+                LEFT JOIN email_templates_type as t2 ON t1.user_request_type_id = t2.id
+                JOIN admin_email_messages as em ON em.message_id = t1.message_id
+                WHERE t1.status = 1 AND t1.processing_index = 7
+                  AND t1.reference_id = {$reference_id}
+                LIMIT 1";
+        $row = DB::query(Database::SELECT, $sql)->execute()->current();
+        return !empty($row) ? $row : null;
+    }
+
+    /**
+     * Extract the request reference_id and a source hint from an incoming email.
      *
-     * Tries the subject first (4+ digit number, must be >= 1000). Falls back
-     * to body matching for replies that lost the original subject token —
-     * common when LEA recipients compose a fresh reply with their own
-     * subject like "Subs Data" but quote the original FIR/DD line in the body.
+     * Token-priority routing — both admin routes (Adminrequest/admin_custom_request_form
+     * and Adminrequest/admin_request_sent_form) embed "ADM-<reference_id>" in
+     * the outgoing subject AND body, so the marker survives most reply forms
+     * (Re:-chain, fresh subject, body-only quote). QRM is reserved for the
+     * quick-request module and is treated as admin-routed too.
      *
-     * Returns 0 when no usable reference is found.
+     * Returns ['reference_id' => int, 'source' => 'admin'|null]:
+     *   - source='admin' → caller should look up admin_request first
+     *   - source=null    → no source preference, default user_request first
      */
     public static function extract_reference_from_email($subject, $body)
     {
-        // 1) Subject extraction (first 4+ digit number, >= 1000).
+        // Combined haystack so a quoted original (in the reply body) or a
+        // fresh-subject reply both have enough material to match on.
+        $haystack = (string) $subject . "\n" . (string) $body;
+
+        // 1) ADM- / QRM markers → admin route (covers both admin custom and
+        //    admin single requests; both share the 'ADM-' prefix today, QRM
+        //    is reserved for future quick-request module use).
+        if (preg_match('/\b(?:ADM|QRM)[-\s]*(\d{4,})/i', $haystack, $m)) {
+            return array('reference_id' => (int) $m[1], 'source' => 'admin');
+        }
+
+        // 2) Universal CTD body footer "FIR/DD NO <id> PS CTD ...".
+        //    Used by BOTH user and admin outgoing emails, so we know the
+        //    reference but not the source — caller's default ordering applies.
+        if (preg_match('/FIR[\s\/]*DD[\s\/]*NO[\s\/\.\#:]*(\d{4,})/i', $haystack, $m)) {
+            return array('reference_id' => (int) $m[1], 'source' => null);
+        }
+
+        // 3) Subject fallback — first 4+ digit number, must be >= 1000.
         $clean_subject = str_replace(array('/', ',', '.'), array(' /', ' ,', ' . '), (string) $subject);
         if (preg_match('/\b(\d{4,})\b/', $clean_subject, $m) && (int) $m[1] >= 1000) {
-            return (int) $m[1];
+            return array('reference_id' => (int) $m[1], 'source' => null);
         }
 
-        // 2) Body fallback — outgoing CTD email always ends with "FIR/DD NO <id> PS CTD ...".
-        if (preg_match('/FIR[\s\/]*DD[\s\/]*NO[\s\/\.\#:]*(\d{4,})/i', (string) $body, $m)) {
-            return (int) $m[1];
+        // 4) Generic FIR/DD/REF fallback for variations like "FIR # 88556".
+        if (preg_match('/(?:FIR|DD|REF|REFERENCE)[\s\/\.\#:NO]*(\d{4,})/i', $haystack, $m)) {
+            return array('reference_id' => (int) $m[1], 'source' => null);
         }
 
-        // 3) Body fallback — outgoing admin subjects use ADM-<id> and are
-        //    typically quoted in the reply body.
-        if (preg_match('/ADM[-\s]*(\d{4,})/i', (string) $body, $m)) {
-            return (int) $m[1];
-        }
-
-        // 4) Generic FIR/DD/REF fallback for variations.
-        if (preg_match('/(?:FIR|DD|REF|REFERENCE)[\s\/\.\#:NO]*(\d{4,})/i', (string) $body, $m)) {
-            return (int) $m[1];
-        }
-
-        return 0;
+        return array('reference_id' => 0, 'source' => null);
     }
 
     public static function change_status_raw($file_name, $body_raw, $body, $messge_id, $request_id, $is_file_exist = NULL, $process_index = Null, $source = 'user')
@@ -940,9 +975,9 @@ abstract class Helpers_Email
             DB::update($request_table)->set(array('status' => 2, 'processing_index' => $process_index))->where('request_id', '=', $request_id)->execute();
             DB::update($message_table)->set(array('received_date' => $date, 'received_file_path' => $file_name, 'received_body_raw' => $body_raw, 'received_body' => $body))->where('message_id', '=', $messge_id)->execute();
 
-            // The files table is keyed by user_request.request_id; the admin
-            // flow doesn't use it, so skip the update for admin-source rows.
-            if ($source !== 'admin' && $is_file_exist == 1 && !empty($file_name) && $file_name != 'na')
+            // Admin replies can carry attachments too (e.g. attached XLSX of
+            // subscriber data), so update the files row for both sources.
+            if ($is_file_exist == 1 && !empty($file_name) && $file_name != 'na')
                 DB::update("files")->set(array('file' => $file_name))->where('request_id', '=', $request_id)->execute();
 
             // Log success
