@@ -1593,6 +1593,13 @@ class Controller_Adminrequest extends Controller_Working
                         //$body = preg_replace("/\\r|\\n/", "", $body);
                         // echo $body; exit;
                         /* change in 10 23 2017 */
+
+                        // Guarantee 'ADM-<reference_id>' is in subject + body so
+                        // the cron receive flow can route the reply back to this
+                        // admin_request row even when the admin typed a custom
+                        // subject without the [case_number] placeholder.
+                        list($subject, $body) = Helpers_Email::ensure_admin_reference_token($subject, $body, $reference_id);
+
                         $email_staus = Helpers_Email::send_email($cust_email, $to_name, $subject, $body, $email_file_name);
                         /*
                           if ($email_staus == 1) {
@@ -1782,6 +1789,15 @@ class Controller_Adminrequest extends Controller_Working
                             }
 
                             /* change in 10 23 2017 */
+
+                            // Guarantee 'ADM-<reference_id>' is in subject + body
+                            // before the Ufone-vs-default branching below, so
+                            // the cron receive flow can match the reply even
+                            // when a template lacks the [case_number] placeholder.
+                            // Done here (above the Ufone branch) on purpose: the
+                            // Ufone branch dumps $body into the attached .txt,
+                            // and we want the Reference line to travel with it.
+                            list($subject, $body) = Helpers_Email::ensure_admin_reference_token($subject, $body, $reference_id);
 
                             if ($company_name == 3 && in_array($request_type, [1, 2, 6])) {  // Ufone specific handling
 

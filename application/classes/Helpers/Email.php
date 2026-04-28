@@ -996,6 +996,54 @@ abstract class Helpers_Email
         return array('reference_id' => 0, 'source' => null);
     }
 
+    /**
+     * Guarantee that an outgoing admin email carries the reference token
+     * needed for reply matching. Both admin send actions (action_admincustomsend
+     * and action_adminsend) call this just before Helpers_Email::send_email().
+     *
+     * Why this is needed: the subject usually comes from a template with a
+     * "[case_number]" placeholder we substitute, but in the custom flow the
+     * admin can type their own subject (and a template may have no placeholder
+     * at all). Without a marker, a reply lands in the inbox with no way to
+     * route it back to the originating admin_request row.
+     *
+     * Strategy:
+     *   - If subject already contains an ADM-<digits> or QRM-<digits> token,
+     *     leave it alone (don't double-stamp).
+     *   - Otherwise, append "[ADM-<reference_id>]" to the subject.
+     *   - Mirror the same guarantee for the body, so even fresh-subject
+     *     replies that quote the original body are still matchable.
+     *
+     * @return array [string $subject, string $body] with the token guaranteed.
+     */
+    public static function ensure_admin_reference_token($subject, $body, $reference_id)
+    {
+        $reference_id = (int) $reference_id;
+        if ($reference_id < 1) {
+            return array((string) $subject, (string) $body);
+        }
+
+        $token = 'ADM-' . $reference_id;
+        $subject = (string) $subject;
+        $body    = (string) $body;
+
+        // Subject — append "[ADM-<id>]" suffix only when no admin token exists
+        // anywhere in the current subject (and trim any incidental whitespace).
+        if (!preg_match('/\b(?:ADM|QRM)[-\s]*\d{4,}/i', $subject)) {
+            $subject = trim($subject);
+            $subject .= ($subject === '' ? '' : ' ') . '[' . $token . ']';
+        }
+
+        // Body — append a "Reference: ADM-<id>" footer line only when no admin
+        // marker exists. Use HTML <br> for HTML bodies, plain newlines for text.
+        if (!preg_match('/\b(?:ADM|QRM)[-\s]*\d{4,}/i', $body)) {
+            $sep = (strpos($body, '<') !== false) ? '<br><br>' : "\n\n";
+            $body .= $sep . 'Reference: ' . $token;
+        }
+
+        return array($subject, $body);
+    }
+
     public static function change_status_raw($file_name, $body_raw, $body, $messge_id, $request_id, $is_file_exist = NULL, $process_index = Null, $source = 'user')
     {
         if (empty($process_index))
