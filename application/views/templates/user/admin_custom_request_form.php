@@ -271,6 +271,21 @@
                 if (typeof resp.email !== 'undefined' && $('#emiladdress').attr('readonly')) {
                     $('#emiladdress').val(resp.email || '');
                 }
+
+                // Body — populate the CKEditor instance from the template
+                // body_txt. Overwrites whatever was there because admins
+                // expect a fresh starting point when they switch request
+                // type or company. The submit-time not-empty validation
+                // still catches any case where the template body is blank
+                // and the admin forgot to type anything.
+                if (typeof resp.body !== 'undefined') {
+                    var bodyHtml = resp.body || '';
+                    if (typeof CKEDITOR !== 'undefined' && CKEDITOR.instances && CKEDITOR.instances.body_txt) {
+                        CKEDITOR.instances.body_txt.setData(bodyHtml);
+                    } else {
+                        $('#body_txt').val(bodyHtml);
+                    }
+                }
             },
             error: function () {
                 // Non-fatal — keep whatever the user already had typed.
