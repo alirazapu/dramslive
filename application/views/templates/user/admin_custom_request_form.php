@@ -105,13 +105,11 @@
                         <div class="col-sm-6">
                                 <div class="form-group" >
                                     <label for="esubject" class="control-label">Email Subject</label>
-                                    <div class="input-group">
-                                        <input type="text" class="form-control" name="esubject" id="esubject" value="" placeholder="Auto-filled from selected request type" readonly>
-                                        <span class="input-group-btn">
-                                            <button type="button" class="btn btn-default" id="esubject_edit" title="Edit subject" onclick="toggleEditable('#esubject', '#esubject_edit')">
-                                                <i class="fa fa-pencil"></i>
-                                            </button>
-                                        </span>
+                                    <div class="lockable-field">
+                                        <input type="text" class="form-control lockable-input" name="esubject" id="esubject" value="" placeholder="Auto-filled from selected request type" readonly>
+                                        <a href="javascript:void(0)" id="esubject_edit" class="lockable-toggle" title="Edit subject" onclick="toggleEditable('#esubject', '#esubject_edit')">
+                                            <i class="fa fa-pencil"></i>
+                                        </a>
                                     </div>
                                 </div>
                         </div>
@@ -150,13 +148,11 @@
                             <div class="col-sm-3">
                                 <div class="form-group" >
                                     <label for="emiladdress" class="control-label">Custom Email Adress</label>
-                                    <div class="input-group">
-                                        <input type="email" class="form-control" name="emiladdress" id="emiladdress" value="" placeholder="Auto-filled from selected company" readonly>
-                                        <span class="input-group-btn">
-                                            <button type="button" class="btn btn-default" id="emiladdress_edit" title="Edit email address" onclick="toggleEditable('#emiladdress', '#emiladdress_edit')">
-                                                <i class="fa fa-pencil"></i>
-                                            </button>
-                                        </span>
+                                    <div class="lockable-field">
+                                        <input type="email" class="form-control lockable-input" name="emiladdress" id="emiladdress" value="" placeholder="Auto-filled from selected company" readonly>
+                                        <a href="javascript:void(0)" id="emiladdress_edit" class="lockable-toggle" title="Edit email address" onclick="toggleEditable('#emiladdress', '#emiladdress_edit')">
+                                            <i class="fa fa-pencil"></i>
+                                        </a>
                                     </div>
                                 </div>
                             </div>
@@ -225,14 +221,17 @@
     }
 
     /**
-     * Fetch the email template subject + body and the default company email
-     * for the currently-selected (request_type, company_name) pair, then
-     * populate #esubject, #emiladdress, and the CKEditor body.
+     * Fetch the email template subject + the default company email for the
+     * currently-selected (request_type, company_name) pair and populate
+     * #esubject and #emiladdress. The body is intentionally NOT touched —
+     * admins type their own message and validate it before submit.
      *
+     * - Subject + recipient email both depend on (request_type, company_name).
      * - Skips fields the admin has unlocked (so user edits aren't overwritten).
-     * - Substitutes the [case_number] placeholder with a friendly hint; the
-     *   server-side ensure_admin_reference_token() helper will inject the
-     *   real ADM-<reference_id> at submit time anyway.
+     * - Replaces the [case_number] placeholder with literal "ADM-XXXXX" so the
+     *   admin can see the ADM- prefix that the receive-side cron uses to
+     *   match replies. The real reference id is injected server-side at send
+     *   time by Helpers_Email::ensure_admin_reference_token().
      */
     function refreshAdminTemplateFields() {
         var requestType = $('#field').val();
@@ -257,26 +256,15 @@
                 // the admin hasn't clicked the pencil to take manual control).
                 if (typeof resp.subject !== 'undefined' && $('#esubject').attr('readonly')) {
                     var subj = resp.subject || '';
-                    // Show a friendly placeholder for the auto-injected
-                    // reference id so the admin sees what will be sent.
-                    subj = subj.replace(/\[case_number\]/g, '[ADM-<auto>]');
+                    // Show ADM-XXXXX placeholder where the template had
+                    // [case_number]; the server replaces it with the real id.
+                    subj = subj.replace(/\[case_number\]/g, 'ADM-XXXXX');
                     $('#esubject').val(subj);
                 }
 
-                // Email — only refresh if still readonly.
+                // Recipient email — only refresh if still readonly.
                 if (typeof resp.email !== 'undefined' && $('#emiladdress').attr('readonly')) {
                     $('#emiladdress').val(resp.email || '');
-                }
-
-                // Body — populate the CKEditor instance if available; admins
-                // commonly edit the body, so we always overwrite when the
-                // request type / company changes (gives a fresh starting point).
-                if (typeof resp.body !== 'undefined') {
-                    if (typeof CKEDITOR !== 'undefined' && CKEDITOR.instances && CKEDITOR.instances.body_txt) {
-                        CKEDITOR.instances.body_txt.setData(resp.body || '');
-                    } else {
-                        $('#body_txt').val(resp.body || '');
-                    }
                 }
             },
             error: function () {
@@ -743,6 +731,25 @@ $(document).on("click","li", function(){
          for (instance in CKEDITOR.instances) {
                 CKEDITOR.instances[instance].updateElement();
             }
+
+        // Body must not be empty. CKEditor often leaves an empty paragraph
+        // wrapper (e.g. "<p>&nbsp;</p>" or "<p></p>") even when the user
+        // typed nothing, so we strip tags + nbsp + whitespace before checking.
+        var rawBody = '';
+        if (typeof CKEDITOR !== 'undefined' && CKEDITOR.instances && CKEDITOR.instances.body_txt) {
+            rawBody = CKEDITOR.instances.body_txt.getData();
+        } else {
+            rawBody = $('#body_txt').val() || '';
+        }
+        var bodyText = $('<div>').html(rawBody).text()
+            .replace(/ /g, ' ')      // strip non-breaking spaces
+            .replace(/\s+/g, ' ')         // collapse whitespace
+            .trim();
+        if (bodyText === '') {
+            swal('Email Body Required', 'Please enter the email body before submitting the request.', 'error');
+            return;
+        }
+
         var data = new FormData();
         var form_data = $('#userrequest').serializeArray();
         $.each(form_data, function (key, input) {
@@ -907,6 +914,43 @@ $(document).on("click","li", function(){
     background-color: #def;
     padding: 10px;
     cursor: pointer;
+}
+
+/* Lockable field component used by Email Subject + Custom Email Adress.
+   The pencil icon sits inside the right edge of the input via absolute
+   positioning, so it's bullet-proof against parent layout quirks
+   (Bootstrap 3's .input-group sometimes breaks under select2/CKEditor). */
+.lockable-field {
+    position: relative;
+    display: block;
+    width: 100%;
+}
+.lockable-field .lockable-input {
+    /* Reserve room on the right so typed text doesn't slide under the icon. */
+    padding-right: 34px;
+}
+.lockable-field .lockable-toggle {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    width: 22px;
+    height: 22px;
+    line-height: 22px;
+    text-align: center;
+    color: #888;
+    cursor: pointer;
+    border-radius: 3px;
+    text-decoration: none;
+}
+.lockable-field .lockable-toggle:hover,
+.lockable-field .lockable-toggle:focus {
+    color: #3c8dbc;
+    background: #f5f5f5;
+    text-decoration: none;
+}
+.lockable-field .lockable-toggle .fa {
+    font-size: 13px;
 }
 </style>
 
