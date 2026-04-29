@@ -1008,15 +1008,27 @@ abstract class Helpers_Email
      * route it back to the originating admin_request row.
      *
      * Strategy:
-     *   - If subject already contains an ADM-<digits> or QRM-<digits> token,
-     *     leave it alone (don't double-stamp).
-     *   - Otherwise, append "[ADM-<reference_id>]" to the subject.
-     *   - Mirror the same guarantee for the body, so even fresh-subject
-     *     replies that quote the original body are still matchable.
+     *   - Body always gets a "Reference: ADM-<id>" footer (or HTML comment
+     *     equivalent) when no marker is already present. The receive matcher
+     *     scans both subject AND body, so the body footer alone is enough
+     *     to recover the reply when the subject can't carry the token —
+     *     e.g. Ufone enforces a strict standard subject format that we
+     *     cannot append to.
+     *   - Subject gets "[ADM-<id>]" appended ONLY when the caller passes
+     *     $inject_subject = true AND no marker is already there. Callers
+     *     sending to telcos with locked subject formats (Ufone, company_id=3)
+     *     pass false so the standard subject travels untouched.
      *
-     * @return array [string $subject, string $body] with the token guaranteed.
+     * @param string $subject         The proposed outgoing subject.
+     * @param string $body            The proposed outgoing body (HTML or text).
+     * @param int    $reference_id    Numeric admin_request.reference_id.
+     * @param bool   $inject_subject  Allow appending '[ADM-<id>]' to subject
+     *                                when no marker is present. Pass false
+     *                                for Ufone & similar strict-format telcos.
+     * @return array [string $subject, string $body] with the body marker
+     *               guaranteed and the subject marker guaranteed iff allowed.
      */
-    public static function ensure_admin_reference_token($subject, $body, $reference_id)
+    public static function ensure_admin_reference_token($subject, $body, $reference_id, $inject_subject = true)
     {
         $reference_id = (int) $reference_id;
         if ($reference_id < 1) {
@@ -1027,15 +1039,17 @@ abstract class Helpers_Email
         $subject = (string) $subject;
         $body    = (string) $body;
 
-        // Subject — append "[ADM-<id>]" suffix only when no admin token exists
-        // anywhere in the current subject (and trim any incidental whitespace).
-        if (!preg_match('/\b(?:ADM|QRM)[-\s]*\d{4,}/i', $subject)) {
+        // Subject — caller-controlled. Skipped entirely for telcos that
+        // enforce a strict subject format (Ufone). Otherwise we append
+        // "[ADM-<id>]" only when no admin token already exists.
+        if ($inject_subject && !preg_match('/\b(?:ADM|QRM)[-\s]*\d{4,}/i', $subject)) {
             $subject = trim($subject);
             $subject .= ($subject === '' ? '' : ' ') . '[' . $token . ']';
         }
 
-        // Body — append a "Reference: ADM-<id>" footer line only when no admin
-        // marker exists. Use HTML <br> for HTML bodies, plain newlines for text.
+        // Body — always inject when no marker is present. The receive matcher
+        // scans subject + body, so this guarantees a route back to the
+        // admin_request row even when the subject couldn't carry the token.
         if (!preg_match('/\b(?:ADM|QRM)[-\s]*\d{4,}/i', $body)) {
             $sep = (strpos($body, '<') !== false) ? '<br><br>' : "\n\n";
             $body .= $sep . 'Reference: ' . $token;

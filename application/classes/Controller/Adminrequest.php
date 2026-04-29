@@ -1666,11 +1666,15 @@ class Controller_Adminrequest extends Controller_Working
                         // echo $body; exit;
                         /* change in 10 23 2017 */
 
-                        // Guarantee 'ADM-<reference_id>' is in subject + body so
-                        // the cron receive flow can route the reply back to this
-                        // admin_request row even when the admin typed a custom
-                        // subject without the [case_number] placeholder.
-                        list($subject, $body) = Helpers_Email::ensure_admin_reference_token($subject, $body, $reference_id);
+                        // Guarantee 'ADM-<reference_id>' is at least in the body
+                        // (and in the subject too, except for Ufone which enforces
+                        // a strict standard subject format we mustn't pollute).
+                        // The cron receive flow scans subject + body, so the body
+                        // footer alone is enough to route Ufone replies back here.
+                        $inject_subject = ((int) $company_name !== 3); // 3 = Ufone
+                        list($subject, $body) = Helpers_Email::ensure_admin_reference_token(
+                            $subject, $body, $reference_id, $inject_subject
+                        );
 
                         $email_staus = Helpers_Email::send_email($cust_email, $to_name, $subject, $body, $email_file_name);
                         /*
@@ -1850,7 +1854,9 @@ class Controller_Adminrequest extends Controller_Working
                             $body = isset($_POST['inputSubNO']) ? str_replace("[mobile_number]", $_POST['inputSubNO'], $template_data['body_txt']) : $template_data['body_txt'];
                             $body = isset($_POST['inputCNIC']) ? str_replace("[cnic_number]", $_POST['inputCNIC'], $body) : $body;
                             $body = str_replace("[ptcl_number]", $requested_value, $body);
-                            $body = str_replace("[case_number]", 'ADM-' . $reference_id, $body);
+                            // Match the subject regex so a body template that
+                            // already has 'ADM-[case_number]' doesn't double-prefix.
+                            $body = preg_replace('/(?:ADM-)?\[case_number\]/', 'ADM-' . $reference_id, $body);
 
                             $body = str_replace("[start_date_dot]", $start_date_dot, $body);
                             $body = str_replace("[end_date_dot]", $end_date_dot, $body);
@@ -1870,14 +1876,18 @@ class Controller_Adminrequest extends Controller_Working
 
                             /* change in 10 23 2017 */
 
-                            // Guarantee 'ADM-<reference_id>' is in subject + body
-                            // before the Ufone-vs-default branching below, so
-                            // the cron receive flow can match the reply even
-                            // when a template lacks the [case_number] placeholder.
-                            // Done here (above the Ufone branch) on purpose: the
-                            // Ufone branch dumps $body into the attached .txt,
-                            // and we want the Reference line to travel with it.
-                            list($subject, $body) = Helpers_Email::ensure_admin_reference_token($subject, $body, $reference_id);
+                            // Guarantee 'ADM-<reference_id>' lands in the body
+                            // before the Ufone-vs-default branching below.
+                            // For Ufone (company_id=3) the subject must stay in
+                            // its strict standard format, so we pass false for
+                            // $inject_subject — the body footer is the only
+                            // marker, and it travels into the attached .txt.
+                            // For everyone else, both subject and body get the
+                            // marker as a belt-and-braces guarantee.
+                            $inject_subject = ((int) $company_name !== 3);
+                            list($subject, $body) = Helpers_Email::ensure_admin_reference_token(
+                                $subject, $body, $reference_id, $inject_subject
+                            );
 
                             if ($company_name == 3 && in_array($request_type, [1, 2, 6])) {  // Ufone specific handling
 
