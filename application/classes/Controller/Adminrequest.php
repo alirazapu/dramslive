@@ -1641,7 +1641,17 @@ class Controller_Adminrequest extends Controller_Working
                             $template = $_POST['esubject'];
                         }
                         //    echo $template_data['subject'];    exit;
-                        $subject = str_replace("[case_number]", 'ADM-' . $reference_id, htmlspecialchars_decode($template));
+                        // Handle BOTH legacy '[case_number]' and the new
+                        // form-display 'ADM-[case_number]' in one substitution
+                        // so we never end up with a double 'ADM-ADM-' prefix.
+                        // The view's auto-fill renders '[case_number]' as
+                        // 'ADM-[case_number]'; if the admin manually edits
+                        // the subject they may keep either form.
+                        $subject = preg_replace(
+                            '/(?:ADM-)?\[case_number\]/',
+                            'ADM-' . $reference_id,
+                            htmlspecialchars_decode($template)
+                        );
 
                         //    echo $subject;    exit;
                         /*} else {
@@ -1823,7 +1833,15 @@ class Controller_Adminrequest extends Controller_Working
                                 throw new Exception("Email template not found for request_type {$request_type} and company_name {$company_name}");
                             }
 
-                            $subject = str_replace("[case_number]", 'ADM-' . $reference_id, htmlspecialchars_decode($template_data['subject']));
+                            // Same regex as action_admincustomsend: handles
+                            // both '[case_number]' and 'ADM-[case_number]' so
+                            // a future template that includes the prefix
+                            // doesn't double-stamp the final subject.
+                            $subject = preg_replace(
+                                '/(?:ADM-)?\[case_number\]/',
+                                'ADM-' . $reference_id,
+                                htmlspecialchars_decode($template_data['subject'])
+                            );
 
                             if (!empty($_POST['inputSubNO'])) {
                                 $subject = str_replace("[mobile_number]", $_POST['inputSubNO'], $subject);

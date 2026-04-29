@@ -106,7 +106,7 @@
                                 <div class="form-group" >
                                     <label for="esubject" class="control-label">Email Subject</label>
                                     <div class="lockable-field">
-                                        <input type="text" class="form-control lockable-input" name="esubject" id="esubject" value="" placeholder="Auto-filled from selected request type" readonly>
+                                        <input type="text" class="form-control lockable-input" name="esubject" id="esubject" value="" placeholder="Email Subject" readonly>
                                         <a href="javascript:void(0)" id="esubject_edit" class="lockable-toggle" title="Edit subject" onclick="toggleEditable('#esubject', '#esubject_edit')">
                                             <i class="fa fa-pencil"></i>
                                         </a>
@@ -149,7 +149,7 @@
                                 <div class="form-group" >
                                     <label for="emiladdress" class="control-label">Custom Email Adress</label>
                                     <div class="lockable-field">
-                                        <input type="email" class="form-control lockable-input" name="emiladdress" id="emiladdress" value="" placeholder="Auto-filled from selected company" readonly>
+                                        <input type="email" class="form-control lockable-input" name="emiladdress" id="emiladdress" value="" placeholder="Email Address" readonly>
                                         <a href="javascript:void(0)" id="emiladdress_edit" class="lockable-toggle" title="Edit email address" onclick="toggleEditable('#emiladdress', '#emiladdress_edit')">
                                             <i class="fa fa-pencil"></i>
                                         </a>
@@ -256,9 +256,14 @@
                 // the admin hasn't clicked the pencil to take manual control).
                 if (typeof resp.subject !== 'undefined' && $('#esubject').attr('readonly')) {
                     var subj = resp.subject || '';
-                    // Show ADM-XXXXX placeholder where the template had
-                    // [case_number]; the server replaces it with the real id.
-                    subj = subj.replace(/\[case_number\]/g, 'ADM-XXXXX');
+                    // Prefix the [case_number] placeholder with ADM- so the
+                    // admin sees the prefix that drives reply matching. The
+                    // server-side substitution handles both 'ADM-[case_number]'
+                    // and bare '[case_number]' (see action_admincustomsend),
+                    // so no double-prefix on submit.
+                    subj = subj.replace(/(ADM-)?\[case_number\]/g, function (m, prefix) {
+                        return prefix ? m : 'ADM-[case_number]';
+                    });
                     $('#esubject').val(subj);
                 }
 
@@ -931,7 +936,10 @@ $(document).on("click","li", function(){
 }
 .lockable-field .lockable-toggle {
     position: absolute;
-    top: 50%;
+    /* 80% (not 50%) is intentional for this page — the surrounding form-group
+       label + .form-control padding combination shifts the visual center
+       upward, so 80% lands the icon at the input's true vertical middle. */
+    top: 80%;
     right: 8px;
     transform: translateY(-50%);
     width: 22px;
