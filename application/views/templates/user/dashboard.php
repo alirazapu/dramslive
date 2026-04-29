@@ -412,8 +412,17 @@ if (!empty($_GET['accessmessage'])) {
                 //-------------
                 //- PIE CHART -
                 //-------------
+                // Guard: the <canvas id="pieChart"> was removed from the
+                // dashboard markup at some point but this JS was kept. Without
+                // the element, $("#pieChart").get(0) is undefined and the
+                // .getContext("2d") call throws a TypeError that breaks the
+                // rest of the dashboard's onload. Bail silently if it's gone.
+                var pieChartEl = $("#pieChart").get(0);
+                if (!pieChartEl) {
+                    return;
+                }
                 // Get context with jQuery - using jQuery's .get() method.
-                var pieChartCanvas = $("#pieChart").get(0).getContext("2d");
+                var pieChartCanvas = pieChartEl.getContext("2d");
                 var pieChart = new Chart(pieChartCanvas);
                 var PieData = [
                     {
