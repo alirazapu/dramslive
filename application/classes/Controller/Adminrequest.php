@@ -1492,6 +1492,68 @@ class Controller_Adminrequest extends Controller_Working
 
     }
 
+    /**
+     * AJAX endpoint that returns the email template subject + body and the
+     * default company email for a (request_type, company_name) pair.
+     *
+     * Used by the admin custom request form to auto-populate the readonly
+     * "Email Subject" and "Custom Email Address" fields when either
+     * Request Type or Company Name changes — mirrors what the single-request
+     * server-side flow already does at submit time.
+     *
+     * Request: POST {request_type, company_name}
+     * Response: {subject, body, email} (each field may be '' when no match).
+     */
+    public function action_get_template_data()
+    {
+        $this->auto_render = false;
+        header('Content-Type: application/json');
+
+        $response = array('subject' => '', 'body' => '', 'email' => '');
+
+        if (!Auth::instance()->logged_in()) {
+            echo json_encode($response);
+            return;
+        }
+
+        try {
+            $post = Helpers_Utilities::remove_injection($_POST);
+            $request_type = !empty($post['request_type']) ? (int) $post['request_type'] : 0;
+            $company_name = !empty($post['company_name']) ? (int) $post['company_name'] : 0;
+
+            if ($request_type > 0 && $company_name > 0) {
+                // Email template (subject + body) for this (type, company) pair.
+                $template = Model_Email::get_email_tempalte($request_type, $company_name);
+                if (!empty($template)) {
+                    $response['subject'] = isset($template['subject'])
+                        ? htmlspecialchars_decode($template['subject'])
+                        : '';
+                    $response['body'] = isset($template['body_txt'])
+                        ? $template['body_txt']
+                        : '';
+                }
+
+                // Default recipient email for the chosen company / request type.
+                $email_config = Helpers_CompanyEmail::get_email($company_name, $request_type);
+                $response['email'] = isset($email_config['email'])
+                    ? $email_config['email']
+                    : '';
+            }
+        } catch (Exception $e) {
+            Model_ErrorLog::log(
+                'action_get_template_data',
+                $e->getMessage(),
+                array('request_type' => $request_type ?? null, 'company_name' => $company_name ?? null),
+                $e->getTraceAsString(),
+                'ajax_error',
+                'admin_custom_form'
+            );
+            // Fall through with the empty $response so the form doesn't break.
+        }
+
+        echo json_encode($response);
+    }
+
     // admin custom email send
     public function action_admincustomsend()
     {

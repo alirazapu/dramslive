@@ -104,8 +104,15 @@
                         </div>
                         <div class="col-sm-6">
                                 <div class="form-group" >
-                                    <label for="esubject" class="control-label">Requested Subject</label>
-                                      <input type="text"   class="form-control" name="esubject" id="esubject" value="" placeholder="email subject">                                      
+                                    <label for="esubject" class="control-label">Email Subject</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" name="esubject" id="esubject" value="" placeholder="Auto-filled from selected request type" readonly>
+                                        <span class="input-group-btn">
+                                            <button type="button" class="btn btn-default" id="esubject_edit" title="Edit subject" onclick="toggleEditable('#esubject', '#esubject_edit')">
+                                                <i class="fa fa-pencil"></i>
+                                            </button>
+                                        </span>
+                                    </div>
                                 </div>
                         </div>
                         <div class="col-sm-3" id="company_div" >
@@ -142,9 +149,15 @@
                             </div>
                             <div class="col-sm-3">
                                 <div class="form-group" >
-                                    <label  class="control-label">Custom Email Adress</label>
-                                    <input type="email"   class="form-control" name="emiladdress" id="emiladdress" value="" placeholder="Email Address">
-                                      
+                                    <label for="emiladdress" class="control-label">Custom Email Adress</label>
+                                    <div class="input-group">
+                                        <input type="email" class="form-control" name="emiladdress" id="emiladdress" value="" placeholder="Auto-filled from selected company" readonly>
+                                        <span class="input-group-btn">
+                                            <button type="button" class="btn btn-default" id="emiladdress_edit" title="Edit email address" onclick="toggleEditable('#emiladdress', '#emiladdress_edit')">
+                                                <i class="fa fa-pencil"></i>
+                                            </button>
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                             <div class="col-sm-3">
@@ -188,6 +201,93 @@
     $(function () {
         //Initialize Select2 Elements
         $(".select2").select2();
+    });
+
+    /**
+     * Toggle the readonly state of an input + flip the pencil/save icon.
+     * Used by the "Email Subject" and "Custom Email Adress" fields so the
+     * default behaviour is auto-filled-and-locked, but the admin can still
+     * override either value with one click.
+     */
+    function toggleEditable(inputSelector, buttonSelector) {
+        var $input  = $(inputSelector);
+        var $button = $(buttonSelector);
+        var $icon   = $button.find('i');
+        if ($input.attr('readonly')) {
+            $input.removeAttr('readonly').focus();
+            $icon.removeClass('fa-pencil').addClass('fa-lock');
+            $button.attr('title', 'Lock (revert to auto-fill on next change)');
+        } else {
+            $input.attr('readonly', 'readonly');
+            $icon.removeClass('fa-lock').addClass('fa-pencil');
+            $button.attr('title', 'Edit subject');
+        }
+    }
+
+    /**
+     * Fetch the email template subject + body and the default company email
+     * for the currently-selected (request_type, company_name) pair, then
+     * populate #esubject, #emiladdress, and the CKEditor body.
+     *
+     * - Skips fields the admin has unlocked (so user edits aren't overwritten).
+     * - Substitutes the [case_number] placeholder with a friendly hint; the
+     *   server-side ensure_admin_reference_token() helper will inject the
+     *   real ADM-<reference_id> at submit time anyway.
+     */
+    function refreshAdminTemplateFields() {
+        var requestType = $('#field').val();
+        var companyName = $('#company_name_get').val();
+
+        if (!requestType || !companyName) {
+            return;
+        }
+
+        $.ajax({
+            url: "<?php echo URL::site('Adminrequest/get_template_data'); ?>",
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                request_type: requestType,
+                company_name: companyName
+            },
+            success: function (resp) {
+                if (!resp) return;
+
+                // Subject — only refresh if the field is still readonly (i.e.
+                // the admin hasn't clicked the pencil to take manual control).
+                if (typeof resp.subject !== 'undefined' && $('#esubject').attr('readonly')) {
+                    var subj = resp.subject || '';
+                    // Show a friendly placeholder for the auto-injected
+                    // reference id so the admin sees what will be sent.
+                    subj = subj.replace(/\[case_number\]/g, '[ADM-<auto>]');
+                    $('#esubject').val(subj);
+                }
+
+                // Email — only refresh if still readonly.
+                if (typeof resp.email !== 'undefined' && $('#emiladdress').attr('readonly')) {
+                    $('#emiladdress').val(resp.email || '');
+                }
+
+                // Body — populate the CKEditor instance if available; admins
+                // commonly edit the body, so we always overwrite when the
+                // request type / company changes (gives a fresh starting point).
+                if (typeof resp.body !== 'undefined') {
+                    if (typeof CKEDITOR !== 'undefined' && CKEDITOR.instances && CKEDITOR.instances.body_txt) {
+                        CKEDITOR.instances.body_txt.setData(resp.body || '');
+                    } else {
+                        $('#body_txt').val(resp.body || '');
+                    }
+                }
+            },
+            error: function () {
+                // Non-fatal — keep whatever the user already had typed.
+            }
+        });
+    }
+
+    $(function () {
+        $('#field').on('change', refreshAdminTemplateFields);
+        $('#company_name_get').on('change', refreshAdminTemplateFields);
     });
 </script>
 <script type="text/javascript">
