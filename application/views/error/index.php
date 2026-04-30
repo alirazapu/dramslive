@@ -125,10 +125,27 @@
 
     <script>
         document.getElementById('clear_range').addEventListener('change', function() {
-            document.getElementById('custom_date_range').style.display = 
+            document.getElementById('custom_date_range').style.display =
                 this.value === 'custom' ? 'block' : 'none';
         });
 
+        // Same popup-stacking workaround used elsewhere in the system
+        // (see bparty_subscriber.php → external_search_model). AdminLTE's
+        // .content-wrapper creates a stacking context that traps the
+        // Bootstrap modal at a low z-index, so the body-level
+        // .modal-backdrop is painted ON TOP of the modal and steals
+        // every click. Stripping the backdrop after show keeps the modal
+        // floating cleanly above the page.
+        if (window.jQuery) {
+            jQuery(function ($) {
+                $('#clearLogsModal').on('shown.bs.modal', function () {
+                    $('body').removeClass('modal-open').css('padding-right', '');
+                    setTimeout(function () {
+                        $('.modal-backdrop.fade.in, .modal-backdrop').remove();
+                    }, 300);
+                });
+            });
+        }
     </script>
 
     <!-- LOG TABLE -->

@@ -1566,6 +1566,18 @@ $(document).on("click","li", function(){
         // pre-wrap so plain-text formats keep their layout.
         $('#previewBody').html(rawBody);
         $('#previewModal').modal('show');
+
+        // Same workaround the existing bparty_subscriber popup uses:
+        // strip Bootstrap's modal-backdrop entirely. AdminLTE's
+        // .content-wrapper stacking context traps the modal at a low
+        // z-index, so the body-level backdrop ends up painted ON TOP
+        // of the modal and steals every click. Removing the backdrop
+        // (and the body.modal-open lock) leaves a clean floating
+        // popup with the rest of the page still readable behind it.
+        $('body').removeClass('modal-open').css('padding-right', '');
+        setTimeout(function () {
+            $('.modal-backdrop.fade.in, .modal-backdrop').remove();
+        }, 300);
     }
 
     /**
