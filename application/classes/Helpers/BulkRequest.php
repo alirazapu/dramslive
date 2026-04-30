@@ -81,6 +81,13 @@ class Helpers_BulkRequest
             if ($start_date && $end_date && $start_date > $end_date) {
                 $errors[] = 'Date From must be earlier than Date To.';
             }
+            // Telco-side cap: CDR/IMEI windows can't exceed 180 days.
+            if ($start_date && $end_date && $start_date <= $end_date) {
+                $diff_days = (int) $start_date->diff($end_date)->format('%a') + 1;
+                if ($diff_days > 180) {
+                    $errors[] = 'Date range cannot exceed 180 days. Selected: ' . $diff_days . ' days.';
+                }
+            }
         }
 
         // CDR by Mobile.
@@ -375,13 +382,14 @@ class Helpers_BulkRequest
         return array_values(array_unique($out));
     }
 
-    /** Parse a 'mm/dd/yyyy' string into a DateTime, or NULL. */
+    /** Parse a 'mm/dd/yyyy' (or 'm/d/yyyy', possibly with trailing time)
+     *  string into a DateTime, or NULL. Anchorless regex tolerates the
+     *  bootstrap-datetimepicker's "04/30/2026 12:00" shape. */
     private static function _parse_mdy($value)
     {
         $value = trim((string) $value);
         if ($value === '') return null;
-        // Accept mm/dd/yyyy or m/d/yyyy.
-        if (!preg_match('#^(\d{1,2})/(\d{1,2})/(\d{4})$#', $value, $m)) return null;
+        if (!preg_match('#(\d{1,2})/(\d{1,2})/(\d{4})#', $value, $m)) return null;
         $month = (int) $m[1]; $day = (int) $m[2]; $year = (int) $m[3];
         if (!checkdate($month, $day, $year)) return null;
         $dt = DateTime::createFromFormat('!m/d/Y', sprintf('%d/%d/%d', $month, $day, $year));

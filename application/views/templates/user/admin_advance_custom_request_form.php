@@ -81,11 +81,14 @@
 
                         
 
-                <!--<div id="dataform">-->
+                <!-- Top row: Type → Company → Subject → Email Address.
+                     Wrapped in a .row so the four col-sm-3 cells clear cleanly
+                     and don't bleed into the conditional inputs that follow. -->
+                <div class="row">
                     <div class="col-sm-3">
-                    <div class="form-group" >
+                        <div class="form-group">
                             <label for="field">Please select request type</label>
-                            <select class="form-control " name="ChooseTemplate"  id='field' >
+                            <select class="form-control" name="ChooseTemplate" id="field">
                                 <option value=""> Please Select Type</option>
                                 <option value="3"> Subscriber Against Mobile Number</option>
                                 <option value="4"> Location Against Mobile Number</option>
@@ -94,45 +97,44 @@
                                 <option value="5"> SIM's Against CNIC Number</option>
                             </select>
                         </div>
+                    </div>
+                    <div class="col-sm-3" id="company_div">
+                        <div class="form-group">
+                            <label for="company_name_get" class="control-label">Company Name</label>
+                            <select class="form-control select2" name="company_name_get" id="company_name_get" data-placeholder="Select company from list" style="width: 100%">
+                                <?php $comp_name_list = Helpers_Utilities::get_companies_data();
+                                foreach ($comp_name_list as $list) {
+                                    if ($list->company_id < 6 || $list->company_id == 9) { ?>
+                                        <option value="<?php echo $list->mnc ?>"><?php echo $list->company_name ?></option>
+                                <?php }} ?>
+                                <option value="11">PTCL</option>
+                                <option value="12">International</option>
+                            </select>
                         </div>
-                        <div class="col-sm-3">
-                                <div class="form-group" >
-                                    <label for="esubject" class="control-label">Email Subject</label>
-                                    <div class="lockable-field">
-                                        <input type="text" class="form-control lockable-input" name="esubject" id="esubject" value="" placeholder="Email Subject" readonly>
-                                        <a href="javascript:void(0)" id="esubject_edit" class="lockable-toggle" title="Edit subject" onclick="toggleEditable('#esubject', '#esubject_edit')">
-                                            <i class="fa fa-pencil"></i>
-                                        </a>
-                                    </div>
-                                </div>
-                        </div>
-                        <div class="col-sm-3" id="company_div" >
-                                <div class="form-group">
-                                    <label for="company_name_get" class="control-label">Company Name </label>
-                                    <select class="form-control select2" name="company_name_get" id="company_name_get" data-placeholder="Select company from list"  style="width: 100%">
-                                        <?php $comp_name_list = Helpers_Utilities::get_companies_data();
-                                        foreach ($comp_name_list as $list) {
-                                            if ($list->company_id < 6 || $list->company_id==9) {
-                                                ?>
-                                                <option value="<?php echo $list->mnc ?>"><?php echo $list->company_name ?></option>
-                                            <?php }} ?>
-                                                <option value="11">PTCL</option>
-                                                <option value="12">International</option>
-
-                                    </select>
-                                </div>
-                        </div>
-                        <div class="col-sm-3">
-                                <div class="form-group">
-                                    <label for="emiladdress" class="control-label">Custom Email Adress</label>
-                                    <div class="lockable-field">
-                                        <input type="email" class="form-control lockable-input" name="emiladdress" id="emiladdress" value="" placeholder="Email Address" readonly>
-                                        <a href="javascript:void(0)" id="emiladdress_edit" class="lockable-toggle" title="Edit email address" onclick="toggleEditable('#emiladdress', '#emiladdress_edit')">
-                                            <i class="fa fa-pencil"></i>
-                                        </a>
-                                    </div>
-                                </div>
+                    </div>
+                    <div class="col-sm-3">
+                        <div class="form-group">
+                            <label for="esubject" class="control-label">Email Subject</label>
+                            <div class="lockable-field">
+                                <input type="text" class="form-control lockable-input" name="esubject" id="esubject" value="" placeholder="Email Subject" readonly>
+                                <a href="javascript:void(0)" id="esubject_edit" class="lockable-toggle" title="Edit subject" onclick="toggleEditable('#esubject', '#esubject_edit')">
+                                    <i class="fa fa-pencil"></i>
+                                </a>
                             </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-3">
+                        <div class="form-group">
+                            <label for="emiladdress" class="control-label">Custom Email Adress</label>
+                            <div class="lockable-field">
+                                <input type="email" class="form-control lockable-input" name="emiladdress" id="emiladdress" value="" placeholder="Email Address" readonly>
+                                <a href="javascript:void(0)" id="emiladdress_edit" class="lockable-toggle" title="Edit email address" onclick="toggleEditable('#emiladdress', '#emiladdress_edit')">
+                                    <i class="fa fa-pencil"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                             <!--
                                 Conditional inputs — same set as the single
@@ -140,7 +142,14 @@
                                 but with multi-value tag inputs so the admin can
                                 lodge ONE custom request that covers many numbers.
                                 Visibility is driven by request_against() in JS.
+
+                                Wrapped in its own .row so the col-sm-12 Body
+                                Message section that follows clears the float
+                                — without this wrapper, the bulk-upload toolbar
+                                under each chip field bleeds into the Body
+                                Message label area on tall multi-input renders.
                             -->
+                            <div class="row">
                             <div class="col-sm-6" id="mob_div" style="display:none">
                                 <div class="form-group">
                                     <label for="inputSubNO" class="control-label">Mobile Number(s)</label>
@@ -225,50 +234,57 @@
                                     </div>
                                 </div>
                             </div>
+                            </div><!-- /.row (conditional inputs) -->
 
+                            <div class="row">
                             <div class="col-sm-12" id="quickoption_div"  >
                                 <div class="form-group" >
                                     <label for="quickoption" class="control-label">Body Message</label>                                                                        
                                     <textarea id="body_txt" value=""  name="body" class="textarea form-control" placeholder="Please enter email body heare" style="width: 100%; height: 300px; font-size: 14px; line-height: 18px; border: 1px solid #dddddd; padding: 10px;"></textarea>
                                 </div>
                             </div>
-                            <!-- Requested By on its own row so the field has space to breathe. -->
-                            <div class="col-sm-12">
-                                <div class="form-group">
-                                    <label for="rqtbyname" class="control-label">Requested By</label>
-                                    <input type="text" class="form-control" name="rqtbyname" id="rqtbyname" value="" placeholder="Name">
-                                    <div id="rqtbynamelist"></div>
+                            </div><!-- /.row (body) -->
+
+                            <!-- Requested By + Requested Attachment side-by-side
+                                 (col-sm-6 each). Email Attachment is hidden but
+                                 kept in markup so action_admincustomsend keeps
+                                 reading $_FILES['emailfile'] without PHP changes —
+                                 the bulk-format builder + Ufone .txt-attachment
+                                 logic in send_email() handle the attachment case
+                                 server-side. -->
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <div class="form-group">
+                                        <label for="rqtbyname" class="control-label">Requested By</label>
+                                        <input type="text" class="form-control" name="rqtbyname" id="rqtbyname" value="" placeholder="Name">
+                                        <div id="rqtbynamelist"></div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="form-group">
+                                        <label for="rqtfile" class="control-label">Requested Attachment</label>
+                                        <input type="file" accept=".jpeg,.jpg,.gif,.png" id="rqtfile" name="rqtfile" placeholder="Select Image">
+                                    </div>
+                                </div>
+                                <div class="col-sm-6" style="display:none">
+                                    <div class="form-group">
+                                        <label for="emailfile" class="control-label">Email Attachment (auto-managed)</label>
+                                        <input type="file" accept=".txt" id="emailfile" name="emailfile" placeholder="Select text file">
+                                    </div>
                                 </div>
                             </div>
 
-                            <!-- Attachments row. Email Attachment is hidden — the
-                                 advance form auto-builds the bulk-format body server-
-                                 side (Helpers_BulkRequest) and, for Ufone CDR/IMEI,
-                                 the existing send_email() flow attaches the body as
-                                 .txt automatically. The hidden input is preserved so
-                                 admincustomsend keeps reading $_FILES['emailfile']
-                                 with no PHP changes needed. -->
-                            <div class="col-sm-6">
-                                <div class="form-group">
-                                    <label for="rqtfile" class="control-label">Requested Attachment</label>
-                                    <input type="file" accept=".jpeg,.jpg,.gif,.png" id="rqtfile" name="rqtfile" placeholder="Select Image">
-                                </div>
-                            </div>
-                            <div class="col-sm-6" style="display:none">
-                                <div class="form-group">
-                                    <label for="emailfile" class="control-label">Email Attachment (auto-managed)</label>
-                                    <input type="file" accept=".txt" id="emailfile" name="emailfile" placeholder="Select text file">
-                                </div>
-                            </div>
-                            <div class="col-sm-12">
-                                <div class="form-group" >
-                                    <label for="inputreason" class="control-label">Reason For This Request</label>
-                                    <textarea class="form-control" name="inputreason" id="inputreason"  placeholder="Enter Reason For Request" ></textarea>
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="form-group">
+                                        <label for="inputreason" class="control-label">Reason For This Request</label>
+                                        <textarea class="form-control" name="inputreason" id="inputreason" placeholder="Enter Reason For Request"></textarea>
+                                    </div>
                                 </div>
                             </div>
                             <div class="form-group" id="submit_div">
                                 <div class="col-sm-12">
-                                    <button  id="userrequestbtn" type="button" onclick="submitrequestform()" class="btn btn-primary pull-right" style="margin-top:10px" >Submit</button>
+                                    <button id="userrequestbtn" type="button" onclick="submitrequestform()" class="btn btn-primary pull-right" style="margin-top:10px"><i class="fa fa-eye"></i> Preview</button>
                                 </div>
                             </div>
                         <!--</div>-->
@@ -308,8 +324,8 @@
                 <div id="previewBody"></div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-pencil"></i> Edit</button>
-                <button type="button" class="btn btn-primary" id="confirmSendBtn"><i class="fa fa-paper-plane"></i> Confirm &amp; Send</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmSendBtn"><i class="fa fa-paper-plane"></i> Submit Request</button>
             </div>
         </div>
     </div>
@@ -408,10 +424,21 @@
     /** Parse 'mm/dd/yyyy' into a Date, or return null. */
     function parseMdy(value) {
         if (!value) return null;
-        var m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(value);
+        // Anchorless match — bootstrap-datetimepicker sometimes appends a
+        // time component (e.g. "04/30/2026 12:00") and the previous
+        // ^...$ regex rejected anything that wasn't a bare mm/dd/yyyy.
+        var m = /(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(String(value));
         if (!m) return null;
-        var d = new Date(parseInt(m[3], 10), parseInt(m[1], 10) - 1, parseInt(m[2], 10));
-        return isNaN(d.getTime()) ? null : d;
+        var month = parseInt(m[1], 10);
+        var day   = parseInt(m[2], 10);
+        var year  = parseInt(m[3], 10);
+        // Calendar sanity — JS Date silently rolls over invalid dates
+        // (e.g. Feb 30 becomes Mar 2), so cross-check the components.
+        var d = new Date(year, month - 1, day);
+        if (d.getFullYear() !== year || d.getMonth() !== month - 1 || d.getDate() !== day) {
+            return null;
+        }
+        return d;
     }
 
     /* =================================================================
@@ -609,6 +636,14 @@
             if (!sd) errors.push('Please enter a valid Date From (mm/dd/yyyy).');
             if (!ed) errors.push('Please enter a valid Date To (mm/dd/yyyy).');
             if (sd && ed && sd > ed) errors.push('Date From must be earlier than Date To.');
+            // Telcos cap CDR/IMEI windows at 180 days. Use ceil so a 181-day
+            // span is rejected (still rounds to "181 days" in the message).
+            if (sd && ed && sd <= ed) {
+                var diffDays = Math.ceil((ed.getTime() - sd.getTime()) / 86400000) + 1;
+                if (diffDays > 180) {
+                    errors.push('Date range cannot exceed 180 days. Selected: ' + diffDays + ' days.');
+                }
+            }
         }
 
         // CDR by Mobile — count + format.
@@ -883,14 +918,93 @@
         });
     }
 
+    /* =================================================================
+        Input validators — block bad MSISDN / CNIC / IMEI values before
+        they ever become a chip. Each returns either the cleaned digit-
+        only string (chip allowed) or null (chip rejected with a brief
+        flash message under the field).
+       ================================================================= */
+
+    function validateMobileInput(raw) {
+        var d = String(raw).replace(/\D/g, '');
+        // Accept 10-digit 3xxxxxxxxx, 11-digit 03xxxxxxxxx,
+        // 12-digit 92xxxxxxxxxx, 13-digit 0092xxxxxxxxxx.
+        if (d.length === 10 && d.charAt(0) === '3')                return d;
+        if (d.length === 11 && d.substr(0, 2) === '03')            return d;
+        if (d.length === 12 && d.substr(0, 2) === '92')            return d;
+        if (d.length === 13 && d.substr(0, 4) === '0092')          return d;
+        return null;
+    }
+    function validateCnicInput(raw) {
+        var d = String(raw).replace(/\D/g, '');
+        // Pakistani CNIC = exactly 13 digits (dashes / spaces tolerated).
+        return (d.length === 13) ? d : null;
+    }
+    function validateImeiInput(raw) {
+        var d = String(raw).replace(/\D/g, '');
+        // IMEI = 14 (Mobilink/Telenor), 15 (Zong/Ufone) or 16 digits.
+        return (d.length >= 14 && d.length <= 16) ? d : null;
+    }
+
+    /** Brief inline flash beneath the input when an entry is rejected. */
+    function flashTagReject($field, message) {
+        var $small = $field.parent().find('.tag-reject-flash');
+        if (!$small.length) {
+            $small = $('<small class="tag-reject-flash text-danger" style="display:block;margin-top:4px;"></small>');
+            $field.parent().append($small);
+        }
+        $small.text(message).stop(true, true).show().delay(2000).fadeOut(400);
+    }
+
     $(function () {
         // select2 tag mode for the multi-value inputs. tokenSeparators lets
         // the admin paste a comma- or space-separated list and have each
-        // entry chip up automatically.
-        $('#inputSubNO, #inputCNIC, #inputIMEI').select2({
+        // entry chip up automatically. createTag rejects malformed entries
+        // so only valid MSISDN/CNIC/IMEI values can become chips.
+
+        $('#inputSubNO').select2({
             tags: true,
             tokenSeparators: [',', ' ', "\n", "\t"],
-            width: '100%'
+            width: '100%',
+            createTag: function (params) {
+                var term = $.trim(params.term);
+                var clean = validateMobileInput(term);
+                if (clean === null) {
+                    flashTagReject($('#inputSubNO'), 'Invalid mobile: "' + term + '". Use 10-digit 3xxxxxxxxx, 11-digit 03xxxxxxxxx, or 12-digit 92xxxxxxxxxx.');
+                    return null;
+                }
+                return { id: clean, text: clean, newTag: true };
+            }
+        });
+
+        $('#inputCNIC').select2({
+            tags: true,
+            tokenSeparators: [',', ' ', "\n", "\t"],
+            width: '100%',
+            createTag: function (params) {
+                var term = $.trim(params.term);
+                var clean = validateCnicInput(term);
+                if (clean === null) {
+                    flashTagReject($('#inputCNIC'), 'Invalid CNIC: "' + term + '". Must be exactly 13 digits (dashes optional).');
+                    return null;
+                }
+                return { id: clean, text: clean, newTag: true };
+            }
+        });
+
+        $('#inputIMEI').select2({
+            tags: true,
+            tokenSeparators: [',', ' ', "\n", "\t"],
+            width: '100%',
+            createTag: function (params) {
+                var term = $.trim(params.term);
+                var clean = validateImeiInput(term);
+                if (clean === null) {
+                    flashTagReject($('#inputIMEI'), 'Invalid IMEI: "' + term + '". Must be 14, 15, or 16 digits.');
+                    return null;
+                }
+                return { id: clean, text: clean, newTag: true };
+            }
         });
 
         // Wire each Bulk Upload button to the matching multi-input.
@@ -1496,10 +1610,22 @@ $(document).on("click","li", function(){
         });
     }
 
-    // Wire the preview modal's Confirm & Send button.
+    // Wire the preview modal's Submit Request button.
     $(function () {
         $('#confirmSendBtn').on('click', function () {
             actuallySendRequest();
+        });
+
+        // Bootstrap 3 + AdminLTE sometimes leave a stray
+        // <div class="modal-backdrop fade in"></div> behind after
+        // hide(), which captures pointer events and makes the rest
+        // of the page unclickable. Clean up on hide.
+        $('#previewModal').on('hidden.bs.modal', function () {
+            $('.modal-backdrop').remove();
+            $('body').removeClass('modal-open').css({
+                'padding-right': '',
+                'overflow':      ''
+            });
         });
     });
 

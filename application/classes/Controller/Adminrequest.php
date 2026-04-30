@@ -1918,12 +1918,37 @@ class Controller_Adminrequest extends Controller_Working
         $sd_raw  = isset($post['start_date']) ? (string) $post['start_date'] : '';
         $ed_raw  = isset($post['end_date'])   ? (string) $post['end_date']   : '';
 
-        if (count($mobiles) > 0) $text = str_replace('[mobile_number]', implode(', ', $mobiles), $text);
+        // Mobile substitution. Some templates hardcode the country prefix
+        // right before the placeholder (e.g. Mobilink Subscriber:
+        // "92[mobile_number]"), which only worked when there was a SINGLE
+        // number — multi-input substitution leaves later numbers without
+        // the prefix because the literal "92" only sticks to the first
+        // value. So we expand the longer "92[mobile_number]" pattern first
+        // with each mobile pre-formatted as "92<10-digit>" on its own line,
+        // then handle the bare "[mobile_number]" for templates that don't
+        // hardcode any prefix.
+        if (count($mobiles) > 0) {
+            $msisdns_92 = array();
+            $msisdns_local = array();
+            foreach ($mobiles as $m) {
+                $d = preg_replace('/\D/', '', (string) $m);
+                // Normalise to 10-digit form first (3xxxxxxxxx).
+                if (strlen($d) === 11 && $d[0] === '0')               $d = substr($d, 1);
+                if (strlen($d) === 12 && substr($d, 0, 2) === '92')   $d = substr($d, 2);
+                if (strlen($d) === 13 && substr($d, 0, 4) === '0092') $d = substr($d, 4);
+                $msisdns_local[] = $d;
+                $msisdns_92[]    = '92' . $d;
+            }
+            // Order matters: replace the more specific "92[mobile_number]"
+            // pattern before the bare placeholder.
+            $text = str_replace('92[mobile_number]', implode("\n", $msisdns_92), $text);
+            $text = str_replace('[mobile_number]',   implode(', ', $msisdns_local), $text);
+        }
         if (count($cnics)   > 0) $text = str_replace('[cnic_number]',   implode(', ', $cnics),   $text);
         if (count($imeis)   > 0) $text = str_replace('[imei_number]',   implode(', ', $imeis),   $text);
 
         // Date placeholders (only substitute when valid mm/dd/yyyy).
-        if (preg_match('#^(\d{1,2})/(\d{1,2})/(\d{4})$#', $sd_raw, $m) && checkdate((int)$m[1], (int)$m[2], (int)$m[3])) {
+        if (preg_match('#(\d{1,2})/(\d{1,2})/(\d{4})#', $sd_raw, $m) && checkdate((int)$m[1], (int)$m[2], (int)$m[3])) {
             $sd_dt = DateTime::createFromFormat('!m/d/Y', sprintf('%d/%d/%d', (int)$m[1], (int)$m[2], (int)$m[3]));
             if ($sd_dt) {
                 $text = str_replace('[start_date_dot]',       $sd_dt->format('d.m.Y'), $text);
@@ -1932,7 +1957,7 @@ class Controller_Adminrequest extends Controller_Working
                 $text = str_replace('[start_date_slash_mdy]', $sd_dt->format('m/d/Y'), $text);
             }
         }
-        if (preg_match('#^(\d{1,2})/(\d{1,2})/(\d{4})$#', $ed_raw, $m) && checkdate((int)$m[1], (int)$m[2], (int)$m[3])) {
+        if (preg_match('#(\d{1,2})/(\d{1,2})/(\d{4})#', $ed_raw, $m) && checkdate((int)$m[1], (int)$m[2], (int)$m[3])) {
             $ed_dt = DateTime::createFromFormat('!m/d/Y', sprintf('%d/%d/%d', (int)$m[1], (int)$m[2], (int)$m[3]));
             if ($ed_dt) {
                 $text = str_replace('[end_date_dot]',       $ed_dt->format('d.m.Y'), $text);
