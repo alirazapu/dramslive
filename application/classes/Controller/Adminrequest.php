@@ -1431,35 +1431,72 @@ class Controller_Adminrequest extends Controller_Working
     }
 
 
-    // admin email send
+    // Autocomplete: suggests existing rqtbyname values across all admin
+    // request tables (admin_request, admin_nadra_request,
+    // admin_familytree_request, admin_travel_request).  The previous
+    // implementation only queried admin_request, which is why the dropdown
+    // was returning at most ~2 distinct names — names entered through the
+    // NADRA / Family Tree / Travel forms were never offered as suggestions.
     public function action_autocomplete()
     {
-        if (Auth::instance()->logged_in()) {
-            $user_obj = Auth::instance()->get_user();
-
-            if (isset($_POST['rqtbyname'])) {
-
-                $output = "";
-                $city = $_POST['rqtbyname'];
-                $sql = "SELECT rqtbyname 
-                         from admin_request where rqtbyname like '%$city%' group by rqtbyname";
-                $result = DB::query(Database::SELECT, $sql)->as_object()->execute();
-                $output = '<ul class="list-unstyled">';
-
-                if ($result->count() > 0) {
-                    foreach ($result as $rs) {
-                        $output .= '<li>' . ucwords($rs->rqtbyname) . '</li>';
-                    }
-                } else {
-                    $output .= '<li> Requested By not Found</li>';
-                }
-
-                $output .= '</ul>';
-                echo $output;
-            }
-
+        if (!Auth::instance()->logged_in()) {
+            return;
+        }
+        if (!isset($_POST['rqtbyname'])) {
+            return;
         }
 
+        $raw = trim((string) $_POST['rqtbyname']);
+        if ($raw === '') {
+            echo '<ul class="list-unstyled"></ul>';
+            return;
+        }
+
+        $DB = Database::instance();
+
+        // Sanitize: remove injection markers, then escape LIKE wildcards
+        // ('%' and '_') so a user typing them gets a literal-character match.
+        // Using '|' as the LIKE escape character (instead of the default
+        // backslash) avoids the multi-layer escaping headache where PHP
+        // collapses \\\\ to \\ and MySQL collapses \\ to \ — different
+        // tools / logs render those differently and ESCAPE only accepts
+        // a single byte. '|' has no special meaning in PHP or MySQL strings,
+        // so what we write is what MySQL gets.
+        $clean = Helpers_Utilities::remove_injection($raw);
+        $like  = str_replace(array('|', '%', '_'), array('||', '|%', '|_'), $clean);
+        $like_q = $DB->escape('%' . $like . '%');
+
+        // Pull suggestions from every admin request table that carries
+        // rqtbyname, dedupe across them, sort, and cap to 20 rows so the
+        // dropdown stays usable.
+        $sql = "
+            SELECT name FROM (
+                SELECT rqtbyname AS name FROM admin_request            WHERE rqtbyname LIKE {$like_q} ESCAPE '|'
+                UNION
+                SELECT rqtbyname AS name FROM admin_nadra_request      WHERE rqtbyname LIKE {$like_q} ESCAPE '|'
+                UNION
+                SELECT rqtbyname AS name FROM admin_familytree_request WHERE rqtbyname LIKE {$like_q} ESCAPE '|'
+                UNION
+                SELECT rqtbyname AS name FROM admin_travel_request     WHERE rqtbyname LIKE {$like_q} ESCAPE '|'
+            ) AS combined
+            WHERE name IS NOT NULL AND TRIM(name) != ''
+            GROUP BY name
+            ORDER BY name ASC
+            LIMIT 20
+        ";
+
+        $result = DB::query(Database::SELECT, $sql)->as_object()->execute();
+
+        $output = '<ul class="list-unstyled">';
+        if ($result->count() > 0) {
+            foreach ($result as $rs) {
+                $output .= '<li>' . htmlspecialchars(ucwords($rs->name), ENT_QUOTES, 'UTF-8') . '</li>';
+            }
+        } else {
+            $output .= '<li> Requested By not Found</li>';
+        }
+        $output .= '</ul>';
+        echo $output;
     }
 
     // admin nadra request send
@@ -1504,6 +1541,384 @@ class Controller_Adminrequest extends Controller_Working
      * Request: POST {request_type, company_name}
      * Response: {subject, body, email} (each field may be '' when no match).
      */
+
+    /**
+     * Stream a tiny sample CSV the admin can fill in their spreadsheet
+     * tool and re-upload via the Bulk Upload control on the custom form.
+     *
+     * GET ?type=mobile|cnic|imei
+     */
+    public function action_sample_csv()
+    {
+        $this->auto_render = false;
+
+        $type = isset($_GET['type']) ? strtolower((string) $_GET['type']) : '';
+        $samples = array(
+            'mobile' => array(
+                'header' => 'Mobile Number',
+                'rows'   => array('3001234567', '3007654321', '3211234567'),
+                'file'   => 'mobile_numbers_sample.csv',
+            ),
+            'cnic' => array(
+                'header' => 'CNIC Number',
+                'rows'   => array('1234512345671', '1410123456789', '1740112345671'),
+                'file'   => 'cnic_numbers_sample.csv',
+            ),
+            'imei' => array(
+                'header' => 'IMEI Number',
+                'rows'   => array('123456789012345', '987654321098765', '356938035643809'),
+                'file'   => 'imei_numbers_sample.csv',
+            ),
+        );
+
+        if (!isset($samples[$type])) {
+            header('HTTP/1.1 400 Bad Request');
+            header('Content-Type: text/plain');
+            echo 'Unknown sample type. Use type=mobile|cnic|imei.';
+            return;
+        }
+
+        $sample = $samples[$type];
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $sample['file'] . '"');
+        header('Cache-Control: no-store');
+
+        $fh = fopen('php://output', 'w');
+        // BOM so Excel auto-detects UTF-8.
+        fwrite($fh, "\xEF\xBB\xBF");
+        fputcsv($fh, array($sample['header']));
+        foreach ($sample['rows'] as $row) {
+            fputcsv($fh, array($row));
+        }
+        fclose($fh);
+    }
+
+    /**
+     * Parse a CSV / XLSX / TXT file uploaded from the custom form's Bulk
+     * Upload control. Reads the first column, normalises Pakistani MSISDN
+     * variants, drops invalid rows, dedupes, and returns JSON the client
+     * can pour straight into the corresponding select2-tags input.
+     *
+     * Request:  POST {field_type: 'mobile'|'cnic'|'imei'} + multipart bulk_file
+     * Response: {values: string[], invalid_count: int, invalid_samples: string[]}
+     */
+    public function action_parse_bulk_upload()
+    {
+        $this->auto_render = false;
+        header('Content-Type: application/json');
+
+        $response = array(
+            'values'          => array(),
+            'invalid_count'   => 0,
+            'invalid_samples' => array(),
+        );
+
+        if (!Auth::instance()->logged_in()) {
+            $response['error'] = 'auth';
+            echo json_encode($response);
+            return;
+        }
+
+        $type = isset($_POST['field_type']) ? strtolower((string) $_POST['field_type']) : '';
+        if (!in_array($type, array('mobile', 'cnic', 'imei'), true)) {
+            $response['error'] = 'invalid_type';
+            echo json_encode($response);
+            return;
+        }
+
+        if (empty($_FILES['bulk_file']['tmp_name']) || !is_uploaded_file($_FILES['bulk_file']['tmp_name'])) {
+            $response['error'] = 'no_file';
+            echo json_encode($response);
+            return;
+        }
+
+        // Cap upload size at 2 MB — we only need a list of strings, not a
+        // workbook full of formulas.
+        if (!empty($_FILES['bulk_file']['size']) && $_FILES['bulk_file']['size'] > 2 * 1024 * 1024) {
+            $response['error'] = 'file_too_large';
+            echo json_encode($response);
+            return;
+        }
+
+        $tmp  = $_FILES['bulk_file']['tmp_name'];
+        $name = isset($_FILES['bulk_file']['name']) ? $_FILES['bulk_file']['name'] : '';
+        $ext  = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+
+        try {
+            $raw_values = $this->_read_first_column($tmp, $ext);
+        } catch (Exception $e) {
+            Model_ErrorLog::log(
+                'action_parse_bulk_upload',
+                'File parse failed: ' . $e->getMessage(),
+                array('field_type' => $type, 'ext' => $ext, 'name' => $name),
+                $e->getTraceAsString(),
+                'parse_failure',
+                'admin_custom_form'
+            );
+            $response['error'] = 'parse_failed';
+            echo json_encode($response);
+            return;
+        }
+
+        // Validate + normalise per type.
+        $cleaned = array();
+        $invalid = array();
+        foreach ($raw_values as $val) {
+            $val = trim((string) $val);
+            if ($val === '') continue;
+            $digits = preg_replace('/\D/', '', $val);
+
+            if ($type === 'mobile') {
+                // Normalise common Pakistani MSISDN forms → 10-digit 3xxxxxxxxx.
+                if (strlen($digits) === 11 && substr($digits, 0, 1) === '0') {
+                    $digits = substr($digits, 1);
+                } elseif (strlen($digits) === 12 && substr($digits, 0, 2) === '92') {
+                    $digits = substr($digits, 2);
+                } elseif (strlen($digits) === 13 && substr($digits, 0, 4) === '0092') {
+                    $digits = substr($digits, 4);
+                }
+                if (strlen($digits) === 10 && substr($digits, 0, 1) === '3') {
+                    $cleaned[] = $digits;
+                } else {
+                    $invalid[] = $val;
+                }
+            } elseif ($type === 'cnic') {
+                if (strlen($digits) === 13) {
+                    $cleaned[] = $digits;
+                } else {
+                    $invalid[] = $val;
+                }
+            } elseif ($type === 'imei') {
+                if (strlen($digits) === 14 || strlen($digits) === 15 || strlen($digits) === 16) {
+                    $cleaned[] = $digits;
+                } else {
+                    $invalid[] = $val;
+                }
+            }
+        }
+
+        $response['values']          = array_values(array_unique($cleaned));
+        $response['invalid_count']   = count($invalid);
+        $response['invalid_samples'] = array_slice($invalid, 0, 5);
+
+        echo json_encode($response);
+    }
+
+    /**
+     * Internal helper used by action_parse_bulk_upload(). Reads the first
+     * column of an uploaded file, regardless of whether it's CSV/TSV/TXT
+     * (native PHP) or XLSX/XLS (PHPExcel via the project's existing
+     * Spreadsheet wrapper). Skips a header row when the first cell looks
+     * like a label (non-numeric).
+     *
+     * @return string[] raw cell values from the first column.
+     */
+    private function _read_first_column($path, $ext)
+    {
+        $values = array();
+
+        if ($ext === 'csv' || $ext === 'tsv' || $ext === 'txt' || $ext === '') {
+            $delim = ($ext === 'tsv') ? "\t" : ',';
+            $fh    = @fopen($path, 'r');
+            if ($fh === false) {
+                throw new Exception('Cannot open file');
+            }
+            // Strip optional UTF-8 BOM.
+            $bom = fread($fh, 3);
+            if ($bom !== "\xEF\xBB\xBF") {
+                rewind($fh);
+            }
+
+            $row_index = 0;
+            while (($row = fgetcsv($fh, 0, $delim)) !== false) {
+                $first = isset($row[0]) ? trim((string) $row[0]) : '';
+                if ($first === '') {
+                    $row_index++;
+                    continue;
+                }
+                // Skip a header row only on the first non-empty line, and
+                // only when it looks like a label (no digits at all).
+                if ($row_index === 0 && !preg_match('/\d/', $first)) {
+                    $row_index++;
+                    continue;
+                }
+                $values[] = $first;
+                $row_index++;
+            }
+            fclose($fh);
+            return $values;
+        }
+
+        if ($ext === 'xlsx' || $ext === 'xls') {
+            // Lean on the project's Kohana phpexcel module — instantiating
+            // Spreadsheet pulls in PHPExcel's autoloader as a side effect,
+            // so PHPExcel_IOFactory becomes resolvable below.
+            new Spreadsheet();
+            $reader = PHPExcel_IOFactory::createReaderForFile($path);
+            $reader->setReadDataOnly(true);
+            $excel = $reader->load($path);
+            $sheet = $excel->getActiveSheet();
+            $highestRow = $sheet->getHighestRow();
+
+            $first_row_seen = false;
+            for ($r = 1; $r <= $highestRow; $r++) {
+                $cell = $sheet->getCellByColumnAndRow(0, $r);
+                $val = $cell->getValue();
+                $val = is_null($val) ? '' : trim((string) $val);
+                if ($val === '') continue;
+
+                // Skip header cell once.
+                if (!$first_row_seen && !preg_match('/\d/', $val)) {
+                    $first_row_seen = true;
+                    continue;
+                }
+                $first_row_seen = true;
+                $values[] = $val;
+            }
+            return $values;
+        }
+
+        throw new Exception('Unsupported file format: ' . $ext);
+    }
+
+    /**
+     * Build the bulk-request email body server-side. The custom request
+     * form calls this via AJAX whenever (request_type, company, mobiles,
+     * cnics, imeis, dates) changes — server is the source of truth so
+     * the format the LEA team's parser sees matches exactly what the
+     * admin previewed.
+     *
+     * Request:  POST {request_type, company_name, mobiles[], cnics[],
+     *                  imeis[], start_date, end_date}
+     * Response: {subject, body, email, errors[], has_bulk_format}
+     *   - subject / email come from email_templates + Helpers_CompanyEmail
+     *     (same source the single-request flow uses).
+     *   - body is either the bulk-format string from Helpers_BulkRequest
+     *     (when the (type, company) combo has one defined) OR the
+     *     standard template body_txt with all single-request placeholders
+     *     substituted.
+     *   - errors lists every validation issue surfaced by
+     *     Helpers_BulkRequest::validate(). Empty array == ready to send.
+     *   - has_bulk_format flags whether the body came from a bulk builder.
+     */
+    public function action_build_bulk_body()
+    {
+        $this->auto_render = false;
+        header('Content-Type: application/json');
+
+        $response = array(
+            'subject'         => '',
+            'body'            => '',
+            'email'           => '',
+            'errors'          => array(),
+            'has_bulk_format' => false,
+        );
+
+        if (!Auth::instance()->logged_in()) {
+            $response['errors'][] = 'Session expired. Please reload.';
+            echo json_encode($response);
+            return;
+        }
+
+        try {
+            $post = Helpers_Utilities::remove_injection($_POST);
+
+            // Validate first — we still return subject/email/body even if
+            // there are errors so the admin sees a useful preview while
+            // they fix things, but the submit path will refuse to send.
+            $response['errors'] = Helpers_BulkRequest::validate($post);
+
+            $request_type = isset($post['request_type']) ? (int) $post['request_type'] : 0;
+            $company_name = isset($post['company_name']) ? (int) $post['company_name'] : 0;
+
+            // Subject + recipient: always come from the standard sources
+            // (email_templates row + company_emails config) so admins
+            // can't accidentally override them via the form.
+            if ($request_type > 0 && $company_name > 0) {
+                $template = Model_Email::get_email_tempalte($request_type, $company_name);
+                if (!empty($template) && isset($template['subject'])) {
+                    $response['subject'] = htmlspecialchars_decode($template['subject']);
+                }
+                $email_config = Helpers_CompanyEmail::get_email($company_name, $request_type);
+                if (!empty($email_config['email'])) {
+                    $response['email'] = $email_config['email'];
+                }
+
+                // Bulk body if (type, company) has a defined format,
+                // otherwise fall back to standard placeholder substitution
+                // against the template body_txt.
+                $bulk_body = Helpers_BulkRequest::build($post);
+                if ($bulk_body !== null) {
+                    $response['body']            = $bulk_body;
+                    $response['has_bulk_format'] = true;
+                } elseif (!empty($template) && isset($template['body_txt'])) {
+                    $response['body'] = $this->_apply_template_placeholders(
+                        (string) $template['body_txt'], $post
+                    );
+                }
+            }
+        } catch (Exception $e) {
+            Model_ErrorLog::log(
+                'action_build_bulk_body',
+                $e->getMessage(),
+                array('post' => $_POST),
+                $e->getTraceAsString(),
+                'ajax_error',
+                'admin_custom_form'
+            );
+            $response['errors'][] = 'Internal server error.';
+        }
+
+        echo json_encode($response);
+    }
+
+    /**
+     * Apply the same single-request placeholder set the single-request
+     * controller does — used for non-bulk types (3, 4) where we still
+     * want a useful body preview built from email_templates.body_txt.
+     */
+    private function _apply_template_placeholders($text, array $post)
+    {
+        if ($text === '') return '';
+        $mobiles = isset($post['mobiles']) ? (array) $post['mobiles'] : array();
+        $cnics   = isset($post['cnics'])   ? (array) $post['cnics']   : array();
+        $imeis   = isset($post['imeis'])   ? (array) $post['imeis']   : array();
+        $sd_raw  = isset($post['start_date']) ? (string) $post['start_date'] : '';
+        $ed_raw  = isset($post['end_date'])   ? (string) $post['end_date']   : '';
+
+        if (count($mobiles) > 0) $text = str_replace('[mobile_number]', implode(', ', $mobiles), $text);
+        if (count($cnics)   > 0) $text = str_replace('[cnic_number]',   implode(', ', $cnics),   $text);
+        if (count($imeis)   > 0) $text = str_replace('[imei_number]',   implode(', ', $imeis),   $text);
+
+        // Date placeholders (only substitute when valid mm/dd/yyyy).
+        if (preg_match('#^(\d{1,2})/(\d{1,2})/(\d{4})$#', $sd_raw, $m) && checkdate((int)$m[1], (int)$m[2], (int)$m[3])) {
+            $sd_dt = DateTime::createFromFormat('!m/d/Y', sprintf('%d/%d/%d', (int)$m[1], (int)$m[2], (int)$m[3]));
+            if ($sd_dt) {
+                $text = str_replace('[start_date_dot]',       $sd_dt->format('d.m.Y'), $text);
+                $text = str_replace('[start_date_slash]',     $sd_dt->format('d/m/Y'), $text);
+                $text = str_replace('[start_date_hyphen]',    $sd_dt->format('d-m-Y'), $text);
+                $text = str_replace('[start_date_slash_mdy]', $sd_dt->format('m/d/Y'), $text);
+            }
+        }
+        if (preg_match('#^(\d{1,2})/(\d{1,2})/(\d{4})$#', $ed_raw, $m) && checkdate((int)$m[1], (int)$m[2], (int)$m[3])) {
+            $ed_dt = DateTime::createFromFormat('!m/d/Y', sprintf('%d/%d/%d', (int)$m[1], (int)$m[2], (int)$m[3]));
+            if ($ed_dt) {
+                $text = str_replace('[end_date_dot]',       $ed_dt->format('d.m.Y'), $text);
+                $text = str_replace('[end_date_slash]',     $ed_dt->format('d/m/Y'), $text);
+                $text = str_replace('[end_date_hyphen]',    $ed_dt->format('d-m-Y'), $text);
+                $text = str_replace('[end_date_slash_mdy]', $ed_dt->format('m/d/Y'), $text);
+            }
+        }
+
+        $text = str_replace('[current_date]', date('d/m/Y'), $text);
+
+        // Preserve the [case_number] placeholder for the server-side
+        // ADM-<reference_id> substitution in action_admincustomsend.
+        $text = preg_replace('/(?:ADM-)?\[case_number\]/', 'ADM-[case_number]', $text);
+
+        return $text;
+    }
+
     public function action_get_template_data()
     {
         $this->auto_render = false;

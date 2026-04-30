@@ -91,14 +91,7 @@
                                 <option value="4"> Location Against Mobile Number</option>
                                 <option value="1"> CDR Against Mobile Number</option>
                                 <option value="2"> CDR Against IMEI Number </option>
-                                <option value="5"> SIM's Against CNIC Number</option>                                
-                                <option value="6"> CDR Against Mobile Number with SMS Detail</option>                                
-                                <option value="13"> SIMs against IMSI</option>
-                                <option value="14"> SIMs against ICCID</option>
-                                <option value="15"> Double number against given number</option>
-                                <option value="16"> Place of issue / dated of SIM numbers</option>
-                                <option value="17"> Mega Data</option>
-                                <option value="18"> Subscriber & Location (Mobilink)</option>
+                                <option value="5"> SIM's Against CNIC Number</option>
                             </select>
                         </div>
                         </div>
@@ -125,11 +118,96 @@
                                             <?php }} ?>
                                                 <option value="11">PTCL</option>
                                                 <option value="12">International</option>
-                                                
+
                                     </select>
                                 </div>
 
 
+                            </div>
+
+                            <!--
+                                Conditional inputs — same set as the single
+                                request form (Mobile / CNIC / IMEI + date range)
+                                but with multi-value tag inputs so the admin can
+                                lodge ONE custom request that covers many numbers.
+                                Visibility is driven by request_against() in JS.
+                            -->
+                            <div class="col-sm-6" id="mob_div" style="display:none">
+                                <div class="form-group">
+                                    <label for="inputSubNO" class="control-label">Mobile Number(s)</label>
+                                    <select class="form-control select2-tags" name="inputSubNO[]" id="inputSubNO" multiple="multiple" data-placeholder="Type a number then press Enter (or comma)" style="width:100%"></select>
+                                    <small class="text-muted">10-digit numbers starting with 3, e.g. 3001234567. Press Enter or comma to add more.</small>
+                                    <div class="bulk-upload-row">
+                                        <label class="btn btn-default btn-xs bulk-upload-btn">
+                                            <i class="fa fa-upload"></i> Bulk Upload (CSV / XLSX)
+                                            <input type="file" id="mobileBulkFile" accept=".csv,.tsv,.txt,.xlsx,.xls" style="display:none">
+                                        </label>
+                                        <a href="<?php echo URL::site('Adminrequest/sample_csv?type=mobile'); ?>" class="btn btn-link btn-xs" target="_blank">
+                                            <i class="fa fa-download"></i> Sample format
+                                        </a>
+                                        <span id="mobileBulkStatus" class="text-muted bulk-upload-status"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-sm-6" id="cnic_div" style="display:none">
+                                <div class="form-group">
+                                    <label for="inputCNIC" class="control-label">CNIC Number(s)</label>
+                                    <select class="form-control select2-tags" name="inputCNIC[]" id="inputCNIC" multiple="multiple" data-placeholder="Type a CNIC then press Enter" style="width:100%"></select>
+                                    <small class="text-muted">13-digit CNIC, e.g. 1234512345671.</small>
+                                    <div class="bulk-upload-row">
+                                        <label class="btn btn-default btn-xs bulk-upload-btn">
+                                            <i class="fa fa-upload"></i> Bulk Upload (CSV / XLSX)
+                                            <input type="file" id="cnicBulkFile" accept=".csv,.tsv,.txt,.xlsx,.xls" style="display:none">
+                                        </label>
+                                        <a href="<?php echo URL::site('Adminrequest/sample_csv?type=cnic'); ?>" class="btn btn-link btn-xs" target="_blank">
+                                            <i class="fa fa-download"></i> Sample format
+                                        </a>
+                                        <span id="cnicBulkStatus" class="text-muted bulk-upload-status"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-sm-6" id="imei_div" style="display:none">
+                                <div class="form-group">
+                                    <label for="inputIMEI" class="control-label">IMEI Number(s)</label>
+                                    <select class="form-control select2-tags" name="inputIMEI[]" id="inputIMEI" multiple="multiple" data-placeholder="Type an IMEI then press Enter" style="width:100%"></select>
+                                    <small class="text-muted">15-digit IMEI.</small>
+                                    <div class="bulk-upload-row">
+                                        <label class="btn btn-default btn-xs bulk-upload-btn">
+                                            <i class="fa fa-upload"></i> Bulk Upload (CSV / XLSX)
+                                            <input type="file" id="imeiBulkFile" accept=".csv,.tsv,.txt,.xlsx,.xls" style="display:none">
+                                        </label>
+                                        <a href="<?php echo URL::site('Adminrequest/sample_csv?type=imei'); ?>" class="btn btn-link btn-xs" target="_blank">
+                                            <i class="fa fa-download"></i> Sample format
+                                        </a>
+                                        <span id="imeiBulkStatus" class="text-muted bulk-upload-status"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-sm-12" id="quickoption_div_dates" style="display:none">
+                                <div class="form-group">
+                                    <label class="control-label">Quick Options (For Start and End Date)</label>
+                                    <div>
+                                        <button type="button" onclick="dateonemonth()" class="btn btn-primary btn-sm">Last 30 Days</button>
+                                        <button type="button" onclick="datetwomonths()" class="btn btn-primary btn-sm">Last 60 Days</button>
+                                        <button type="button" onclick="datethreemonths()" class="btn btn-primary btn-sm">Last 90 Days</button>
+                                        <button type="button" onclick="datesixmonths()" class="btn btn-primary btn-sm">Last 180 Days</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-3" id="datefrom_div" style="display:none">
+                                <div class="form-group">
+                                    <label for="startDate" class="control-label">Date From (mm/dd/yyyy)</label>
+                                    <input type="text" class="form-control" name="startDate" id="startDate" value="" placeholder="mm/dd/yyyy">
+                                </div>
+                            </div>
+                            <div class="col-sm-3" id="dateto_div" style="display:none">
+                                <div class="form-group">
+                                    <label for="endDate" class="control-label">Date To (mm/dd/yyyy)</label>
+                                    <input type="text" class="form-control" name="endDate" id="endDate" value="" placeholder="mm/dd/yyyy">
+                                </div>
                             </div>
 
                             <div class="col-sm-12" id="quickoption_div"  >
@@ -189,6 +267,40 @@
 
 </section>
 <!-- /.content -->
+
+<!--
+    Confirm-Before-Send modal.
+
+    submitrequestform() validates the form against the bulk-template rules
+    (per-telco max counts, MSISDN format, IMEI digit count, date sanity)
+    and, if everything looks good, populates this modal with the final
+    Subject + To + Body for the admin to eyeball before the actual AJAX
+    submission goes out. Hitting "Send" triggers actuallySendRequest().
+-->
+<div class="modal fade" id="previewModal" tabindex="-1" role="dialog" aria-labelledby="previewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="previewModalLabel"><i class="fa fa-paper-plane"></i> Confirm Email Send</h4>
+            </div>
+            <div class="modal-body">
+                <div class="preview-meta">
+                    <div><strong>To:</strong> <span id="previewTo"></span></div>
+                    <div><strong>Subject:</strong> <span id="previewSubject"></span></div>
+                </div>
+                <hr>
+                <div><strong>Body:</strong></div>
+                <div id="previewBody"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-pencil"></i> Edit</button>
+                <button type="button" class="btn btn-primary" id="confirmSendBtn"><i class="fa fa-paper-plane"></i> Confirm &amp; Send</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="<?php echo URL::base() . 'plugins/select2/select2.full.min.js'; ?>"></script>
 <script>
     $('#userrequest').one('submit', function () {
@@ -221,17 +333,399 @@
     }
 
     /**
-     * Fetch the email template subject + the default company email for the
-     * currently-selected (request_type, company_name) pair and populate
-     * #esubject and #emiladdress. The body is intentionally NOT touched —
-     * admins type their own message and validate it before submit.
+     * Mirror of admin_request_sent_form.php's request_against() — show/hide
+     * the conditional input divs based on the selected request type.
      *
-     * - Subject + recipient email both depend on (request_type, company_name).
-     * - Skips fields the admin has unlocked (so user edits aren't overwritten).
-     * - Replaces the [case_number] placeholder with literal "ADM-XXXXX" so the
-     *   admin can see the ADM- prefix that the receive-side cron uses to
-     *   match replies. The real reference id is injected server-side at send
-     *   time by Helpers_Email::ensure_admin_reference_token().
+     * Type → fields (kept identical to the single-request form):
+     *   1 = CDR by Mobile        → mobile + dates
+     *   2 = CDR by IMEI          → imei   + dates
+     *   3 = Subscriber by Mobile → mobile (no dates)
+     *   4 = Location by Mobile   → mobile (no dates)
+     *   5 = SIMs by CNIC         → cnic   (no dates)
+     */
+    function request_against(val) {
+        var t = (val && val.value !== undefined) ? String(val.value) : String($('#field').val() || '');
+
+        var showMobile = (t === '1' || t === '3' || t === '4');
+        var showCnic   = (t === '5');
+        var showImei   = (t === '2');
+        var showDates  = (t === '1' || t === '2');
+
+        $('#mob_div').toggle(showMobile);
+        $('#cnic_div').toggle(showCnic);
+        $('#imei_div').toggle(showImei);
+        $('#quickoption_div_dates').toggle(showDates);
+        $('#datefrom_div').toggle(showDates);
+        $('#dateto_div').toggle(showDates);
+
+        // Clear inputs that are no longer relevant so stray values don't
+        // leak into the rebuilt body.
+        if (!showMobile) $('#inputSubNO').val(null).trigger('change.select2');
+        if (!showCnic)   $('#inputCNIC').val(null).trigger('change.select2');
+        if (!showImei)   $('#inputIMEI').val(null).trigger('change.select2');
+        if (!showDates) {
+            $('#startDate').val('');
+            $('#endDate').val('');
+        }
+
+        // Re-render the body against the new layout.
+        refreshAdminTemplateFields();
+    }
+
+    /**
+     * Format a Date object as DD<sep>MM<sep>YYYY (sep ∈ '.', '/', '-') OR
+     * MM/DD/YYYY when 'mdy' is requested. Mirrors the date-format set the
+     * single-flow controller (action_adminsend) hands to str_replace.
+     */
+    function fmtDate(d, format) {
+        if (!d) return '';
+        var dd = ('0' + d.getDate()).slice(-2);
+        var mm = ('0' + (d.getMonth() + 1)).slice(-2);
+        var yyyy = d.getFullYear();
+        switch (format) {
+            case 'dot':       return dd + '.' + mm + '.' + yyyy;
+            case 'slash':     return dd + '/' + mm + '/' + yyyy;
+            case 'hyphen':    return dd + '-' + mm + '-' + yyyy;
+            case 'slash_mdy': return mm + '/' + dd + '/' + yyyy;
+        }
+        return '';
+    }
+
+    /** Parse 'mm/dd/yyyy' into a Date, or return null. */
+    function parseMdy(value) {
+        if (!value) return null;
+        var m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(value);
+        if (!m) return null;
+        var d = new Date(parseInt(m[3], 10), parseInt(m[1], 10) - 1, parseInt(m[2], 10));
+        return isNaN(d.getTime()) ? null : d;
+    }
+
+    /* =================================================================
+        BULK-REQUEST EMAIL BODY BUILDERS
+
+        Source-of-truth for the formats below:
+          C:\Users\ali_r\Desktop\Bulk CDR sending format.docx
+          C:\Users\ali_r\Desktop\Bulk IMEI sending format.docx
+        plus Ufone .txt samples the user provided directly in chat.
+
+        These telcos parse the body programmatically, so their formats
+        are strict. The builders take the form's current inputs and
+        produce the exact body string each LEA team expects.
+       ================================================================= */
+
+    /** company_id → human-readable name (used in validation error messages). */
+    var TELCO_NAME = { '1': 'Mobilink (Jazz)', '3': 'Ufone', '4': 'Zong', '6': 'Telenor' };
+
+    /** Normalise a Pakistani mobile number to '92xxxxxxxxxx' (12 digits). */
+    function toMsisdn92(num) {
+        var d = String(num).replace(/\D/g, '');
+        if (d.length === 10 && d.charAt(0) === '3')   return '92' + d;
+        if (d.length === 11 && d.charAt(0) === '0')   return '92' + d.substr(1);
+        if (d.length === 12 && d.substr(0, 2) === '92') return d;
+        if (d.length === 13 && d.substr(0, 4) === '0092') return d.substr(2);
+        return d;
+    }
+
+    /** dd<sep>mm<sep>yyyy or mm/dd/yyyy depending on order='mdy'. */
+    function fmtDmy(d, sep, order) {
+        if (!d) return '';
+        var dd = ('0' + d.getDate()).slice(-2);
+        var mm = ('0' + (d.getMonth() + 1)).slice(-2);
+        var yy = d.getFullYear();
+        if (order === 'mdy') return mm + sep + dd + sep + yy;
+        return dd + sep + mm + sep + yy;
+    }
+
+    /* ---- CDR by MSISDN ---- */
+
+    function bulkCdrMobilink(mobiles, sd, ed) {
+        // Jazz/Mobilink: HTML table with each cell formatted A;<msisdn>;dd/mm/yyyy;dd/mm/yyyy;
+        var rows = mobiles.map(function (m, i) {
+            return '<tr><td>' + (i + 1) + '</td>' +
+                   '<td>ADM-[case_number]</td>' +
+                   '<td>A;' + toMsisdn92(m) + ';' + fmtDmy(sd, '/') + ';' + fmtDmy(ed, '/') + ';</td></tr>';
+        }).join('');
+        return '<p>Dear Sir/Madam,</p>' +
+               '<p>Please provide the requested CDR &amp; SMS log for the numbers below.</p>' +
+               '<table border="1" cellpadding="6" cellspacing="0">' +
+                 '<thead><tr><th>S.NO</th><th>FIR/DD NO</th><th>REQUIRED</th></tr></thead>' +
+                 '<tbody>' + rows + '</tbody>' +
+               '</table>' +
+               '<p>FIR/DD NO ADM-[case_number] PS CTD KPK</p>';
+    }
+
+    function bulkCdrTelenor(mobiles, sd, ed) {
+        // Tpn:<92xxxxxxxxxx>,<...>:dd-mm-yyyy:dd-mm-yyyy:
+        // No trailing comma. Numbers must start with 92.
+        return 'Tpn:' + mobiles.map(toMsisdn92).join(',') +
+               ':' + fmtDmy(sd, '-') + ':' + fmtDmy(ed, '-') + ':';
+    }
+
+    function bulkCdrZong(mobiles, sd, ed) {
+        var rows = mobiles.map(function (m, i) {
+            return '<tr><td>' + (i + 1) + '</td>' +
+                   '<td>ADM-[case_number]</td>' +
+                   '<td>' + toMsisdn92(m) + '</td>' +
+                   '<td>' + fmtDmy(sd, '/') + ' to ' + fmtDmy(ed, '/') + '</td></tr>';
+        }).join('');
+        return '<p>Dear Sir/Madam,</p>' +
+               '<p>Please provide the requested CDR &amp; SMS log for the numbers below.</p>' +
+               '<table border="1" cellpadding="6" cellspacing="0">' +
+                 '<thead><tr><th>S.NO</th><th>FIR/DD NO</th><th>NUMBER</th><th>REQUIRED CDR &amp; SMS LOG</th></tr></thead>' +
+                 '<tbody>' + rows + '</tbody>' +
+               '</table>' +
+               '<p>FIR/DD NO ADM-[case_number] PS CTD KPK</p>';
+    }
+
+    function bulkCdrUfone(mobiles, sd, ed) {
+        // Pipe-separated, mm/dd/yyyy, MSISDNs joined by ':' (no trailing colon).
+        // Sample from the user: "MSISDN|Both|05/01/2025|04/27/2026|923365350875:923275835163"
+        return 'MSISDN|Both|' + fmtDmy(sd, '/', 'mdy') + '|' + fmtDmy(ed, '/', 'mdy') + '|' +
+               mobiles.map(toMsisdn92).join(':');
+    }
+
+    /* ---- CDR by IMEI ---- */
+
+    function bulkImeiMobilink(imeis, sd, ed) {
+        // Jazz/Mobilink: 14-digit IMEI, table cell I;<imei14>;dd/mm/yyyy;dd/mm/yyyy;
+        var rows = imeis.map(function (im, i) {
+            var d = String(im).replace(/\D/g, '').substr(0, 14);
+            return '<tr><td>' + (i + 1) + '</td>' +
+                   '<td>ADM-[case_number]</td>' +
+                   '<td>I;' + d + ';' + fmtDmy(sd, '/') + ';' + fmtDmy(ed, '/') + ';</td></tr>';
+        }).join('');
+        return '<p>Dear Sir/Madam,</p>' +
+               '<p>Please provide the CDR for the IMEIs below.</p>' +
+               '<table border="1" cellpadding="6" cellspacing="0">' +
+                 '<thead><tr><th>S/NO</th><th>FIR/DD NO</th><th>Required</th></tr></thead>' +
+                 '<tbody>' + rows + '</tbody>' +
+               '</table>' +
+               '<p>FIR/DD NO ADM-[case_number] PS CTD KPK</p>';
+    }
+
+    function bulkImeiTelenor(imeis, sd, ed) {
+        // Tpi:14-digit,14-digit,...:dd-mm-yyyy:dd-mm-yyyy:
+        var ids = imeis.map(function (im) { return String(im).replace(/\D/g, '').substr(0, 14); }).join(',');
+        return 'Tpi:' + ids + ':' + fmtDmy(sd, '-') + ':' + fmtDmy(ed, '-') + ':';
+    }
+
+    function bulkImeiZong(imeis, sd, ed) {
+        // Zong: 15-digit IMEI, with the trailing "," before the colon kept
+        // verbatim per the docx sample ("353535,:10-05-2025:30-04-2026:").
+        var ids = imeis.map(function (im) {
+            var d = String(im).replace(/\D/g, '');
+            return d.length >= 15 ? d.substr(0, 15) : d;
+        }).join(',');
+        return 'Tpi:' + ids + ',:' + fmtDmy(sd, '-') + ':' + fmtDmy(ed, '-') + ':';
+    }
+
+    function bulkImeiUfone(imeis, sd, ed) {
+        // Pipe-separated, mm/dd/yyyy, IMEIs colon-joined.
+        // Ufone requires 15-digit IMEI with last digit forced to 0.
+        var ids = imeis.map(function (im) {
+            var d = String(im).replace(/\D/g, '');
+            if (d.length >= 15) d = d.substr(0, 15);
+            if (d.length === 14) d = d + '0';
+            if (d.length === 15 && d.charAt(14) !== '0') d = d.substr(0, 14) + '0';
+            return d;
+        }).join(':');
+        return 'IMEI|Both|' + fmtDmy(sd, '/', 'mdy') + '|' + fmtDmy(ed, '/', 'mdy') + '|' + ids;
+    }
+
+    /**
+     * Dispatch to the right bulk builder based on (request_type, company).
+     * Returns the body string for CDR/IMEI bulk requests, or null if the
+     * combination doesn't have a defined bulk format (in which case the
+     * caller falls back to the standard template substitution path).
+     */
+    function buildBulkBody() {
+        var requestType = $('#field').val();
+        var companyName = $('#company_name_get').val();
+        var sd = parseMdy($('#startDate').val());
+        var ed = parseMdy($('#endDate').val());
+        var mobiles = $('#inputSubNO').val() || [];
+        var imeis   = $('#inputIMEI').val() || [];
+
+        // Bulk formats we have are CDR-by-mobile (1) and CDR-by-IMEI (2).
+        if (requestType !== '1' && requestType !== '2') return null;
+        if (!sd || !ed) return null;
+
+        if (requestType === '1') {
+            if (mobiles.length === 0) return null;
+            switch (companyName) {
+                case '1': return bulkCdrMobilink(mobiles, sd, ed);
+                case '6': return bulkCdrTelenor(mobiles, sd, ed);
+                case '4': return bulkCdrZong(mobiles, sd, ed);
+                case '3': return bulkCdrUfone(mobiles, sd, ed);
+            }
+        }
+        if (requestType === '2') {
+            if (imeis.length === 0) return null;
+            switch (companyName) {
+                case '1': return bulkImeiMobilink(imeis, sd, ed);
+                case '6': return bulkImeiTelenor(imeis, sd, ed);
+                case '4': return bulkImeiZong(imeis, sd, ed);
+                case '3': return bulkImeiUfone(imeis, sd, ed);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Return an array of human-readable error strings for the current form
+     * inputs, keyed off the bulk-template requirements (per-telco max
+     * counts, MSISDN format, IMEI digit count, date sanity).
+     * Empty array == ready to send.
+     */
+    function validateBulkRequest() {
+        var requestType = $('#field').val();
+        var companyName = $('#company_name_get').val();
+        var mobiles = $('#inputSubNO').val() || [];
+        var cnics   = $('#inputCNIC').val() || [];
+        var imeis   = $('#inputIMEI').val() || [];
+        var sd = parseMdy($('#startDate').val());
+        var ed = parseMdy($('#endDate').val());
+        var errors = [];
+
+        if (!requestType) errors.push('Please select a request type.');
+        if (!companyName) errors.push('Please select a company.');
+
+        // CDR types need dates.
+        if (requestType === '1' || requestType === '2') {
+            if (!sd) errors.push('Please enter a valid Date From (mm/dd/yyyy).');
+            if (!ed) errors.push('Please enter a valid Date To (mm/dd/yyyy).');
+            if (sd && ed && sd > ed) errors.push('Date From must be earlier than Date To.');
+        }
+
+        // CDR by Mobile — count + format.
+        if (requestType === '1') {
+            var maxMobile = (companyName === '4') ? 25 : 10;  // Zong = 25, others = 10
+            if (mobiles.length === 0) {
+                errors.push('Please add at least one mobile number.');
+            } else if (mobiles.length > maxMobile) {
+                errors.push('Maximum ' + maxMobile + ' numbers allowed for ' +
+                            (TELCO_NAME[companyName] || 'this telco') +
+                            '. You entered ' + mobiles.length + '.');
+            }
+            mobiles.forEach(function (m) {
+                var d = String(m).replace(/\D/g, '');
+                var ok = (d.length === 10 && d.charAt(0) === '3') ||
+                         (d.length === 11 && d.substr(0, 2) === '03') ||
+                         (d.length === 12 && d.substr(0, 2) === '92') ||
+                         (d.length === 13 && d.substr(0, 4) === '0092');
+                if (!ok) errors.push('Invalid mobile number: ' + m);
+            });
+        }
+
+        // CDR by IMEI — count + digit length.
+        if (requestType === '2') {
+            if (imeis.length === 0) {
+                errors.push('Please add at least one IMEI.');
+            } else if (imeis.length > 10) {
+                errors.push('Maximum 10 IMEIs allowed. You entered ' + imeis.length + '.');
+            }
+            imeis.forEach(function (im) {
+                var d = String(im).replace(/\D/g, '');
+                if (d.length < 14 || d.length > 16) {
+                    errors.push('Invalid IMEI: ' + im + ' (must be 14, 15, or 16 digits).');
+                }
+            });
+        }
+
+        // SIMs by CNIC.
+        if (requestType === '5') {
+            if (cnics.length === 0) {
+                errors.push('Please add at least one CNIC.');
+            }
+            cnics.forEach(function (c) {
+                var d = String(c).replace(/\D/g, '');
+                if (d.length !== 13) errors.push('Invalid CNIC: ' + c + ' (must be 13 digits).');
+            });
+        }
+
+        // Subscriber/Location by mobile.
+        if (requestType === '3' || requestType === '4') {
+            if (mobiles.length === 0) {
+                errors.push('Please add at least one mobile number.');
+            }
+            mobiles.forEach(function (m) {
+                var d = String(m).replace(/\D/g, '');
+                var ok = (d.length === 10 && d.charAt(0) === '3') ||
+                         (d.length === 11 && d.substr(0, 2) === '03') ||
+                         (d.length === 12 && d.substr(0, 2) === '92');
+                if (!ok) errors.push('Invalid mobile number: ' + m);
+            });
+        }
+
+        return errors;
+    }
+
+    /**
+     * Substitute every templating placeholder the standard email_templates
+     * use against the values currently in the form — the same set of
+     * placeholders that action_adminsend handles server-side, so what the
+     * admin sees in the body editor matches what would be sent if this
+     * were a single request.
+     *
+     * For multi-value inputs (mobile / cnic / imei) we join entries with
+     * ", " — telcos accept comma-separated lists in templates that use a
+     * single [mobile_number] (etc.) placeholder.
+     */
+    function applyTemplatePlaceholders(text) {
+        if (!text) return '';
+
+        var mobiles = $('#inputSubNO').val() || [];
+        var cnics   = $('#inputCNIC').val() || [];
+        var imeis   = $('#inputIMEI').val() || [];
+        var startDate = parseMdy($('#startDate').val());
+        var endDate   = parseMdy($('#endDate').val());
+
+        // Multi-value fields — join with comma+space.
+        if (mobiles.length) text = text.replace(/\[mobile_number\]/g, mobiles.join(', '));
+        if (cnics.length)   text = text.replace(/\[cnic_number\]/g,   cnics.join(', '));
+        if (imeis.length)   text = text.replace(/\[imei_number\]/g,   imeis.join(', '));
+
+        // Date placeholders — only substitute if the date is set, so
+        // an empty date doesn't replace the placeholder with nothing.
+        if (startDate) {
+            text = text.replace(/\[start_date_dot\]/g,       fmtDate(startDate, 'dot'));
+            text = text.replace(/\[start_date_slash\]/g,     fmtDate(startDate, 'slash'));
+            text = text.replace(/\[start_date_hyphen\]/g,    fmtDate(startDate, 'hyphen'));
+            text = text.replace(/\[start_date_slash_mdy\]/g, fmtDate(startDate, 'slash_mdy'));
+        }
+        if (endDate) {
+            text = text.replace(/\[end_date_dot\]/g,       fmtDate(endDate, 'dot'));
+            text = text.replace(/\[end_date_slash\]/g,     fmtDate(endDate, 'slash'));
+            text = text.replace(/\[end_date_hyphen\]/g,    fmtDate(endDate, 'hyphen'));
+            text = text.replace(/\[end_date_slash_mdy\]/g, fmtDate(endDate, 'slash_mdy'));
+        }
+
+        // current_date — admin always wants today.
+        var today = new Date();
+        text = text.replace(/\[current_date\]/g, fmtDate(today, 'slash'));
+
+        // [case_number] / ADM-[case_number] — preserve the placeholder so
+        // the admin can see the ADM- prefix; the server's preg_replace
+        // swaps it for ADM-<reference_id> at send time.
+        text = text.replace(/(ADM-)?\[case_number\]/g, function (m, prefix) {
+            return prefix ? m : 'ADM-[case_number]';
+        });
+
+        return text;
+    }
+
+    /** Cache the latest server-side validation errors so submitrequestform()
+     *  can echo them when the admin tries to send. */
+    var lastServerErrors = [];
+
+    /**
+     * Fetch the canonical bulk body + subject + recipient email from the
+     * server (Adminrequest/build_bulk_body) for the currently-selected
+     * (request_type, company, mobiles, cnics, imeis, dates) tuple. The
+     * server is the source of truth: it owns the per-telco bulk format
+     * specs, the per-telco max counts, and the standard template subjects
+     * so admin-typed inputs can't accidentally drift from what the LEA
+     * team's parser expects.
      */
     function refreshAdminTemplateFields() {
         var requestType = $('#field').val();
@@ -242,29 +736,32 @@
         }
 
         $.ajax({
-            url: "<?php echo URL::site('Adminrequest/get_template_data'); ?>",
+            url: "<?php echo URL::site('Adminrequest/build_bulk_body'); ?>",
             type: 'POST',
             dataType: 'json',
+            // PHP requires the [] suffix to land array-typed POST values
+            // in $_POST['mobiles'] etc. as an array.
+            traditional: false,
             data: {
-                request_type: requestType,
-                company_name: companyName
+                request_type:  requestType,
+                company_name:  companyName,
+                'mobiles[]':   ($('#inputSubNO').val() || []),
+                'cnics[]':     ($('#inputCNIC').val()  || []),
+                'imeis[]':     ($('#inputIMEI').val()  || []),
+                start_date:    $('#startDate').val() || '',
+                end_date:      $('#endDate').val()   || ''
             },
             success: function (resp) {
                 if (!resp) return;
 
-                // Subject — only refresh if the field is still readonly (i.e.
-                // the admin hasn't clicked the pencil to take manual control).
+                lastServerErrors = (resp.errors || []);
+
+                // Subject — only refresh if the field is still readonly.
+                // Apply local placeholder substitution as well (e.g. swap
+                // [case_number] → ADM-[case_number] for display) so the
+                // admin sees the prefix that drives reply matching.
                 if (typeof resp.subject !== 'undefined' && $('#esubject').attr('readonly')) {
-                    var subj = resp.subject || '';
-                    // Prefix the [case_number] placeholder with ADM- so the
-                    // admin sees the prefix that drives reply matching. The
-                    // server-side substitution handles both 'ADM-[case_number]'
-                    // and bare '[case_number]' (see action_admincustomsend),
-                    // so no double-prefix on submit.
-                    subj = subj.replace(/(ADM-)?\[case_number\]/g, function (m, prefix) {
-                        return prefix ? m : 'ADM-[case_number]';
-                    });
-                    $('#esubject').val(subj);
+                    $('#esubject').val(applyTemplatePlaceholders(resp.subject || ''));
                 }
 
                 // Recipient email — only refresh if still readonly.
@@ -272,12 +769,10 @@
                     $('#emiladdress').val(resp.email || '');
                 }
 
-                // Body — populate the CKEditor instance from the template
-                // body_txt. Overwrites whatever was there because admins
-                // expect a fresh starting point when they switch request
-                // type or company. The submit-time not-empty validation
-                // still catches any case where the template body is blank
-                // and the admin forgot to type anything.
+                // Body — server returns the canonical bulk-format string
+                // for combinations that have one defined, otherwise the
+                // standard template body with single-request placeholders
+                // already substituted. We just push it into the editor.
                 if (typeof resp.body !== 'undefined') {
                     var bodyHtml = resp.body || '';
                     if (typeof CKEDITOR !== 'undefined' && CKEDITOR.instances && CKEDITOR.instances.body_txt) {
@@ -293,9 +788,112 @@
         });
     }
 
+    /**
+     * Wire a Bulk Upload control to a select2-tags input.
+     * On file pick: POSTs to Adminrequest/parse_bulk_upload, the server
+     * reads the first column (CSV / TSV / TXT / XLSX / XLS), normalises
+     * the values, drops invalids, and returns a deduped list. We then
+     * push each value into the target select2 as a selected option.
+     */
+    function wireBulkUpload(fieldType, fileInputSel, targetSelectSel, statusSel) {
+        $(fileInputSel).on('change', function () {
+            if (!this.files || !this.files[0]) return;
+
+            var formData = new FormData();
+            formData.append('bulk_file', this.files[0]);
+            formData.append('field_type', fieldType);
+
+            var $status = $(statusSel);
+            $status.text('Uploading…').removeClass('text-danger').addClass('text-muted');
+
+            var fileInputEl = this;
+
+            $.ajax({
+                url: "<?php echo URL::site('Adminrequest/parse_bulk_upload'); ?>",
+                type: 'POST',
+                data: formData,
+                cache: false,
+                contentType: false,
+                processData: false,
+                dataType: 'json',
+                success: function (resp) {
+                    if (!resp || resp.error) {
+                        var msg = (resp && resp.error) ? resp.error : 'unknown';
+                        var human = {
+                            'auth':           'Session expired. Please reload.',
+                            'invalid_type':   'Internal error: invalid field type.',
+                            'no_file':        'No file selected.',
+                            'file_too_large': 'File is larger than 2 MB.',
+                            'parse_failed':   'Could not parse the file. Please use the sample format.'
+                        }[msg] || ('Upload failed: ' + msg);
+                        swal('Bulk Upload', human, 'error');
+                        $status.text('').removeClass('text-muted').addClass('text-danger');
+                        fileInputEl.value = '';
+                        return;
+                    }
+
+                    var values = resp.values || [];
+                    var $sel   = $(targetSelectSel);
+                    values.forEach(function (v) {
+                        if (!$sel.find('option[value="' + v + '"]').length) {
+                            $sel.append(new Option(v, v, true, true));
+                        } else {
+                            // Already present — make sure it's marked selected.
+                            $sel.find('option[value="' + v + '"]').prop('selected', true);
+                        }
+                    });
+                    $sel.trigger('change');
+
+                    var summary = 'Added ' + values.length + ' value(s).';
+                    if (resp.invalid_count > 0) {
+                        summary += ' Skipped ' + resp.invalid_count + ' invalid';
+                        if (resp.invalid_samples && resp.invalid_samples.length) {
+                            summary += ' (e.g. ' + resp.invalid_samples.slice(0, 3).join(', ') + ')';
+                        }
+                        summary += '.';
+                    }
+                    $status.text(summary);
+
+                    // Reset so the same file can be re-uploaded after editing.
+                    fileInputEl.value = '';
+
+                    // Body live-preview reflects the new entries.
+                    refreshAdminTemplateFields();
+                },
+                error: function () {
+                    swal('Bulk Upload', 'Could not reach the server.', 'error');
+                    $status.text('').removeClass('text-muted').addClass('text-danger');
+                    fileInputEl.value = '';
+                }
+            });
+        });
+    }
+
     $(function () {
-        $('#field').on('change', refreshAdminTemplateFields);
+        // select2 tag mode for the multi-value inputs. tokenSeparators lets
+        // the admin paste a comma- or space-separated list and have each
+        // entry chip up automatically.
+        $('#inputSubNO, #inputCNIC, #inputIMEI').select2({
+            tags: true,
+            tokenSeparators: [',', ' ', "\n", "\t"],
+            width: '100%'
+        });
+
+        // Wire each Bulk Upload button to the matching multi-input.
+        wireBulkUpload('mobile', '#mobileBulkFile', '#inputSubNO', '#mobileBulkStatus');
+        wireBulkUpload('cnic',   '#cnicBulkFile',   '#inputCNIC',  '#cnicBulkStatus');
+        wireBulkUpload('imei',   '#imeiBulkFile',   '#inputIMEI',  '#imeiBulkStatus');
+
+        // Drive the conditional layout from whatever's in #field at load
+        // (handles back-button page restore).
+        request_against({ value: $('#field').val() });
+
+        // Any change to inputs that feed the template body should trigger
+        // a refresh — the body always reflects the current form state.
+        $('#field').on('change', function () { request_against(this); });
         $('#company_name_get').on('change', refreshAdminTemplateFields);
+        $('#inputSubNO, #inputCNIC, #inputIMEI').on('change', refreshAdminTemplateFields);
+        $('#startDate, #endDate').on('change blur', refreshAdminTemplateFields);
     });
 </script>
 <script type="text/javascript">
@@ -747,98 +1345,149 @@ $(document).on("click","li", function(){
         return datefrommonthago;
     }
     //user request form submit via ajax
-    function submitrequestform(){
-         for (instance in CKEDITOR.instances) {
-                CKEDITOR.instances[instance].updateElement();
-            }
 
-        // Body must not be empty. CKEditor often leaves an empty paragraph
-        // wrapper (e.g. "<p>&nbsp;</p>" or "<p></p>") even when the user
-        // typed nothing, so we strip tags + nbsp + whitespace before checking.
-        var rawBody = '';
-        if (typeof CKEDITOR !== 'undefined' && CKEDITOR.instances && CKEDITOR.instances.body_txt) {
-            rawBody = CKEDITOR.instances.body_txt.getData();
-        } else {
-            rawBody = $('#body_txt').val() || '';
+    /**
+     * Two-step submit: (1) validate against bulk-template rules and
+     * collect any errors, (2) show the preview modal with subject + body,
+     * (3) on Confirm, fire the AJAX submit. The actual network call lives
+     * in actuallySendRequest() so we can call it from the modal's button.
+     */
+    function submitrequestform() {
+        // Sync CKEditor -> underlying textarea so serializeArray() picks up the body.
+        for (var instance in CKEDITOR.instances) {
+            CKEDITOR.instances[instance].updateElement();
         }
+
+        // 1. Bulk-template validation. Both client and server run the same
+        //    rule set; the server-side list (cached on every refresh by
+        //    refreshAdminTemplateFields()) is authoritative — it can't be
+        //    bypassed by anyone tampering with the JS. We start from the
+        //    server's last known errors and let the local validator add
+        //    fast-feedback ones for fields the user just changed.
+        var errors = (lastServerErrors || []).slice();
+        validateBulkRequest().forEach(function (e) {
+            if (errors.indexOf(e) === -1) errors.push(e);
+        });
+
+        // 2. Body-not-empty validation. CKEditor leaves empty wrappers
+        //    (e.g. "<p>&nbsp;</p>") even when the user typed nothing,
+        //    so we strip HTML + nbsp + whitespace before checking.
+        var rawBody = (typeof CKEDITOR !== 'undefined' && CKEDITOR.instances && CKEDITOR.instances.body_txt)
+            ? CKEDITOR.instances.body_txt.getData()
+            : ($('#body_txt').val() || '');
         var bodyText = $('<div>').html(rawBody).text()
-            .replace(/ /g, ' ')      // strip non-breaking spaces
-            .replace(/\s+/g, ' ')         // collapse whitespace
+            .replace(/ /g, ' ')   // non-breaking spaces
+            .replace(/\s+/g, ' ')
             .trim();
         if (bodyText === '') {
-            swal('Email Body Required', 'Please enter the email body before submitting the request.', 'error');
+            errors.push('Email body is empty.');
+        }
+
+        // 3. Subject + recipient sanity.
+        if ($.trim($('#esubject').val() || '') === '') {
+            errors.push('Email subject is empty.');
+        }
+        var emailVal = $.trim($('#emiladdress').val() || '');
+        if (emailVal === '') {
+            errors.push('Recipient email address is empty.');
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
+            errors.push('Recipient email address looks invalid: ' + emailVal);
+        }
+
+        // 4. Standard jQuery-validate (covers any rules wired via $.validator).
+        if (!$('#userrequest').valid()) {
+            errors.push('Please fix the highlighted form fields above.');
+        }
+
+        if (errors.length > 0) {
+            // Render errors as a bullet list. Pre-escape each line so user-
+            // typed values that show up in messages can't inject HTML.
+            var html = '<ul style="text-align:left; padding-left:20px;">' +
+                       errors.map(function (e) {
+                           return '<li>' + $('<div>').text(e).html() + '</li>';
+                       }).join('') +
+                       '</ul>';
+            swal({ title: 'Please fix the following', text: html, type: 'error', html: true });
             return;
         }
 
+        // 5. Populate + open the preview modal.
+        $('#previewTo').text(emailVal);
+        $('#previewSubject').text($('#esubject').val() || '');
+        // rawBody contains either HTML (Mobilink/Zong tables) or plain text
+        // (Telenor/Ufone strict formats). The modal CSS uses white-space:
+        // pre-wrap so plain-text formats keep their layout.
+        $('#previewBody').html(rawBody);
+        $('#previewModal').modal('show');
+    }
+
+    /**
+     * The actual AJAX-submit, factored out of submitrequestform() so the
+     * preview modal's "Confirm & Send" button can call it directly.
+     */
+    function actuallySendRequest() {
         var data = new FormData();
         var form_data = $('#userrequest').serializeArray();
         $.each(form_data, function (key, input) {
             data.append(input.name, input.value);
         });
-        var files = $('#rqtfile')[0].files;
-       data.append('file', files[0]);
-        var files = $('#emailfile')[0].files;
-       data.append('emailfile', files[0]);
-        
-        //var formData = $('#userrequest').serialize();
-        //var formData = $("#userrequest").serializeArray();
-         
-        //var formData = new FormData();
-        var url = $("#redirect_url").val();
-        if ($('#userrequest').valid())
-        {
-//                    var duration = duration_check();
-           // var in_queue = in_queue_check();
-            //if (duration == 1 && in_queue == 1) {
-          //  if (in_queue == 1) {
-                $("#preloader").show();
-                $.ajax({
-                    type: 'POST',
-                    url: "<?php echo URL::site('adminrequest/admincustomsend') ?>",
-                    data: data,
-                     cache:false,
-                    contentType: false,
-                    processData: false,
-                    success: function (result) {
-                        $("#preloader").hide();
-                        if (result == 1) {
-                            swal({
-                                    title: "Congratulations!",
-                                    text: "You want to view request or go back?",
-                                    type: "success",
-                                    showCancelButton: true,
-                                    confirmButtonClass: "btn-primary",
-                                    confirmButtonText: "View Request",
-                                    cancelButtonText: "Go Back",
-                                    closeOnConfirm: false,
-                                    closeOnCancel: false
-                                },
-                                function (isConfirm) {
-                                    if (isConfirm) {
-                                        window.location.href = '<?php echo URL::site('Adminrequest/admin_sent_request_status', TRUE); ?>';
-                                    } else {
-                                        window.location.href = url;
-                                    }
-                                });
-                        } else {
-                        
-                        if (result == 5) {
-                                swal("Email Limit Exceeded", "Contact AIES Support Team.", "error");
-                            }else{
-                                swal("System Error", "Contact AIES Support Team.", "error");
-                                }    
-                          // window.location.reload(false);
-                        }
-                    },
-                    error: function (data) {
-                        console.log("error");
-                        console.log(result);
-                    }
-                });
-        //    }
-        }
+        var rqt = $('#rqtfile')[0].files;
+        if (rqt && rqt[0]) data.append('file', rqt[0]);
+        var emailFile = $('#emailfile')[0].files;
+        if (emailFile && emailFile[0]) data.append('emailfile', emailFile[0]);
 
+        var redirectUrl = $('#redirect_url').val();
+
+        $('#previewModal').modal('hide');
+        $('#preloader').show();
+
+        $.ajax({
+            type: 'POST',
+            url: "<?php echo URL::site('adminrequest/admincustomsend'); ?>",
+            data: data,
+            cache: false,
+            contentType: false,
+            processData: false,
+            success: function (result) {
+                $('#preloader').hide();
+                if (result == 1) {
+                    swal({
+                            title: 'Congratulations!',
+                            text: 'You want to view request or go back?',
+                            type: 'success',
+                            showCancelButton: true,
+                            confirmButtonClass: 'btn-primary',
+                            confirmButtonText: 'View Request',
+                            cancelButtonText: 'Go Back',
+                            closeOnConfirm: false,
+                            closeOnCancel: false
+                        },
+                        function (isConfirm) {
+                            if (isConfirm) {
+                                window.location.href = '<?php echo URL::site('Adminrequest/admin_sent_request_status', TRUE); ?>';
+                            } else {
+                                window.location.href = redirectUrl;
+                            }
+                        });
+                } else if (result == 5) {
+                    swal('Email Limit Exceeded', 'Contact AIES Support Team.', 'error');
+                } else {
+                    swal('System Error', 'Contact AIES Support Team.', 'error');
+                }
+            },
+            error: function () {
+                $('#preloader').hide();
+                swal('System Error', 'Could not reach the server. Please try again.', 'error');
+            }
+        });
     }
+
+    // Wire the preview modal's Confirm & Send button.
+    $(function () {
+        $('#confirmSendBtn').on('click', function () {
+            actuallySendRequest();
+        });
+    });
 
     //function to check duration
 //    function duration_check() {
@@ -974,6 +1623,60 @@ $(document).on("click","li", function(){
 }
 .lockable-field .lockable-toggle .fa {
     font-size: 13px;
+}
+
+/* Make the select2-tag containers match Bootstrap form-control height
+   so the conditional Mobile/CNIC/IMEI rows line up with the rest of
+   the form. select2 v3.5 defaults are slightly taller. */
+.select2-container--default .select2-selection--multiple {
+    min-height: 34px;
+    border-color: #d2d6de;
+}
+.select2-container--default.select2-container--focus .select2-selection--multiple {
+    border-color: #3c8dbc;
+}
+
+/* Bulk-upload toolbar under each multi-value field. */
+.bulk-upload-row {
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.bulk-upload-btn {
+    margin-bottom: 0;
+    cursor: pointer;
+}
+.bulk-upload-status {
+    font-size: 12px;
+    margin-left: 4px;
+}
+
+/* Preview-before-send modal. */
+#previewModal .preview-meta div { margin-bottom: 6px; }
+#previewModal .preview-meta strong { display: inline-block; min-width: 80px; }
+#previewModal #previewBody {
+    margin-top: 8px;
+    max-height: 50vh;
+    overflow: auto;
+    border: 1px solid #d2d6de;
+    background: #fafafa;
+    padding: 12px;
+    font-size: 13px;
+    line-height: 1.5;
+    white-space: pre-wrap;          /* preserve plain-text bulk formats (Tpn:..., MSISDN|..., etc.) */
+    word-wrap: break-word;
+    word-break: break-word;
+}
+#previewModal #previewBody table {
+    border-collapse: collapse;
+    margin: 6px 0;
+}
+#previewModal #previewBody td,
+#previewModal #previewBody th {
+    border: 1px solid #999;
+    padding: 4px 8px;
 }
 </style>
 
