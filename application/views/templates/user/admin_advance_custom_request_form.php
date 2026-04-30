@@ -143,18 +143,28 @@
                                 lodge ONE custom request that covers many numbers.
                                 Visibility is driven by request_against() in JS.
 
-                                Wrapped in its own .row so the col-sm-12 Body
-                                Message section that follows clears the float
-                                — without this wrapper, the bulk-upload toolbar
-                                under each chip field bleeds into the Body
-                                Message label area on tall multi-input renders.
+                                Each conditional field lives in its OWN .row so
+                                Bootstrap 3 floats clear cleanly between
+                                sections. The previous single-.row layout let
+                                the chips field's bulk-upload toolbar bleed
+                                visually into the Body Message label that
+                                followed in the next .row, because mixed-height
+                                columns inside one .row don't always clear.
                             -->
-                            <div class="row">
-                            <div class="col-sm-6" id="mob_div" style="display:none">
-                                <div class="form-group">
-                                    <label for="inputSubNO" class="control-label">Mobile Number(s)</label>
-                                    <select class="form-control select2-tags" name="inputSubNO[]" id="inputSubNO" multiple="multiple" data-placeholder="Type a number then press Enter (or comma)" style="width:100%"></select>
-                                    <small class="text-muted">10-digit numbers starting with 3, e.g. 3001234567. Press Enter or comma to add more.</small>
+
+                            <!-- Mobile chips (full width when shown). -->
+                            <div class="row" id="mob_row" style="display:none">
+                                <div class="col-sm-12">
+                                    <div class="form-group">
+                                        <label for="inputSubNO" class="control-label">Mobile Number(s)</label>
+                                        <select class="form-control select2-tags" name="inputSubNO[]" id="inputSubNO" multiple="multiple" data-placeholder="Type a number then press Enter (or comma)" style="width:100%"></select>
+                                        <small class="text-muted">10-digit numbers starting with 3, e.g. 3001234567. Press Enter or comma to add more.</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Mobile bulk upload (separate row so icons/links never overlap). -->
+                            <div class="row" id="mob_bulk_row" style="display:none">
+                                <div class="col-sm-12">
                                     <div class="bulk-upload-row">
                                         <label class="btn btn-default btn-xs bulk-upload-btn">
                                             <i class="fa fa-upload"></i> Bulk Upload (CSV / XLSX)
@@ -168,11 +178,18 @@
                                 </div>
                             </div>
 
-                            <div class="col-sm-6" id="cnic_div" style="display:none">
-                                <div class="form-group">
-                                    <label for="inputCNIC" class="control-label">CNIC Number(s)</label>
-                                    <select class="form-control select2-tags" name="inputCNIC[]" id="inputCNIC" multiple="multiple" data-placeholder="Type a CNIC then press Enter" style="width:100%"></select>
-                                    <small class="text-muted">13-digit CNIC, e.g. 1234512345671.</small>
+                            <!-- CNIC chips. -->
+                            <div class="row" id="cnic_row" style="display:none">
+                                <div class="col-sm-12">
+                                    <div class="form-group">
+                                        <label for="inputCNIC" class="control-label">CNIC Number(s)</label>
+                                        <select class="form-control select2-tags" name="inputCNIC[]" id="inputCNIC" multiple="multiple" data-placeholder="Type a CNIC then press Enter" style="width:100%"></select>
+                                        <small class="text-muted">13-digit CNIC, e.g. 1234512345671.</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row" id="cnic_bulk_row" style="display:none">
+                                <div class="col-sm-12">
                                     <div class="bulk-upload-row">
                                         <label class="btn btn-default btn-xs bulk-upload-btn">
                                             <i class="fa fa-upload"></i> Bulk Upload (CSV / XLSX)
@@ -186,11 +203,18 @@
                                 </div>
                             </div>
 
-                            <div class="col-sm-6" id="imei_div" style="display:none">
-                                <div class="form-group">
-                                    <label for="inputIMEI" class="control-label">IMEI Number(s)</label>
-                                    <select class="form-control select2-tags" name="inputIMEI[]" id="inputIMEI" multiple="multiple" data-placeholder="Type an IMEI then press Enter" style="width:100%"></select>
-                                    <small class="text-muted">15-digit IMEI.</small>
+                            <!-- IMEI chips. -->
+                            <div class="row" id="imei_row" style="display:none">
+                                <div class="col-sm-12">
+                                    <div class="form-group">
+                                        <label for="inputIMEI" class="control-label">IMEI Number(s)</label>
+                                        <select class="form-control select2-tags" name="inputIMEI[]" id="inputIMEI" multiple="multiple" data-placeholder="Type an IMEI then press Enter" style="width:100%"></select>
+                                        <small class="text-muted">15-digit IMEI.</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row" id="imei_bulk_row" style="display:none">
+                                <div class="col-sm-12">
                                     <div class="bulk-upload-row">
                                         <label class="btn btn-default btn-xs bulk-upload-btn">
                                             <i class="fa fa-upload"></i> Bulk Upload (CSV / XLSX)
@@ -204,37 +228,32 @@
                                 </div>
                             </div>
 
-                            <div class="col-sm-3" id="datefrom_div" style="display:none">
-                                <div class="form-group">
-                                    <label for="startDate" class="control-label">Date From (mm/dd/yyyy)</label>
-                                    <input type="text" class="form-control" name="startDate" id="startDate" value="" placeholder="mm/dd/yyyy">
+                            <!-- Dates row: Date From / Date To / Quick Options inline. -->
+                            <div class="row" id="dates_row" style="display:none">
+                                <div class="col-sm-3">
+                                    <div class="form-group">
+                                        <label for="startDate" class="control-label">Date From (mm/dd/yyyy)</label>
+                                        <input type="text" class="form-control" name="startDate" id="startDate" value="" placeholder="mm/dd/yyyy">
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-sm-3" id="dateto_div" style="display:none">
-                                <div class="form-group">
-                                    <label for="endDate" class="control-label">Date To (mm/dd/yyyy)</label>
-                                    <input type="text" class="form-control" name="endDate" id="endDate" value="" placeholder="mm/dd/yyyy">
+                                <div class="col-sm-3">
+                                    <div class="form-group">
+                                        <label for="endDate" class="control-label">Date To (mm/dd/yyyy)</label>
+                                        <input type="text" class="form-control" name="endDate" id="endDate" value="" placeholder="mm/dd/yyyy">
+                                    </div>
                                 </div>
-                            </div>
-                            <!--
-                                Quick Options now sits inline beside the date
-                                pickers (col-sm-6) instead of a full-width row,
-                                so the layout stays in one tidy line for CDR
-                                request types and never appears at all for
-                                non-CDR types (request_against() toggles it).
-                            -->
-                            <div class="col-sm-6" id="quickoption_div_dates" style="display:none">
-                                <div class="form-group">
-                                    <label class="control-label">Quick Options</label>
-                                    <div>
-                                        <button type="button" onclick="dateonemonth()"   class="btn btn-primary btn-sm">Last 30 Days</button>
-                                        <button type="button" onclick="datetwomonths()"  class="btn btn-primary btn-sm">Last 60 Days</button>
-                                        <button type="button" onclick="datethreemonths()" class="btn btn-primary btn-sm">Last 90 Days</button>
-                                        <button type="button" onclick="datesixmonths()"  class="btn btn-primary btn-sm">Last 180 Days</button>
+                                <div class="col-sm-6">
+                                    <div class="form-group">
+                                        <label class="control-label">Quick Options</label>
+                                        <div>
+                                            <button type="button" onclick="dateonemonth()"    class="btn btn-primary btn-sm">Last 30 Days</button>
+                                            <button type="button" onclick="datetwomonths()"   class="btn btn-primary btn-sm">Last 60 Days</button>
+                                            <button type="button" onclick="datethreemonths()" class="btn btn-primary btn-sm">Last 90 Days</button>
+                                            <button type="button" onclick="datesixmonths()"   class="btn btn-primary btn-sm">Last 180 Days</button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            </div><!-- /.row (conditional inputs) -->
 
                             <div class="row">
                             <div class="col-sm-12" id="quickoption_div"  >
@@ -381,12 +400,12 @@
         var showImei   = (t === '2');
         var showDates  = (t === '1' || t === '2');
 
-        $('#mob_div').toggle(showMobile);
-        $('#cnic_div').toggle(showCnic);
-        $('#imei_div').toggle(showImei);
-        $('#quickoption_div_dates').toggle(showDates);
-        $('#datefrom_div').toggle(showDates);
-        $('#dateto_div').toggle(showDates);
+        // Each conditional input now lives in its own .row for clean
+        // float-clearing — chip row + bulk-upload row are sibling .rows.
+        $('#mob_row, #mob_bulk_row').toggle(showMobile);
+        $('#cnic_row, #cnic_bulk_row').toggle(showCnic);
+        $('#imei_row, #imei_bulk_row').toggle(showImei);
+        $('#dates_row').toggle(showDates);
 
         // Clear inputs that are no longer relevant so stray values don't
         // leak into the rebuilt body.
@@ -1612,6 +1631,19 @@ $(document).on("click","li", function(){
 
     // Wire the preview modal's Submit Request button.
     $(function () {
+        // ─── Stacking-context fix ─────────────────────────────────
+        // Bootstrap 3 renders <div class="modal-backdrop"> as a direct
+        // child of <body> at z-index:1040, but the modal itself is
+        // declared inside AdminLTE's .content-wrapper (which has its
+        // own stacking context via `position: relative; z-index: <X>`).
+        // The modal can't escape that context, so the body-level
+        // backdrop ends up rendered ON TOP of the modal — clicks are
+        // blocked everywhere, including on the modal's own buttons.
+        // Moving the modal to be a direct child of <body> puts the
+        // modal AND the backdrop in the same stacking context so the
+        // modal's z-index:1050 wins over the backdrop's z-index:1040.
+        $('#previewModal').appendTo(document.body);
+
         $('#confirmSendBtn').on('click', function () {
             actuallySendRequest();
         });
@@ -1719,10 +1751,31 @@ $(document).on("click","li", function(){
 
 </script>
 <style>
+/* Requested-By autocomplete dropdown.
+   The suggestion <ul> is rendered as a sibling of the input inside the
+   form-group. Without explicit positioning it pushes following content
+   down (or, with strict layouts, ends up hidden behind the next form-
+   group's label). Absolute-positioning + a high z-index makes it overlay
+   the next row cleanly without affecting layout. */
+#rqtbynamelist {
+    position: relative;
+}
 #rqtbynamelist ul.list-unstyled {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
     background-color: #def;
     padding: 10px;
+    margin: 0;
     cursor: pointer;
+    z-index: 1050;          /* above Bootstrap form-group labels */
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+    border: 1px solid #b6cfe1;
+    border-radius: 3px;
+}
+#rqtbynamelist ul.list-unstyled li:hover {
+    background-color: #cde;
 }
 
 /* Lockable field component used by Email Subject + Custom Email Adress.
