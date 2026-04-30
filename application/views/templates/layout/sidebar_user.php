@@ -512,7 +512,7 @@ try {
             <?php } ?>
 
             <?php if ((Helpers_Utilities::chek_role_array_access($role_id, array(34,35)) == 1) || $user->id ==171 ||  $user->id ==719) { ?>
-                <li class="treeview <?php echo (($current_url == 'Adminrequest' && ($menu_name == 'admin_request_sent_form' || $menu_name == 'admin_custom_request_form' || $menu_name == 'admin_sent_request_status'|| $menu_name == 'admin_sent_request_count'|| $menu_name == 'travel_request_sent_form'|| $menu_name == 'nadra_request_sent_form'|| $menu_name == 'user_request_count'||  $menu_name == 'familytree_request_sent_form' || $menu_name == 'nadra_bulk_request_sent_form'))) ? 'active' : ''; ?>">
+                <li class="treeview <?php echo (($current_url == 'Adminrequest' && ($menu_name == 'admin_request_sent_form' || $menu_name == 'admin_custom_request_form' || $menu_name == 'admin_advance_custom_request_form' || $menu_name == 'admin_sent_request_status'|| $menu_name == 'admin_sent_request_count'|| $menu_name == 'travel_request_sent_form'|| $menu_name == 'nadra_request_sent_form'|| $menu_name == 'user_request_count'||  $menu_name == 'familytree_request_sent_form' || $menu_name == 'nadra_bulk_request_sent_form'))) ? 'active' : ''; ?>">
                     <a href="#">
                         <i class="fa  fa-plus"></i>
                         <span>DRAMS Plus</span>
@@ -526,6 +526,9 @@ try {
                         <?php } ?>
                         <?php if (Helpers_Utilities::chek_role_access($role_id, 34) == 1) { ?>
                             <li class="<?php echo ($menu_name == 'admin_custom_request_form') ? 'active' : ''; ?>"><a href="<?php echo URL::site('Adminrequest/admin_custom_request_form'); ?>"><i class="fa fa-circle-o"></i>Custom Request</a></li>
+                        <?php } ?>
+                        <?php if (Helpers_Utilities::chek_role_access($role_id, 34) == 1) { ?>
+                            <li class="<?php echo ($menu_name == 'admin_advance_custom_request_form') ? 'active' : ''; ?>"><a href="<?php echo URL::site('Adminrequest/admin_advance_custom_request_form'); ?>"><i class="fa fa-rocket"></i> Advance Custom Request</a></li>
                         <?php } ?>
                         <?php if (Helpers_Utilities::chek_role_access($role_id, 35) == 1) { ?>
                             <li class="<?php echo ($menu_name == 'admin_sent_request_status') ? 'active' : ''; ?>"><a href="<?php echo URL::site('Adminrequest/admin_sent_request_status'); ?>"><i class="fa fa-circle-o"></i> Admin Request Status</a></li>

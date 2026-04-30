@@ -43,6 +43,38 @@ class Controller_Adminrequest extends Controller_Working
         }
     }
 
+    /**
+     * Render the Advance Custom Request form. Same backend (admincustomsend,
+     * build_bulk_body, parse_bulk_upload, sample_csv) as the standard custom
+     * request — this is purely a tidier-layout view that exposes the recent
+     * additions (multi-value chips, bulk file upload, server-side body
+     * builder, validation, preview-before-send). Adding it as a separate
+     * route keeps the original /Adminrequest/admin_custom_request_form
+     * untouched for users who prefer the simpler form.
+     */
+    public function action_admin_advance_custom_request_form()
+    {
+        try {
+            if (Helpers_Utilities::chek_role_access($this->role_id, 34) == 1) {
+                $this->template->content = View::factory('templates/user/admin_advance_custom_request_form');
+            } else {
+                $this->template->content = View::factory('templates/user/access_denied');
+            }
+        } catch (Exception $ex) {
+            Model_ErrorLog::log(
+                'action_admin_advance_custom_request_form',
+                $ex->getMessage(),
+                array(),
+                $ex->getTraceAsString(),
+                'exception',
+                'page_load'
+            );
+            error_log('[' . date('c') . '] action_admin_advance_custom_request_form exception: ' . $ex->getMessage());
+            $this->template->content = View::factory('templates/user/exception_error_page')
+                ->bind('exception', $ex);
+        }
+    }
+
     /*     * Admin Request*/
 
     public function action_admin_custom_request_form()
