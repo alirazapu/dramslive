@@ -91,14 +91,7 @@
                                 <option value="4"> Location Against Mobile Number</option>
                                 <option value="1"> CDR Against Mobile Number</option>
                                 <option value="2"> CDR Against IMEI Number </option>
-                                <option value="5"> SIM's Against CNIC Number</option>                                
-                                <option value="6"> CDR Against Mobile Number with SMS Detail</option>                                
-                                <option value="13"> SIMs against IMSI</option>
-                                <option value="14"> SIMs against ICCID</option>
-                                <option value="15"> Double number against given number</option>
-                                <option value="16"> Place of issue / dated of SIM numbers</option>
-                                <option value="17"> Mega Data</option>
-                                <option value="18"> Subscriber & Location (Mobilink)</option>
+                                <option value="5"> SIM's Against CNIC Number</option>
                             </select>
                         </div>
                         </div>
