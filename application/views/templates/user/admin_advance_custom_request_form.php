@@ -1433,29 +1433,38 @@ $(document).on("click","li", function(){
     });
     var changecount = 1;
 
+    /**
+     * Fill the From/To date inputs from a quick-option button. Setting
+     * `.value` via raw DOM doesn't fire change/blur events, so without
+     * the explicit jQuery .change() trigger below the server-side
+     * build_bulk_body AJAX never re-runs and lastServerErrors keeps
+     * the "Please enter a valid Date From/To" errors from before the
+     * dates were filled. fireDateChange() pushes the values out via
+     * change events so refreshAdminTemplateFields() picks them up and
+     * the server returns fresh validation.
+     */
+    function fireDateChange() {
+        $('#startDate, #endDate').trigger('change');
+    }
     function dateonemonth() {
-        var today = currentdate();
-        var onemonthago = backdate(30);
-        document.getElementById('endDate').value = today;
-        document.getElementById('startDate').value = onemonthago;
+        document.getElementById('endDate').value   = currentdate();
+        document.getElementById('startDate').value = backdate(30);
+        fireDateChange();
     }
     function datetwomonths() {
-        var today = currentdate();
-        var twomonthsago = backdate(60);
-        document.getElementById('endDate').value = today;
-        document.getElementById('startDate').value = twomonthsago;
+        document.getElementById('endDate').value   = currentdate();
+        document.getElementById('startDate').value = backdate(60);
+        fireDateChange();
     }
     function datethreemonths() {
-        var today = currentdate();
-        var threemonthsago = backdate(86);
-        document.getElementById('endDate').value = today;
-        document.getElementById('startDate').value = threemonthsago;
+        document.getElementById('endDate').value   = currentdate();
+        document.getElementById('startDate').value = backdate(86);
+        fireDateChange();
     }
     function datesixmonths() {
-        var today = currentdate();
-        var sixmonthago = backdate(170);
-        document.getElementById('endDate').value = today;
-        document.getElementById('startDate').value = sixmonthago;
+        document.getElementById('endDate').value   = currentdate();
+        document.getElementById('startDate').value = backdate(170);
+        fireDateChange();
     }
     function currentdate() {
         var today = new Date();
@@ -1505,16 +1514,17 @@ $(document).on("click","li", function(){
             CKEDITOR.instances[instance].updateElement();
         }
 
-        // 1. Bulk-template validation. Both client and server run the same
-        //    rule set; the server-side list (cached on every refresh by
-        //    refreshAdminTemplateFields()) is authoritative — it can't be
-        //    bypassed by anyone tampering with the JS. We start from the
-        //    server's last known errors and let the local validator add
-        //    fast-feedback ones for fields the user just changed.
-        var errors = (lastServerErrors || []).slice();
-        validateBulkRequest().forEach(function (e) {
-            if (errors.indexOf(e) === -1) errors.push(e);
-        });
+        // 1. Bulk-template validation. Run the LOCAL validator at submit
+        //    time — it reads the live values straight from the inputs,
+        //    so it's always current. The previous design merged in the
+        //    server-cached errors from the last build_bulk_body AJAX,
+        //    but that cache could be stale (e.g. the Quick Option
+        //    buttons set date values via raw .value= without firing
+        //    change events, so the server never saw the new dates and
+        //    its cached "Please enter a valid Date From/To" errors got
+        //    falsely reapplied here at submit). The server-side check
+        //    in action_admincustomsend remains the final safety net.
+        var errors = validateBulkRequest();
 
         // 2. Body-not-empty validation. CKEditor leaves empty wrappers
         //    (e.g. "<p>&nbsp;</p>") even when the user typed nothing,
