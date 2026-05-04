@@ -1648,10 +1648,17 @@ $(document).on("mousedown", function (e) {
         // unknown HTML tag and rendered invisibly (left bare "ADM-"
         // text in body cells).
         var previewCaseNumber = $.trim($('#preview_case_number').val()) || 'NEW';
-        var caseToken = 'ADM-' + previewCaseNumber;
 
+        // Mirror the server-side preg_replace_callback in admincustomsend:
+        // preserve whichever prefix is in front of [case_number]
+        // (ADM- for most templates, FIR- for Jazz/Warid bulk table
+        // cells), default to ADM- when no prefix is there. The actual
+        // email send uses the same logic, so what the preview shows is
+        // what the recipient gets.
         function substituteCaseNumber(text) {
-            return (text || '').replace(/(?:ADM-)?\[case_number\]/g, caseToken);
+            return (text || '').replace(/(ADM-|FIR-)?\[case_number\]/g, function (m, prefix) {
+                return (prefix || 'ADM-') + previewCaseNumber;
+            });
         }
 
         var previewSubjectFinal = substituteCaseNumber($('#esubject').val());

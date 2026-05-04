@@ -35,6 +35,7 @@ class Helpers_BulkRequest
     const COMPANY_UFONE    = 3;
     const COMPANY_ZONG     = 4;
     const COMPANY_TELENOR  = 6;
+    const COMPANY_WARID    = 7;
 
     const TYPE_CDR_MOBILE     = 1;
     const TYPE_CDR_IMEI       = 2;
@@ -45,6 +46,7 @@ class Helpers_BulkRequest
     /** Display names used in error messages. */
     public static $TELCO_NAMES = array(
         1 => 'Mobilink (Jazz)',
+        7 => 'Warid',
         3 => 'Ufone',
         4 => 'Zong',
         6 => 'Telenor',
@@ -176,7 +178,10 @@ class Helpers_BulkRequest
         if ($request_type === self::TYPE_CDR_MOBILE) {
             if (!$start_date || !$end_date || count($mobiles) === 0) return null;
             switch ($company) {
-                case self::COMPANY_MOBILINK: return self::_cdr_mobile_mobilink($mobiles, $start_date, $end_date);
+                // Warid is owned by Jazz/Mobilink and uses the same LEA
+                // request format (HTML table with A;<msisdn>;dd/mm/yyyy;...).
+                case self::COMPANY_MOBILINK:
+                case self::COMPANY_WARID:    return self::_cdr_mobile_mobilink($mobiles, $start_date, $end_date);
                 case self::COMPANY_TELENOR:  return self::_cdr_mobile_telenor($mobiles, $start_date, $end_date);
                 case self::COMPANY_ZONG:     return self::_cdr_mobile_zong($mobiles, $start_date, $end_date);
                 case self::COMPANY_UFONE:    return self::_cdr_mobile_ufone($mobiles, $start_date, $end_date);
@@ -185,7 +190,8 @@ class Helpers_BulkRequest
         if ($request_type === self::TYPE_CDR_IMEI) {
             if (!$start_date || !$end_date || count($imeis) === 0) return null;
             switch ($company) {
-                case self::COMPANY_MOBILINK: return self::_cdr_imei_mobilink($imeis, $start_date, $end_date);
+                case self::COMPANY_MOBILINK:
+                case self::COMPANY_WARID:    return self::_cdr_imei_mobilink($imeis, $start_date, $end_date);
                 case self::COMPANY_TELENOR:  return self::_cdr_imei_telenor($imeis, $start_date, $end_date);
                 case self::COMPANY_ZONG:     return self::_cdr_imei_zong($imeis, $start_date, $end_date);
                 case self::COMPANY_UFONE:    return self::_cdr_imei_ufone($imeis, $start_date, $end_date);
@@ -194,7 +200,8 @@ class Helpers_BulkRequest
         if ($request_type === self::TYPE_SIMS_BY_CNIC) {
             if (count($cnics) === 0) return null;
             switch ($company) {
-                case self::COMPANY_MOBILINK: return self::_cnic_mobilink($cnics);
+                case self::COMPANY_MOBILINK:
+                case self::COMPANY_WARID:    return self::_cnic_mobilink($cnics);
                 case self::COMPANY_TELENOR:  return self::_cnic_telenor($cnics);
                 case self::COMPANY_ZONG:     return self::_cnic_zong($cnics);
                 // Ufone CNIC bulk format isn't documented yet — fall through
@@ -215,8 +222,12 @@ class Helpers_BulkRequest
         foreach ($mobiles as $i => $m) {
             $idx  = $i + 1;
             $msi  = self::_to_msisdn92($m);
+            // FIR-[case_number] (not ADM-) per the Jazz/Warid LEA
+            // template — gets substituted to FIR-<reference_id> at send
+            // time. The FIR/DD NO body footer below keeps the ADM-
+            // prefix so the cron's reply-matcher still has its hook.
             $rows .= '<tr><td>' . $idx . '</td>'
-                  . '<td>ADM-[case_number]</td>'
+                  . '<td>FIR-[case_number]</td>'
                   . '<td>A;' . $msi . ';' . self::_fmt_date($sd, '/') . ';'
                   . self::_fmt_date($ed, '/') . ';</td></tr>';
         }
@@ -243,7 +254,7 @@ class Helpers_BulkRequest
         foreach ($mobiles as $i => $m) {
             $idx = $i + 1;
             $rows .= '<tr><td>' . $idx . '</td>'
-                  . '<td>ADM-[case_number]</td>'
+                  . '<td>FIR-[case_number]</td>'
                   . '<td>' . self::_to_msisdn92($m) . '</td>'
                   . '<td>' . self::_fmt_date($sd, '/') . ' to ' . self::_fmt_date($ed, '/') . '</td></tr>';
         }
@@ -275,7 +286,7 @@ class Helpers_BulkRequest
             $idx = $i + 1;
             $d   = substr(preg_replace('/\D/', '', $im), 0, 14);
             $rows .= '<tr><td>' . $idx . '</td>'
-                  . '<td>ADM-[case_number]</td>'
+                  . '<td>FIR-[case_number]</td>'
                   . '<td>I;' . $d . ';' . self::_fmt_date($sd, '/') . ';'
                   . self::_fmt_date($ed, '/') . ';</td></tr>';
         }

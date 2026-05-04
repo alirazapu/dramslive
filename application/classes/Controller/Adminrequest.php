@@ -1973,7 +1973,9 @@ class Controller_Adminrequest extends Controller_Working
 
         // Preserve the [case_number] placeholder for the server-side
         // ADM-<reference_id> substitution in action_admincustomsend.
-        $text = preg_replace('/(?:ADM-)?\[case_number\]/', 'ADM-[case_number]', $text);
+        // Preserve FIR- / ADM- prefix while leaving [case_number] in place
+        // for the server-side admincustomsend substitution at send time.
+        $text = preg_replace('/(?:(?:ADM|FIR)-)?\[case_number\]/', 'ADM-[case_number]', $text);
 
         return $text;
     }
@@ -2115,15 +2117,18 @@ class Controller_Adminrequest extends Controller_Working
                             $template = $_POST['esubject'];
                         }
                         //    echo $template_data['subject'];    exit;
-                        // Handle BOTH legacy '[case_number]' and the new
-                        // form-display 'ADM-[case_number]' in one substitution
-                        // so we never end up with a double 'ADM-ADM-' prefix.
-                        // The view's auto-fill renders '[case_number]' as
-                        // 'ADM-[case_number]'; if the admin manually edits
-                        // the subject they may keep either form.
-                        $subject = preg_replace(
-                            '/(?:ADM-)?\[case_number\]/',
-                            'ADM-' . $reference_id,
+                        // Handle '[case_number]', 'ADM-[case_number]', and
+                        // 'FIR-[case_number]' in one substitution. Bulk
+                        // table cells use 'FIR-' (per Jazz/Warid LEA
+                        // template), the rest use 'ADM-'. Preserve whichever
+                        // prefix was there so we never end up with a double
+                        // 'ADM-ADM-' or 'FIR-ADM-' prefix.
+                        $subject = preg_replace_callback(
+                            '/(ADM-|FIR-)?\[case_number\]/',
+                            function ($m) use ($reference_id) {
+                                $prefix = !empty($m[1]) ? $m[1] : 'ADM-';
+                                return $prefix . $reference_id;
+                            },
                             htmlspecialchars_decode($template)
                         );
 
@@ -2140,17 +2145,20 @@ class Controller_Adminrequest extends Controller_Working
                         // echo $body; exit;
                         /* change in 10 23 2017 */
 
-                        // Substitute any '[case_number]' / 'ADM-[case_number]'
-                        // placeholders in the body to 'ADM-<reference_id>' —
-                        // same regex the subject uses. Without this the body
-                        // would ship with the literal placeholder, AND
+                        // Substitute any '[case_number]', 'ADM-[case_number]',
+                        // or 'FIR-[case_number]' in the body to '<prefix><id>'.
+                        // Bulk-format builders for Jazz/Warid use 'FIR-' in
+                        // table cells; everywhere else uses 'ADM-'. Without
+                        // this the body would ship with the literal token AND
                         // ensure_admin_reference_token below wouldn't see a
-                        // valid ADM-<digits> marker (it requires digits, not
-                        // the literal "[case_number]"), so it would tack on
-                        // a redundant "Reference: ADM-<id>" footer.
-                        $body = preg_replace(
-                            '/(?:ADM-)?\[case_number\]/',
-                            'ADM-' . $reference_id,
+                        // valid <prefix>-<digits> marker, so it would tack
+                        // on a redundant "Reference: ADM-<id>" footer.
+                        $body = preg_replace_callback(
+                            '/(ADM-|FIR-)?\[case_number\]/',
+                            function ($m) use ($reference_id) {
+                                $prefix = !empty($m[1]) ? $m[1] : 'ADM-';
+                                return $prefix . $reference_id;
+                            },
                             $body
                         );
 
@@ -2167,13 +2175,55 @@ class Controller_Adminrequest extends Controller_Working
                             $subject, $body, $reference_id, $inject_subject
                         );
 
+                        // Ufone .txt auto-attachment for CDR-by-mobile (1) and
+                        // CDR-by-IMEI (2). Ufone's LEA team parses requests
+                        // from a .txt attachment, not from the inline body —
+                        // the same pattern action_adminsend (single flow)
+                        // uses. The bulk-format builder already produced the
+                        // correct text format ("MSISDN|Both|..." or "IMEI|
+                        // Both|...") so we just dump it to a temp .txt and
+                        // pass that path as the attachment. We only do this
+                        // when the admin didn't upload their own emailfile,
+                        // so manual override still works.
+                        $auto_ufone_txt = '';
+                        if ((int) $company_name === 3
+                            && in_array((int) $request_type, array(1, 2), true)
+                            && empty($email_file_name)
+                            && defined('UFONE_FILES')) {
+                            $ufone_txt_filename = $reference_id . '.txt';
+                            $ufone_txt_path = UFONE_FILES . $ufone_txt_filename;
+                            if (!is_dir(UFONE_FILES)) {
+                                @mkdir(UFONE_FILES, 0755, true);
+                            }
+                            $ufone_body_plain = trim(strip_tags($body));
+                            if (@file_put_contents($ufone_txt_path, $ufone_body_plain) !== false) {
+                                $email_file_name = $ufone_txt_path;
+                                $auto_ufone_txt  = $ufone_txt_path;
+                            } else {
+                                Model_ErrorLog::log(
+                                    'action_admincustomsend',
+                                    'Failed to write Ufone .txt attachment',
+                                    array('path' => $ufone_txt_path, 'reference_id' => $reference_id),
+                                    null,
+                                    'attachment_write_failure',
+                                    'admin_custom_send'
+                                );
+                            }
+                        }
+
                         $email_staus = Helpers_Email::send_email($cust_email, $to_name, $subject, $body, $email_file_name);
                         /*
                           if ($email_staus == 1) {
                           $reference_number = Model_Email::email_sended($to, $subject, $body, $reference_number, 0, 1);
                           } else { */
-                        if (file_exists($email_file_name)) {
+                        if (!empty($email_file_name) && file_exists($email_file_name)) {
                             unlink($email_file_name);
+                        }
+                        // The temp Ufone .txt is unlinked by the block above
+                        // (since $email_file_name was set to it). Defensive
+                        // double-unlink in case the path was overwritten:
+                        if (!empty($auto_ufone_txt) && file_exists($auto_ufone_txt)) {
+                            @unlink($auto_ufone_txt);
                         }
                         $reference_number = Model_AdminRequest::admin_email_sended($cust_email, $subject, $body, $reference_number, 7, 1, $startDate, $endDate);
                         //
@@ -2328,13 +2378,16 @@ class Controller_Adminrequest extends Controller_Working
                                 throw new Exception("Email template not found for request_type {$request_type} and company_name {$company_name}");
                             }
 
-                            // Same regex as action_admincustomsend: handles
-                            // both '[case_number]' and 'ADM-[case_number]' so
-                            // a future template that includes the prefix
-                            // doesn't double-stamp the final subject.
-                            $subject = preg_replace(
-                                '/(?:ADM-)?\[case_number\]/',
-                                'ADM-' . $reference_id,
+                            // Same callback as action_admincustomsend: handles
+                            // '[case_number]', 'ADM-[case_number]', and
+                            // 'FIR-[case_number]' while preserving whichever
+                            // prefix was there (no double-stamping).
+                            $subject = preg_replace_callback(
+                                '/(ADM-|FIR-)?\[case_number\]/',
+                                function ($m) use ($reference_id) {
+                                    $prefix = !empty($m[1]) ? $m[1] : 'ADM-';
+                                    return $prefix . $reference_id;
+                                },
                                 htmlspecialchars_decode($template_data['subject'])
                             );
 
@@ -2345,9 +2398,17 @@ class Controller_Adminrequest extends Controller_Working
                             $body = isset($_POST['inputSubNO']) ? str_replace("[mobile_number]", $_POST['inputSubNO'], $template_data['body_txt']) : $template_data['body_txt'];
                             $body = isset($_POST['inputCNIC']) ? str_replace("[cnic_number]", $_POST['inputCNIC'], $body) : $body;
                             $body = str_replace("[ptcl_number]", $requested_value, $body);
-                            // Match the subject regex so a body template that
-                            // already has 'ADM-[case_number]' doesn't double-prefix.
-                            $body = preg_replace('/(?:ADM-)?\[case_number\]/', 'ADM-' . $reference_id, $body);
+                            // Match the subject callback so a body template that
+                            // has 'ADM-[case_number]' or 'FIR-[case_number]'
+                            // doesn't double-prefix.
+                            $body = preg_replace_callback(
+                                '/(ADM-|FIR-)?\[case_number\]/',
+                                function ($m) use ($reference_id) {
+                                    $prefix = !empty($m[1]) ? $m[1] : 'ADM-';
+                                    return $prefix . $reference_id;
+                                },
+                                $body
+                            );
 
                             $body = str_replace("[start_date_dot]", $start_date_dot, $body);
                             $body = str_replace("[end_date_dot]", $end_date_dot, $body);

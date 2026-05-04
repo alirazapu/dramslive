@@ -1052,7 +1052,13 @@ abstract class Helpers_Email
         // admin_request row even when the subject couldn't carry the token.
         if (!preg_match('/\b(?:ADM|QRM)[-\s]*\d{4,}/i', $body)) {
             $sep = (strpos($body, '<') !== false) ? '<br><br>' : "\n\n";
-            $body .= $sep . 'Reference: ' . $token;
+            // "FIR No: ADM-<id>" — keeping the literal ADM- prefix is
+            // important: the receive matcher (extract_reference_from_email)
+            // looks for the \b(?:ADM|QRM)[-\s]*\d{4,} pattern anywhere in
+            // subject+body, so the ADM-<id> piece is what makes the reply
+            // routable back to this admin_request row. The "FIR No:" label
+            // is purely cosmetic for the LEA team.
+            $body .= $sep . 'FIR No: ' . $token;
         }
 
         return array($subject, $body);
