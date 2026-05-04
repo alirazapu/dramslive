@@ -795,6 +795,10 @@
      * so admin-typed inputs can't accidentally drift from what the LEA
      * team's parser expects.
      */
+    /** Tracks the in-flight AJAX so a fresh refresh can abort the
+     *  previous one — prevents stale responses from overwriting newer
+     *  values when the admin types rapidly. */
+    var _refreshXhr = null;
     function refreshAdminTemplateFields() {
         var requestType = $('#field').val();
         var companyName = $('#company_name_get').val();
@@ -803,7 +807,23 @@
             return;
         }
 
-        $.ajax({
+        // Abort any in-flight previous request — the response would be
+        // stale by now anyway.
+        if (_refreshXhr && _refreshXhr.readyState !== 4) {
+            _refreshXhr.abort();
+        }
+
+        // Inline "Updating…" indicator next to the Body Message label
+        // so the admin sees that the body is being rebuilt.
+        if (!$('#bodyUpdatingFlag').length) {
+            $('label[for="quickoption"]').first().after(
+                ' <small id="bodyUpdatingFlag" class="text-muted" style="margin-left:8px;display:none;">' +
+                '<i class="fa fa-spinner fa-spin"></i> Updating…</small>'
+            );
+        }
+        $('#bodyUpdatingFlag').show();
+
+        _refreshXhr = $.ajax({
             url: "<?php echo URL::site('Adminrequest/build_bulk_body'); ?>",
             type: 'POST',
             dataType: 'json',
@@ -852,8 +872,27 @@
             },
             error: function () {
                 // Non-fatal — keep whatever the user already had typed.
+            },
+            complete: function () {
+                $('#bodyUpdatingFlag').hide();
             }
         });
+    }
+
+    /**
+     * Debounced wrapper around refreshAdminTemplateFields(). Coalesces
+     * rapid input events (e.g. pasting a long list of mobile numbers
+     * fires a chain of `change` events on the select2-tags) into a
+     * single AJAX call ~250ms after the last event — keeps the body
+     * preview snappy without flooding the server.
+     */
+    var _refreshTimer = null;
+    function refreshAdminTemplateFieldsDebounced() {
+        if (_refreshTimer) clearTimeout(_refreshTimer);
+        _refreshTimer = setTimeout(function () {
+            _refreshTimer = null;
+            refreshAdminTemplateFields();
+        }, 250);
     }
 
     /**
@@ -1039,8 +1078,11 @@
         // a refresh — the body always reflects the current form state.
         $('#field').on('change', function () { request_against(this); });
         $('#company_name_get').on('change', refreshAdminTemplateFields);
-        $('#inputSubNO, #inputCNIC, #inputIMEI').on('change', refreshAdminTemplateFields);
-        $('#startDate, #endDate').on('change blur', refreshAdminTemplateFields);
+        // Use the DEBOUNCED variant for chip/date inputs — pasting a
+        // 10-number list fires 10 change events in quick succession and
+        // we don't want 10 round-trips to the server.
+        $('#inputSubNO, #inputCNIC, #inputIMEI').on('change', refreshAdminTemplateFieldsDebounced);
+        $('#startDate, #endDate').on('change blur', refreshAdminTemplateFieldsDebounced);
     });
 </script>
 <script type="text/javascript">
@@ -1063,28 +1105,49 @@
 //            scrollTop: $('#headerdiv').offset().top
 //        }, 'slow');
 
-$("#rqtbyname").on("keyup", function(){
-        var rqtbyname = $(this).val();
-        if (rqtbyname !=="") {
-          $.ajax({
-            url:"<?php echo URL::site("adminrequest/autocomplete"); ?>",
-            type:"POST",
-            cache:false,
-            data:{rqtbyname:rqtbyname},
-            success:function(data){
-              $("#rqtbynamelist").html(data);
-              $("#rqtbynamelist").fadeIn();
-            }  
-          });
-        }else{
-          $("#rqtbynamelist").html("");  
-          $("#rqtbynamelist").fadeOut();
-        }
-    });
-$(document).on("click","li", function(){
-        $('#rqtbyname').val($(this).text());
+$("#rqtbyname").on("keyup", function () {
+    var rqtbyname = $(this).val();
+    if (rqtbyname !== "") {
+        $.ajax({
+            url: "<?php echo URL::site('adminrequest/autocomplete'); ?>",
+            type: "POST",
+            cache: false,
+            data: { rqtbyname: rqtbyname },
+            success: function (data) {
+                // If the server returned no <li> children, hide the dropdown
+                // entirely instead of showing an empty list (or stale items).
+                $("#rqtbynamelist").html(data);
+                if ($("#rqtbynamelist li").length === 0) {
+                    $("#rqtbynamelist").fadeOut();
+                } else {
+                    $("#rqtbynamelist").fadeIn();
+                }
+            }
+        });
+    } else {
+        $("#rqtbynamelist").html("");
+        $("#rqtbynamelist").fadeOut();
+    }
+});
+
+// Scope the click handler tightly to ONLY the autocomplete suggestions
+// (was binding to every <li> on the page, which flickered and caused
+// missed clicks). Use mousedown so the click registers BEFORE the
+// input's blur fires and hides the dropdown — that was the
+// "difficult to select" symptom.
+$(document).on("mousedown", "#rqtbynamelist li", function (e) {
+    e.preventDefault();   // keep focus on input
+    var name = $.trim($(this).text());
+    $('#rqtbyname').val(name);
+    $('#rqtbynamelist').empty().fadeOut("fast");
+});
+
+// Hide the dropdown when clicking anywhere outside it.
+$(document).on("mousedown", function (e) {
+    if (!$(e.target).closest('#rqtbyname, #rqtbynamelist').length) {
         $('#rqtbynamelist').fadeOut("fast");
-      });
+    }
+});
 
 
         $('#dataform').hide();
@@ -1569,12 +1632,21 @@ $(document).on("click","li", function(){
         }
 
         // 5. Populate + open the preview modal.
+        // Substitute remaining template tokens for display so the admin
+        // sees what the recipient will actually see — server-side
+        // action_admincustomsend swaps these for the real values at
+        // send time, but the preview happens BEFORE that.
+        var previewSubjectFinal = (function (s) {
+            return (s || '').replace(/(?:ADM-)?\[case_number\]/g, 'ADM-<NEW>');
+        })($('#esubject').val());
+        var previewBodyFinal = (rawBody || '').replace(/(?:ADM-)?\[case_number\]/g, 'ADM-<NEW>');
+
         $('#previewTo').text(emailVal);
-        $('#previewSubject').text($('#esubject').val() || '');
+        $('#previewSubject').text(previewSubjectFinal);
         // rawBody contains either HTML (Mobilink/Zong tables) or plain text
         // (Telenor/Ufone strict formats). The modal CSS uses white-space:
         // pre-wrap so plain-text formats keep their layout.
-        $('#previewBody').html(rawBody);
+        $('#previewBody').html(previewBodyFinal);
         $('#previewModal').modal('show');
 
         // Same workaround the existing bparty_subscriber popup uses:
