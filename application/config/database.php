@@ -1,19 +1,38 @@
 <?php
+// The 'default' connection is environment-aware. Dev (dev.ctd.drams.com)
+// uses the live snapshot at aiesplusbk22032026 on 192.168.0.151 so testing
+// happens against real-shape data without mutating prod, while production
+// keeps using the local 'aiesplus' database. Kohana::$environment is set
+// in application/bootstrap.php from the KOHANA_ENV variable.
+$default_dev = array(
+    'type'       => 'MySQLi',
+    'connection' => array(
+        'hostname'   => '192.168.0.151',
+        'username'   => 'brainbotuser',
+        'password'   => 'BBuser@2025',
+        'persistent' => FALSE,
+        'database'   => 'aiesplusbk22032026',
+    ),
+    'table_prefix' => '',
+    'charset'      => 'utf8',
+);
+
+$default_prod = array(
+    'type'       => 'MySQLi',
+    'connection' => array(
+        'hostname'   => 'localhost',
+        'username'   => 'root',
+        'password'   => '',
+        'persistent' => FALSE,
+        'database'   => 'aiesplus',
+    ),
+    'table_prefix' => '',
+    'charset'      => 'utf8',
+);
+
 return array
 (
-    'default' => array
-    (
-        'type'       => 'MySQLi',
-        'connection' => array(
-              'hostname'   => 'localhost',           
-            'username'   => 'root',           
-           'password'   => '',
-            'persistent' => FALSE,
-            'database'   => 'aiesplus',
-        ),
-        'table_prefix' => '',
-        'charset'      => 'utf8',
-    ),
+    'default' => (Kohana::$environment === Kohana::DEVELOPMENT) ? $default_dev : $default_prod,
     'remote' => array(
         'type'       => 'MySQL',
         'connection' => array(
