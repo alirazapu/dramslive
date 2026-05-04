@@ -1943,11 +1943,17 @@ class Controller_Adminrequest extends Controller_Working
             }
             // Order matters: replace the more specific "92[mobile_number]"
             // pattern before the bare placeholder.
-            $text = str_replace('92[mobile_number]', implode("\n", $msisdns_92), $text);
-            $text = str_replace('[mobile_number]',   implode(', ', $msisdns_local), $text);
+            // HTML email: '\n' between values renders as a single space,
+            // so JAZZ's LEA parser only sees the first number on the line
+            // and silently drops the rest. '<br>' renders as a real line
+            // break in HTML and is also benign in plain-text views.
+            $text = str_replace('92[mobile_number]', implode("<br>\n", $msisdns_92), $text);
+            $text = str_replace('[mobile_number]',   implode("<br>\n", $msisdns_local), $text);
         }
-        if (count($cnics)   > 0) $text = str_replace('[cnic_number]',   implode(', ', $cnics),   $text);
-        if (count($imeis)   > 0) $text = str_replace('[imei_number]',   implode(', ', $imeis),   $text);
+        // CNIC and IMEI lists likewise need line breaks so the recipient's
+        // parser sees one value per row.
+        if (count($cnics) > 0) $text = str_replace('[cnic_number]', implode("<br>\n", $cnics), $text);
+        if (count($imeis) > 0) $text = str_replace('[imei_number]', implode("<br>\n", $imeis), $text);
 
         // Date placeholders (only substitute when valid mm/dd/yyyy).
         if (preg_match('#(\d{1,2})/(\d{1,2})/(\d{4})#', $sd_raw, $m) && checkdate((int)$m[1], (int)$m[2], (int)$m[3])) {
