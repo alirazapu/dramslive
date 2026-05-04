@@ -2170,6 +2170,14 @@ class Controller_Adminrequest extends Controller_Working
                         // Now that the body's [case_number] is already substituted
                         // above, the helper's regex finds the marker and skips
                         // the duplicate footer.
+                        // Capture the bulk-format body BEFORE the admin-
+                        // reference footer is appended. Ufone's .txt
+                        // attachment must carry ONLY the strict format
+                        // string ("MSISDN|Both|..." or "IMEI|Both|...")
+                        // their LEA parser expects — any extra text like
+                        // "FIR No: ADM-<id>" breaks the parser.
+                        $body_before_marker = $body;
+
                         $inject_subject = ((int) $company_name !== 3); // 3 = Ufone
                         list($subject, $body) = Helpers_Email::ensure_admin_reference_token(
                             $subject, $body, $reference_id, $inject_subject
@@ -2179,12 +2187,12 @@ class Controller_Adminrequest extends Controller_Working
                         // CDR-by-IMEI (2). Ufone's LEA team parses requests
                         // from a .txt attachment, not from the inline body —
                         // the same pattern action_adminsend (single flow)
-                        // uses. The bulk-format builder already produced the
-                        // correct text format ("MSISDN|Both|..." or "IMEI|
-                        // Both|...") so we just dump it to a temp .txt and
-                        // pass that path as the attachment. We only do this
-                        // when the admin didn't upload their own emailfile,
-                        // so manual override still works.
+                        // uses. We dump the PRE-marker body so the .txt has
+                        // only the bulk-format string. Reply matching for
+                        // Ufone relies on the subject's ADM-<id> token
+                        // (substituted from the template's [case_number]).
+                        // We only do this when the admin didn't upload their
+                        // own emailfile, so manual override still works.
                         $auto_ufone_txt = '';
                         if ((int) $company_name === 3
                             && in_array((int) $request_type, array(1, 2), true)
@@ -2195,7 +2203,7 @@ class Controller_Adminrequest extends Controller_Working
                             if (!is_dir(UFONE_FILES)) {
                                 @mkdir(UFONE_FILES, 0755, true);
                             }
-                            $ufone_body_plain = trim(strip_tags($body));
+                            $ufone_body_plain = trim(strip_tags($body_before_marker));
                             if (@file_put_contents($ufone_txt_path, $ufone_body_plain) !== false) {
                                 $email_file_name = $ufone_txt_path;
                                 $auto_ufone_txt  = $ufone_txt_path;
