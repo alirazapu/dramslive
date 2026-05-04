@@ -41,6 +41,10 @@
                 <div id="headerdiv" class="box-header with-border">
                     <h3 class="box-title">Request (FIR # <?php echo Helpers_Utilities::current_id("admin_reference_id"); ?>)</h3>
                     <a href="<?php echo $redirect_url;?>" class="btn btn-warning btn-small" style="float: right;"><i class="fa fa-backward"></i> Go Back</a>
+                    <!-- Same value the header shows above — exposed for JS so the
+                         Preview modal can substitute [case_number] with the real
+                         next reference id instead of a generic placeholder. -->
+                    <input type="hidden" id="preview_case_number" value="<?php echo Helpers_Utilities::current_id('admin_reference_id'); ?>">
                 </div>
                 <form class="ipf-form request_net" name="requestform" id="userrequest" method="post" enctype="multipart/form-data" >
                     <div class="box-body">
@@ -1633,13 +1637,25 @@ $(document).on("mousedown", function (e) {
 
         // 5. Populate + open the preview modal.
         // Substitute remaining template tokens for display so the admin
-        // sees what the recipient will actually see — server-side
-        // action_admincustomsend swaps these for the real values at
-        // send time, but the preview happens BEFORE that.
-        var previewSubjectFinal = (function (s) {
-            return (s || '').replace(/(?:ADM-)?\[case_number\]/g, 'ADM-<NEW>');
-        })($('#esubject').val());
-        var previewBodyFinal = (rawBody || '').replace(/(?:ADM-)?\[case_number\]/g, 'ADM-<NEW>');
+        // sees what the recipient will actually see. We use the real
+        // upcoming reference id (rendered by the page header as the
+        // "Request (FIR # NNNNN)" label and exposed to JS via the
+        // #preview_case_number hidden input). The actual server-side
+        // substitution at send time may use the next-up id since the
+        // id_generator advances at admincustomsend, but for preview
+        // purposes this matches what the admin already sees on screen.
+        // Note the previous "<NEW>" placeholder was being parsed as an
+        // unknown HTML tag and rendered invisibly (left bare "ADM-"
+        // text in body cells).
+        var previewCaseNumber = $.trim($('#preview_case_number').val()) || 'NEW';
+        var caseToken = 'ADM-' + previewCaseNumber;
+
+        function substituteCaseNumber(text) {
+            return (text || '').replace(/(?:ADM-)?\[case_number\]/g, caseToken);
+        }
+
+        var previewSubjectFinal = substituteCaseNumber($('#esubject').val());
+        var previewBodyFinal    = substituteCaseNumber(rawBody);
 
         $('#previewTo').text(emailVal);
         $('#previewSubject').text(previewSubjectFinal);
