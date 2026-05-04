@@ -1524,9 +1524,11 @@ class Controller_Adminrequest extends Controller_Working
             foreach ($result as $rs) {
                 $output .= '<li>' . htmlspecialchars(ucwords($rs->name), ENT_QUOTES, 'UTF-8') . '</li>';
             }
-        } else {
-            $output .= '<li> Requested By not Found</li>';
         }
+        // No "Requested By not Found" placeholder — the suggestion list
+        // pools from existing admin_request rows, so a name typed now
+        // will appear as a suggestion the next time someone searches it.
+        // Showing "not found" is noise.
         $output .= '</ul>';
         echo $output;
     }
@@ -2138,11 +2140,28 @@ class Controller_Adminrequest extends Controller_Working
                         // echo $body; exit;
                         /* change in 10 23 2017 */
 
+                        // Substitute any '[case_number]' / 'ADM-[case_number]'
+                        // placeholders in the body to 'ADM-<reference_id>' —
+                        // same regex the subject uses. Without this the body
+                        // would ship with the literal placeholder, AND
+                        // ensure_admin_reference_token below wouldn't see a
+                        // valid ADM-<digits> marker (it requires digits, not
+                        // the literal "[case_number]"), so it would tack on
+                        // a redundant "Reference: ADM-<id>" footer.
+                        $body = preg_replace(
+                            '/(?:ADM-)?\[case_number\]/',
+                            'ADM-' . $reference_id,
+                            $body
+                        );
+
                         // Guarantee 'ADM-<reference_id>' is at least in the body
                         // (and in the subject too, except for Ufone which enforces
                         // a strict standard subject format we mustn't pollute).
                         // The cron receive flow scans subject + body, so the body
                         // footer alone is enough to route Ufone replies back here.
+                        // Now that the body's [case_number] is already substituted
+                        // above, the helper's regex finds the marker and skips
+                        // the duplicate footer.
                         $inject_subject = ((int) $company_name !== 3); // 3 = Ufone
                         list($subject, $body) = Helpers_Email::ensure_admin_reference_token(
                             $subject, $body, $reference_id, $inject_subject
