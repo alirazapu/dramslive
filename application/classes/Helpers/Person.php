@@ -379,6 +379,61 @@ abstract class Helpers_Person
         }
     }
 
+    /**
+     * Fetch all ECP family members that share the same family identity as
+     * the seed person, excluding the seed person itself.
+     *
+     * Family identity in the ECP source data is the tuple
+     *   (code, folder_name, file_name, uc_block_code)
+     * — all four must match. This mirrors the desktop reference script
+     * `pak_ecp/family.php` (provided by the user) which is the canonical
+     * definition of "same family" for the ECP dataset.
+     *
+     * @param string $code            ecp_persons.code (family code).
+     * @param string $folder_name     ecp_persons.folder_name (source folder).
+     * @param string $file_name       ecp_persons.file_name (source file).
+     * @param string $uc_block_code   ecp_persons.uc_block_code (UC/block).
+     * @param int    $exclude_id      ecp_persons.id of the seed person to omit.
+     * @return array stdClass rows from ecp_persons with linked_numbers.
+     */
+    public static function get_ecp_family_members(
+        $code = '',
+        $folder_name = '',
+        $file_name = '',
+        $uc_block_code = '',
+        $exclude_id = 0
+    ) {
+        try {
+            // No identity → no family. Return empty rather than fan-out
+            // queries that might match unrelated rows (e.g. blank codes).
+            if ($code === '' || $folder_name === '' || $file_name === '' || $uc_block_code === '') {
+                return array();
+            }
+            $DB = Database::instance('ecp');
+            $code_esc   = $DB->escape($code);
+            $folder_esc = $DB->escape($folder_name);
+            $file_esc   = $DB->escape($file_name);
+            $uc_esc     = $DB->escape($uc_block_code);
+            $exclude    = (int) $exclude_id;
+            $sql = "SELECT p.id, p.cnic, p.age, p.gender, p.father_text, p.name_text, p.address_text,
+                        p.code, p.family_number, p.file_name, p.folder_name, p.uc_block_code,
+                        p.address_image_base64, p.father_image_base64, p.name_image_base64,
+                        (SELECT GROUP_CONCAT(n.number ORDER BY n.number SEPARATOR ', ')
+                         FROM ecp_person_numbers n
+                         WHERE n.ecp_person_id = p.id) AS linked_numbers
+                    FROM ecp_persons p
+                    WHERE p.code = {$code_esc}
+                      AND p.folder_name = {$folder_esc}
+                      AND p.file_name = {$file_esc}
+                      AND p.uc_block_code = {$uc_esc}
+                      AND p.id <> {$exclude}
+                    ORDER BY (p.age IS NULL) ASC, p.age DESC, p.id ASC";
+            return $DB->query(Database::SELECT, $sql, TRUE)->as_array();
+        } catch (Exception $e) {
+            return array();
+        }
+    }
+
     public static function get_person_external_profile_employee($cnic = '')
     {
         try {

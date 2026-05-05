@@ -3856,8 +3856,27 @@ exit();
             if (!empty($p->linked_numbers)) {
                 $linked_numbers_list = array_filter(array_map('trim', explode(',', $p->linked_numbers)));
             }
+
+            // Tab scaffolding mirrors the CTD KPK panel structure so the two
+            // external-DB cards on the dashboard look and behave the same:
+            //   - Tab 1 "Personal Info" is the original ECP record table.
+            //   - Tab 2 "Family Tree" is lazy-loaded via the same data-lazy-*
+            //     attributes the CTD KPK tabs use (see the script at the
+            //     bottom of this method).
+            $tab_id     = 'ecp_tabs_' . $person_id;
+            $enc_id     = HTML::chars($_GET['id']);
+            $cnic_digits = HTML::chars(preg_replace('/\D/', '', $person_cnic));
+            $family_url = URL::site('Persons/ext_db_ecp_family');
             ?>
             <div class="col-md-12">
+                <ul class="nav nav-tabs" id="<?php echo $tab_id; ?>">
+                    <li class="active"><a href="#<?php echo $tab_id; ?>_profile" data-toggle="tab">Personal Info</a></li>
+                    <li><a href="#<?php echo $tab_id; ?>_family" data-toggle="tab" data-lazy-url="<?php echo $family_url; ?>" data-lazy-id="<?php echo $enc_id; ?>" data-lazy-cnic="<?php echo $cnic_digits; ?>">Family Tree</a></li>
+                </ul>
+                <div class="tab-content" style="padding-top:10px;">
+
+                    <!-- Personal Info Tab -->
+                    <div class="tab-pane active" id="<?php echo $tab_id; ?>_profile">
                 <table class="table table-bordered table-condensed" style="font-size:13px;">
                     <tr class="active"><th colspan="4"><i class="fa fa-id-card-o margin-r-2"></i> Personal Information</th></tr>
                     <tr>
@@ -3930,11 +3949,228 @@ exit();
                     </tr>
                     <?php } ?>
                 </table>
+                    </div><!-- /Personal Info tab-pane -->
+
+                    <!-- Family Tree Tab (lazy-loaded) -->
+                    <div class="tab-pane" id="<?php echo $tab_id; ?>_family">
+                        <div class="col-md-12 text-center"><i class="fa fa-spinner fa-spin"></i> Click the tab to load Family Tree&hellip;</div>
+                    </div>
+
+                </div><!-- /tab-content -->
             </div>
+            <!-- Image modal lives OUTSIDE the tab panes so a click on any
+                 image — Personal Info OR Family Tree — can open it. If we
+                 nested it inside #*_profile, switching to the Family tab
+                 would set display:none on the pane (and on the modal),
+                 making image enlargement impossible from that tab. -->
             <div id="ecpmodal" class="modal" style="display:none;">
                 <span class="close" onclick="document.getElementById('ecpmodal').style.display='none'">&times;</span>
                 <img class="modal-content" id="imgecpmodal">
                 <div id="captionecpmodal">Election Commission Image</div>
+            </div>
+            <script>
+            (function () {
+                // Same lazy-load contract as the CTD KPK panel: the second
+                // tab carries data-lazy-url, data-lazy-id, data-lazy-cnic.
+                // First time the user opens it, fetch + inject. data-lazy-loaded
+                // marker prevents re-fetch on subsequent tab switches.
+                var tabId = <?php echo json_encode($tab_id); ?>;
+                $('#' + tabId + ' a[data-toggle="tab"]').on('shown.bs.tab', function () {
+                    var $a    = $(this);
+                    var url   = $a.data('lazy-url');
+                    var encId = $a.data('lazy-id');
+                    var cnic  = $a.data('lazy-cnic');
+                    if (!url || $a.data('lazy-loaded')) { return; }
+                    $a.data('lazy-loaded', true);
+                    var paneId = $a.attr('href');
+                    $.ajax({
+                        url: url,
+                        data: {id: encId, cnic: cnic},
+                        cache: false,
+                        dataType: 'html',
+                        success: function (html) {
+                            $(paneId).html(html);
+                        },
+                        error: function () {
+                            $(paneId).html('<div class="col-md-12"><span class="text-danger"><strong>Failed to load family tree. Please try again.</strong></span></div>');
+                        }
+                    });
+                });
+            }());
+            </script>
+            <?php
+        } catch (Exception $ex) {
+            echo json_encode(2);
+        }
+    }
+
+    /**
+     * Render the Family Tree tab inside the ECP panel of the Person
+     * dashboard. Loaded lazily by `action_ext_db_ecp` via AJAX the first
+     * time the analyst opens the tab.
+     *
+     * Data-source contract (mirrors the desktop pak_ecp/family.php
+     * reference script provided by the user):
+     *  1. Look up the seed person in `ecp_persons` by CNIC. From that row
+     *     we get the four-tuple that defines the family:
+     *        (code, folder_name, file_name, uc_block_code)
+     *     and the seed person's id (used to exclude self).
+     *  2. Pull every other ecp_persons row sharing all four keys.
+     *  3. Render each as a colour-coded card (blue for Male, pink for
+     *     Female), showing name/father/address (image OR text), CNIC,
+     *     phone numbers, age, gender. Image fields are clickable and
+     *     reuse the existing #ecpmodal img-zoom modal.
+     */
+    public function action_ext_db_ecp_family()
+    {
+        try {
+            $_GET = Helpers_Utilities::remove_injection($_GET);
+            $person_id = (int)Helpers_Utilities::encrypted_key($_GET['id'], "decrypt");
+            $person_cnic = self::ext_db_get_cnic($person_id);
+            if (empty($person_cnic) && !empty($_GET['cnic'])) {
+                $person_cnic = Helpers_Person::normalize_cnic_for_external_sources($_GET['cnic']);
+            }
+
+            if (empty($person_id) || empty($person_cnic)) {
+                echo '<div class="col-md-12"><span><strong>No CNIC available for lookup</strong></span></div>';
+                return;
+            }
+
+            // Step 1: re-fetch the seed person so we have the family identity
+            // tuple (code, folder_name, file_name, uc_block_code) AND the
+            // ecp_persons.id we need to exclude from the sibling list. We
+            // could pass these from the Personal Info tab, but a fresh lookup
+            // keeps the family handler self-contained and avoids leaking the
+            // seed id through the URL.
+            $seed = Helpers_Person::get_person_external_profile_ecp($person_cnic);
+            if (empty($seed)) {
+                echo '<div class="col-md-12"><span><i class="fa fa-info-circle margin-r-2"></i><strong> No ECP record found for this CNIC, so no family lookup is possible.</strong></span></div>';
+                return;
+            }
+
+            // Step 2: fetch siblings sharing the family identity tuple.
+            $members = Helpers_Person::get_ecp_family_members(
+                isset($seed->code)          ? $seed->code          : '',
+                isset($seed->folder_name)   ? $seed->folder_name   : '',
+                isset($seed->file_name)     ? $seed->file_name     : '',
+                isset($seed->uc_block_code) ? $seed->uc_block_code : '',
+                isset($seed->id)            ? (int) $seed->id      : 0
+            );
+
+            if (empty($members)) {
+                echo '<div class="col-md-12 text-left"><span><i class="fa fa-info-circle margin-r-2"></i><strong> No family members found.</strong></span></div>';
+                return;
+            }
+            ?>
+            <div class="col-md-12">
+                <p class="text-muted" style="margin-bottom:8px; font-size:12px;">
+                    <i class="fa fa-users margin-r-2"></i>
+                    <strong><?php echo count($members); ?></strong> family member<?php echo count($members) === 1 ? '' : 's'; ?> found
+                    (Family Code: <?php echo HTML::chars($seed->code); ?>,
+                    UC/Block: <?php echo HTML::chars($seed->uc_block_code); ?>).
+                </p>
+                <?php foreach ($members as $idx => $m) {
+                    // Mirror the desktop pak_ecp/family.php colour scheme:
+                    // light-blue for Male, pinkish for Female, neutral grey
+                    // for unknown/other so the cards stay scannable at a
+                    // glance.
+                    $gender = trim((string) (isset($m->gender) ? $m->gender : ''));
+                    if (strcasecmp($gender, 'Male') === 0) {
+                        $card_bg = '#eaf2fb'; $card_border = '#95beed'; $gender_label = 'Male';
+                    } elseif (strcasecmp($gender, 'Female') === 0) {
+                        $card_bg = '#faf0f2'; $card_border = '#e5d6d9'; $gender_label = 'Female';
+                    } else {
+                        $card_bg = '#f5f5f5'; $card_border = '#ccc';    $gender_label = $gender !== '' ? $gender : '-';
+                    }
+
+                    // Each image column may already be a data-URI or a bare
+                    // base64 blob — normalise once per row, same as the
+                    // Personal Info tab. Empty strings render as a "-".
+                    $name_img = '';
+                    if (!empty($m->name_image_base64)) {
+                        $name_img = (strpos($m->name_image_base64, 'data:image') === 0)
+                            ? $m->name_image_base64
+                            : 'data:image/jpeg;base64,' . $m->name_image_base64;
+                    }
+                    $father_img = '';
+                    if (!empty($m->father_image_base64)) {
+                        $father_img = (strpos($m->father_image_base64, 'data:image') === 0)
+                            ? $m->father_image_base64
+                            : 'data:image/jpeg;base64,' . $m->father_image_base64;
+                    }
+                    $address_img = '';
+                    if (!empty($m->address_image_base64)) {
+                        $address_img = (strpos($m->address_image_base64, 'data:image') === 0)
+                            ? $m->address_image_base64
+                            : 'data:image/jpeg;base64,' . $m->address_image_base64;
+                    }
+                    $phone_list = array();
+                    if (!empty($m->linked_numbers)) {
+                        $phone_list = array_filter(array_map('trim', explode(',', $m->linked_numbers)));
+                    }
+                ?>
+                <div class="ecp-family-card" style="background:<?php echo $card_bg; ?>; border:1px solid <?php echo $card_border; ?>; border-radius:3px; padding:8px 10px; margin-bottom:10px;">
+                    <table class="table table-bordered table-condensed" style="font-size:12px; margin-bottom:0; background:#fff;">
+                        <tr class="active">
+                            <th colspan="4">
+                                <i class="fa fa-user margin-r-2"></i>
+                                Family Member #<?php echo ($idx + 1); ?>
+                                <span class="pull-right">
+                                    <i class="fa fa-venus-mars margin-r-2"></i><?php echo HTML::chars($gender_label); ?>
+                                </span>
+                            </th>
+                        </tr>
+                        <tr>
+                            <th style="width:15%">Name</th>
+                            <td style="width:35%">
+                                <?php if (!empty($m->name_text)) { echo HTML::chars($m->name_text); } elseif (!empty($name_img)) { ?>
+                                    <img src="<?php echo HTML::chars($name_img); ?>" alt="Name Image"
+                                         style="max-width:200px; border:1px solid #ddd; padding:2px; cursor:pointer;"
+                                         onclick="document.getElementById('ecpmodal').style.display='block'; document.getElementById('imgecpmodal').src=this.src;">
+                                <?php } else { echo '-'; } ?>
+                            </td>
+                            <th style="width:15%">Father</th>
+                            <td style="width:35%">
+                                <?php if (!empty($m->father_text)) { echo HTML::chars($m->father_text); } elseif (!empty($father_img)) { ?>
+                                    <img src="<?php echo HTML::chars($father_img); ?>" alt="Father Image"
+                                         style="max-width:200px; border:1px solid #ddd; padding:2px; cursor:pointer;"
+                                         onclick="document.getElementById('ecpmodal').style.display='block'; document.getElementById('imgecpmodal').src=this.src;">
+                                <?php } else { echo '-'; } ?>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>CNIC</th>
+                            <td><?php echo !empty($m->cnic) ? HTML::chars($m->cnic) : '-'; ?></td>
+                            <th>Age</th>
+                            <td><?php echo !empty($m->age) ? HTML::chars($m->age) : '-'; ?></td>
+                        </tr>
+                        <tr>
+                            <th>Family Number</th>
+                            <td><?php echo !empty($m->family_number) ? HTML::chars($m->family_number) : '-'; ?></td>
+                            <th>Phone Numbers</th>
+                            <td>
+                                <?php if (!empty($phone_list)) {
+                                    foreach ($phone_list as $ph) { ?>
+                                        <span style="display:inline-block; margin-right:8px; margin-bottom:2px;"><i class="fa fa-mobile margin-r-2"></i><?php echo HTML::chars($ph); ?></span>
+                                    <?php }
+                                } else { echo '-'; } ?>
+                            </td>
+                        </tr>
+                        <?php if (!empty($m->address_text) || !empty($address_img)) { ?>
+                        <tr>
+                            <th>Address</th>
+                            <td colspan="3">
+                                <?php if (!empty($m->address_text)) { echo HTML::chars($m->address_text); } elseif (!empty($address_img)) { ?>
+                                    <img src="<?php echo HTML::chars($address_img); ?>" alt="Address Image"
+                                         style="max-width:380px; border:1px solid #ddd; padding:2px; cursor:pointer;"
+                                         onclick="document.getElementById('ecpmodal').style.display='block'; document.getElementById('imgecpmodal').src=this.src;">
+                                <?php } ?>
+                            </td>
+                        </tr>
+                        <?php } ?>
+                    </table>
+                </div>
+                <?php } ?>
             </div>
             <?php
         } catch (Exception $ex) {
