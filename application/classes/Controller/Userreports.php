@@ -3341,9 +3341,13 @@ exit();
             //get person id by updating table
             try {
                 $_POST = Helpers_Utilities::remove_injection($_POST);
-                $array_person['cnic_number'] = $_POST['cnic_number'];
-                $array_person['first_name'] = $_POST['person_name'];
+                $array_person['cnic_number']  = $_POST['cnic_number']  ?? '';
+                $array_person['first_name']   = $_POST['first_name']   ?? ($_POST['person_name'] ?? '');
+                $array_person['address']      = $_POST['address']      ?? '';
                 $array_person['is_foreigner'] = 1;
+                if (!empty($_POST['created_by'])) {
+                    $array_person['user_id'] = (int) $_POST['created_by'];
+                }
                 $content = new Model_Generic();
 
                 if(!empty($array_person['cnic_number']))
