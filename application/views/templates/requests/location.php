@@ -367,7 +367,7 @@
                                     }
                                 });
                     } else {
-                        swal("System Error", "Contact AIES Support Team.", "error");
+                        swal("System Error", "Contact DRAMS Support Team.", "error");
                         window.location.reload(false);
                     }
 

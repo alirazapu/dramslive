@@ -689,9 +689,9 @@ $(document).on("click","li", function(){
                         } else {
                         
                         if (result == 5) {
-                                swal("Email Limit Exceeded", "Contact AIES Support Team.", "error");
+                                swal("Email Limit Exceeded", "Contact DRAMS Support Team.", "error");
                             }else{
-                                swal("System Error", "Contact AIES Support Team.", "error");
+                                swal("System Error", "Contact DRAMS Support Team.", "error");
                                 }    
                           // window.location.reload(false);
                         }
