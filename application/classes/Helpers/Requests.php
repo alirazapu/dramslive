@@ -118,18 +118,46 @@ abstract class Helpers_Requests {
         return $region_district;
     }
     
-    public static function get_requests_by_sim($sim, $type = 1)
+    /**
+     * Return the rows from `files` for every CDR request placed against the
+     * given SIM. Used by the Person dashboard's "Download" button to render
+     * the list of available CDR archives in the modal.
+     *
+     * Historical bug: the previous implementation filtered with
+     *   `files.data_from_date <> 'null'`
+     * which compared the datetime column against the literal *string* 'null'.
+     * MariaDB silently casts 'null' to a datetime, where it becomes
+     * '0000-00-00 00:00:00'. Every CDR file in the system has
+     * data_from_date = '0000-00-00 00:00:00' (the parser never populates it),
+     * so the predicate evaluated FALSE for every row and the modal always
+     * showed "No files found" — even when downloadable archives existed.
+     *
+     * The fix: drop that filter entirely (it never did anything useful),
+     * switch the LEFT JOIN to INNER JOIN so we only return rows that
+     * actually have a file row to download, and exclude soft-deleted files.
+     * Per product requirement, no extra permission gating is applied — if
+     * a downloadable file exists for the SIM, it shows up.
+     *
+     * @param string $sim         The mobile number (requested_value in user_request).
+     * @param int    $type        user_request.user_request_type_id (1 = CDR by mobile).
+     * @param string $classifier  Free-form tag from the caller (e.g. 'callcdr').
+     *                            Accepted for forward-compat / call-site clarity;
+     *                            not currently used to alter the query.
+     */
+    public static function get_requests_by_sim($sim, $type = 1, $classifier = '')
     {
         if (empty($sim)) {
             return [];
         }
         $db = Database::instance();
-        $query = DB::select('files.*') // only files columns
+        $query = DB::select('files.*')
             ->from('user_request')
-            ->join('files', 'LEFT') // or INNER if required
+            ->join('files', 'INNER')
             ->on('files.request_id', '=', 'user_request.request_id')
             ->where('user_request.requested_value', '=', $sim)
-            ->and_where('user_request.user_request_type_id', '=', $type)->and_where('files.data_from_date', '<>','null')
+            ->and_where('user_request.user_request_type_id', '=', $type)
+            ->and_where('files.is_deleted', '=', 0)
+            ->order_by('files.id', 'DESC')
             ->execute($db)
             ->as_array();
         return $query;

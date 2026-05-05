@@ -3196,17 +3196,29 @@ body.modal-open {
                         </form>`;
                     }
 
+                    // CDR files in this system consistently have
+                    // data_from_date = '0000-00-00 00:00:00' (the parser
+                    // never populates it). Treat any zero-date as missing
+                    // so the modal doesn't render an ugly
+                    // "0000-00-00 | 2026-04-23" range. We show whichever
+                    // bound has a real value, joined by " | " when both do.
+                    var fmtDate = function(d) {
+                        if (!d) return '';
+                        var ds = String(d).split(' ')[0];
+                        return ds === '0000-00-00' ? '' : ds;
+                    };
+                    var fromTxt = fmtDate(file.data_from_date);
+                    var toTxt   = fmtDate(file.data_to_date);
+                    var rangeTxt = (fromTxt && toTxt) ? (fromTxt + ' | ' + toTxt)
+                                  : (fromTxt || toTxt || '');
+
                     html += `
                     <div class="row align-items-center mb-3 p-2" style="border-bottom:1px solid #ddd;">
                         <div class="col-md-4">
                             <strong><i class="fa fa-file-text-o"></i> ${file.file}</strong>
                         </div>
                       <div class="col-md-4">
-                                ${
-                                    file.data_from_date && file.data_to_date
-                                    ? file.data_from_date.split(' ')[0] + ' | ' + file.data_to_date.split(' ')[0]
-                                    : ''
-                                }
+                                ${rangeTxt}
                             </div>
                         <div class="col-md-2">
                             Records: ${file.no_of_record}
