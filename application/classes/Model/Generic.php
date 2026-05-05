@@ -343,7 +343,6 @@ class Model_Generic {
                 $send_array['user_id'] = $user_id;
                 $content = new Model_Generic();
                 $device_id = $content->update_imei_number($send_array);
-                return $device_id;
             }
             
             if (empty($device_id)) {
