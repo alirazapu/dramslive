@@ -2278,6 +2278,17 @@ class Controller_Adminrequest extends Controller_Working
                         'admin_custom_send'
                     );
                     error_log("[" . date('c') . "] action_admincustomsend exception: " . $e->getMessage());
+                    // In DEVELOPMENT, return the actual exception message so the
+                    // browser surfaces the underlying cause (schema mismatch,
+                    // missing config, etc.) instead of an opaque "System Error".
+                    // PRODUCTION continues to return the legacy code 2.
+                    if (Kohana::$environment === Kohana::DEVELOPMENT) {
+                        echo json_encode(array(
+                            'code'  => 2,
+                            'error' => $e->getMessage(),
+                        ));
+                        exit;
+                    }
                     echo json_encode(2);
                     exit;
                 }
