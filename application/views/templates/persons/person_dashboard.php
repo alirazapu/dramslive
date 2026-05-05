@@ -3196,20 +3196,22 @@ body.modal-open {
                         </form>`;
                     }
 
-                    // CDR files in this system consistently have
-                    // data_from_date = '0000-00-00 00:00:00' (the parser
-                    // never populates it). Treat any zero-date as missing
-                    // so the modal doesn't render an ugly
-                    // "0000-00-00 | 2026-04-23" range. We show whichever
-                    // bound has a real value, joined by " | " when both do.
+                    // The displayed range is the data window the analyst
+                    // asked the telco for — i.e. user_request.startDate /
+                    // user_request.endDate, surfaced by the helper as
+                    // request_start_date / request_end_date. files.data_*
+                    // columns are never populated by the parser
+                    // ('0000-00-00'), so we ignore them here and only
+                    // fall back to them on the off chance a future row
+                    // has them set.
                     var fmtDate = function(d) {
                         if (!d) return '';
                         var ds = String(d).split(' ')[0];
                         return ds === '0000-00-00' ? '' : ds;
                     };
-                    var fromTxt = fmtDate(file.data_from_date);
-                    var toTxt   = fmtDate(file.data_to_date);
-                    var rangeTxt = (fromTxt && toTxt) ? (fromTxt + ' | ' + toTxt)
+                    var fromTxt = fmtDate(file.request_start_date) || fmtDate(file.data_from_date);
+                    var toTxt   = fmtDate(file.request_end_date)   || fmtDate(file.data_to_date);
+                    var rangeTxt = (fromTxt && toTxt) ? (fromTxt + ' to ' + toTxt)
                                   : (fromTxt || toTxt || '');
 
                     html += `

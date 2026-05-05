@@ -149,8 +149,20 @@ abstract class Helpers_Requests {
         if (empty($sim)) {
             return [];
         }
+        // We pull files.* plus the requested-data window from user_request
+        // (startDate / endDate). The files table's own data_from_date /
+        // data_to_date are never populated by the parser ('0000-00-00'),
+        // so they're useless for display. The user_request row, in
+        // contrast, records exactly the range the analyst asked for —
+        // which IS the range of data inside the downloaded archive.
+        // Aliased to request_start_date / request_end_date so they don't
+        // collide with the files columns the JS modal already references.
         $db = Database::instance();
-        $query = DB::select('files.*')
+        $query = DB::select(
+                'files.*',
+                array('user_request.startDate', 'request_start_date'),
+                array('user_request.endDate',   'request_end_date')
+            )
             ->from('user_request')
             ->join('files', 'INNER')
             ->on('files.request_id', '=', 'user_request.request_id')
