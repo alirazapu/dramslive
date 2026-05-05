@@ -3339,10 +3339,7 @@ exit();
         }
         if ($permission == 1 || $permission == 2 || $permission == 3 || $permission == 4) {
             //get person id by updating table
-            $content = new Model_Generic();
-            $pid = $content->update_cnic_number($_POST);
-            //print_r($pid);die();
-            try {                                
+            try {
                 $_POST = Helpers_Utilities::remove_injection($_POST);
                 $array_person['cnic_number'] = $_POST['cnic_number'];
                 $array_person['first_name'] = $_POST['person_name'];
