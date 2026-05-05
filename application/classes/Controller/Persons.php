@@ -3448,6 +3448,46 @@ exit();
         return Helpers_Person::normalize_cnic_for_external_sources(Helpers_Person::get_person_cnic($person_id));
     }
 
+    /**
+     * Render a phone number with the same "if it already exists in DRAMS,
+     * link to that profile" treatment used by the bparty_subscriber view.
+     *
+     * Behaviour:
+     *  - If the number maps to an existing row in person_phone_number,
+     *    wrap the digits in `<span class="text-green disabled">…</span>`
+     *    (visual hint that this number is already known to DRAMS) and
+     *    append a `text-primary` eye-icon link to that person's dashboard.
+     *  - Otherwise return the plain HTML-escaped digits.
+     *
+     * Used by the ECP panel's Personal Info and Family Tree tabs so
+     * analysts can jump straight from an ECP record to the matching
+     * DRAMS profile when one exists. The check is per-number; for
+     * dashboards with many numbers this is N small queries, which
+     * matches the cost the surrounding ECP queries already pay and keeps
+     * the call sites simple.
+     *
+     * @param string $number Bare 10-digit MSISDN (no leading zero / 92).
+     * @return string Safe HTML.
+     */
+    private static function ext_db_phone_with_profile_link($number)
+    {
+        $number = trim((string) $number);
+        if ($number === '') {
+            return '';
+        }
+        $safe = HTML::chars($number);
+        $pid  = Helpers_Utilities::search_pid_of_mobile($number);
+        if (empty($pid)) {
+            return $safe;
+        }
+        $enc  = Helpers_Utilities::encrypted_key($pid, 'encrypt');
+        $url  = URL::site('persons/dashboard/?id=' . $enc);
+        // Mirror the bparty_subscriber markup verbatim so the visual
+        // language ("eye icon → profile") is consistent across the app.
+        return '<span class="text-green disabled">' . $safe . '</span>'
+             . ' <a href="' . HTML::chars($url) . '" class="text-primary" title="Go to Profile" target="_blank"> <i class="fa fa-eye"></i></a>';
+    }
+
     public function action_ext_db_ctd_kpk()
     {
         try {
@@ -3878,7 +3918,6 @@ exit();
                     <!-- Personal Info Tab -->
                     <div class="tab-pane active" id="<?php echo $tab_id; ?>_profile">
                 <table class="table table-bordered table-condensed" style="font-size:13px;">
-                    <tr class="active"><th colspan="4"><i class="fa fa-id-card-o margin-r-2"></i> Personal Information</th></tr>
                     <tr>
                         <th style="width:10%">Name</th>
                         <td style="width:40%">
@@ -3930,12 +3969,10 @@ exit();
                         <td><?php echo HTML::chars($p->code); ?></td>
                     </tr>
                     <?php } ?>
-                    <?php if (!empty($p->folder_name) || !empty($p->file_name)) { ?>
+                    <?php if (!empty($p->folder_name)) { ?>
                     <tr>
-                        <th>Folder</th>
-                        <td><?php echo HTML::chars($p->folder_name); ?></td>
-                        <th>File Name</th>
-                        <td><?php echo HTML::chars($p->file_name); ?></td>
+                        <th>Constituency</th>
+                        <td colspan="3"><?php echo HTML::chars($p->folder_name); ?></td>
                     </tr>
                     <?php } ?>
                     <?php if (!empty($linked_numbers_list)) { ?>
@@ -3943,7 +3980,7 @@ exit();
                     <tr>
                         <td colspan="4">
                             <?php foreach ($linked_numbers_list as $num) { ?>
-                                <span style="display:inline-block; margin-right:12px; margin-bottom:4px; font-size:13px;"><i class="fa fa-mobile margin-r-2"></i> <?php echo HTML::chars($num); ?></span>
+                                <span style="display:inline-block; margin-right:12px; margin-bottom:4px; font-size:13px;"><i class="fa fa-mobile margin-r-2"></i> <?php echo self::ext_db_phone_with_profile_link($num); ?></span>
                             <?php } ?>
                         </td>
                     </tr>
@@ -4151,7 +4188,7 @@ exit();
                             <td>
                                 <?php if (!empty($phone_list)) {
                                     foreach ($phone_list as $ph) { ?>
-                                        <span style="display:inline-block; margin-right:8px; margin-bottom:2px;"><i class="fa fa-mobile margin-r-2"></i><?php echo HTML::chars($ph); ?></span>
+                                        <span style="display:inline-block; margin-right:8px; margin-bottom:2px;"><i class="fa fa-mobile margin-r-2"></i> <?php echo self::ext_db_phone_with_profile_link($ph); ?></span>
                                     <?php }
                                 } else { echo '-'; } ?>
                             </td>
