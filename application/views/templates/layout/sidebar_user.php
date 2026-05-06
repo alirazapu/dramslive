@@ -591,7 +591,7 @@ try {
                             <a href="<?php echo URL::site('databank/subscriber_advanced'); ?>"><i class="fa fa-mobile"></i>Subscriber Search</a>
                         </li>
                         <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'ecp_advanced') ? 'active' : ''; ?>">
-                            <a href="<?php echo URL::site('databank/ecp_advanced'); ?>"><i class="fa fa-id-card-o"></i>ECP Search</a>
+                            <a href="<?php echo URL::site('databank/ecp_advanced'); ?>"><i class="fa fa-vcard-o"></i>ECP Search</a>
                         </li>
                         <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'ctd_kpk_advanced') ? 'active' : ''; ?>">
                             <a href="<?php echo URL::site('databank/ctd_kpk_advanced'); ?>"><i class="fa fa-shield"></i>CTD KPK Search</a>
