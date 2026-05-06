@@ -2370,6 +2370,40 @@ public static function get_person_for_dashboard_perofile($person_id)
 
     }
 
+    /**
+     * Search ECP persons by free-text in the OCR'd / manually entered
+     * address (ecp_persons.address_text). Hits the remote `ecp` connection.
+     *
+     * Rows that have no address_text are unfindable here — those need to be
+     * OCR'd first via Cronjob::action_ecp_address_ocr_backfill().
+     *
+     * @param string $q     search text (whitespace-trimmed; '' returns [])
+     * @param int    $limit max rows (clamped to [1, 500])
+     * @return array        stdClass rows from ecp_persons
+     */
+    public static function search_ecp_by_address($q, $limit = 100)
+    {
+        $q = trim((string) $q);
+        if ($q === '') {
+            return array();
+        }
+        try {
+            $DB    = Database::instance('ecp');
+            $q_esc = $DB->escape('%' . $q . '%');
+            $lim   = max(1, min(500, (int) $limit));
+            $sql = "SELECT p.id, p.cnic, p.age, p.gender,
+                        p.name_text, p.father_text, p.address_text,
+                        p.code, p.family_number, p.file_name, p.folder_name, p.uc_block_code,
+                        p.address_image_base64
+                    FROM ecp_persons p
+                    WHERE p.address_text LIKE {$q_esc}
+                    LIMIT {$lim}";
+            return $DB->query(Database::SELECT, $sql, TRUE)->as_array();
+        } catch (Exception $e) {
+            return array();
+        }
+    }
+
 }
 
 ?>

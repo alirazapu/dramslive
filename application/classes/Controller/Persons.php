@@ -5071,7 +5071,49 @@ public function action_get_cdr_data()
     return;
 }
 
+    /**
+     * Search ECP persons by free-text in the address (text or OCR'd from
+     * the base64 image). Mirrors the lightweight rendering pattern of
+     * action_ext_db_ecp() — the response is an HTML fragment intended
+     * to be loaded into a panel via AJAX.
+     *
+     * GET params:
+     *   q      search text (required; trimmed)
+     *   limit  max rows (default 100, capped at 500 by the helper)
+     *
+     * URL: /persons/ecp_address_search?q=Karachi
+     */
+    public function action_ecp_address_search()
+    {
+        try {
+            $_GET  = Helpers_Utilities::remove_injection($_GET);
+            $q     = isset($_GET['q'])     ? trim((string) $_GET['q'])     : '';
+            $limit = isset($_GET['limit']) ? (int) $_GET['limit']          : 100;
 
+            if ($q === '') {
+                echo '<div class="col-md-12 text-left"><span class="text-muted">'
+                    .'Enter address text to search ECP records.</span></div>';
+                return;
+            }
+
+            $rows = Helpers_Person::search_ecp_by_address($q, $limit);
+
+            if (empty($rows)) {
+                echo '<div class="col-md-12 text-left">'
+                    .'<span><i class="fa fa-info-circle margin-r-2"></i>'
+                    .'<strong> No matching ECP records.</strong></span></div>';
+                return;
+            }
+
+            $view = View::factory('templates/user/ecp_address_search')
+                ->set('q', $q)
+                ->set('rows', $rows);
+            echo $view->render();
+        } catch (Exception $e) {
+            echo '<div class="col-md-12 text-left">'
+                .'<span class="text-danger">Search failed.</span></div>';
+        }
+    }
 
 }
 

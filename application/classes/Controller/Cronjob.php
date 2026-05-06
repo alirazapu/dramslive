@@ -2162,6 +2162,181 @@ class Controller_Cronjob extends Controller {
             error_log("[" . date('c') . "] action_resend_error_in_queue failed: " . $e->getMessage());
         }
     }
-    
-    
+
+    /* ------------------------------------------------------------------ */
+    /*  ECP address-text diagnostics + OCR backfill                       */
+    /*                                                                    */
+    /*  Purpose: ecp_persons.address_image_base64 stores the address as   */
+    /*  a base64 JPEG. To make the address searchable we OCR each image   */
+    /*  once and write the recognised text into the sibling address_text  */
+    /*  column on the same row, then SQL LIKE/FULLTEXT search becomes     */
+    /*  trivial (see Helpers_Person::search_ecp_by_address).              */
+    /* ------------------------------------------------------------------ */
+
+    /**
+     * One-shot read-only diagnostic: how populated is ecp_persons.address_text
+     * today, and how big is the OCR backlog?
+     *
+     * URL: /cronjob/ecp_address_diagnostic
+     */
+    public function action_ecp_address_diagnostic()
+    {
+        header('Content-Type: text/plain; charset=utf-8');
+        try {
+            $DB = Database::instance('ecp');
+            $sql = "SELECT
+                        COUNT(*) AS total,
+                        SUM(address_text IS NOT NULL AND address_text <> '')                 AS with_text,
+                        SUM(address_image_base64 IS NOT NULL AND address_image_base64 <> '') AS with_image,
+                        ROUND(100 * SUM(address_text IS NOT NULL AND address_text <> '')
+                              / NULLIF(COUNT(*), 0), 2)                                       AS pct_with_text
+                    FROM ecp_persons";
+            $row = $DB->query(Database::SELECT, $sql, TRUE)->current();
+
+            $backlog = $DB->query(Database::SELECT,
+                "SELECT COUNT(*) AS n FROM ecp_persons
+                 WHERE (address_text IS NULL OR address_text = '')
+                   AND address_image_base64 IS NOT NULL AND address_image_base64 <> ''",
+                TRUE)->current();
+
+            echo "ECP address_text fill rate\n";
+            echo "==========================\n";
+            echo sprintf("Total rows         : %s\n", number_format((int) $row->total));
+            echo sprintf("With image         : %s\n", number_format((int) $row->with_image));
+            echo sprintf("With address_text  : %s\n", number_format((int) $row->with_text));
+            echo sprintf("Pct with text      : %s%%\n", $row->pct_with_text);
+            echo "\n";
+            echo sprintf("Backlog needing OCR: %s\n", number_format((int) $backlog->n));
+            echo "\n";
+            echo "Next steps:\n";
+            echo "  - If pct_with_text >= 85%, address search is already viable;\n";
+            echo "    hit /persons/ecp_address_search?q=... to try it.\n";
+            echo "  - Otherwise run:\n";
+            echo "      /cronjob/ecp_address_ocr_backfill?limit=100&engine=tesseract&dry_run=1\n";
+            echo "    on a sample first to validate accuracy, then drop dry_run=1.\n";
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo 'Diagnostic failed: ' . $e->getMessage();
+        }
+    }
+
+    /**
+     * OCR-backfill ecp_persons.address_text from address_image_base64.
+     *
+     * Query params:
+     *   limit    batch size (default 100, max 1000)
+     *   engine   'tesseract' (default) | 'gvision'
+     *   lang     tesseract language code, default 'eng' (e.g. 'eng+urd')
+     *   dry_run  if 1, OCR but do not UPDATE — useful for sampling accuracy
+     *
+     * URL example:
+     *   /cronjob/ecp_address_ocr_backfill?limit=200&engine=tesseract&lang=eng+urd
+     *
+     * Recommended one-time schema additions on ecp.ecp_persons (we have
+     * write access per the design doc) so we can distinguish manually
+     * entered vs OCR'd text and re-process later if the engine changes:
+     *
+     *   ALTER TABLE ecp_persons
+     *     ADD COLUMN address_text_ocr_at DATETIME    NULL AFTER address_text,
+     *     ADD COLUMN address_text_source VARCHAR(16) NULL AFTER address_text_ocr_at;
+     *
+     * The action runs fine without those columns — it just won't stamp
+     * provenance.
+     */
+    public function action_ecp_address_ocr_backfill()
+    {
+        @set_time_limit(600);
+        header('Content-Type: text/plain; charset=utf-8');
+
+        $limit   = max(1, min(1000, isset($_GET['limit'])  ? (int) $_GET['limit'] : 100));
+        $engine  = isset($_GET['engine'])  ? (string) $_GET['engine']  : 'tesseract';
+        $lang    = isset($_GET['lang'])    ? (string) $_GET['lang']    : 'eng';
+        $dry_run = !empty($_GET['dry_run']);
+
+        try {
+            $DB                = Database::instance('ecp');
+            $has_tracking_cols = self::ecp_has_tracking_columns($DB);
+
+            $sql = "SELECT id, address_image_base64
+                    FROM ecp_persons
+                    WHERE (address_text IS NULL OR address_text = '')
+                      AND address_image_base64 IS NOT NULL AND address_image_base64 <> ''
+                    LIMIT {$limit}";
+            $rows = $DB->query(Database::SELECT, $sql, FALSE)->as_array();
+
+            $stats = array('processed' => 0, 'updated' => 0, 'empty' => 0, 'failed' => 0);
+
+            foreach ($rows as $row) {
+                $stats['processed']++;
+                $id = (int) $row['id'];
+                try {
+                    $bytes = Helpers_Ocr::decode_base64_image($row['address_image_base64']);
+                    if ($bytes === '') {
+                        $stats['empty']++;
+                        continue;
+                    }
+                    $text = Helpers_Ocr::recognise($bytes, $engine, array('lang' => $lang));
+                    if ($text === '') {
+                        $stats['empty']++;
+                        continue;
+                    }
+                    if ($dry_run) {
+                        $stats['updated']++;
+                        echo sprintf("[dry] id=%d  text=%s\n",
+                            $id,
+                            substr(str_replace(array("\r", "\n"), ' ', $text), 0, 80));
+                        continue;
+                    }
+                    $set = "address_text = " . $DB->escape($text);
+                    if ($has_tracking_cols) {
+                        $set .= ", address_text_ocr_at = NOW(), address_text_source = " . $DB->escape($engine);
+                    }
+                    $upd = "UPDATE ecp_persons SET {$set} WHERE id = {$id}";
+                    $DB->query(Database::UPDATE, $upd, FALSE);
+                    $stats['updated']++;
+                } catch (Exception $e) {
+                    $stats['failed']++;
+                    echo sprintf("[err] id=%d  %s\n", $id, $e->getMessage());
+                }
+            }
+
+            $left = $DB->query(Database::SELECT,
+                "SELECT COUNT(*) AS n FROM ecp_persons
+                 WHERE (address_text IS NULL OR address_text = '')
+                   AND address_image_base64 IS NOT NULL AND address_image_base64 <> ''",
+                TRUE)->current();
+
+            echo "\n----- summary -----\n";
+            echo sprintf("engine    : %s (lang=%s)%s\n", $engine, $lang, $dry_run ? ' [dry-run]' : '');
+            echo sprintf("processed : %d\n", $stats['processed']);
+            echo sprintf("updated   : %d\n", $stats['updated']);
+            echo sprintf("empty     : %d\n", $stats['empty']);
+            echo sprintf("failed    : %d\n", $stats['failed']);
+            echo sprintf("remaining : %d\n", (int) $left->n);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo 'Backfill aborted: ' . $e->getMessage();
+        }
+    }
+
+    /**
+     * Detect once per request whether the optional provenance columns
+     * exist on ecp_persons. Cached in static for the request lifetime.
+     */
+    private static function ecp_has_tracking_columns($DB)
+    {
+        static $cache = null;
+        if ($cache !== null) {
+            return $cache;
+        }
+        try {
+            $r = $DB->query(Database::SELECT,
+                "SHOW COLUMNS FROM ecp_persons LIKE 'address_text_source'", TRUE)->current();
+            $cache = !empty($r);
+        } catch (Exception $e) {
+            $cache = false;
+        }
+        return $cache;
+    }
+
 }
