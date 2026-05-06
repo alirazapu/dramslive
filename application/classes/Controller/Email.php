@@ -50,6 +50,30 @@ class Controller_Email extends Controller_Working
                 $endDate = (!empty($_POST['endDate']) ? $_POST['endDate'] : '');
                 $startDate = (!empty($_POST['startDate']) ? $_POST['startDate'] : '');
                 $post_force_imei_last_digit_zero = (!empty($_POST['force_imei_last_digit_zero']) && $_POST['force_imei_last_digit_zero'] == 1) ? 1 : 0;
+
+                // Optional "Requested Attachment" file the analyst picked
+                // on the user-side request forms (CDR / Subscriber /
+                // Location / CNIC-SIMs). Mirrors the admin attachment
+                // pattern at Adminrequest::action_adminsend so we use the
+                // same Upload::save call shape; only the destination
+                // directory differs (REQUESTED_ATTACHMENTS, declared in
+                // application/bootstrap.php). The path lands in
+                // user_request.file_name via Model_Email::user_request.
+                // Loop selects multiple companies — we save the file ONCE
+                // and reference the same path on every per-company row so
+                // analysts don't end up with duplicate copies on disk.
+                $req_attachment = '';
+                if (!empty($_FILES['rqtfile']) && !empty($_FILES['rqtfile']['name'])) {
+                    if (!is_dir(REQUESTED_ATTACHMENTS)) {
+                        @mkdir(REQUESTED_ATTACHMENTS, 0755, true);
+                    }
+                    $stamp    = date('YmdHis');
+                    $ext      = pathinfo($_FILES['rqtfile']['name'], PATHINFO_EXTENSION);
+                    $filename = 'rqtuser' . $stamp . '.' . $ext;
+                    Upload::save($_FILES['rqtfile'], $filename, REQUESTED_ATTACHMENTS);
+                    $req_attachment = REQUESTED_ATTACHMENTS . $filename;
+                }
+
                 foreach ($company_names as $company_name) {
 
                     try {
@@ -196,7 +220,7 @@ class Controller_Email extends Controller_Working
                             }
                         } while ($GLOBALS['id_generator'] == 1);
 
-                        $reference_number = Model_Email::user_request($reference_id, $user_id, $request_type, $company_name, $status, $requested_value, $concerned_person_id, $projectids, $startDate, $endDate, $reason, ($company_name == 3 && $request_type == 2 && $post_force_imei_last_digit_zero == 1) ? 1 : 0);
+                        $reference_number = Model_Email::user_request($reference_id, $user_id, $request_type, $company_name, $status, $requested_value, $concerned_person_id, $projectids, $startDate, $endDate, $reason, ($company_name == 3 && $request_type == 2 && $post_force_imei_last_digit_zero == 1) ? 1 : 0, $req_attachment);
 
                         $template_data = Model_Email::get_email_tempalte($request_type, $company_name);
 
@@ -292,7 +316,7 @@ class Controller_Email extends Controller_Working
                     $concerned_person_id = (!empty($_POST['person_id']) ? $_POST['person_id'] : '');
                     $endDate = 0;
                     $startDate = 0;
-                    $reference_number = Model_Email::user_request($reference_id, $user_id, $request_type, $company_name, $status, $requested_value, $concerned_person_id, $projectids, $startDate, $endDate, $reason);
+                    $reference_number = Model_Email::user_request($reference_id, $user_id, $request_type, $company_name, $status, $requested_value, $concerned_person_id, $projectids, $startDate, $endDate, $reason, 0, $req_attachment);
                     $to = 'Technical Support Team';
                     $subject = 'Nadra Verysis';
                     $body = 'This is local request for nadra verysis';
@@ -343,7 +367,7 @@ class Controller_Email extends Controller_Working
                     $concerned_person_id = (!empty($_POST['person_id']) ? $_POST['person_id'] : '');
                     $endDate = '0000-00-00';
                     $startDate = '0000-00-00';
-                    $reference_number = Model_Email::user_request($reference_id, $user_id, $request_type, $company_name, $status, $requested_value, $concerned_person_id, $projectids, $startDate, $endDate, $reason);
+                    $reference_number = Model_Email::user_request($reference_id, $user_id, $request_type, $company_name, $status, $requested_value, $concerned_person_id, $projectids, $startDate, $endDate, $reason, 0, $req_attachment);
                     $to = 'Technical Support Team';
                     $subject = 'Family Tree';
                     $body = 'This is local request for family tree';
@@ -391,7 +415,7 @@ class Controller_Email extends Controller_Working
                     $concerned_person_id = (!empty($_POST['person_id']) ? $_POST['person_id'] : '');
                     $endDate = '';
                     $startDate = '';
-                    $reference_number = Model_Email::user_request($reference_id, $user_id, $request_type, $company_name, $status, $requested_value, $concerned_person_id, $projectids, $startDate, $endDate, $reason);
+                    $reference_number = Model_Email::user_request($reference_id, $user_id, $request_type, $company_name, $status, $requested_value, $concerned_person_id, $projectids, $startDate, $endDate, $reason, 0, $req_attachment);
                     $to = 'Technical Support Team';
                     $subject = 'Travel History';
                     $body = 'This is local request for Travel History';

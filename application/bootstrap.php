@@ -72,6 +72,10 @@ define('UPLOADS_DIR',   PROJECT_ROOT .  'drams' . DS . 'uploads' . DS);
 define('TEMPLATES_DIR', PROJECT_ROOT .  'drams' . DS . 'application' .DS. 'views' . DS. 'templates' . DS);
 define('EXPORTS_DIR',   PROJECT_ROOT .  'drams' . DS . 'dramsfiles' . DS. 'exports' . DS);
 define('TEMP_DIR',      PROJECT_ROOT  . 'drams' . DS . 'dramsfiles' . DS .'temp' . DS);
+// User-side "Requested Attachment" upload destination (CDR / Subscriber /
+// Location / CNIC-SIMs forms). Mirrors the per-row attachment column on
+// admin_request that admin_request_sent_form already supports.
+define('REQUESTED_ATTACHMENTS', PROJECT_ROOT . 'drams' . DS . 'dramsfiles' . DS . 'requested_attachment' . DS);
 
 define('FAMILYTREE_TERMP_IMAGES',   UPLOADS_DIR . 'familytree_temp_images' . DS);
 define('TRAVELHISTORY_TERMP_IMAGES', UPLOADS_DIR . 'travelhistory_temp_images' . DS);

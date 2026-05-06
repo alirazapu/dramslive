@@ -8,7 +8,7 @@ defined('SYSPATH') or die('No direct script access.');
 class Model_Email {
     /* insert request type  */
 
-    public static function user_request($reference_id, $user_id, $request_type, $company_name, $status, $requested_value, $concerned_person_id, $projectids, $startDate, $endDate, $reason, $force_imei_last_digit_zero = 0) {
+    public static function user_request($reference_id, $user_id, $request_type, $company_name, $status, $requested_value, $concerned_person_id, $projectids, $startDate, $endDate, $reason, $force_imei_last_digit_zero = 0, $file_name = '') {
 
         $login_user = Auth::instance()->get_user();
         $permission = Helpers_Utilities::get_user_permission($login_user->id);
@@ -19,8 +19,14 @@ class Model_Email {
         }
 
         $date = date('Y-m-d H:i:s');
-        $query = DB::insert('user_request', array('reference_id', 'user_id', 'user_request_type_id', 'company_name', 'status', 'concerned_person_id', 'project_id', 'requested_value', 'startDate', 'endDate', 'reason', 'request_priority', 'force_imei_last_digit_zero'))
-                ->values(array($reference_id, $user_id, $request_type, $company_name, $status, $concerned_person_id, $projectids, $requested_value, $startDate, $endDate, $reason, $request_priority, $force_imei_last_digit_zero))
+        // file_name is the absolute disk path of the optional "Requested
+        // Attachment" file the analyst picked on the request form. NULL /
+        // empty string when no file was attached (the column is nullable
+        // and the four user-request forms make the input optional, mirroring
+        // admin_request_sent_form). Stored as VARCHAR(250) to match the
+        // admin_request column shape exactly.
+        $query = DB::insert('user_request', array('reference_id', 'user_id', 'user_request_type_id', 'company_name', 'status', 'concerned_person_id', 'project_id', 'requested_value', 'startDate', 'endDate', 'reason', 'request_priority', 'force_imei_last_digit_zero', 'file_name'))
+                ->values(array($reference_id, $user_id, $request_type, $company_name, $status, $concerned_person_id, $projectids, $requested_value, $startDate, $endDate, $reason, $request_priority, $force_imei_last_digit_zero, $file_name))
                 ->execute();
         $query1 = DB::insert('person_linked_projects', array('user_id', 'request_type_id', 'person_id', 'project_id', 'requested_value', 'request_time'))
                 ->values(array($user_id, $request_type, $concerned_person_id, $projectids, $requested_value, $date))

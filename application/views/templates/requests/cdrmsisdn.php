@@ -144,9 +144,17 @@
                                 </div>
                             </div>
                             <div class="col-sm-12" id="reason_div">
-                                <div class="form-group" >                                                            
+                                <div class="form-group" >
                                     <label for="inputreason" class="control-label">Reason For This Request</label>
-                                    <textarea class="form-control" name="inputreason" id="inputreason"  placeholder="Enter Reason For Request" ></textarea>                                                          
+                                    <textarea class="form-control" name="inputreason" id="inputreason"  placeholder="Enter Reason For Request" ></textarea>
+                                </div>
+                            </div>
+                            <div class="col-sm-12" id="rqtfile_div">
+                                <div class="form-group">
+                                    <label for="rqtfile" class="control-label">Requested Attachment</label>
+                                    <input type="file"
+                                           accept=".jpeg,.jpg,.gif,.png,.pdf,.doc,.docx,.xls,.xlsx"
+                                           id="rqtfile" name="rqtfile" class="form-control">
                                 </div>
                             </div>
                             <div class="form-group" id="submit_div">
@@ -416,19 +424,24 @@
         return datefrommonthago;
     }
              //user request form submit via ajax
-             function submitrequestform(){                 
-                 //var formData = $('#userrequest').serialize();
-                 var formData = $("#userrequest").serializeArray();
-                 //var formData = new FormData();
+             function submitrequestform(){
+                 // FormData (not serializeArray) is required so that the
+                 // optional "Requested Attachment" file input picked up on
+                 // this form actually rides the POST. serializeArray() only
+                 // walks plain inputs and silently drops <input type="file">.
+                 // The accompanying processData/contentType:false on the
+                 // ajax call below preserves the multipart boundary jQuery
+                 // would otherwise rewrite into application/x-www-form-urlencoded.
+                 var formData = new FormData($("#userrequest")[0]);
                  var url = $("#redirect_url").val();
                  var duration =null;
-                                
-                         duration =duration_check(); 
-                setTimeout(function () {                   
+
+                         duration =duration_check();
+                setTimeout(function () {
                  },3000);
-                 
-              
-                
+
+
+
                if ($('#userrequest').valid() && duration == 1)
                 {
                 $("#preloader").show();
@@ -436,6 +449,9 @@
                         type: 'POST',
                         url: "<?php echo URL::site('email/send') ?>",
                         data: formData,
+                        processData: false,
+                        contentType: false,
+                        cache: false,
                         success: function (result) {
                             $("#preloader").hide();
                             if (result == 1) {
