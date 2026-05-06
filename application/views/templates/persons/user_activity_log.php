@@ -14,10 +14,77 @@
     </h1>
     <ol class="breadcrumb">
         <li><a href="<?php echo URL::site('userdashboard/dashboard'); ?>"><i class="fa fa-dashboard"></i> Home</a></li>
-        <li><a href="<?php echo URL::site('persons/dashboard/?id='.$_GET['id']); ?>">Person Dashboard </a></li>                        
+        <li><a href="<?php echo URL::site('persons/dashboard/?id='.$_GET['id']); ?>">Person Dashboard </a></li>
         <li class="active">User Activity Log</li>
     </ol>
 </section>
+
+<style>
+/* Scoped tab + table polish for the Activity & Requests box.
+   Kept inline so the page is self-contained — moves to a stylesheet
+   if/when more pages adopt the same look. */
+.user_activity_log .box-primary { border-top-color: #3c8dbc; }
+.user_activity_log .box-primary > .box-header .box-title {
+    font-size: 16px; font-weight: 600; color: #2c3e50;
+}
+.user_activity_log .box-primary > .box-header .box-tools small {
+    font-size: 12px;
+}
+
+.user_activity_log .nav-tabs {
+    border-bottom: 2px solid #e7ecf1;
+    margin-bottom: 0;
+}
+.user_activity_log .nav-tabs > li {
+    margin-bottom: -2px;
+}
+.user_activity_log .nav-tabs > li > a {
+    font-size: 13.5px;
+    font-weight: 500;
+    color: #6b7c93;
+    padding: 10px 20px;
+    border: none;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    background: transparent;
+    transition: color .15s, border-color .15s;
+}
+.user_activity_log .nav-tabs > li > a:hover {
+    color: #3c8dbc; background: transparent;
+    border-bottom-color: #cfd9e2;
+}
+.user_activity_log .nav-tabs > li.active > a,
+.user_activity_log .nav-tabs > li.active > a:focus,
+.user_activity_log .nav-tabs > li.active > a:hover {
+    color: #3c8dbc; font-weight: 600; background: transparent;
+    border: none; border-bottom: 2px solid #3c8dbc;
+}
+.user_activity_log .nav-tabs > li > a > .fa {
+    margin-right: 7px; color: #98a4b3;
+}
+.user_activity_log .nav-tabs > li.active > a > .fa { color: #3c8dbc; }
+.user_activity_log .nav-tabs > li > a > .badge {
+    margin-left: 6px; font-size: 11px; padding: 2px 7px;
+    background: #e7ecf1; color: #3c8dbc; font-weight: 600;
+}
+.user_activity_log .nav-tabs > li.active > a > .badge {
+    background: #3c8dbc; color: #fff;
+}
+
+.user_activity_log .tab-content {
+    padding: 18px 4px 4px; font-size: 13px;
+}
+.user_activity_log .table > thead > tr > th {
+    font-weight: 600; font-size: 12px;
+    background: #f5f7fa;
+    border-bottom: 2px solid #d6dbe1; color: #4a5566;
+    text-transform: uppercase; letter-spacing: 0.3px;
+}
+.user_activity_log .table > tbody > tr > td { vertical-align: middle; }
+.user_activity_log .table .label { font-size: 11px; padding: 3px 7px; }
+.user_activity_log .dataTables_filter input { width: 220px; margin-left: 6px; }
+.user_activity_log .dataTables_length select { padding: 2px 6px; }
+</style>
 <!-- Main content -->
 <section class="content user_activity_log">
     <div class="container-fluid">
@@ -162,18 +229,17 @@
                                     </div>
                                 <?php } else { ?>
                                 <div class="table-responsive">
-                                    <table id="reqInfoTable" class="table table-bordered table-hover" style="font-size:12.5px;">
-                                        <thead style="background:#f5f7fa;">
+                                    <table id="reqInfoTable" class="table table-bordered table-hover" style="width:100%;">
+                                        <thead>
                                             <tr>
-                                                <th style="width:120px;">Date</th>
-                                                <th style="width:70px;">Source</th>
-                                                <th style="width:90px;">Ref #</th>
+                                                <th style="width:130px;">Date</th>
+                                                <th style="width:100px;">Ref #</th>
                                                 <th>Type</th>
-                                                <th style="width:110px;">Telco</th>
+                                                <th style="width:120px;">Telco</th>
                                                 <th>Requested Value</th>
-                                                <th style="width:130px;">Status</th>
+                                                <th style="width:140px;">Status</th>
                                                 <th>Reason</th>
-                                                <th style="width:80px;">Attachment</th>
+                                                <th style="width:90px;" class="no-sort">Attachment</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -208,15 +274,15 @@
                                             ?>
                                             <tr>
                                                 <td><?php echo HTML::chars(!empty($r['created_at']) ? date('Y-m-d H:i', strtotime($r['created_at'])) : '-'); ?></td>
+                                                <td><?php echo HTML::chars(!empty($r['reference_id']) ? $r['reference_id'] : '-'); ?></td>
                                                 <td>
+                                                    <?php echo HTML::chars($type_label); ?>
                                                     <?php if ($src === 'admin') { ?>
-                                                        <span class="label label-warning" title="admin_request">Admin</span>
+                                                        <span class="label label-warning" style="margin-left:4px;" title="admin_request">A</span>
                                                     <?php } else { ?>
-                                                        <span class="label label-info" title="user_request">User</span>
+                                                        <span class="label label-info" style="margin-left:4px;" title="user_request">U</span>
                                                     <?php } ?>
                                                 </td>
-                                                <td><?php echo HTML::chars(!empty($r['reference_id']) ? $r['reference_id'] : '-'); ?></td>
-                                                <td><?php echo HTML::chars($type_label); ?></td>
                                                 <td><?php echo HTML::chars($company_label); ?></td>
                                                 <td><?php echo HTML::chars(!empty($r['requested_value']) ? $r['requested_value'] : '-'); ?></td>
                                                 <td>
@@ -875,11 +941,10 @@
         );
         $('.dataTables_empty').html("Information not found");
 
-        // Lightbox-style preview for image attachments in the Requests
-        // tab. Delegated off document so it works with rows that may
-        // be re-rendered (e.g. if the future requests table becomes a
-        // DataTable too). Ctrl/Cmd/Shift/middle-click bypass the
-        // lightbox so users can still open the image in a new tab.
+        // Lightbox preview for image attachments. Delegated off document
+        // so future re-renders (e.g. DataTable redraws) keep working.
+        // Ctrl/Cmd/Shift/middle-click bypass the lightbox so users can
+        // still open the original image in a new tab.
         $(document).on('click', 'a[data-rqt-zoom="1"]', function (e) {
             if (e.ctrlKey || e.metaKey || e.shiftKey || e.which === 2) return;
             e.preventDefault();
@@ -887,40 +952,64 @@
             $('#rqt-zoom-img').attr('src', src);
             $('#rqt-zoom-link').attr('href', src);
             $('#rqt-zoom-modal').modal('show');
+
+            // Established backdrop-cleanup pattern, identical to the
+            // 14 other modals on this page (and to the one in
+            // application/views/templates/layout/site-header.php that
+            // fixed the same bug previously). Without this, Bootstrap
+            // leaves <div class="modal-backdrop fade in"></div> stuck
+            // on top of the image, blurring it and blocking clicks.
+            $('.modal-backdrop').appendTo('.blue');
+            $('body').removeClass('modal-open').css('padding-right', '');
+            setTimeout(function () {
+                $('.modal-backdrop.fade.in').remove();
+            }, 300);
+        });
+        // Free the image src on hide to keep memory tidy when an
+        // analyst clicks through many thumbnails in a session.
+        $('#rqt-zoom-modal').on('hidden.bs.modal', function () {
+            $('#rqt-zoom-img').attr('src', '');
+            $('#rqt-zoom-link').attr('href', '#');
         });
 
-        // Robust backdrop / body-state cleanup. The page hosts ~14
-        // other Bootstrap modals using a custom .blue-container hack
-        // (search the file for "appendTo('.blue')"). When the lightbox
-        // is opened/closed against that backdrop machinery, Bootstrap
-        // sometimes leaves a stale .modal-backdrop attached to <body>
-        // which blocks every click on the page until reload. The
-        // listener below — fired on both shown and hidden — deletes
-        // any backdrop element that doesn't have a visible modal
-        // associated with it, and undoes the body-state classes so
-        // the page returns to a clickable state in every case.
-        $('#rqt-zoom-modal').on('shown.bs.modal hidden.bs.modal', function (e) {
-            // Free the image src on hide to keep memory tidy when an
-            // analyst clicks through many thumbnails in a session.
-            if (e && e.type === 'hidden') {
-                $('#rqt-zoom-img').attr('src', '');
-                $('#rqt-zoom-link').attr('href', '#');
-            }
-            setTimeout(function () {
-                if ($('.modal:visible').length === 0) {
-                    $('.modal-backdrop').remove();
-                    $('body').removeClass('modal-open').css('padding-right', '');
-                }
-            }, 250);
-        });
-        // Belt-and-suspenders: clicking the dimmed backdrop should
-        // always dismiss the lightbox, even if Bootstrap got into a
-        // weird state.
-        $(document).on('click', '.modal-backdrop', function () {
-            if ($('#rqt-zoom-modal').hasClass('in')) {
-                $('#rqt-zoom-modal').modal('hide');
-            }
-        });
+        // Requests tab — DataTable with 10/25/50/100 per-page selector
+        // and search/sort, mirroring the User Activity Log feel.
+        // Initialised lazily on first tab show so column widths are
+        // measured against a visible DOM (avoids the well-known
+        // mis-aligned-header bug when DataTables init inside a
+        // hidden tab pane).
+        var reqInfoDT = null;
+        function initReqInfoDT() {
+            if (reqInfoDT) { return; }
+            if (!$('#reqInfoTable tbody tr').length) { return; } /* empty state */
+            reqInfoDT = $('#reqInfoTable').dataTable({
+                "aaSorting":        [[0, "desc"]],
+                "iDisplayLength":   25,
+                "aLengthMenu":      [[10, 25, 50, 100], [10, 25, 50, 100]],
+                "sPaginationType":  "full_numbers",
+                "bPaginate":        true,
+                "bFilter":          true,
+                "bLengthChange":    true,
+                "bAutoWidth":       false,
+                "oLanguage": {
+                    "sSearch":           "Filter:",
+                    "sLengthMenu":       "Show _MENU_ entries",
+                    "sZeroRecords":      "No matching requests",
+                    "sInfo":             "Showing _START_ to _END_ of _TOTAL_ requests",
+                    "sInfoEmpty":        "Showing 0 of 0 requests",
+                    "sInfoFiltered":     "(filtered from _MAX_)"
+                },
+                "columnDefs":       [{ "targets": "no-sort", "orderable": false }]
+            });
+        }
+        // Init when the user clicks the Requests tab the first time.
+        $('a[href="#ual_tab_requests"]').on('shown.bs.tab', initReqInfoDT);
+        // Also init immediately if the URL hash points at the tab on
+        // first load (e.g. someone reloaded while it was active).
+        if (window.location.hash === '#ual_tab_requests') {
+            $('a[href="#ual_tab_requests"]').tab('show');
+            initReqInfoDT();
+        }
 
     });
     $("#search_form").validate({
