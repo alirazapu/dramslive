@@ -556,7 +556,25 @@ try {
                 </li>
             <?php } ?>
             <?php if ((Helpers_Utilities::chek_role_array_access($role_id, array(34,35)) == 1) || $user->id ==171 ||  $user->id ==170) { ?>
-                <li class="treeview <?php echo (($current_url == 'Admindatabank' && ($menu_name == 'bulk_nadra_requests_databank' || $menu_name == 'nadra_requests_reports_databank'|| $menu_name == 'breakup_report'|| $menu_name == 'data_upload_against_msisdn'|| $menu_name == 'msisdn_requests_reports_databank'|| $menu_name == 'msisdn_breakup_report' ||$menu_name == 'msisdn_breakup_report_individual'|| $menu_name == 'msisdn_no_request_send_reports_detail'))) ? 'active' : ''; ?>">
+                <?php
+                    $databank_active =
+                        ($current_url == 'Admindatabank' && in_array($menu_name, array(
+                            'bulk_nadra_requests_databank',
+                            'nadra_requests_reports_databank',
+                            'breakup_report',
+                            'data_upload_against_msisdn',
+                            'msisdn_requests_reports_databank',
+                            'msisdn_breakup_report',
+                            'msisdn_breakup_report_individual',
+                            'msisdn_no_request_send_reports_detail',
+                        )))
+                        || ($current_url == 'Databank' && in_array($menu_name, array(
+                            'ecp_address',
+                            'mobile_subscriber',
+                            'foreigner',
+                        )));
+                ?>
+                <li class="treeview <?php echo $databank_active ? 'active' : ''; ?>">
                     <a href="#">
                         <i class="fa  fa-database"></i>
                         <span>DRAMS Databank</span>
@@ -565,6 +583,19 @@ try {
                         </span>
                     </a>
                     <ul class="treeview-menu">
+
+                        <!-- External-DB search pages (Controller_Databank) -->
+                        <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'mobile_subscriber') ? 'active' : ''; ?>">
+                            <a href="<?php echo URL::site('databank/mobile_subscriber'); ?>"><i class="fa fa-mobile"></i>Mobile Subscriber Search</a>
+                        </li>
+                        <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'foreigner') ? 'active' : ''; ?>">
+                            <a href="<?php echo URL::site('databank/foreigner'); ?>"><i class="fa fa-globe"></i>Foreigner Account Search</a>
+                        </li>
+                        <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'ecp_address') ? 'active' : ''; ?>">
+                            <a href="<?php echo URL::site('databank/ecp_address'); ?>"><i class="fa fa-search"></i>ECP Address Search</a>
+                        </li>
+
+                        <li class="header" style="padding:6px 15px; color:#8aa4af; font-size:11px; text-transform:uppercase;">Reports &amp; Uploads</li>
 
                         <?php if (Helpers_Utilities::chek_role_access($role_id, 34) == 1) { ?>
                             <li class="<?php echo ($menu_name == 'bulk_nadra_requests_databank') ? 'active' : ''; ?>"><a href="<?php echo URL::site('Admindatabank/bulk_nadra_requests_databank'); ?>"><i class="fa fa-circle-o"></i>Nadra Databank </a></li>
