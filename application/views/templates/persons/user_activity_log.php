@@ -23,17 +23,24 @@
     <div class="container-fluid">
         <?php
         // -----------------------------------------------------------------
-        // "Request Information & Attachments" panel
-        // -----------------------------------------------------------------
-        // Renders every user_request and admin_request row that's tied to
-        // the current person, with two tabs:
-        //   1) Requests — sortable table with reason and inline attachment.
-        //   2) Attachments — image gallery + download links for non-images.
-        // Data comes from Helpers_Person::get_person_requests() (passed in
-        // via the include file at persons_functions/user_activity_log.inc).
-        // Both tabs are eager-rendered server-side because the row count
-        // per person is small (usually <50) and gallery thumbnails need
-        // the full list anyway.
+        // Combined "Activity & Requests" panel.
+        //
+        // Renders both of the page's data tables inside a SINGLE box with
+        // two tabs. Replaces the previous two-box layout (with a separate
+        // attachment gallery), per operator request: gallery removed,
+        // tabs only.
+        //
+        // Tab 1 — User Activity Log (default): the existing #activitylog
+        //         DataTable, server-side via /persons/ajaxuseractivitylog.
+        // Tab 2 — Requests & Attachments: every user_request and
+        //         admin_request row tied to this person, with the
+        //         attachment rendered inline as a thumbnail (images) or
+        //         a download link (other types). Clicking an image
+        //         thumbnail opens the lightbox modal at the bottom of
+        //         the file.
+        //
+        // Request data is provided by Helpers_Person::get_person_requests()
+        // through the include at persons_functions/user_activity_log.inc.
         // -----------------------------------------------------------------
         $req_rows = isset($person_requests) && is_array($person_requests) ? $person_requests : array();
 
@@ -72,13 +79,10 @@
             7 => 'Marked Completed',
         );
 
-        // Pull out only the rows that have a saved attachment — the
-        // gallery tab iterates over this once.
-        $attachments = array();
+        // Counter for the requests-tab badge.
+        $attachment_count = 0;
         foreach ($req_rows as $r) {
-            if (!empty($r['file_name'])) {
-                $attachments[] = $r;
-            }
+            if (!empty($r['file_name'])) $attachment_count++;
         }
 
         $img_exts = array('jpg', 'jpeg', 'png', 'gif');
@@ -88,42 +92,88 @@
                 <div class="box box-primary">
                     <div class="box-header with-border">
                         <h3 class="box-title">
-                            <i class="fa fa-folder-open"></i>
-                            Request Information &amp; Attachments
-                            <small class="text-muted" style="margin-left:10px;">
-                                <?php echo count($req_rows); ?> request<?php echo count($req_rows) === 1 ? '' : 's'; ?>,
-                                <?php echo count($attachments); ?> attachment<?php echo count($attachments) === 1 ? '' : 's'; ?>
-                            </small>
+                            <i class="fa fa-history"></i>
+                            Person Activity &amp; Requests
                         </h3>
+                        <div class="box-tools pull-right">
+                            <small class="text-muted">
+                                <?php echo (int) count($req_rows); ?> request<?php echo count($req_rows) === 1 ? '' : 's'; ?>
+                                · <?php echo (int) $attachment_count; ?> attachment<?php echo $attachment_count === 1 ? '' : 's'; ?>
+                            </small>
+                        </div>
                     </div>
                     <div class="box-body">
-                        <ul class="nav nav-tabs" id="reqInfoTabs">
-                            <li class="active"><a href="#reqInfoTab_table" data-toggle="tab"><i class="fa fa-list"></i> Requests</a></li>
-                            <li><a href="#reqInfoTab_gallery" data-toggle="tab"><i class="fa fa-th"></i> Attachments Gallery</a></li>
+                        <ul class="nav nav-tabs" id="ualTabs" role="tablist">
+                            <li class="active">
+                                <a href="#ual_tab_activity" data-toggle="tab" role="tab">
+                                    <i class="fa fa-search"></i> User Activity Log
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#ual_tab_requests" data-toggle="tab" role="tab">
+                                    <i class="fa fa-folder-open"></i> Requests &amp; Attachments
+                                    <?php if (count($req_rows) > 0): ?>
+                                        <span class="badge" style="background:#3c8dbc; margin-left:4px;"><?php echo (int) count($req_rows); ?></span>
+                                    <?php endif; ?>
+                                </a>
+                            </li>
                         </ul>
-                        <div class="tab-content" style="padding-top:12px;">
+                        <div class="tab-content" style="padding-top:14px;">
 
-                            <!-- ============ TAB 1: REQUESTS TABLE ============ -->
-                            <div class="tab-pane active" id="reqInfoTab_table">
+                            <!-- ============ TAB 1: USER ACTIVITY LOG ============ -->
+                            <div class="tab-pane active" id="ual_tab_activity">
+                                <div class="table-responsive">
+                                    <table id="activitylog" class="table table-bordered table-striped" style="width:100%;">
+                                        <thead>
+                                            <tr>
+                                                <th class="no-sort">Username</th>
+                                                <th class="no-sort">Designation</th>
+                                                <th class="no-sort">User Type</th>
+                                                <th class="no-sort">Posted In</th>
+                                                <th class="no-sort">Region</th>
+                                                <th class="no-sort">Activity</th>
+                                                <th>Activity Time</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <th>Username</th>
+                                                <th>Designation</th>
+                                                <th>User Type</th>
+                                                <th>Posted In</th>
+                                                <th>Region</th>
+                                                <th>Activity</th>
+                                                <th>Activity Time</th>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- ============ TAB 2: REQUESTS & ATTACHMENTS ============ -->
+                            <div class="tab-pane" id="ual_tab_requests">
                                 <?php if (empty($req_rows)) { ?>
-                                    <div class="text-muted text-center" style="padding:18px;">
-                                        <i class="fa fa-info-circle"></i>
-                                        No user_request or admin_request rows are linked to this person.
+                                    <div class="text-muted text-center" style="padding:24px;">
+                                        <i class="fa fa-info-circle fa-lg"></i>
+                                        <div style="margin-top:6px;">
+                                            No user_request or admin_request rows are linked to this person.
+                                        </div>
                                     </div>
                                 <?php } else { ?>
                                 <div class="table-responsive">
-                                    <table id="reqInfoTable" class="table table-bordered table-striped" style="font-size:12px;">
-                                        <thead>
+                                    <table id="reqInfoTable" class="table table-bordered table-hover" style="font-size:12.5px;">
+                                        <thead style="background:#f5f7fa;">
                                             <tr>
-                                                <th>Date</th>
-                                                <th>Source</th>
-                                                <th>Ref #</th>
+                                                <th style="width:120px;">Date</th>
+                                                <th style="width:70px;">Source</th>
+                                                <th style="width:90px;">Ref #</th>
                                                 <th>Type</th>
-                                                <th>Telco</th>
+                                                <th style="width:110px;">Telco</th>
                                                 <th>Requested Value</th>
-                                                <th>Status</th>
+                                                <th style="width:130px;">Status</th>
                                                 <th>Reason</th>
-                                                <th>Attachment</th>
+                                                <th style="width:80px;">Attachment</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -131,7 +181,7 @@
                                             $rid     = isset($r['request_id']) ? (int) $r['request_id'] : 0;
                                             $src     = isset($r['source']) ? $r['source'] : 'user';
                                             $rid_enc = $rid ? Helpers_Utilities::encrypted_key($rid, 'encrypt') : '';
-                                            $type_label = !empty($r['request_type_name']) ? $r['request_type_name'] : ('#' . (int) ($r['user_request_type_id'] ?? 0));
+                                            $type_label = !empty($r['request_type_name']) ? $r['request_type_name'] : ('#' . (int) (isset($r['user_request_type_id']) ? $r['user_request_type_id'] : 0));
                                             $cn = isset($r['company_name']) ? (int) $r['company_name'] : 0;
                                             $company_label = isset($company_map[$cn]) ? $company_map[$cn] : ($cn ? 'MNC ' . $cn : '-');
                                             $st = isset($r['status']) ? (int) $r['status'] : 0;
@@ -147,13 +197,12 @@
                                                 $is_img = in_array($ext, $img_exts, true);
                                                 $url = URL::site('persons/attachment') . '?s=' . urlencode($src) . '&r=' . urlencode($rid_enc);
                                                 if ($is_img) {
-                                                    $att_cell = '<a href="' . HTML::chars($url) . '" target="_blank" data-rqt-zoom="1" title="View attachment">'
+                                                    $att_cell = '<a href="' . HTML::chars($url) . '" data-rqt-zoom="1" title="View attachment">'
                                                               . '<img src="' . HTML::chars($url) . '" alt="attachment"'
-                                                              . ' style="max-height:38px; max-width:60px; border:1px solid #ccc; padding:1px; background:#fff;"></a>';
+                                                              . ' style="max-height:42px; max-width:64px; border:1px solid #ccc; padding:2px; background:#fff; border-radius:3px;"></a>';
                                                 } else {
-                                                    $att_cell = '<a href="' . HTML::chars($url) . '" target="_blank">'
-                                                              . '<i class="fa fa-file-' . HTML::chars($ext) . '-o"></i> '
-                                                              . HTML::chars(basename($r['file_name'])) . '</a>';
+                                                    $att_cell = '<a href="' . HTML::chars($url) . '" target="_blank" title="Download ' . HTML::chars(basename($r['file_name'])) . '">'
+                                                              . '<i class="fa fa-file-' . HTML::chars($ext) . '-o fa-lg"></i></a>';
                                                 }
                                             }
                                             ?>
@@ -173,13 +222,13 @@
                                                 <td>
                                                     <span class="label label-<?php echo HTML::chars($st_pair[1]); ?>"><?php echo HTML::chars($st_pair[0]); ?></span>
                                                     <?php if ($proc_label !== '' && $st === 2) { ?>
-                                                        <small class="text-muted" style="display:block;"><?php echo HTML::chars($proc_label); ?></small>
+                                                        <small class="text-muted" style="display:block; margin-top:2px;"><?php echo HTML::chars($proc_label); ?></small>
                                                     <?php } ?>
                                                 </td>
-                                                <td title="<?php echo HTML::chars($reason); ?>" style="max-width:240px; word-break:break-word;">
+                                                <td title="<?php echo HTML::chars($reason); ?>" style="max-width:260px; word-break:break-word;">
                                                     <?php echo $reason !== '' ? HTML::chars($reason_short) : '<span class="text-muted">—</span>'; ?>
                                                 </td>
-                                                <td><?php echo $att_cell; /* HTML pre-built and HTML::chars-applied above */ ?></td>
+                                                <td class="text-center"><?php echo $att_cell; /* HTML pre-built and HTML::chars-applied above */ ?></td>
                                             </tr>
                                         <?php } ?>
                                         </tbody>
@@ -188,126 +237,34 @@
                                 <?php } ?>
                             </div>
 
-                            <!-- ============ TAB 2: ATTACHMENTS GALLERY ============ -->
-                            <div class="tab-pane" id="reqInfoTab_gallery">
-                                <?php if (empty($attachments)) { ?>
-                                    <div class="text-muted text-center" style="padding:18px;">
-                                        <i class="fa fa-info-circle"></i>
-                                        No attachments uploaded against requests for this person.
-                                    </div>
-                                <?php } else { ?>
-                                    <div class="row" style="margin:0;">
-                                        <?php foreach ($attachments as $r) {
-                                            $rid     = (int) $r['request_id'];
-                                            $src     = isset($r['source']) ? $r['source'] : 'user';
-                                            $rid_enc = $rid ? Helpers_Utilities::encrypted_key($rid, 'encrypt') : '';
-                                            $url     = URL::site('persons/attachment') . '?s=' . urlencode($src) . '&r=' . urlencode($rid_enc);
-                                            $ext     = strtolower(pathinfo($r['file_name'], PATHINFO_EXTENSION));
-                                            $is_img  = in_array($ext, $img_exts, true);
-                                            $name    = basename($r['file_name']);
-                                            $stamp   = !empty($r['created_at']) ? date('Y-m-d', strtotime($r['created_at'])) : '';
-                                            $type_label = !empty($r['request_type_name']) ? $r['request_type_name'] : ('Type #' . (int) ($r['user_request_type_id'] ?? 0));
-                                            $ref     = !empty($r['reference_id']) ? $r['reference_id'] : '-';
-                                        ?>
-                                        <div class="col-sm-3 col-xs-6" style="margin-bottom:14px;">
-                                            <div class="thumbnail" style="margin-bottom:0; padding:6px;">
-                                                <?php if ($is_img) { ?>
-                                                    <a href="<?php echo HTML::chars($url); ?>" target="_blank" data-rqt-zoom="1" title="<?php echo HTML::chars($name); ?>">
-                                                        <img src="<?php echo HTML::chars($url); ?>" alt="<?php echo HTML::chars($name); ?>"
-                                                             style="height:120px; width:100%; object-fit:cover; background:#f5f5f5;">
-                                                    </a>
-                                                <?php } else { ?>
-                                                    <a href="<?php echo HTML::chars($url); ?>" target="_blank" title="Download <?php echo HTML::chars($name); ?>"
-                                                       style="display:block; height:120px; line-height:120px; text-align:center; font-size:42px; background:#f5f5f5; color:#666;">
-                                                        <i class="fa fa-file-<?php echo HTML::chars($ext); ?>-o"></i>
-                                                    </a>
-                                                <?php } ?>
-                                                <div class="caption" style="padding:6px 0 0;">
-                                                    <small style="display:block; color:#555; word-break:break-word;">
-                                                        <strong>Ref:</strong> <?php echo HTML::chars($ref); ?>
-                                                        <?php if ($src === 'admin') { ?>
-                                                            <span class="label label-warning" style="font-size:9px;">Admin</span>
-                                                        <?php } else { ?>
-                                                            <span class="label label-info" style="font-size:9px;">User</span>
-                                                        <?php } ?>
-                                                    </small>
-                                                    <small style="display:block; color:#888;">
-                                                        <?php echo HTML::chars($type_label); ?>
-                                                    </small>
-                                                    <?php if ($stamp !== '') { ?>
-                                                    <small style="display:block; color:#888;"><?php echo HTML::chars($stamp); ?></small>
-                                                    <?php } ?>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <?php } ?>
-                                    </div>
-                                <?php } ?>
-                            </div>
-
                         </div><!-- /.tab-content -->
                     </div><!-- /.box-body -->
-                </div><!-- /.box (Request Information & Attachments) -->
+                </div><!-- /.box -->
             </div>
         </div>
 
         <!-- Lightbox modal for image attachments. Triggered by any
-             [data-rqt-zoom="1"] anchor inside the panel above. -->
+             [data-rqt-zoom="1"] anchor in the requests tab. The
+             backdrop-cleanup pattern matches the other modals on this
+             page (.modal-backdrop is forcibly removed on hide so a
+             stale overlay can never block clicks). -->
         <div class="modal fade" id="rqt-zoom-modal" tabindex="-1">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                        <h4 class="modal-title">Attachment Preview</h4>
+                        <h4 class="modal-title"><i class="fa fa-picture-o"></i> Attachment Preview</h4>
                     </div>
-                    <div class="modal-body text-center" style="background:#222;">
+                    <div class="modal-body text-center" style="background:#222; padding:6px;">
                         <img id="rqt-zoom-img" src="" alt="" style="max-width:100%; max-height:75vh;">
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-xs-12">
-
-                <div class="box">
-                    <div class="box-header">
-                        <h3 class="box-title"><i class="fa fa-search"></i> User Activity Log</h3>
+                    <div class="modal-footer" style="background:#f5f5f5;">
+                        <a id="rqt-zoom-link" href="#" target="_blank" class="btn btn-default btn-sm pull-left">
+                            <i class="fa fa-external-link"></i> Open in new tab
+                        </a>
+                        <button type="button" class="btn btn-default btn-sm" data-dismiss="modal">Close</button>
                     </div>
-                    <!-- /.box-header -->
-                    <div class="box-body">
-                        <div class="table-responsive">
-                            <table id="activitylog" class="table table-bordered table-striped">
-                                <thead>
-                                    <tr>                                        
-                                        <th class="no-sort">Username</th>
-                                        <th class="no-sort">Designation</th>
-                                        <th class="no-sort">User Type</th>
-                                        <th class="no-sort">Posted In</th>
-                                        <th class="no-sort">Region</th>
-                                        <th class="no-sort">Activity</th>
-                                        <th>Activity Time</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-
-                                <tfoot>
-                                    <tr>                                        
-                                        <th>Username</th>
-                                        <th>Designation</th>
-                                        <th>User Type</th>
-                                        <th>Posted In</th>
-                                        <th>Region</th>
-                                        <th>Activity</th>
-                                        <th>Activity Time</th>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                    </div>
-                    <!-- /.box-body -->
                 </div>
-                <!-- /.box -->
             </div>
         </div>
     </div>
@@ -918,22 +875,51 @@
         );
         $('.dataTables_empty').html("Information not found");
 
-        // Lightbox-style preview for image attachments in the
-        // "Request Information & Attachments" panel. We delegate the
-        // click off the page root so it picks up both the gallery
-        // thumbnails and the inline thumbnail in the Requests table.
+        // Lightbox-style preview for image attachments in the Requests
+        // tab. Delegated off document so it works with rows that may
+        // be re-rendered (e.g. if the future requests table becomes a
+        // DataTable too). Ctrl/Cmd/Shift/middle-click bypass the
+        // lightbox so users can still open the image in a new tab.
         $(document).on('click', 'a[data-rqt-zoom="1"]', function (e) {
-            // Allow Ctrl/Cmd+click and middle-click to open in a new tab.
             if (e.ctrlKey || e.metaKey || e.shiftKey || e.which === 2) return;
             e.preventDefault();
             var src = $(this).attr('href');
             $('#rqt-zoom-img').attr('src', src);
+            $('#rqt-zoom-link').attr('href', src);
             $('#rqt-zoom-modal').modal('show');
         });
-        // Free the image when the modal closes — keeps memory tidy when
-        // an analyst clicks through many gallery items in a session.
-        $('#rqt-zoom-modal').on('hidden.bs.modal', function () {
-            $('#rqt-zoom-img').attr('src', '');
+
+        // Robust backdrop / body-state cleanup. The page hosts ~14
+        // other Bootstrap modals using a custom .blue-container hack
+        // (search the file for "appendTo('.blue')"). When the lightbox
+        // is opened/closed against that backdrop machinery, Bootstrap
+        // sometimes leaves a stale .modal-backdrop attached to <body>
+        // which blocks every click on the page until reload. The
+        // listener below — fired on both shown and hidden — deletes
+        // any backdrop element that doesn't have a visible modal
+        // associated with it, and undoes the body-state classes so
+        // the page returns to a clickable state in every case.
+        $('#rqt-zoom-modal').on('shown.bs.modal hidden.bs.modal', function (e) {
+            // Free the image src on hide to keep memory tidy when an
+            // analyst clicks through many thumbnails in a session.
+            if (e && e.type === 'hidden') {
+                $('#rqt-zoom-img').attr('src', '');
+                $('#rqt-zoom-link').attr('href', '#');
+            }
+            setTimeout(function () {
+                if ($('.modal:visible').length === 0) {
+                    $('.modal-backdrop').remove();
+                    $('body').removeClass('modal-open').css('padding-right', '');
+                }
+            }, 250);
+        });
+        // Belt-and-suspenders: clicking the dimmed backdrop should
+        // always dismiss the lightbox, even if Bootstrap got into a
+        // weird state.
+        $(document).on('click', '.modal-backdrop', function () {
+            if ($('#rqt-zoom-modal').hasClass('in')) {
+                $('#rqt-zoom-modal').modal('hide');
+            }
         });
 
     });
