@@ -586,45 +586,36 @@ try {
                     </a>
                     <ul class="treeview-menu">
 
-                        <!-- Advanced searches (Controller_Databank) — one per external DB -->
+                        <!-- External-DB searches (Controller_Databank) — one per external DB -->
                         <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'subscriber_advanced') ? 'active' : ''; ?>">
-                            <a href="<?php echo URL::site('databank/subscriber_advanced'); ?>"><i class="fa fa-mobile"></i>Subscriber Advanced Search</a>
+                            <a href="<?php echo URL::site('databank/subscriber_advanced'); ?>"><i class="fa fa-mobile"></i>Subscriber Search</a>
                         </li>
                         <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'ecp_advanced') ? 'active' : ''; ?>">
-                            <a href="<?php echo URL::site('databank/ecp_advanced'); ?>"><i class="fa fa-id-card-o"></i>ECP Advanced Search</a>
+                            <a href="<?php echo URL::site('databank/ecp_advanced'); ?>"><i class="fa fa-id-card-o"></i>ECP Search</a>
                         </li>
                         <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'ctd_kpk_advanced') ? 'active' : ''; ?>">
-                            <a href="<?php echo URL::site('databank/ctd_kpk_advanced'); ?>"><i class="fa fa-shield"></i>CTD KPK Advanced Search</a>
+                            <a href="<?php echo URL::site('databank/ctd_kpk_advanced'); ?>"><i class="fa fa-shield"></i>CTD KPK Search</a>
                         </li>
                         <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'dlms_advanced') ? 'active' : ''; ?>">
-                            <a href="<?php echo URL::site('databank/dlms_advanced'); ?>"><i class="fa fa-car"></i>DLMS Advanced Search</a>
+                            <a href="<?php echo URL::site('databank/dlms_advanced'); ?>"><i class="fa fa-car"></i>DLMS Search</a>
                         </li>
                         <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'govt_employee_advanced') ? 'active' : ''; ?>">
-                            <a href="<?php echo URL::site('databank/govt_employee_advanced'); ?>"><i class="fa fa-briefcase"></i>Govt Employee Advanced Search</a>
+                            <a href="<?php echo URL::site('databank/govt_employee_advanced'); ?>"><i class="fa fa-briefcase"></i>Govt Employee Search</a>
                         </li>
 
-                        <li class="header" style="padding:6px 15px; color:#8aa4af; font-size:11px; text-transform:uppercase;">Reports &amp; Uploads</li>
-
-                        <?php if (Helpers_Utilities::chek_role_access($role_id, 34) == 1) { ?>
-                            <li class="<?php echo ($menu_name == 'bulk_nadra_requests_databank') ? 'active' : ''; ?>"><a href="<?php echo URL::site('Admindatabank/bulk_nadra_requests_databank'); ?>"><i class="fa fa-circle-o"></i>Nadra Databank </a></li>
-                        <?php } ?>
-                        <?php if (Helpers_Utilities::chek_role_access($role_id, 34) == 1) { ?>
-                            <li class="<?php echo ($menu_name == 'nadra_requests_reports_databank') ? 'active' : ''; ?>"><a href="<?php echo URL::site('Admindatabank/nadra_requests_reports_databank'); ?>"><i class="fa fa-circle-o"></i>Nadra Reports </a></li>
-                        <?php } ?>
-                        <?php if (Helpers_Utilities::chek_role_access($role_id, 34) == 1) { ?>
-                            <li class="<?php echo ($menu_name == 'breakup_report') ? 'active' : ''; ?>"><a href="<?php echo URL::site('Admindatabank/breakup_report'); ?>"><i class="fa fa-circle-o"></i>Nadra Breakup Reports </a></li>
-                        <?php } ?>
-                        <?php if (Helpers_Utilities::chek_role_access($role_id, 34) == 1) { ?>
-                            <li class="<?php echo ($menu_name == 'data_upload_against_msisdn') ? 'active' : ''; ?>"><a href="<?php echo URL::site('Admindatabank/data_upload_against_msisdn'); ?>"><i class="fa fa-circle-o"></i>Old Databank(MSISDN) </a></li>
-                        <?php } ?>
-                        <?php if (Helpers_Utilities::chek_role_access($role_id, 34) == 1) { ?>
-                            <li class="<?php echo ($menu_name == 'msisdn_requests_reports_databank') ? 'active' : ''; ?>"><a href="<?php echo URL::site('Admindatabank/msisdn_requests_reports_databank'); ?>"><i class="fa fa-circle-o"></i>MSISDN Reports </a></li>
-                        <?php } ?>
-                        <?php if (Helpers_Utilities::chek_role_access($role_id, 34) == 1) { ?>
-                            <li class="<?php echo ($menu_name == 'msisdn_breakup_report' || ($menu_name == 'msisdn_breakup_report_individual'|| $menu_name == 'msisdn_no_request_send_reports_detail') ) ? 'active' : ''; ?>"><a href="<?php echo URL::site('Admindatabank/msisdn_breakup_report'); ?>"><i class="fa fa-circle-o"></i>MSISDN Breakup Reports </a></li>
-                        <?php } ?>
-
-
+                        <?php /* Reports & Uploads — hidden per operator request. The
+                                 underlying Admindatabank actions still exist; flip the
+                                 if(false) to if(true) (and restore the original role
+                                 gates) to bring them back. */ ?>
+                        <?php if (false): ?>
+                            <li class="header" style="padding:6px 15px; color:#8aa4af; font-size:11px; text-transform:uppercase;">Reports &amp; Uploads</li>
+                            <li><a href="<?php echo URL::site('Admindatabank/bulk_nadra_requests_databank'); ?>"><i class="fa fa-circle-o"></i>Nadra Databank </a></li>
+                            <li><a href="<?php echo URL::site('Admindatabank/nadra_requests_reports_databank'); ?>"><i class="fa fa-circle-o"></i>Nadra Reports </a></li>
+                            <li><a href="<?php echo URL::site('Admindatabank/breakup_report'); ?>"><i class="fa fa-circle-o"></i>Nadra Breakup Reports </a></li>
+                            <li><a href="<?php echo URL::site('Admindatabank/data_upload_against_msisdn'); ?>"><i class="fa fa-circle-o"></i>Old Databank(MSISDN) </a></li>
+                            <li><a href="<?php echo URL::site('Admindatabank/msisdn_requests_reports_databank'); ?>"><i class="fa fa-circle-o"></i>MSISDN Reports </a></li>
+                            <li><a href="<?php echo URL::site('Admindatabank/msisdn_breakup_report'); ?>"><i class="fa fa-circle-o"></i>MSISDN Breakup Reports </a></li>
+                        <?php endif; ?>
 
                     </ul>
                 </li>

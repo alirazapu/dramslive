@@ -124,7 +124,11 @@ class Helpers_Databank
         $limit = self::_clamp($limit, 1, 500);
         $rows  = array();
 
-        // --- subscribers_main (mobile) — only fields that exist there ---
+        // --- subscribers_main (mobile) — confirmed columns from existing
+        // Model_Userrequest::subscriber_external_search_results():
+        //   msisdn, cnic, name, address, imsi, status, bvs_status.
+        // (subscribers_main has no father column — that filter is only
+        // honoured on the afghan side below.)
         try {
             $DB    = Database::instance('mobile');
             $where = array();
@@ -142,6 +146,12 @@ class Helpers_Databank
             }
             if (!empty($filters['imsi'])) {
                 $where[] = 'imsi = ' . $DB->escape(trim($filters['imsi']));
+            }
+            if (!empty($filters['name'])) {
+                $where[] = 'name LIKE ' . $DB->escape('%' . trim($filters['name']) . '%');
+            }
+            if (!empty($filters['address'])) {
+                $where[] = 'address LIKE ' . $DB->escape('%' . trim($filters['address']) . '%');
             }
 
             if (!empty($where)) {
@@ -216,23 +226,50 @@ class Helpers_Databank
             $where = array();
 
             if (!empty($filters['cnic'])) {
-                $where[] = 'CNIC = ' . $DB->escape(trim($filters['cnic']));
+                $where[] = 'p.CNIC = ' . $DB->escape(trim($filters['cnic']));
             }
             if (!empty($filters['name'])) {
-                $where[] = 'Name LIKE ' . $DB->escape('%' . trim($filters['name']) . '%');
+                $where[] = 'p.Name LIKE ' . $DB->escape('%' . trim($filters['name']) . '%');
             }
             if (!empty($filters['father'])) {
-                $where[] = 'FatherName LIKE ' . $DB->escape('%' . trim($filters['father']) . '%');
+                $where[] = 'p.FatherName LIKE ' . $DB->escape('%' . trim($filters['father']) . '%');
             }
             if (!empty($filters['district'])) {
                 $d = $DB->escape('%' . trim($filters['district']) . '%');
-                $where[] = "(PermAdrDistrict LIKE {$d} OR CurrAdrDistrict LIKE {$d})";
+                $where[] = "(p.PermAdrDistrict LIKE {$d} OR p.CurrAdrDistrict LIKE {$d})";
+            }
+            if (!empty($filters['fir'])) {
+                // FIR cross-table lookup: pull PersonIDs from
+                // dct_person_profile_status_detail (Schedule IV) and
+                // dsr_terrorism_attack (Accused) that mention this FIR
+                // number, then constrain dct_person_profile to that set.
+                $fir_esc = $DB->escape(trim($filters['fir']));
+                $where[] = "p.PersonId IN (
+                    SELECT DISTINCT spd.PersonID
+                      FROM dct_person_profile_status_detail spd
+                     WHERE spd.FirRefNo = {$fir_esc}
+                    UNION
+                    SELECT DISTINCT spd2.PersonID
+                      FROM dct_person_profile_status_detail spd2
+                      JOIN dsr_terrorism_attack ta ON ta.TerrorismAttackID = spd2.ActivityID
+                     WHERE ta.FIRNumber = {$fir_esc}
+                )";
             }
             if (empty($where)) {
                 return array();
             }
 
-            $sql = "SELECT * FROM dct_person_profile
+            // Pull a few useful FIR fields from the status-detail table
+            // alongside the person profile so the result row can show
+            // an FIR badge without a second round-trip.
+            $sql = "SELECT p.*,
+                           (SELECT spd.FirRefNo FROM dct_person_profile_status_detail spd
+                              WHERE spd.PersonID = p.PersonId AND spd.FirRefNo IS NOT NULL
+                              ORDER BY spd.StatusID DESC LIMIT 1) AS LatestFirRefNo,
+                           (SELECT spd.FirRefDate FROM dct_person_profile_status_detail spd
+                              WHERE spd.PersonID = p.PersonId AND spd.FirRefDate IS NOT NULL
+                              ORDER BY spd.StatusID DESC LIMIT 1) AS LatestFirRefDate
+                    FROM dct_person_profile p
                     WHERE " . implode(' AND ', $where) . "
                     LIMIT {$limit}";
             return $DB->query(Database::SELECT, $sql, TRUE)->as_array();

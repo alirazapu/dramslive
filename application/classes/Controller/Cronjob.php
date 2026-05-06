@@ -2435,4 +2435,137 @@ class Controller_Cronjob extends Controller {
         return $cache;
     }
 
+    /* ------------------------------------------------------------------ */
+    /*  ECP OCR daemon — local cache builder                              */
+    /*                                                                    */
+    /*  Walks ecp.ecp_persons and OCRs name_image_base64,                 */
+    /*  father_image_base64, address_image_base64 into the LOCAL          */
+    /*  ecp_persons_ocr table on the aiesplus DB. Once populated, the     */
+    /*  Databank ECP search hits the local table first; the remote DB     */
+    /*  is only round-tripped when the user wants the original image      */
+    /*  or columns we don't cache.                                        */
+    /*                                                                    */
+    /*  Schema lives in docs/sql/ecp_persons_ocr.sql — run it once per    */
+    /*  environment before the daemon will store anything.                */
+    /* ------------------------------------------------------------------ */
+
+    /**
+     * Operate the ECP OCR daemon. Streaming output throughout so the
+     * URL doesn't look hung while OCR is in progress.
+     *
+     * Query params:
+     *   mode          oneshot (default) | daemon | stop | status
+     *   batch         rows per batch    (oneshot/daemon, default 50, max 500)
+     *   engine        tesseract (default) | gvision
+     *   lang          tesseract language, default 'eng+urd'
+     *   max_minutes   wall-clock budget (daemon mode only, default 30)
+     *   idle_sleep    seconds to nap when caught up (daemon, default 30)
+     *
+     * Examples:
+     *   /cronjob/ecp_ocr_daemon?mode=status
+     *   /cronjob/ecp_ocr_daemon?mode=oneshot&batch=200
+     *   /cronjob/ecp_ocr_daemon?mode=daemon&max_minutes=60&engine=gvision
+     *   /cronjob/ecp_ocr_daemon?mode=stop      (graceful shutdown of running daemon)
+     *
+     * Recommended deployment:
+     *   - Schedule oneshot via Windows Task Scheduler every 5 minutes
+     *     for low-priority steady-state ingest, OR
+     *   - Run daemon mode with --max_minutes=55 every hour for higher
+     *     throughput while still recycling the process regularly.
+     */
+    public function action_ecp_ocr_daemon()
+    {
+        @set_time_limit(0);
+        self::_stream_init();
+        $say = function ($s) { echo $s; @flush(); };
+
+        $mode        = isset($_GET['mode'])        ? (string) $_GET['mode']        : 'oneshot';
+        $batch       = isset($_GET['batch'])       ? (int)    $_GET['batch']       : 50;
+        $engine      = isset($_GET['engine'])      ? (string) $_GET['engine']      : 'tesseract';
+        $lang        = isset($_GET['lang'])        ? (string) $_GET['lang']        : 'eng+urd';
+        $max_minutes = isset($_GET['max_minutes']) ? (int)    $_GET['max_minutes'] : 30;
+        $idle_sleep  = isset($_GET['idle_sleep'])  ? (int)    $_GET['idle_sleep']  : 30;
+
+        $say(sprintf("[%s] ecp_ocr_daemon mode=%s\n", date('H:i:s'), $mode));
+
+        // Stop signal handling: just touch the stop-file and return.
+        if ($mode === 'stop') {
+            $ok = Helpers_EcpOcrDaemon::request_stop();
+            $say($ok
+                ? "stop-file created. Any running daemon will exit at the top of its next iteration.\n"
+                : "could not create stop-file (cache dir not writable?)\n");
+            exit;
+        }
+
+        // Status: print current heartbeat + cache fill snapshot.
+        if ($mode === 'status') {
+            $info = Helpers_EcpOcrDaemon::status();
+            $say("\n----- daemon status -----\n");
+            $say(sprintf("locked         : %s\n", $info['is_locked'] ? 'yes (running)' : 'no'));
+            $say(sprintf("cache rows     : %s (ok=%s, empty=%s, error=%s)\n",
+                number_format($info['cache_total']),
+                number_format($info['cache_ok']),
+                number_format($info['cache_empty']),
+                number_format($info['cache_error'])));
+            if ($info['remote_total'] !== null) {
+                $say(sprintf("remote rows    : %s\n", number_format($info['remote_total'])));
+                $say(sprintf("frontier id    : %s / max id %s (backlog %s)\n",
+                    number_format((int) $info['cache_max_id']),
+                    number_format((int) $info['remote_max_id']),
+                    number_format((int) $info['backlog'])));
+            }
+            $say("\nlast run:\n");
+            if ($info['last_run']) {
+                foreach ((array) $info['last_run'] as $k => $v) {
+                    $say(sprintf("  %-22s %s\n", $k, (string) $v));
+                }
+            } else {
+                $say("  (no runs recorded yet)\n");
+            }
+            exit;
+        }
+
+        // For tesseract, run the same preflight the OCR backfill action
+        // uses so a missing binary fails loudly up front.
+        if ($engine === 'tesseract') {
+            $err = self::_tesseract_check();
+            if ($err !== '') {
+                http_response_code(500);
+                $say("[FATAL] tesseract preflight: {$err}\n");
+                $say("        Install Tesseract on this host or re-run with engine=gvision.\n");
+                exit;
+            }
+            $say("[ok] tesseract binary detected\n");
+        }
+
+        $opts = array(
+            'batch_size'  => $batch,
+            'engine'      => $engine,
+            'lang'        => $lang,
+            'idle_sleep'  => $idle_sleep,
+            'max_minutes' => $max_minutes,
+        );
+
+        try {
+            if ($mode === 'daemon') {
+                $say(sprintf("[%s] entering daemon loop (max_minutes=%d, idle_sleep=%d)\n",
+                    date('H:i:s'), $max_minutes, $idle_sleep));
+                $stats = Helpers_EcpOcrDaemon::run_daemon($opts);
+            } else {
+                // default: oneshot
+                $say(sprintf("[%s] running single batch (size=%d)\n", date('H:i:s'), $batch));
+                $stats = Helpers_EcpOcrDaemon::run_oneshot($opts);
+            }
+
+            $say("\n----- summary -----\n");
+            foreach ($stats as $k => $v) {
+                $say(sprintf("%-10s : %s\n", $k, is_scalar($v) ? (string) $v : json_encode($v)));
+            }
+        } catch (Exception $e) {
+            http_response_code(500);
+            $say('Daemon aborted: ' . $e->getMessage() . "\n");
+        }
+        exit;
+    }
+
 }

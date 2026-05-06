@@ -55,17 +55,17 @@ class Controller_Databank extends Controller_Working
     {
         $this->_require_databank_access();
         $this->template->content = $this->_form_view(array(
-            'title'      => 'Subscriber Advanced Search',
+            'title'      => 'Subscriber Search',
             'subtitle'   => 'Mobile + Afghan accounts (auto-detected)',
-            'breadcrumb' => 'Subscriber Advanced Search',
+            'breadcrumb' => 'Subscriber Search',
             'ajax_url'   => URL::site('databank/subscriber_advanced_results', TRUE),
             'fields'     => array(
                 array('name' => 'msisdn',   'label' => 'MSISDN',   'placeholder' => '03100910677 / 3100910677 / +923100910677'),
                 array('name' => 'cnic',     'label' => 'CNIC',     'placeholder' => 'Pakistani 13-digit OR Afghan ID'),
                 array('name' => 'imsi',     'label' => 'IMSI',     'placeholder' => '15-digit IMSI (mobile only)'),
-                array('name' => 'name',     'label' => 'Name',     'placeholder' => 'Master name (foreigner only)'),
+                array('name' => 'name',     'label' => 'Name',     'placeholder' => 'Subscriber name (mobile + foreigner)'),
                 array('name' => 'father',   'label' => 'Father',   'placeholder' => "Father's name (foreigner only)"),
-                array('name' => 'address',  'label' => 'Address',  'placeholder' => 'Site address (foreigner only)'),
+                array('name' => 'address',  'label' => 'Address',  'placeholder' => 'Address (mobile + foreigner)'),
                 array('name' => 'district', 'label' => 'District', 'placeholder' => 'District / Tehsil (foreigner only)'),
             ),
         ));
@@ -89,16 +89,30 @@ class Controller_Databank extends Controller_Working
             $this->response->body(View::factory('templates/user/databank_advanced_results')
                 ->set('rows', $rows)
                 ->set('columns', array(
-                    array('key' => 'source',     'label' => 'Source'),
-                    array('key' => 'msisdn',     'label' => 'MSISDN'),
-                    array('key' => 'cnic',       'label' => 'CNIC',
-                                                 'fallback_keys' => array('foreign_cnic', 'master_acc_number')),
-                    array('key' => 'imsi',       'label' => 'IMSI'),
-                    array('key' => 'subscriber_name', 'label' => 'Name',
-                                                 'fallback_keys' => array('master_name')),
-                    array('key' => 'father_name','label' => 'Father'),
-                    array('key' => 'site_address','label' => 'Address'),
-                    array('key' => 'master_pak_district','label' => 'District'),
+                    array('key' => 'source', 'label' => 'Source'),
+                    array('key' => 'msisdn', 'label' => 'MSISDN'),
+                    // CNIC: subscribers_main has `cnic`; afghan_accounts has
+                    // `foreign_cnic` (or master_acc_number for the rare
+                    // master-only row).
+                    array('key' => 'cnic',
+                          'label' => 'CNIC',
+                          'fallback_keys' => array('foreign_cnic', 'master_acc_number')),
+                    array('key' => 'imsi', 'label' => 'IMSI'),
+                    // Name: mobile uses `name`, afghan uses `master_name`.
+                    array('key' => 'name',
+                          'label' => 'Name',
+                          'fallback_keys' => array('master_name')),
+                    // Father: mobile has no father column; only afghan has
+                    // father_name. Render '—' for mobile rows.
+                    array('key' => 'father_name', 'label' => 'Father'),
+                    // Address: mobile uses `address`, afghan uses `site_address`.
+                    array('key' => 'address',
+                          'label' => 'Address',
+                          'fallback_keys' => array('site_address')),
+                    // District: afghan-only.
+                    array('key' => 'master_pak_district', 'label' => 'District'),
+                    array('key' => 'status', 'label' => 'Status'),
+                    array('key' => 'bvs_status', 'label' => 'BVS'),
                 ))
                 ->set('summary', count($rows) . ' result(s)')
                 ->render());
@@ -115,9 +129,9 @@ class Controller_Databank extends Controller_Working
     {
         $this->_require_databank_access();
         $this->template->content = $this->_form_view(array(
-            'title'      => 'ECP Advanced Search',
+            'title'      => 'ECP Search',
             'subtitle'   => 'Search the electoral roll (ecp_persons)',
-            'breadcrumb' => 'ECP Advanced Search',
+            'breadcrumb' => 'ECP Search',
             'ajax_url'   => URL::site('databank/ecp_advanced_results', TRUE),
             'fields'     => array(
                 array('name' => 'cnic',     'label' => 'CNIC',         'placeholder' => '13-digit CNIC (no dashes)'),
@@ -173,15 +187,16 @@ class Controller_Databank extends Controller_Working
     {
         $this->_require_databank_access();
         $this->template->content = $this->_form_view(array(
-            'title'      => 'CTD KPK Advanced Search',
+            'title'      => 'CTD KPK Search',
             'subtitle'   => 'KPK CTD person profile (dct_person_profile)',
-            'breadcrumb' => 'CTD KPK Advanced Search',
+            'breadcrumb' => 'CTD KPK Search',
             'ajax_url'   => URL::site('databank/ctd_kpk_advanced_results', TRUE),
             'fields'     => array(
-                array('name' => 'cnic',     'label' => 'CNIC',     'placeholder' => '13-digit CNIC, with or without dashes'),
-                array('name' => 'name',     'label' => 'Name',     'placeholder' => 'Person name (partial OK)'),
-                array('name' => 'father',   'label' => 'Father',   'placeholder' => "Father's name (partial OK)"),
-                array('name' => 'district', 'label' => 'District', 'placeholder' => 'Permanent or current district id (partial OK)'),
+                array('name' => 'cnic',     'label' => 'CNIC',         'placeholder' => '13-digit CNIC, with or without dashes'),
+                array('name' => 'name',     'label' => 'Name',         'placeholder' => 'Person name (partial OK)'),
+                array('name' => 'father',   'label' => 'Father',       'placeholder' => "Father's name (partial OK)"),
+                array('name' => 'district', 'label' => 'District',     'placeholder' => 'Permanent or current district id (partial OK)'),
+                array('name' => 'fir',      'label' => 'F.I.R / M.S.', 'placeholder' => 'Exact FIR number (Schedule IV or terrorism)'),
             ),
         ));
     }
@@ -191,7 +206,7 @@ class Controller_Databank extends Controller_Working
         $this->auto_render = FALSE;
         $this->_require_databank_access();
         try {
-            $filters = $this->_collect_filters(array('cnic','name','father','district'));
+            $filters = $this->_collect_filters(array('cnic','name','father','district','fir'));
             if (empty($filters)) {
                 $this->response->body($this->_no_filters());
                 return;
@@ -204,13 +219,15 @@ class Controller_Databank extends Controller_Working
             $this->response->body(View::factory('templates/user/databank_advanced_results')
                 ->set('rows', $rows)
                 ->set('columns', array(
-                    array('key' => 'CNIC',           'label' => 'CNIC'),
-                    array('key' => 'Name',           'label' => 'Name'),
-                    array('key' => 'FatherName',     'label' => 'Father'),
-                    array('key' => 'PermAdrDistrict','label' => 'Perm. District'),
-                    array('key' => 'CurrAdrDistrict','label' => 'Curr. District'),
-                    array('key' => 'PermAdrTehsil',  'label' => 'Perm. Tehsil'),
-                    array('key' => 'CurrAdrTehsil',  'label' => 'Curr. Tehsil'),
+                    array('key' => 'CNIC',             'label' => 'CNIC'),
+                    array('key' => 'Name',             'label' => 'Name'),
+                    array('key' => 'FatherName',       'label' => 'Father'),
+                    array('key' => 'PermAdrDistrict',  'label' => 'Perm. District'),
+                    array('key' => 'CurrAdrDistrict',  'label' => 'Curr. District'),
+                    array('key' => 'PermAdrTehsil',    'label' => 'Perm. Tehsil'),
+                    array('key' => 'CurrAdrTehsil',    'label' => 'Curr. Tehsil'),
+                    array('key' => 'LatestFirRefNo',   'label' => 'Latest FIR No'),
+                    array('key' => 'LatestFirRefDate', 'label' => 'Latest FIR Date'),
                 ))
                 ->set('summary', count($rows) . ' CTD KPK record(s)')
                 ->render());
@@ -227,9 +244,9 @@ class Controller_Databank extends Controller_Working
     {
         $this->_require_databank_access();
         $this->template->content = $this->_form_view(array(
-            'title'      => 'DLMS Advanced Search',
+            'title'      => 'DLMS Search',
             'subtitle'   => 'Driving Licence (License_Person + License_Details)',
-            'breadcrumb' => 'DLMS Advanced Search',
+            'breadcrumb' => 'DLMS Search',
             'ajax_url'   => URL::site('databank/dlms_advanced_results', TRUE),
             'fields'     => array(
                 array('name' => 'cnic',       'label' => 'CNIC',           'placeholder' => '13-digit CNIC, with or without dashes'),
@@ -283,9 +300,9 @@ class Controller_Databank extends Controller_Working
     {
         $this->_require_databank_access();
         $this->template->content = $this->_form_view(array(
-            'title'      => 'Government Employee Advanced Search',
+            'title'      => 'Government Employee Search',
             'subtitle'   => 'Employee data (govt_emp_data.employee_data)',
-            'breadcrumb' => 'Govt Employee Advanced Search',
+            'breadcrumb' => 'Govt Employee Search',
             'ajax_url'   => URL::site('databank/govt_employee_advanced_results', TRUE),
             'fields'     => array(
                 array('name' => 'cnic',     'label' => 'CNIC / National ID', 'placeholder' => '13-digit national ID'),
