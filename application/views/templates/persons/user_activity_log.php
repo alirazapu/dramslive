@@ -180,7 +180,7 @@
                                 <a href="#ual_tab_requests" data-toggle="tab" role="tab">
                                     <i class="fa fa-folder-open"></i> Requests &amp; Attachments
                                     <?php if (count($req_rows) > 0): ?>
-                                        <span class="badge" style="background:#3c8dbc; margin-left:4px;"><?php echo (int) count($req_rows); ?></span>
+                                        <span class="badge"><?php echo (int) count($req_rows); ?></span>
                                     <?php endif; ?>
                                 </a>
                             </li>
@@ -229,7 +229,7 @@
                                     </div>
                                 <?php } else { ?>
                                 <div class="table-responsive">
-                                    <table id="reqInfoTable" class="table table-bordered table-hover" style="width:100%;">
+                                    <table id="reqInfoTable" class="table table-bordered table-striped dataTable" style="width:100%;">
                                         <thead>
                                             <tr>
                                                 <th style="width:130px;">Date</th>
@@ -275,14 +275,7 @@
                                             <tr>
                                                 <td><?php echo HTML::chars(!empty($r['created_at']) ? date('Y-m-d H:i', strtotime($r['created_at'])) : '-'); ?></td>
                                                 <td><?php echo HTML::chars(!empty($r['reference_id']) ? $r['reference_id'] : '-'); ?></td>
-                                                <td>
-                                                    <?php echo HTML::chars($type_label); ?>
-                                                    <?php if ($src === 'admin') { ?>
-                                                        <span class="label label-warning" style="margin-left:4px;" title="admin_request">A</span>
-                                                    <?php } else { ?>
-                                                        <span class="label label-info" style="margin-left:4px;" title="user_request">U</span>
-                                                    <?php } ?>
-                                                </td>
+                                                <td><?php echo HTML::chars($type_label); ?></td>
                                                 <td><?php echo HTML::chars($company_label); ?></td>
                                                 <td><?php echo HTML::chars(!empty($r['requested_value']) ? $r['requested_value'] : '-'); ?></td>
                                                 <td>
