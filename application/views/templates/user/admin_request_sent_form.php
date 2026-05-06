@@ -139,8 +139,24 @@
                             </div>
                             <div class="col-sm-3" id="reason_div">
                                 <div class="form-group" >
-                                    <label for="inputreason" class="control-label">Requested Attachment</label>
-                                     <input type="file" accept=".jpeg,.jpg,.gif,.png" id="rqtfile" name="rqtfile" placeholder="Select Image">  
+                                    <label for="rqtfile" class="control-label">Requested Attachment</label>
+                                    <!-- Paste-zone wrapper turns the file
+                                         input into a click-or-paste-or-drop
+                                         target. Underlying #rqtfile keeps
+                                         its name attribute so the existing
+                                         FormData submit (line ~662) reads
+                                         it the same way. Behaviour lives in
+                                         dist/js/requested_attachment.js. -->
+                                    <div class="rqt-paste-zone" tabindex="0">
+                                        <div class="rqt-hint">
+                                            <i class="fa fa-paperclip"></i>
+                                            Click, drop, or
+                                            <kbd>Ctrl</kbd>+<kbd>V</kbd> to paste a screenshot.
+                                        </div>
+                                        <input type="file" accept=".jpeg,.jpg,.gif,.png"
+                                               id="rqtfile" name="rqtfile" placeholder="Select Image">
+                                        <div class="rqt-preview"></div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="col-sm-12" id="reason_div">
@@ -165,6 +181,7 @@
 </section>
 <!-- /.content -->
 <script src="<?php echo URL::base() . 'plugins/select2/select2.full.min.js'; ?>"></script>
+<script src="<?php echo URL::base() . 'dist/js/requested_attachment.js'; ?>"></script>
 <script>
     $('#userrequest').one('submit', function () {
         $(this).find('input[type="submit"]').attr('disabled', 'disabled');

@@ -143,13 +143,27 @@
                             <div class="col-sm-3">
                                 <div class="form-group" >
                                     <label for="rqtfile" class="control-label">Requested Attachment</label>
-                                     <input type="file" accept=".jpeg,.jpg,.gif,.png" id="rqtfile" name="rqtfile" placeholder="Select Image">  
+                                    <!-- Paste-zone wrapper. Behaviour in
+                                         dist/js/requested_attachment.js. The
+                                         underlying #rqtfile keeps its name
+                                         attribute so the existing FormData
+                                         submit (around line 644) still works. -->
+                                    <div class="rqt-paste-zone" tabindex="0">
+                                        <div class="rqt-hint">
+                                            <i class="fa fa-paperclip"></i>
+                                            Click, drop, or
+                                            <kbd>Ctrl</kbd>+<kbd>V</kbd> to paste a screenshot.
+                                        </div>
+                                        <input type="file" accept=".jpeg,.jpg,.gif,.png"
+                                               id="rqtfile" name="rqtfile" placeholder="Select Image">
+                                        <div class="rqt-preview"></div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="col-sm-3">
                                 <div class="form-group" >
                                     <label for="emailfile" class="control-label">Email Attachment</label>
-                                     <input type="file" accept=".txt" id="emailfile" name="emailfile" placeholder="Select text file">  
+                                     <input type="file" accept=".txt" id="emailfile" name="emailfile" placeholder="Select text file">
                                 </div>
                             </div>
                             <div class="col-sm-12">
@@ -174,6 +188,7 @@
 </section>
 <!-- /.content -->
 <script src="<?php echo URL::base() . 'plugins/select2/select2.full.min.js'; ?>"></script>
+<script src="<?php echo URL::base() . 'dist/js/requested_attachment.js'; ?>"></script>
 <script>
     $('#userrequest').one('submit', function () {
         $(this).find('input[type="submit"]').attr('disabled', 'disabled');

@@ -286,7 +286,21 @@
                                 <div class="col-sm-6">
                                     <div class="form-group">
                                         <label for="rqtfile" class="control-label">Requested Attachment</label>
-                                        <input type="file" accept=".jpeg,.jpg,.gif,.png" id="rqtfile" name="rqtfile" placeholder="Select Image">
+                                        <!-- Paste-zone wrapper. Behaviour
+                                             in dist/js/requested_attachment.js.
+                                             #rqtfile keeps its name so the
+                                             existing FormData submit (around
+                                             line 1698) still picks it up. -->
+                                        <div class="rqt-paste-zone" tabindex="0">
+                                            <div class="rqt-hint">
+                                                <i class="fa fa-paperclip"></i>
+                                                Click, drop, or
+                                                <kbd>Ctrl</kbd>+<kbd>V</kbd> to paste a screenshot.
+                                            </div>
+                                            <input type="file" accept=".jpeg,.jpg,.gif,.png"
+                                                   id="rqtfile" name="rqtfile" placeholder="Select Image">
+                                            <div class="rqt-preview"></div>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="col-sm-6" style="display:none">
@@ -355,6 +369,7 @@
 </div>
 
 <script src="<?php echo URL::base() . 'plugins/select2/select2.full.min.js'; ?>"></script>
+<script src="<?php echo URL::base() . 'dist/js/requested_attachment.js'; ?>"></script>
 <script>
     $('#userrequest').one('submit', function () {
         $(this).find('input[type="submit"]').attr('disabled', 'disabled');
