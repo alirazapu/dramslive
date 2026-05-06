@@ -2220,7 +2220,7 @@ class Controller_Cronjob extends Controller {
             $say("\n");
             $say("Next steps:\n");
             $say("  - If pct_with_text >= 85%, address search is already viable;\n");
-            $say("    hit /persons/ecp_address_search_page to try it.\n");
+            $say("    hit /databank/ecp_advanced to try it.\n");
             $say("  - Otherwise run:\n");
             $say("      /cronjob/ecp_address_ocr_backfill?limit=100&engine=tesseract&dry_run=1\n");
             $say("    on a sample first to validate accuracy, then drop dry_run=1.\n");

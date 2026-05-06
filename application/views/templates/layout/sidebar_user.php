@@ -569,13 +569,11 @@ try {
                             'msisdn_no_request_send_reports_detail',
                         )))
                         || ($current_url == 'Databank' && in_array($menu_name, array(
-                            'ecp_address',
-                            'ecp_cnic',
-                            'ctd_kpk',
-                            'dlms',
-                            'govt_employee',
-                            'mobile_subscriber',
-                            'foreigner',
+                            'subscriber_advanced',
+                            'ecp_advanced',
+                            'ctd_kpk_advanced',
+                            'dlms_advanced',
+                            'govt_employee_advanced',
                         )));
                 ?>
                 <li class="treeview <?php echo $databank_active ? 'active' : ''; ?>">
@@ -588,27 +586,21 @@ try {
                     </a>
                     <ul class="treeview-menu">
 
-                        <!-- External-DB search pages (Controller_Databank) -->
-                        <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'mobile_subscriber') ? 'active' : ''; ?>">
-                            <a href="<?php echo URL::site('databank/mobile_subscriber'); ?>"><i class="fa fa-mobile"></i>Mobile Subscriber Search</a>
+                        <!-- Advanced searches (Controller_Databank) — one per external DB -->
+                        <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'subscriber_advanced') ? 'active' : ''; ?>">
+                            <a href="<?php echo URL::site('databank/subscriber_advanced'); ?>"><i class="fa fa-mobile"></i>Subscriber Advanced Search</a>
                         </li>
-                        <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'foreigner') ? 'active' : ''; ?>">
-                            <a href="<?php echo URL::site('databank/foreigner'); ?>"><i class="fa fa-globe"></i>Foreigner Account Search</a>
+                        <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'ecp_advanced') ? 'active' : ''; ?>">
+                            <a href="<?php echo URL::site('databank/ecp_advanced'); ?>"><i class="fa fa-id-card-o"></i>ECP Advanced Search</a>
                         </li>
-                        <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'ecp_cnic') ? 'active' : ''; ?>">
-                            <a href="<?php echo URL::site('databank/ecp_cnic'); ?>"><i class="fa fa-id-card-o"></i>ECP Person Search (CNIC)</a>
+                        <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'ctd_kpk_advanced') ? 'active' : ''; ?>">
+                            <a href="<?php echo URL::site('databank/ctd_kpk_advanced'); ?>"><i class="fa fa-shield"></i>CTD KPK Advanced Search</a>
                         </li>
-                        <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'ecp_address') ? 'active' : ''; ?>">
-                            <a href="<?php echo URL::site('databank/ecp_address'); ?>"><i class="fa fa-search"></i>ECP Address Search</a>
+                        <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'dlms_advanced') ? 'active' : ''; ?>">
+                            <a href="<?php echo URL::site('databank/dlms_advanced'); ?>"><i class="fa fa-car"></i>DLMS Advanced Search</a>
                         </li>
-                        <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'ctd_kpk') ? 'active' : ''; ?>">
-                            <a href="<?php echo URL::site('databank/ctd_kpk'); ?>"><i class="fa fa-shield"></i>CTD KPK Search</a>
-                        </li>
-                        <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'dlms') ? 'active' : ''; ?>">
-                            <a href="<?php echo URL::site('databank/dlms'); ?>"><i class="fa fa-car"></i>DLMS Licence Search</a>
-                        </li>
-                        <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'govt_employee') ? 'active' : ''; ?>">
-                            <a href="<?php echo URL::site('databank/govt_employee'); ?>"><i class="fa fa-briefcase"></i>Govt Employee Search</a>
+                        <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'govt_employee_advanced') ? 'active' : ''; ?>">
+                            <a href="<?php echo URL::site('databank/govt_employee_advanced'); ?>"><i class="fa fa-briefcase"></i>Govt Employee Advanced Search</a>
                         </li>
 
                         <li class="header" style="padding:6px 15px; color:#8aa4af; font-size:11px; text-transform:uppercase;">Reports &amp; Uploads</li>
