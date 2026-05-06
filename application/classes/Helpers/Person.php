@@ -434,6 +434,141 @@ abstract class Helpers_Person
         }
     }
 
+    /**
+     * Aggregate every user_request and admin_request row attributable to
+     * the given person, merged into a single chronological list. Powers
+     * the "Request Information & Attachments" box on the
+     * /persons/user_activity_log page.
+     *
+     * Linkage rules:
+     *  - user_request rows: direct via `concerned_person_id = $person_id`
+     *    (the column is set by Controller_Email::action_send when an
+     *    analyst submits a per-telco request from the person's profile).
+     *  - admin_request rows: indirect — admin requests don't carry a
+     *    person_id. We instead match on `requested_value`, comparing it
+     *    against every phone number the person owns
+     *    (`person_phone_number.phone_number`) and every CNIC variant on
+     *    `person_initiate.cnic_number`. The `requested_value` column on
+     *    admin_request stores either an MSISDN or a CNIC depending on
+     *    the request type, so this catches both shapes in one IN(...)
+     *    clause.
+     *
+     * Both sources are LEFT-joined to `email_templates_type` so the
+     * caller gets a human-readable request-type name without needing a
+     * second lookup. Rows arrive sorted by created_at DESC across both
+     * tables.
+     *
+     * @param int $person_id  Internal `person.person_id`.
+     * @return array<int,array<string,mixed>>  Each row keyed by:
+     *     request_id, reference_id, user_request_type_id,
+     *     request_type_name, company_name, requested_value,
+     *     status, processing_index, reason, file_name,
+     *     startDate, endDate, created_at, user_id, source ('user'|'admin'),
+     *     and (admin only) rqtbyname.
+     */
+    public static function get_person_requests($person_id)
+    {
+        $person_id = (int) $person_id;
+        if ($person_id <= 0) {
+            return array();
+        }
+        $DB = Database::instance();
+
+        // --- user_request: directly linked via concerned_person_id ---
+        $user_sql = "
+            SELECT
+                ur.request_id,
+                ur.reference_id,
+                ur.user_request_type_id,
+                ett.email_type_name AS request_type_name,
+                ur.company_name,
+                ur.requested_value,
+                ur.status,
+                ur.processing_index,
+                ur.reason,
+                ur.file_name,
+                ur.startDate,
+                ur.endDate,
+                ur.created_at,
+                ur.user_id,
+                NULL AS rqtbyname,
+                'user' AS source
+            FROM user_request ur
+            LEFT JOIN email_templates_type ett ON ett.id = ur.user_request_type_id
+            WHERE ur.concerned_person_id = {$person_id}
+            ORDER BY ur.request_id DESC
+        ";
+        $user_rows = $DB->query(Database::SELECT, $user_sql, TRUE)->as_array();
+
+        // --- admin_request: indirect via requested_value matching one of
+        //     the person's owned phone numbers or CNICs.
+        $phones_q = $DB->query(Database::SELECT,
+            "SELECT DISTINCT phone_number FROM person_phone_number WHERE person_id = {$person_id}",
+            TRUE
+        )->as_array();
+        $cnics_q = $DB->query(Database::SELECT,
+            "SELECT DISTINCT cnic_number FROM person_initiate WHERE person_id = {$person_id} AND cnic_number IS NOT NULL",
+            TRUE
+        )->as_array();
+
+        $values = array();
+        foreach ($phones_q as $p) {
+            if (!empty($p->phone_number)) {
+                // $DB->escape returns the value with surrounding quotes
+                $values[] = $DB->escape((string) $p->phone_number);
+            }
+        }
+        foreach ($cnics_q as $c) {
+            if (!empty($c->cnic_number)) {
+                $values[] = $DB->escape((string) $c->cnic_number);
+            }
+        }
+
+        $admin_rows = array();
+        if (!empty($values)) {
+            $values_csv = implode(',', $values);
+            $admin_sql = "
+                SELECT
+                    ar.request_id,
+                    ar.reference_id,
+                    ar.user_request_type_id,
+                    ett.email_type_name AS request_type_name,
+                    ar.company_name,
+                    ar.requested_value,
+                    ar.status,
+                    ar.processing_index,
+                    ar.reason,
+                    ar.file_name,
+                    ar.startDate,
+                    ar.endDate,
+                    ar.created_at,
+                    ar.user_id,
+                    ar.rqtbyname,
+                    'admin' AS source
+                FROM admin_request ar
+                LEFT JOIN email_templates_type ett ON ett.id = ar.user_request_type_id
+                WHERE ar.requested_value IN ({$values_csv})
+                ORDER BY ar.request_id DESC
+            ";
+            $admin_rows = $DB->query(Database::SELECT, $admin_sql, TRUE)->as_array();
+        }
+
+        // Merge and sort by created_at DESC across both sources
+        $merged = array();
+        foreach ($user_rows as $r) {
+            $merged[] = (array) $r;
+        }
+        foreach ($admin_rows as $r) {
+            $merged[] = (array) $r;
+        }
+        usort($merged, function ($a, $b) {
+            $ka = isset($a['created_at']) ? $a['created_at'] : '';
+            $kb = isset($b['created_at']) ? $b['created_at'] : '';
+            return strcmp($kb, $ka);
+        });
+        return $merged;
+    }
+
     public static function get_person_external_profile_employee($cnic = '')
     {
         try {

@@ -3449,6 +3449,127 @@ exit();
     }
 
     /**
+     * Stream a request "Requested Attachment" file back to the analyst's
+     * browser — used by the Request Information panel on the user
+     * activity log page (and reusable elsewhere).
+     *
+     * Security model:
+     *  - Auth-gated: anonymous requests get 401.
+     *  - The encrypted ?r=<rid> identifies a row in either user_request
+     *    or admin_request (selected by ?s=user|admin). We pull
+     *    file_name from that row.
+     *  - The resolved real path MUST live inside one of a small
+     *    whitelist of attachment directories. Anything else returns
+     *    403 — defends against a tampered DB pointing at /etc/passwd
+     *    or arbitrary paths.
+     *
+     * Display rule:
+     *  - Image MIME types render inline (so the gallery can <img src=…>).
+     *  - Anything else is sent with `Content-Disposition: attachment`.
+     */
+    public function action_attachment()
+    {
+        $this->auto_render = FALSE;
+        if (!Auth::instance()->logged_in()) {
+            header('HTTP/1.1 401 Unauthorized');
+            exit;
+        }
+        $_GET = Helpers_Utilities::remove_injection($_GET);
+        $source  = isset($_GET['s']) ? trim((string) $_GET['s']) : '';
+        $rid_enc = isset($_GET['r']) ? (string) $_GET['r'] : '';
+        if ($rid_enc === '' || !in_array($source, array('user', 'admin'), true)) {
+            header('HTTP/1.1 404 Not Found');
+            exit('Bad request');
+        }
+        $rid = (int) Helpers_Utilities::encrypted_key($rid_enc, 'decrypt');
+        if ($rid <= 0) {
+            header('HTTP/1.1 404 Not Found');
+            exit('Bad identifier');
+        }
+
+        $DB = Database::instance();
+        $table = $source === 'user' ? 'user_request' : 'admin_request';
+        $row = $DB->query(
+            Database::SELECT,
+            "SELECT file_name FROM {$table} WHERE request_id = {$rid} LIMIT 1",
+            TRUE
+        )->current();
+        if (empty($row->file_name)) {
+            header('HTTP/1.1 404 Not Found');
+            exit('No attachment');
+        }
+
+        // Whitelist the directories we'll actually serve from. Anything
+        // resolving outside these is rejected even if the DB row says so.
+        $allowed_dirs = array();
+        if (defined('REQUESTED_ATTACHMENTS')) {
+            $allowed_dirs[] = REQUESTED_ATTACHMENTS;          // new user-side requests
+        }
+        $allowed_dirs[] = DOCROOT . 'dist/uploads/user/request_approve/'; // legacy admin uploads
+
+        $real = realpath($row->file_name);
+        if ($real === false || !is_file($real)) {
+            header('HTTP/1.1 404 Not Found');
+            exit('File missing');
+        }
+        $allowed = false;
+        foreach ($allowed_dirs as $dir) {
+            $real_dir = realpath($dir);
+            if ($real_dir === false) {
+                continue;
+            }
+            // Use trailing separator so /a/b doesn't accidentally match /a/bb.
+            $prefix = rtrim($real_dir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+            if (strpos($real, $prefix) === 0) {
+                $allowed = true;
+                break;
+            }
+        }
+        if (!$allowed) {
+            header('HTTP/1.1 403 Forbidden');
+            exit('Forbidden');
+        }
+
+        // Map common extensions to MIME directly — saves us depending on
+        // the optional fileinfo PHP extension.
+        $ext = strtolower(pathinfo($real, PATHINFO_EXTENSION));
+        $image_exts = array('jpg', 'jpeg', 'png', 'gif');
+        $is_image = in_array($ext, $image_exts, true);
+
+        if ($is_image) {
+            $mime = 'image/' . ($ext === 'jpg' ? 'jpeg' : $ext);
+        } elseif ($ext === 'pdf') {
+            $mime = 'application/pdf';
+        } elseif ($ext === 'doc') {
+            $mime = 'application/msword';
+        } elseif ($ext === 'docx') {
+            $mime = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+        } elseif ($ext === 'xls') {
+            $mime = 'application/vnd.ms-excel';
+        } elseif ($ext === 'xlsx') {
+            $mime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+        } else {
+            $mime = 'application/octet-stream';
+        }
+
+        $name = basename($real);
+        $disposition = $is_image ? 'inline' : 'attachment';
+
+        // Drop any output buffers so the binary stream isn't corrupted
+        // by stray PHP output that Kohana may have queued.
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
+        header('Content-Type: ' . $mime);
+        header('Content-Length: ' . filesize($real));
+        header('Content-Disposition: ' . $disposition . '; filename="' . $name . '"');
+        header('Cache-Control: private, max-age=3600');
+        readfile($real);
+        exit;
+    }
+
+    /**
      * Render a phone number with the same "if it already exists in DRAMS,
      * link to that profile" treatment used by the bparty_subscriber view.
      *

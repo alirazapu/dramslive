@@ -20,13 +20,259 @@
 </section>
 <!-- Main content -->
 <section class="content user_activity_log">
-    <div class="container-fluid">        
+    <div class="container-fluid">
+        <?php
+        // -----------------------------------------------------------------
+        // "Request Information & Attachments" panel
+        // -----------------------------------------------------------------
+        // Renders every user_request and admin_request row that's tied to
+        // the current person, with two tabs:
+        //   1) Requests — sortable table with reason and inline attachment.
+        //   2) Attachments — image gallery + download links for non-images.
+        // Data comes from Helpers_Person::get_person_requests() (passed in
+        // via the include file at persons_functions/user_activity_log.inc).
+        // Both tabs are eager-rendered server-side because the row count
+        // per person is small (usually <50) and gallery thumbnails need
+        // the full list anyway.
+        // -----------------------------------------------------------------
+        $req_rows = isset($person_requests) && is_array($person_requests) ? $person_requests : array();
+
+        // Static lookups — kept inline to avoid threading another helper
+        // dependency. Source of truth is the column comments on
+        // user_request and the company list rendered on the request forms.
+        $company_map = array(
+            1  => 'Mobilink/Jazz',
+            2  => 'Warid',
+            3  => 'Ufone',
+            4  => 'Zong',
+            5  => 'SCOM',
+            6  => 'Telenor',
+            7  => 'Warid',
+            9  => 'PTCL Mobile',
+            11 => 'PTCL',
+            12 => 'International',
+            13 => 'NADRA',
+            14 => 'Travel',
+        );
+        $status_map = array(
+            0 => array('Not Sent',       'default'),
+            1 => array('Sent',           'info'),
+            2 => array('Email Received', 'primary'),
+            3 => array('Send Error',     'danger'),
+            4 => array('Rejected',       'warning'),
+        );
+        $proc_map = array(
+            0 => 'Waiting Response',
+            1 => 'Email Format Error',
+            2 => 'No Data Found',
+            3 => 'Parsing Error',
+            4 => 'Waiting for Parsing',
+            5 => 'Parsing Completed',
+            6 => 'Partially Parsed',
+            7 => 'Marked Completed',
+        );
+
+        // Pull out only the rows that have a saved attachment — the
+        // gallery tab iterates over this once.
+        $attachments = array();
+        foreach ($req_rows as $r) {
+            if (!empty($r['file_name'])) {
+                $attachments[] = $r;
+            }
+        }
+
+        $img_exts = array('jpg', 'jpeg', 'png', 'gif');
+        ?>
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="box box-primary">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">
+                            <i class="fa fa-folder-open"></i>
+                            Request Information &amp; Attachments
+                            <small class="text-muted" style="margin-left:10px;">
+                                <?php echo count($req_rows); ?> request<?php echo count($req_rows) === 1 ? '' : 's'; ?>,
+                                <?php echo count($attachments); ?> attachment<?php echo count($attachments) === 1 ? '' : 's'; ?>
+                            </small>
+                        </h3>
+                    </div>
+                    <div class="box-body">
+                        <ul class="nav nav-tabs" id="reqInfoTabs">
+                            <li class="active"><a href="#reqInfoTab_table" data-toggle="tab"><i class="fa fa-list"></i> Requests</a></li>
+                            <li><a href="#reqInfoTab_gallery" data-toggle="tab"><i class="fa fa-th"></i> Attachments Gallery</a></li>
+                        </ul>
+                        <div class="tab-content" style="padding-top:12px;">
+
+                            <!-- ============ TAB 1: REQUESTS TABLE ============ -->
+                            <div class="tab-pane active" id="reqInfoTab_table">
+                                <?php if (empty($req_rows)) { ?>
+                                    <div class="text-muted text-center" style="padding:18px;">
+                                        <i class="fa fa-info-circle"></i>
+                                        No user_request or admin_request rows are linked to this person.
+                                    </div>
+                                <?php } else { ?>
+                                <div class="table-responsive">
+                                    <table id="reqInfoTable" class="table table-bordered table-striped" style="font-size:12px;">
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Source</th>
+                                                <th>Ref #</th>
+                                                <th>Type</th>
+                                                <th>Telco</th>
+                                                <th>Requested Value</th>
+                                                <th>Status</th>
+                                                <th>Reason</th>
+                                                <th>Attachment</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        <?php foreach ($req_rows as $r) {
+                                            $rid     = isset($r['request_id']) ? (int) $r['request_id'] : 0;
+                                            $src     = isset($r['source']) ? $r['source'] : 'user';
+                                            $rid_enc = $rid ? Helpers_Utilities::encrypted_key($rid, 'encrypt') : '';
+                                            $type_label = !empty($r['request_type_name']) ? $r['request_type_name'] : ('#' . (int) ($r['user_request_type_id'] ?? 0));
+                                            $cn = isset($r['company_name']) ? (int) $r['company_name'] : 0;
+                                            $company_label = isset($company_map[$cn]) ? $company_map[$cn] : ($cn ? 'MNC ' . $cn : '-');
+                                            $st = isset($r['status']) ? (int) $r['status'] : 0;
+                                            $st_pair = isset($status_map[$st]) ? $status_map[$st] : array('Unknown', 'default');
+                                            $proc = isset($r['processing_index']) ? (int) $r['processing_index'] : 0;
+                                            $proc_label = isset($proc_map[$proc]) ? $proc_map[$proc] : '';
+                                            $reason = !empty($r['reason']) ? $r['reason'] : '';
+                                            $reason_short = mb_strlen($reason) > 80 ? (mb_substr($reason, 0, 78) . '…') : $reason;
+
+                                            $att_cell = '<span class="text-muted">—</span>';
+                                            if (!empty($r['file_name'])) {
+                                                $ext = strtolower(pathinfo($r['file_name'], PATHINFO_EXTENSION));
+                                                $is_img = in_array($ext, $img_exts, true);
+                                                $url = URL::site('persons/attachment') . '?s=' . urlencode($src) . '&r=' . urlencode($rid_enc);
+                                                if ($is_img) {
+                                                    $att_cell = '<a href="' . HTML::chars($url) . '" target="_blank" data-rqt-zoom="1" title="View attachment">'
+                                                              . '<img src="' . HTML::chars($url) . '" alt="attachment"'
+                                                              . ' style="max-height:38px; max-width:60px; border:1px solid #ccc; padding:1px; background:#fff;"></a>';
+                                                } else {
+                                                    $att_cell = '<a href="' . HTML::chars($url) . '" target="_blank">'
+                                                              . '<i class="fa fa-file-' . HTML::chars($ext) . '-o"></i> '
+                                                              . HTML::chars(basename($r['file_name'])) . '</a>';
+                                                }
+                                            }
+                                            ?>
+                                            <tr>
+                                                <td><?php echo HTML::chars(!empty($r['created_at']) ? date('Y-m-d H:i', strtotime($r['created_at'])) : '-'); ?></td>
+                                                <td>
+                                                    <?php if ($src === 'admin') { ?>
+                                                        <span class="label label-warning" title="admin_request">Admin</span>
+                                                    <?php } else { ?>
+                                                        <span class="label label-info" title="user_request">User</span>
+                                                    <?php } ?>
+                                                </td>
+                                                <td><?php echo HTML::chars(!empty($r['reference_id']) ? $r['reference_id'] : '-'); ?></td>
+                                                <td><?php echo HTML::chars($type_label); ?></td>
+                                                <td><?php echo HTML::chars($company_label); ?></td>
+                                                <td><?php echo HTML::chars(!empty($r['requested_value']) ? $r['requested_value'] : '-'); ?></td>
+                                                <td>
+                                                    <span class="label label-<?php echo HTML::chars($st_pair[1]); ?>"><?php echo HTML::chars($st_pair[0]); ?></span>
+                                                    <?php if ($proc_label !== '' && $st === 2) { ?>
+                                                        <small class="text-muted" style="display:block;"><?php echo HTML::chars($proc_label); ?></small>
+                                                    <?php } ?>
+                                                </td>
+                                                <td title="<?php echo HTML::chars($reason); ?>" style="max-width:240px; word-break:break-word;">
+                                                    <?php echo $reason !== '' ? HTML::chars($reason_short) : '<span class="text-muted">—</span>'; ?>
+                                                </td>
+                                                <td><?php echo $att_cell; /* HTML pre-built and HTML::chars-applied above */ ?></td>
+                                            </tr>
+                                        <?php } ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <?php } ?>
+                            </div>
+
+                            <!-- ============ TAB 2: ATTACHMENTS GALLERY ============ -->
+                            <div class="tab-pane" id="reqInfoTab_gallery">
+                                <?php if (empty($attachments)) { ?>
+                                    <div class="text-muted text-center" style="padding:18px;">
+                                        <i class="fa fa-info-circle"></i>
+                                        No attachments uploaded against requests for this person.
+                                    </div>
+                                <?php } else { ?>
+                                    <div class="row" style="margin:0;">
+                                        <?php foreach ($attachments as $r) {
+                                            $rid     = (int) $r['request_id'];
+                                            $src     = isset($r['source']) ? $r['source'] : 'user';
+                                            $rid_enc = $rid ? Helpers_Utilities::encrypted_key($rid, 'encrypt') : '';
+                                            $url     = URL::site('persons/attachment') . '?s=' . urlencode($src) . '&r=' . urlencode($rid_enc);
+                                            $ext     = strtolower(pathinfo($r['file_name'], PATHINFO_EXTENSION));
+                                            $is_img  = in_array($ext, $img_exts, true);
+                                            $name    = basename($r['file_name']);
+                                            $stamp   = !empty($r['created_at']) ? date('Y-m-d', strtotime($r['created_at'])) : '';
+                                            $type_label = !empty($r['request_type_name']) ? $r['request_type_name'] : ('Type #' . (int) ($r['user_request_type_id'] ?? 0));
+                                            $ref     = !empty($r['reference_id']) ? $r['reference_id'] : '-';
+                                        ?>
+                                        <div class="col-sm-3 col-xs-6" style="margin-bottom:14px;">
+                                            <div class="thumbnail" style="margin-bottom:0; padding:6px;">
+                                                <?php if ($is_img) { ?>
+                                                    <a href="<?php echo HTML::chars($url); ?>" target="_blank" data-rqt-zoom="1" title="<?php echo HTML::chars($name); ?>">
+                                                        <img src="<?php echo HTML::chars($url); ?>" alt="<?php echo HTML::chars($name); ?>"
+                                                             style="height:120px; width:100%; object-fit:cover; background:#f5f5f5;">
+                                                    </a>
+                                                <?php } else { ?>
+                                                    <a href="<?php echo HTML::chars($url); ?>" target="_blank" title="Download <?php echo HTML::chars($name); ?>"
+                                                       style="display:block; height:120px; line-height:120px; text-align:center; font-size:42px; background:#f5f5f5; color:#666;">
+                                                        <i class="fa fa-file-<?php echo HTML::chars($ext); ?>-o"></i>
+                                                    </a>
+                                                <?php } ?>
+                                                <div class="caption" style="padding:6px 0 0;">
+                                                    <small style="display:block; color:#555; word-break:break-word;">
+                                                        <strong>Ref:</strong> <?php echo HTML::chars($ref); ?>
+                                                        <?php if ($src === 'admin') { ?>
+                                                            <span class="label label-warning" style="font-size:9px;">Admin</span>
+                                                        <?php } else { ?>
+                                                            <span class="label label-info" style="font-size:9px;">User</span>
+                                                        <?php } ?>
+                                                    </small>
+                                                    <small style="display:block; color:#888;">
+                                                        <?php echo HTML::chars($type_label); ?>
+                                                    </small>
+                                                    <?php if ($stamp !== '') { ?>
+                                                    <small style="display:block; color:#888;"><?php echo HTML::chars($stamp); ?></small>
+                                                    <?php } ?>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <?php } ?>
+                                    </div>
+                                <?php } ?>
+                            </div>
+
+                        </div><!-- /.tab-content -->
+                    </div><!-- /.box-body -->
+                </div><!-- /.box (Request Information & Attachments) -->
+            </div>
+        </div>
+
+        <!-- Lightbox modal for image attachments. Triggered by any
+             [data-rqt-zoom="1"] anchor inside the panel above. -->
+        <div class="modal fade" id="rqt-zoom-modal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title">Attachment Preview</h4>
+                    </div>
+                    <div class="modal-body text-center" style="background:#222;">
+                        <img id="rqt-zoom-img" src="" alt="" style="max-width:100%; max-height:75vh;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="row">
             <div class="col-xs-12">
 
                 <div class="box">
                     <div class="box-header">
-                        <h3 class="box-title"><i class="fa fa-search"></i> User Activity Log</h3>                        
+                        <h3 class="box-title"><i class="fa fa-search"></i> User Activity Log</h3>
                     </div>
                     <!-- /.box-header -->
                     <div class="box-body">
@@ -671,6 +917,24 @@
                 }
         );
         $('.dataTables_empty').html("Information not found");
+
+        // Lightbox-style preview for image attachments in the
+        // "Request Information & Attachments" panel. We delegate the
+        // click off the page root so it picks up both the gallery
+        // thumbnails and the inline thumbnail in the Requests table.
+        $(document).on('click', 'a[data-rqt-zoom="1"]', function (e) {
+            // Allow Ctrl/Cmd+click and middle-click to open in a new tab.
+            if (e.ctrlKey || e.metaKey || e.shiftKey || e.which === 2) return;
+            e.preventDefault();
+            var src = $(this).attr('href');
+            $('#rqt-zoom-img').attr('src', src);
+            $('#rqt-zoom-modal').modal('show');
+        });
+        // Free the image when the modal closes — keeps memory tidy when
+        // an analyst clicks through many gallery items in a session.
+        $('#rqt-zoom-modal').on('hidden.bs.modal', function () {
+            $('#rqt-zoom-img').attr('src', '');
+        });
 
     });
     $("#search_form").validate({
