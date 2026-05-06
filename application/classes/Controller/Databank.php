@@ -159,9 +159,33 @@ class Controller_Databank extends Controller_Working
                 $this->response->body($this->_no_results());
                 return;
             }
+
+            // Per-row "Family" action — opens the family-members page in
+            // a new tab. Built as a closure so the row's id can be baked
+            // into the link without templating in the view.
+            $family_url_base = URL::site('databank/ecp_family');
+            $row_actions = function ($r) use ($family_url_base) {
+                $id = is_array($r)
+                    ? (isset($r['id']) ? (int) $r['id'] : 0)
+                    : (isset($r->id)   ? (int) $r->id   : 0);
+                if ($id <= 0) {
+                    return '<span class="text-muted">&mdash;</span>';
+                }
+                $href = $family_url_base . '?ecp_id=' . $id;
+                return '<a href="' . htmlspecialchars($href) . '" target="_blank"'
+                     . ' class="btn btn-xs btn-info" title="View family members">'
+                     . '<i class="fa fa-sitemap"></i> Family</a>';
+            };
+
             $this->response->body(View::factory('templates/user/databank_advanced_results')
                 ->set('rows', $rows)
                 ->set('columns', array(
+                    // ECP ID is exposed because ecp_persons stores the
+                    // same CNIC across multiple uploads (different code /
+                    // file / folder / uc_block tuples). Without the id
+                    // column duplicate-CNIC rows look identical to the
+                    // operator.
+                    array('key' => 'id',            'label' => 'ECP ID'),
                     array('key' => 'cnic',          'label' => 'CNIC'),
                     array('key' => 'name_text',     'label' => 'Name'),
                     array('key' => 'father_text',   'label' => 'Father'),
@@ -172,10 +196,67 @@ class Controller_Databank extends Controller_Working
                     array('key' => 'linked_numbers','label' => 'Phones'),
                     array('key' => 'address_image_base64', 'label' => 'Addr. Image', 'formatter' => 'image_jpeg'),
                 ))
+                ->set('row_actions', $row_actions)
                 ->set('summary', count($rows) . ' ECP record(s)')
                 ->render());
         } catch (Exception $e) {
             $this->response->body($this->_search_failed());
+        }
+    }
+
+    /**
+     * ECP family-tree page for a single seed person.
+     *
+     * Reached from the "Family" button on each row of the ECP search
+     * results. Pulls the seed row by id, then uses its (code,
+     * folder_name, file_name, uc_block_code) tuple to find every
+     * other ecp_persons row sharing the same family identity (the
+     * canonical "same family" definition for the ECP dataset, see
+     * Helpers_Person::get_ecp_family_members for prior art).
+     *
+     * URL: /databank/ecp_family?ecp_id=12345
+     */
+    public function action_ecp_family()
+    {
+        $this->_require_databank_access();
+        try {
+            $_GET   = Helpers_Utilities::remove_injection($_GET);
+            $ecp_id = isset($_GET['ecp_id']) ? (int) $_GET['ecp_id'] : 0;
+
+            $seed   = null;
+            $family = array();
+
+            if ($ecp_id > 0) {
+                $DB  = Database::instance('ecp');
+                $sql = "SELECT p.id, p.cnic, p.age, p.gender,
+                               p.name_text, p.father_text, p.address_text,
+                               p.code, p.family_number, p.file_name, p.folder_name, p.uc_block_code,
+                               p.address_image_base64,
+                               (SELECT GROUP_CONCAT(n.number ORDER BY n.number SEPARATOR ', ')
+                                  FROM ecp_person_numbers n
+                                 WHERE n.ecp_person_id = p.id) AS linked_numbers
+                          FROM ecp_persons p
+                         WHERE p.id = " . $ecp_id . "
+                         LIMIT 1";
+                $seed = $DB->query(Database::SELECT, $sql, TRUE)->current();
+
+                if ($seed) {
+                    $family = Helpers_Person::get_ecp_family_members(
+                        isset($seed->code)          ? $seed->code          : '',
+                        isset($seed->folder_name)   ? $seed->folder_name   : '',
+                        isset($seed->file_name)     ? $seed->file_name     : '',
+                        isset($seed->uc_block_code) ? $seed->uc_block_code : '',
+                        $ecp_id
+                    );
+                }
+            }
+
+            $this->template->content = View::factory('templates/user/databank_ecp_family')
+                ->set('seed',   $seed)
+                ->set('family', $family);
+        } catch (Exception $ex) {
+            $this->template->content = View::factory('templates/user/exception_error_page')
+                ->bind('exception', $ex);
         }
     }
 

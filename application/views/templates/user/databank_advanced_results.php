@@ -13,8 +13,20 @@
 //                 the unified Subscriber search where one row may use
 //                 cnic and another foreign_cnic).
 //   $summary  — short text like "12 result(s)"
+//   $row_actions — OPTIONAL callable. If set, an extra "Actions" column
+//                  is appended; the callable is invoked once per row
+//                  with the row as its argument and must return the
+//                  HTML for that row's action cell (e.g. a "Family"
+//                  button on ECP results).
 //
 // Renders a striped + bordered table.
+
+// Default row_actions to null so isset() checks below work even when
+// the action didn't pass it.
+if (!isset($row_actions)) {
+    $row_actions = null;
+}
+$has_row_actions = is_callable($row_actions);
 
 /**
  * Read a value from $row trying $primary first, then each fallback key.
@@ -47,6 +59,9 @@ $dbk_pick = function ($row, $primary, $fallbacks = array()) {
                     <?php foreach ($columns as $col): ?>
                         <th><?php echo HTML::chars($col['label']); ?></th>
                     <?php endforeach; ?>
+                    <?php if ($has_row_actions): ?>
+                        <th style="width:90px;">Actions</th>
+                    <?php endif; ?>
                 </tr>
             </thead>
             <tbody>
@@ -77,6 +92,9 @@ $dbk_pick = function ($row, $primary, $fallbacks = array()) {
                             ?>
                         </td>
                     <?php endforeach; ?>
+                    <?php if ($has_row_actions): ?>
+                        <td><?php echo call_user_func($row_actions, $r); ?></td>
+                    <?php endif; ?>
                 </tr>
             <?php endforeach; ?>
             </tbody>
