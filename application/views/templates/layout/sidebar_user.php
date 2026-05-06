@@ -556,7 +556,7 @@ try {
                 </li>
             <?php } ?>
             <?php if ((Helpers_Utilities::chek_role_array_access($role_id, array(34,35)) == 1) || $user->id ==171 ||  $user->id ==170) { ?>
-                <li class="treeview <?php echo (($current_url == 'Admindatabank' && ($menu_name == 'bulk_nadra_requests_databank' || $menu_name == 'nadra_requests_reports_databank'|| $menu_name == 'breakup_report'|| $menu_name == 'data_upload_against_msisdn'|| $menu_name == 'msisdn_requests_reports_databank'|| $menu_name == 'msisdn_breakup_report' ||$menu_name == 'msisdn_breakup_report_individual'|| $menu_name == 'msisdn_no_request_send_reports_detail'))) ? 'active' : ''; ?>">
+                <li class="treeview <?php echo (($current_url == 'Admindatabank' && ($menu_name == 'bulk_nadra_requests_databank' || $menu_name == 'nadra_requests_reports_databank'|| $menu_name == 'breakup_report'|| $menu_name == 'data_upload_against_msisdn'|| $menu_name == 'msisdn_requests_reports_databank'|| $menu_name == 'msisdn_breakup_report' ||$menu_name == 'msisdn_breakup_report_individual'|| $menu_name == 'msisdn_no_request_send_reports_detail')) || ($current_url == 'Persons' && $menu_name == 'ecp_address_search_page')) ? 'active' : ''; ?>">
                     <a href="#">
                         <i class="fa  fa-database"></i>
                         <span>DRAMS Databank</span>
@@ -565,6 +565,8 @@ try {
                         </span>
                     </a>
                     <ul class="treeview-menu">
+
+                        <li class="<?php echo ($menu_name == 'ecp_address_search_page') ? 'active' : ''; ?>"><a href="<?php echo URL::site('persons/ecp_address_search_page'); ?>"><i class="fa fa-search"></i>ECP Address Search </a></li>
 
                         <?php if (Helpers_Utilities::chek_role_access($role_id, 34) == 1) { ?>
                             <li class="<?php echo ($menu_name == 'bulk_nadra_requests_databank') ? 'active' : ''; ?>"><a href="<?php echo URL::site('Admindatabank/bulk_nadra_requests_databank'); ?>"><i class="fa fa-circle-o"></i>Nadra Databank </a></li>

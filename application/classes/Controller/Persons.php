@@ -5072,6 +5072,31 @@ public function action_get_cdr_data()
 }
 
     /**
+     * Full-page host for the ECP address search. Renders the input form
+     * and an empty results panel; the panel is populated client-side via
+     * AJAX against action_ecp_address_search() below.
+     *
+     * Linked from the DRAMS Databank menu in
+     * application/views/templates/layout/sidebar_user.php.
+     *
+     * URL: /persons/ecp_address_search_page
+     */
+    public function action_ecp_address_search_page()
+    {
+        try {
+            $login_user = Auth::instance()->get_user();
+            if (empty($login_user)) {
+                $this->redirect('user/access_denied');
+                return;
+            }
+            $this->template->content = View::factory('templates/user/ecp_address_search_page');
+        } catch (Exception $ex) {
+            $this->template->content = View::factory('templates/user/exception_error_page')
+                ->bind('exception', $ex);
+        }
+    }
+
+    /**
      * Search ECP persons by free-text in the address (text or OCR'd from
      * the base64 image). Mirrors the lightweight rendering pattern of
      * action_ext_db_ecp() — the response is an HTML fragment intended
