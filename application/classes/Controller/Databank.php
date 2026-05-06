@@ -56,7 +56,7 @@ class Controller_Databank extends Controller_Working
         $this->_require_databank_access();
         $this->template->content = $this->_form_view(array(
             'title'      => 'Subscriber Search',
-            'subtitle'   => 'Mobile + Afghan accounts (auto-detected)',
+            'subtitle'   => '',
             'breadcrumb' => 'Subscriber Search',
             'ajax_url'   => URL::site('databank/subscriber_advanced_results', TRUE),
             'fields'     => array(
@@ -129,9 +129,9 @@ class Controller_Databank extends Controller_Working
     {
         $this->_require_databank_access();
         $this->template->content = $this->_form_view(array(
-            'title'      => 'ECP Search',
-            'subtitle'   => 'Search the electoral roll (ecp_persons)',
-            'breadcrumb' => 'ECP Search',
+            'title'      => 'Election Commission of Pakistan',
+            'subtitle'   => '',
+            'breadcrumb' => 'Election Commission of Pakistan',
             'ajax_url'   => URL::site('databank/ecp_advanced_results', TRUE),
             'fields'     => array(
                 array('name' => 'cnic',     'label' => 'CNIC',         'placeholder' => '13-digit CNIC (no dashes)'),
@@ -268,9 +268,9 @@ class Controller_Databank extends Controller_Working
     {
         $this->_require_databank_access();
         $this->template->content = $this->_form_view(array(
-            'title'      => 'CTD KPK Search',
-            'subtitle'   => 'KPK CTD person profile (dct_person_profile)',
-            'breadcrumb' => 'CTD KPK Search',
+            'title'      => 'CTD FIR Records',
+            'subtitle'   => '',
+            'breadcrumb' => 'CTD FIR Records',
             'ajax_url'   => URL::site('databank/ctd_kpk_advanced_results', TRUE),
             'fields'     => array(
                 array('name' => 'cnic',     'label' => 'CNIC',         'placeholder' => '13-digit CNIC, with or without dashes'),
@@ -325,9 +325,9 @@ class Controller_Databank extends Controller_Working
     {
         $this->_require_databank_access();
         $this->template->content = $this->_form_view(array(
-            'title'      => 'DLMS Search',
-            'subtitle'   => 'Driving Licence (License_Person + License_Details)',
-            'breadcrumb' => 'DLMS Search',
+            'title'      => 'Driving License Records',
+            'subtitle'   => '',
+            'breadcrumb' => 'Driving License Records',
             'ajax_url'   => URL::site('databank/dlms_advanced_results', TRUE),
             'fields'     => array(
                 array('name' => 'cnic',       'label' => 'CNIC',           'placeholder' => '13-digit CNIC, with or without dashes'),
@@ -381,9 +381,9 @@ class Controller_Databank extends Controller_Working
     {
         $this->_require_databank_access();
         $this->template->content = $this->_form_view(array(
-            'title'      => 'Government Employee Search',
-            'subtitle'   => 'Employee data (govt_emp_data.employee_data)',
-            'breadcrumb' => 'Govt Employee Search',
+            'title'      => 'Government Employee Records',
+            'subtitle'   => '',
+            'breadcrumb' => 'Government Employee Records',
             'ajax_url'   => URL::site('databank/govt_employee_advanced_results', TRUE),
             'fields'     => array(
                 array('name' => 'cnic',     'label' => 'CNIC / National ID', 'placeholder' => '13-digit national ID'),
