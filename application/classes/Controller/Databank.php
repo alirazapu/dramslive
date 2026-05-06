@@ -85,6 +85,79 @@ class Controller_Databank extends Controller_Working
         }
     }
 
+    /** ECP person profile by CNIC — host page (delegates to /persons/ext_db_ecp). */
+    public function action_ecp_cnic()
+    {
+        $this->_require_databank_access();
+        $this->template->content = $this->_search_view(array(
+            'title'        => 'ECP Person Search by CNIC',
+            'subtitle'     => 'Look up a person\'s ECP record (electoral list)',
+            'breadcrumb'   => 'ECP Person Search',
+            'placeholder'  => '13-digit CNIC (with or without dashes)',
+            'input_name'   => 'cnic',
+            'ajax_url'     => URL::site('persons/ext_db_ecp', TRUE),
+            'ajax_method'  => 'GET',
+            'help_text'    => 'Searches ecp_persons by CNIC. Renders the same panel used on the person dashboard, including Family Tree.',
+        ));
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  CTD KPK database (192.168.5.204)                                  */
+    /* ------------------------------------------------------------------ */
+
+    public function action_ctd_kpk()
+    {
+        $this->_require_databank_access();
+        $this->template->content = $this->_search_view(array(
+            'title'        => 'CTD KPK Search by CNIC',
+            'subtitle'     => 'KPK CTD records — Personal Info / Schedule IV / Accused',
+            'breadcrumb'   => 'CTD KPK Search',
+            'placeholder'  => '13-digit CNIC',
+            'input_name'   => 'cnic',
+            'ajax_url'     => URL::site('persons/ext_db_ctd_kpk', TRUE),
+            'ajax_method'  => 'GET',
+            'help_text'    => 'Searches dct_person_profile in the ctd_kpk database (192.168.5.204). The Schedule IV and Accused tabs are lazy-loaded after the panel renders.',
+        ));
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  DLMS driving licence (SQL Server, 192.168.0.152)                  */
+    /* ------------------------------------------------------------------ */
+
+    public function action_dlms()
+    {
+        $this->_require_databank_access();
+        $this->template->content = $this->_search_view(array(
+            'title'        => 'DLMS Driving Licence Search',
+            'subtitle'     => 'Driving licence records by CNIC',
+            'breadcrumb'   => 'DLMS Search',
+            'placeholder'  => '13-digit CNIC',
+            'input_name'   => 'cnic',
+            'ajax_url'     => URL::site('persons/ext_db_dlms', TRUE),
+            'ajax_method'  => 'GET',
+            'help_text'    => 'Searches License_Person / License_Details on DLMS_FamzSolutions (SQL Server, 192.168.0.152).',
+        ));
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  Government employees (govt_emp_data on 192.168.0.151)             */
+    /* ------------------------------------------------------------------ */
+
+    public function action_govt_employee()
+    {
+        $this->_require_databank_access();
+        $this->template->content = $this->_search_view(array(
+            'title'        => 'Government Employee Search',
+            'subtitle'     => 'Look up a government employee record by CNIC',
+            'breadcrumb'   => 'Govt Employee Search',
+            'placeholder'  => '13-digit CNIC',
+            'input_name'   => 'cnic',
+            'ajax_url'     => URL::site('persons/ext_db_employee', TRUE),
+            'ajax_method'  => 'GET',
+            'help_text'    => 'Searches employee_data in the govt_emp_data database (192.168.0.151).',
+        ));
+    }
+
     /* ------------------------------------------------------------------ */
     /*  Mobile subscriber database (subscriber_db on 192.168.0.151)       */
     /* ------------------------------------------------------------------ */
