@@ -7,11 +7,11 @@
 $default_dev = array(
     'type'       => 'MySQLi',
     'connection' => array(
-        'hostname'   => '192.168.0.151',
-        'username'   => 'brainbotuser',
-        'password'   => 'BBuser@2025',
+        'hostname'   => 'localhost',
+        'username'   => 'root',
+        'password'   => '',
         'persistent' => FALSE,
-        'database'   => 'aiesplusbk22032026',
+        'database'   => 'aiesdev',
     ),
     'table_prefix' => '',
     'charset'      => 'utf8',
