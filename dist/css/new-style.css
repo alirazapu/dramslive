@@ -231,10 +231,19 @@
         width: 100%;
     }    
 }
-@media (min-width: 700px) and (max-width: 1600px){    
+@media (min-width: 700px) and (max-width: 1600px){
     .table-responsive {
      overflow-x: hidden;
 }
+}
+
+/* Remove the overflow-x: auto Bootstrap applies to .table-responsive
+   on narrow viewports (default media query @media (max-width: 767px)).
+   Per operator request, the class should never produce a horizontal
+   scrollbar — tables that need horizontal scroll should opt in
+   explicitly via inline style or a sibling wrapper. */
+.table-responsive {
+    overflow-x: visible !important;
 }
 
 

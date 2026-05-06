@@ -52,7 +52,7 @@ $dbk_pick = function ($row, $primary, $fallbacks = array()) {
     <p class="text-muted" style="margin-bottom:8px;">
         <strong><?php echo HTML::chars($summary); ?></strong>
     </p>
-    <div style="overflow-x:auto;">
+    <div>
         <table class="table table-striped table-bordered table-condensed">
             <thead>
                 <tr>
