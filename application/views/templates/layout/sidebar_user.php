@@ -570,6 +570,10 @@ try {
                         )))
                         || ($current_url == 'Databank' && in_array($menu_name, array(
                             'ecp_address',
+                            'ecp_cnic',
+                            'ctd_kpk',
+                            'dlms',
+                            'govt_employee',
                             'mobile_subscriber',
                             'foreigner',
                         )));
@@ -591,8 +595,20 @@ try {
                         <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'foreigner') ? 'active' : ''; ?>">
                             <a href="<?php echo URL::site('databank/foreigner'); ?>"><i class="fa fa-globe"></i>Foreigner Account Search</a>
                         </li>
+                        <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'ecp_cnic') ? 'active' : ''; ?>">
+                            <a href="<?php echo URL::site('databank/ecp_cnic'); ?>"><i class="fa fa-id-card-o"></i>ECP Person Search (CNIC)</a>
+                        </li>
                         <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'ecp_address') ? 'active' : ''; ?>">
                             <a href="<?php echo URL::site('databank/ecp_address'); ?>"><i class="fa fa-search"></i>ECP Address Search</a>
+                        </li>
+                        <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'ctd_kpk') ? 'active' : ''; ?>">
+                            <a href="<?php echo URL::site('databank/ctd_kpk'); ?>"><i class="fa fa-shield"></i>CTD KPK Search</a>
+                        </li>
+                        <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'dlms') ? 'active' : ''; ?>">
+                            <a href="<?php echo URL::site('databank/dlms'); ?>"><i class="fa fa-car"></i>DLMS Licence Search</a>
+                        </li>
+                        <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'govt_employee') ? 'active' : ''; ?>">
+                            <a href="<?php echo URL::site('databank/govt_employee'); ?>"><i class="fa fa-briefcase"></i>Govt Employee Search</a>
                         </li>
 
                         <li class="header" style="padding:6px 15px; color:#8aa4af; font-size:11px; text-transform:uppercase;">Reports &amp; Uploads</li>

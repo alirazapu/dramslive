@@ -3619,7 +3619,7 @@ exit();
                 $person_cnic = Helpers_Person::normalize_cnic_for_external_sources($_GET['cnic']);
             }
 
-            if (empty($person_id) || empty($person_cnic)) {
+            if (empty($person_cnic)) {
                 echo '<div class="col-md-12"><span><strong>No CNIC available for lookup</strong></span></div>';
                 return;
             }
@@ -3768,7 +3768,7 @@ exit();
                 $person_cnic = Helpers_Person::normalize_cnic_for_external_sources($_GET['cnic']);
             }
 
-            if (empty($person_id) || empty($person_cnic)) {
+            if (empty($person_cnic)) {
                 echo '<div class="col-md-12"><span><strong>No CNIC available for lookup</strong></span></div>';
                 return;
             }
@@ -3834,7 +3834,7 @@ exit();
                 $person_cnic = Helpers_Person::normalize_cnic_for_external_sources($_GET['cnic']);
             }
 
-            if (empty($person_id) || empty($person_cnic)) {
+            if (empty($person_cnic)) {
                 echo '<div class="col-md-12"><span><strong>No CNIC available for lookup</strong></span></div>';
                 return;
             }
@@ -3902,7 +3902,7 @@ exit();
                 $person_cnic = Helpers_Person::normalize_cnic_for_external_sources($_GET['cnic']);
             }
 
-            if (empty($person_id) || empty($person_cnic)) {
+            if (empty($person_cnic)) {
                 echo '<div class="col-md-12"><span><strong>No CNIC available for lookup</strong></span></div>';
                 return;
             }
@@ -3982,7 +3982,7 @@ exit();
                 $person_cnic = Helpers_Person::normalize_cnic_for_external_sources($_GET['cnic']);
             }
 
-            if (empty($person_id) || empty($person_cnic)) {
+            if (empty($person_cnic)) {
                 echo '<img src="' . URL::base() . 'dist/img/noperson.png" alt="No Data" style="width: 100%; margin: auto; height: 240px; padding: 27px 0">';
                 return;
             }
@@ -4189,7 +4189,7 @@ exit();
                 $person_cnic = Helpers_Person::normalize_cnic_for_external_sources($_GET['cnic']);
             }
 
-            if (empty($person_id) || empty($person_cnic)) {
+            if (empty($person_cnic)) {
                 echo '<div class="col-md-12"><span><strong>No CNIC available for lookup</strong></span></div>';
                 return;
             }
@@ -4346,7 +4346,7 @@ exit();
                 $person_cnic = Helpers_Person::normalize_cnic_for_external_sources($_GET['cnic']);
             }
 
-            if (empty($person_id) || empty($person_cnic)) {
+            if (empty($person_cnic)) {
                 echo '<div class="col-md-12"><span><strong>No CNIC available for lookup</strong></span></div>';
                 return;
             }
