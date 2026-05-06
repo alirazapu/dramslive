@@ -2181,9 +2181,15 @@ class Controller_Cronjob extends Controller {
      */
     public function action_ecp_address_diagnostic()
     {
-        header('Content-Type: text/plain; charset=utf-8');
+        self::_stream_init();
+        $say = function ($s) { echo $s; @flush(); };
+
         try {
+            $say(sprintf("[%s] connecting to ecp database (192.168.0.156)...\n", date('H:i:s')));
             $DB = Database::instance('ecp');
+            $say(sprintf("[%s] connected. running fill-rate query (full scan, may take a while)...\n", date('H:i:s')));
+
+            $t0 = microtime(true);
             $sql = "SELECT
                         COUNT(*) AS total,
                         SUM(address_text IS NOT NULL AND address_text <> '')                 AS with_text,
@@ -2192,32 +2198,37 @@ class Controller_Cronjob extends Controller {
                               / NULLIF(COUNT(*), 0), 2)                                       AS pct_with_text
                     FROM ecp_persons";
             $row = $DB->query(Database::SELECT, $sql, TRUE)->current();
+            $say(sprintf("[%s] fill-rate query done in %.2fs\n", date('H:i:s'), microtime(true) - $t0));
 
+            $say(sprintf("[%s] running backlog query...\n", date('H:i:s')));
+            $t0 = microtime(true);
             $backlog = $DB->query(Database::SELECT,
                 "SELECT COUNT(*) AS n FROM ecp_persons
                  WHERE (address_text IS NULL OR address_text = '')
                    AND address_image_base64 IS NOT NULL AND address_image_base64 <> ''",
                 TRUE)->current();
+            $say(sprintf("[%s] backlog query done in %.2fs\n\n", date('H:i:s'), microtime(true) - $t0));
 
-            echo "ECP address_text fill rate\n";
-            echo "==========================\n";
-            echo sprintf("Total rows         : %s\n", number_format((int) $row->total));
-            echo sprintf("With image         : %s\n", number_format((int) $row->with_image));
-            echo sprintf("With address_text  : %s\n", number_format((int) $row->with_text));
-            echo sprintf("Pct with text      : %s%%\n", $row->pct_with_text);
-            echo "\n";
-            echo sprintf("Backlog needing OCR: %s\n", number_format((int) $backlog->n));
-            echo "\n";
-            echo "Next steps:\n";
-            echo "  - If pct_with_text >= 85%, address search is already viable;\n";
-            echo "    hit /persons/ecp_address_search?q=... to try it.\n";
-            echo "  - Otherwise run:\n";
-            echo "      /cronjob/ecp_address_ocr_backfill?limit=100&engine=tesseract&dry_run=1\n";
-            echo "    on a sample first to validate accuracy, then drop dry_run=1.\n";
+            $say("ECP address_text fill rate\n");
+            $say("==========================\n");
+            $say(sprintf("Total rows         : %s\n", number_format((int) $row->total)));
+            $say(sprintf("With image         : %s\n", number_format((int) $row->with_image)));
+            $say(sprintf("With address_text  : %s\n", number_format((int) $row->with_text)));
+            $say(sprintf("Pct with text      : %s%%\n", $row->pct_with_text));
+            $say("\n");
+            $say(sprintf("Backlog needing OCR: %s\n", number_format((int) $backlog->n)));
+            $say("\n");
+            $say("Next steps:\n");
+            $say("  - If pct_with_text >= 85%, address search is already viable;\n");
+            $say("    hit /persons/ecp_address_search_page to try it.\n");
+            $say("  - Otherwise run:\n");
+            $say("      /cronjob/ecp_address_ocr_backfill?limit=100&engine=tesseract&dry_run=1\n");
+            $say("    on a sample first to validate accuracy, then drop dry_run=1.\n");
         } catch (Exception $e) {
             http_response_code(500);
-            echo 'Diagnostic failed: ' . $e->getMessage();
+            $say('Diagnostic failed: ' . $e->getMessage() . "\n");
         }
+        exit;
     }
 
     /**
@@ -2246,45 +2257,80 @@ class Controller_Cronjob extends Controller {
     public function action_ecp_address_ocr_backfill()
     {
         @set_time_limit(600);
-        header('Content-Type: text/plain; charset=utf-8');
+        self::_stream_init();
+        $say = function ($s) { echo $s; @flush(); };
 
         $limit   = max(1, min(1000, isset($_GET['limit'])  ? (int) $_GET['limit'] : 100));
         $engine  = isset($_GET['engine'])  ? (string) $_GET['engine']  : 'tesseract';
         $lang    = isset($_GET['lang'])    ? (string) $_GET['lang']    : 'eng';
         $dry_run = !empty($_GET['dry_run']);
 
-        try {
-            $DB                = Database::instance('ecp');
-            $has_tracking_cols = self::ecp_has_tracking_columns($DB);
+        $say(sprintf("[%s] backfill starting (limit=%d engine=%s lang=%s%s)\n",
+            date('H:i:s'), $limit, $engine, $lang, $dry_run ? ' DRY-RUN' : ''));
 
+        // Pre-flight: catch the most common silent failure (engine binary
+        // missing) here instead of letting every row fail with empty OCR.
+        if ($engine === 'tesseract') {
+            $err = self::_tesseract_check();
+            if ($err !== '') {
+                http_response_code(500);
+                $say("[FATAL] tesseract preflight: {$err}\n");
+                $say("        install Tesseract on this host (https://github.com/UB-Mannheim/tesseract/wiki)\n");
+                $say("        and ensure the binary is on PATH, OR set tesseract_bin in application/config/ocr.php\n");
+                $say("        OR re-run with engine=gvision after configuring google_vision_api_key.\n");
+                exit;
+            }
+            $say("[ok] tesseract binary detected\n");
+        }
+
+        try {
+            $say(sprintf("[%s] connecting to ecp database...\n", date('H:i:s')));
+            $DB = Database::instance('ecp');
+            $say(sprintf("[%s] connected\n", date('H:i:s')));
+
+            $has_tracking_cols = self::ecp_has_tracking_columns($DB);
+            $say(sprintf("[%s] provenance columns present: %s\n",
+                date('H:i:s'), $has_tracking_cols ? 'yes' : 'no (will skip stamping)'));
+
+            $say(sprintf("[%s] selecting up to %d rows missing address_text...\n", date('H:i:s'), $limit));
+            $t0  = microtime(true);
             $sql = "SELECT id, address_image_base64
                     FROM ecp_persons
                     WHERE (address_text IS NULL OR address_text = '')
                       AND address_image_base64 IS NOT NULL AND address_image_base64 <> ''
                     LIMIT {$limit}";
             $rows = $DB->query(Database::SELECT, $sql, FALSE)->as_array();
+            $say(sprintf("[%s] got %d rows in %.2fs\n", date('H:i:s'), count($rows), microtime(true) - $t0));
+
+            if (empty($rows)) {
+                $say("nothing to do — backlog is empty (or filter excludes everything).\n");
+                exit;
+            }
 
             $stats = array('processed' => 0, 'updated' => 0, 'empty' => 0, 'failed' => 0);
 
             foreach ($rows as $row) {
                 $stats['processed']++;
                 $id = (int) $row['id'];
+                $t  = microtime(true);
                 try {
                     $bytes = Helpers_Ocr::decode_base64_image($row['address_image_base64']);
                     if ($bytes === '') {
                         $stats['empty']++;
+                        $say(sprintf("  id=%-10d  [empty after base64 decode]\n", $id));
                         continue;
                     }
                     $text = Helpers_Ocr::recognise($bytes, $engine, array('lang' => $lang));
+                    $ms   = (int) round((microtime(true) - $t) * 1000);
                     if ($text === '') {
                         $stats['empty']++;
+                        $say(sprintf("  id=%-10d  %5dms  [OCR returned empty]\n", $id, $ms));
                         continue;
                     }
+                    $preview = substr(str_replace(array("\r", "\n"), ' ', $text), 0, 80);
                     if ($dry_run) {
                         $stats['updated']++;
-                        echo sprintf("[dry] id=%d  text=%s\n",
-                            $id,
-                            substr(str_replace(array("\r", "\n"), ' ', $text), 0, 80));
+                        $say(sprintf("  id=%-10d  %5dms  [dry] %s\n", $id, $ms, $preview));
                         continue;
                     }
                     $set = "address_text = " . $DB->escape($text);
@@ -2294,29 +2340,79 @@ class Controller_Cronjob extends Controller {
                     $upd = "UPDATE ecp_persons SET {$set} WHERE id = {$id}";
                     $DB->query(Database::UPDATE, $upd, FALSE);
                     $stats['updated']++;
+                    $say(sprintf("  id=%-10d  %5dms  [ok]  %s\n", $id, $ms, $preview));
                 } catch (Exception $e) {
                     $stats['failed']++;
-                    echo sprintf("[err] id=%d  %s\n", $id, $e->getMessage());
+                    $say(sprintf("  id=%-10d  [err] %s\n", $id, $e->getMessage()));
                 }
             }
 
+            $say(sprintf("\n[%s] computing remaining backlog...\n", date('H:i:s')));
             $left = $DB->query(Database::SELECT,
                 "SELECT COUNT(*) AS n FROM ecp_persons
                  WHERE (address_text IS NULL OR address_text = '')
                    AND address_image_base64 IS NOT NULL AND address_image_base64 <> ''",
                 TRUE)->current();
 
-            echo "\n----- summary -----\n";
-            echo sprintf("engine    : %s (lang=%s)%s\n", $engine, $lang, $dry_run ? ' [dry-run]' : '');
-            echo sprintf("processed : %d\n", $stats['processed']);
-            echo sprintf("updated   : %d\n", $stats['updated']);
-            echo sprintf("empty     : %d\n", $stats['empty']);
-            echo sprintf("failed    : %d\n", $stats['failed']);
-            echo sprintf("remaining : %d\n", (int) $left->n);
+            $say("\n----- summary -----\n");
+            $say(sprintf("engine    : %s (lang=%s)%s\n", $engine, $lang, $dry_run ? ' [dry-run]' : ''));
+            $say(sprintf("processed : %d\n", $stats['processed']));
+            $say(sprintf("updated   : %d\n", $stats['updated']));
+            $say(sprintf("empty     : %d\n", $stats['empty']));
+            $say(sprintf("failed    : %d\n", $stats['failed']));
+            $say(sprintf("remaining : %d\n", (int) $left->n));
         } catch (Exception $e) {
             http_response_code(500);
-            echo 'Backfill aborted: ' . $e->getMessage();
+            $say('Backfill aborted: ' . $e->getMessage() . "\n");
         }
+        exit;
+    }
+
+    /**
+     * Disable Kohana / PHP / web-server output buffering so subsequent
+     * `echo $msg; flush();` pairs reach the browser as they happen.
+     * Used by the long-running ECP cron actions so they don't appear
+     * to hang while the work is in progress.
+     */
+    private static function _stream_init($content_type = 'text/plain; charset=utf-8')
+    {
+        while (ob_get_level()) { @ob_end_clean(); }
+        @ini_set('output_buffering',         'Off');
+        @ini_set('zlib.output_compression',  'Off');
+        @ini_set('implicit_flush',           1);
+        @ob_implicit_flush(1);
+        if (!headers_sent()) {
+            header('Content-Type: ' . $content_type);
+            header('X-Accel-Buffering: no');                              // nginx hint
+            header('Cache-Control: no-cache, no-store, must-revalidate'); // disable client cache
+        }
+    }
+
+    /**
+     * Verify the tesseract binary is callable. Returns '' on success or a
+     * short human-readable error description if the engine cannot be used.
+     * Without this check, a missing binary just silently produces empty
+     * OCR results for every row — which looks identical to a hung process.
+     */
+    private static function _tesseract_check()
+    {
+        if (!function_exists('shell_exec')) {
+            return 'shell_exec() is disabled in php.ini (disable_functions)';
+        }
+        $bin = 'tesseract';
+        try {
+            $cfg = Kohana::$config->load('ocr');
+            if ($cfg && $cfg->get('tesseract_bin')) {
+                $bin = $cfg->get('tesseract_bin');
+            }
+        } catch (Exception $e) { /* config file optional */ }
+
+        $cmd = escapeshellarg($bin) . ' --version 2>&1';
+        $out = @shell_exec($cmd);
+        if (!is_string($out) || stripos($out, 'tesseract') === false) {
+            return "binary not found (tried `{$bin}`). Run `where tesseract` on the server to verify.";
+        }
+        return '';
     }
 
     /**
