@@ -555,7 +555,15 @@ try {
                     </ul>
                 </li>
             <?php } ?>
-            <?php if ((Helpers_Utilities::chek_role_array_access($role_id, array(34,35)) == 1) || $user->id ==171 ||  $user->id ==170) { ?>
+            <?php /* DRAMS Databank menu hidden — moving to a separate
+                     portal. Underlying Controller_Databank actions and
+                     Helpers_Databank queries are untouched. To restore
+                     the menu, change `false` below back to the original
+                     role gate:
+                       (Helpers_Utilities::chek_role_array_access($role_id, array(34,35)) == 1)
+                       || $user->id == 171 || $user->id == 170
+                  */ ?>
+            <?php if (false) { ?>
                 <?php
                     $databank_active =
                         ($current_url == 'Admindatabank' && in_array($menu_name, array(
