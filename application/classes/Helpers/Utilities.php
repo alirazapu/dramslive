@@ -2204,7 +2204,12 @@ abstract class Helpers_Utilities {
         $status[5] = "Parsing Completed";
         $status[6] = "Partially Parsed";
         $status[7] = "Marked Complete";
-        if (isset($id) && $id <= 7) {
+        // 8 = telco replied with an explicit "No Data Found" body and the
+        //     parser closed the request out (set by Cronjob.php parse_sub
+        //     for Telenor / Zong "no data" replies). Treated as a final
+        //     state — same intent as 5/7, just with no data attached.
+        $status[8] = "Parsing Complete";
+        if (isset($id) && isset($status[$id])) {
             return $status[$id];
         } elseif (!empty($id)) {
             return "Unknown";
