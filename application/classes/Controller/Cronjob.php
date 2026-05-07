@@ -1830,6 +1830,410 @@ class Controller_Cronjob extends Controller {
             error_log("[" . date('c') . "] action_resend_error_in_queue failed: " . $e->getMessage());
         }
     }
-    
-    
+
+    /* ------------------------------------------------------------------ */
+    /*  ECP address-text diagnostics + OCR backfill                       */
+    /*                                                                    */
+    /*  Purpose: ecp_persons.address_image_base64 stores the address as   */
+    /*  a base64 JPEG. To make the address searchable we OCR each image   */
+    /*  once and write the recognised text into the sibling address_text  */
+    /*  column on the same row, then SQL LIKE/FULLTEXT search becomes     */
+    /*  trivial (see Helpers_Person::search_ecp_by_address).              */
+    /* ------------------------------------------------------------------ */
+
+    /**
+     * One-shot read-only diagnostic: how populated is ecp_persons.address_text
+     * today, and how big is the OCR backlog?
+     *
+     * URL: /cronjob/ecp_address_diagnostic
+     */
+    public function action_ecp_address_diagnostic()
+    {
+        self::_stream_init();
+        $say = function ($s) { echo $s; @flush(); };
+
+        try {
+            $say(sprintf("[%s] connecting to ecp database (192.168.0.156)...\n", date('H:i:s')));
+            $DB = Database::instance('ecp');
+            $say(sprintf("[%s] connected. running fill-rate query (full scan, may take a while)...\n", date('H:i:s')));
+
+            $t0 = microtime(true);
+            $sql = "SELECT
+                        COUNT(*) AS total,
+                        SUM(address_text IS NOT NULL AND address_text <> '')                 AS with_text,
+                        SUM(address_image_base64 IS NOT NULL AND address_image_base64 <> '') AS with_image,
+                        ROUND(100 * SUM(address_text IS NOT NULL AND address_text <> '')
+                              / NULLIF(COUNT(*), 0), 2)                                       AS pct_with_text
+                    FROM ecp_persons";
+            $row = $DB->query(Database::SELECT, $sql, TRUE)->current();
+            $say(sprintf("[%s] fill-rate query done in %.2fs\n", date('H:i:s'), microtime(true) - $t0));
+
+            $say(sprintf("[%s] running backlog query...\n", date('H:i:s')));
+            $t0 = microtime(true);
+            $backlog = $DB->query(Database::SELECT,
+                "SELECT COUNT(*) AS n FROM ecp_persons
+                 WHERE (address_text IS NULL OR address_text = '')
+                   AND address_image_base64 IS NOT NULL AND address_image_base64 <> ''",
+                TRUE)->current();
+            $say(sprintf("[%s] backlog query done in %.2fs\n\n", date('H:i:s'), microtime(true) - $t0));
+
+            $say("ECP address_text fill rate\n");
+            $say("==========================\n");
+            $say(sprintf("Total rows         : %s\n", number_format((int) $row->total)));
+            $say(sprintf("With image         : %s\n", number_format((int) $row->with_image)));
+            $say(sprintf("With address_text  : %s\n", number_format((int) $row->with_text)));
+            $say(sprintf("Pct with text      : %s%%\n", $row->pct_with_text));
+            $say("\n");
+            $say(sprintf("Backlog needing OCR: %s\n", number_format((int) $backlog->n)));
+            $say("\n");
+            $say("Next steps:\n");
+            $say("  - If pct_with_text >= 85%, address search is already viable;\n");
+            $say("    hit /databank/ecp_advanced to try it.\n");
+            $say("  - Otherwise run:\n");
+            $say("      /cronjob/ecp_address_ocr_backfill?limit=100&engine=tesseract&dry_run=1\n");
+            $say("    on a sample first to validate accuracy, then drop dry_run=1.\n");
+        } catch (Exception $e) {
+            http_response_code(500);
+            $say('Diagnostic failed: ' . $e->getMessage() . "\n");
+        }
+        exit;
+    }
+
+    /**
+     * OCR-backfill ecp_persons.address_text from address_image_base64.
+     *
+     * Query params:
+     *   limit    batch size (default 100, max 1000)
+     *   engine   'tesseract' (default) | 'gvision'
+     *   lang     tesseract language code, default 'eng' (e.g. 'eng+urd')
+     *   dry_run  if 1, OCR but do not UPDATE — useful for sampling accuracy
+     *
+     * URL example:
+     *   /cronjob/ecp_address_ocr_backfill?limit=200&engine=tesseract&lang=eng+urd
+     *
+     * Recommended one-time schema additions on ecp.ecp_persons (we have
+     * write access per the design doc) so we can distinguish manually
+     * entered vs OCR'd text and re-process later if the engine changes:
+     *
+     *   ALTER TABLE ecp_persons
+     *     ADD COLUMN address_text_ocr_at DATETIME    NULL AFTER address_text,
+     *     ADD COLUMN address_text_source VARCHAR(16) NULL AFTER address_text_ocr_at;
+     *
+     * The action runs fine without those columns — it just won't stamp
+     * provenance.
+     */
+    public function action_ecp_address_ocr_backfill()
+    {
+        @set_time_limit(600);
+        self::_stream_init();
+        $say = function ($s) { echo $s; @flush(); };
+
+        $limit   = max(1, min(1000, isset($_GET['limit'])  ? (int) $_GET['limit'] : 100));
+        $engine  = isset($_GET['engine'])  ? (string) $_GET['engine']  : 'tesseract';
+        $lang    = isset($_GET['lang'])    ? (string) $_GET['lang']    : 'eng';
+        $dry_run = !empty($_GET['dry_run']);
+
+        $say(sprintf("[%s] backfill starting (limit=%d engine=%s lang=%s%s)\n",
+            date('H:i:s'), $limit, $engine, $lang, $dry_run ? ' DRY-RUN' : ''));
+
+        // Pre-flight: catch the most common silent failure (engine binary
+        // missing) here instead of letting every row fail with empty OCR.
+        if ($engine === 'tesseract') {
+            $err = self::_tesseract_check();
+            if ($err !== '') {
+                http_response_code(500);
+                $say("[FATAL] tesseract preflight: {$err}\n");
+                $say("        install Tesseract on this host (https://github.com/UB-Mannheim/tesseract/wiki)\n");
+                $say("        and ensure the binary is on PATH, OR set tesseract_bin in application/config/ocr.php\n");
+                $say("        OR re-run with engine=gvision after configuring google_vision_api_key.\n");
+                exit;
+            }
+            $say("[ok] tesseract binary detected\n");
+        }
+
+        try {
+            $say(sprintf("[%s] connecting to ecp database...\n", date('H:i:s')));
+            $DB = Database::instance('ecp');
+            $say(sprintf("[%s] connected\n", date('H:i:s')));
+
+            $has_tracking_cols = self::ecp_has_tracking_columns($DB);
+            $say(sprintf("[%s] provenance columns present: %s\n",
+                date('H:i:s'), $has_tracking_cols ? 'yes' : 'no (will skip stamping)'));
+
+            $say(sprintf("[%s] selecting up to %d rows missing address_text...\n", date('H:i:s'), $limit));
+            $t0  = microtime(true);
+            $sql = "SELECT id, address_image_base64
+                    FROM ecp_persons
+                    WHERE (address_text IS NULL OR address_text = '')
+                      AND address_image_base64 IS NOT NULL AND address_image_base64 <> ''
+                    LIMIT {$limit}";
+            $rows = $DB->query(Database::SELECT, $sql, FALSE)->as_array();
+            $say(sprintf("[%s] got %d rows in %.2fs\n", date('H:i:s'), count($rows), microtime(true) - $t0));
+
+            if (empty($rows)) {
+                $say("nothing to do — backlog is empty (or filter excludes everything).\n");
+                exit;
+            }
+
+            $stats = array('processed' => 0, 'updated' => 0, 'empty' => 0, 'failed' => 0);
+
+            foreach ($rows as $row) {
+                $stats['processed']++;
+                $id = (int) $row['id'];
+                $t  = microtime(true);
+                try {
+                    $bytes = Helpers_Ocr::decode_base64_image($row['address_image_base64']);
+                    if ($bytes === '') {
+                        $stats['empty']++;
+                        $say(sprintf("  id=%-10d  [empty after base64 decode]\n", $id));
+                        continue;
+                    }
+                    $text = Helpers_Ocr::recognise($bytes, $engine, array('lang' => $lang));
+                    $ms   = (int) round((microtime(true) - $t) * 1000);
+                    if ($text === '') {
+                        $stats['empty']++;
+                        $say(sprintf("  id=%-10d  %5dms  [OCR returned empty]\n", $id, $ms));
+                        continue;
+                    }
+                    $preview = substr(str_replace(array("\r", "\n"), ' ', $text), 0, 80);
+                    if ($dry_run) {
+                        $stats['updated']++;
+                        $say(sprintf("  id=%-10d  %5dms  [dry] %s\n", $id, $ms, $preview));
+                        continue;
+                    }
+                    $set = "address_text = " . $DB->escape($text);
+                    if ($has_tracking_cols) {
+                        $set .= ", address_text_ocr_at = NOW(), address_text_source = " . $DB->escape($engine);
+                    }
+                    $upd = "UPDATE ecp_persons SET {$set} WHERE id = {$id}";
+                    $DB->query(Database::UPDATE, $upd, FALSE);
+                    $stats['updated']++;
+                    $say(sprintf("  id=%-10d  %5dms  [ok]  %s\n", $id, $ms, $preview));
+                } catch (Exception $e) {
+                    $stats['failed']++;
+                    $say(sprintf("  id=%-10d  [err] %s\n", $id, $e->getMessage()));
+                }
+            }
+
+            $say(sprintf("\n[%s] computing remaining backlog...\n", date('H:i:s')));
+            $left = $DB->query(Database::SELECT,
+                "SELECT COUNT(*) AS n FROM ecp_persons
+                 WHERE (address_text IS NULL OR address_text = '')
+                   AND address_image_base64 IS NOT NULL AND address_image_base64 <> ''",
+                TRUE)->current();
+
+            $say("\n----- summary -----\n");
+            $say(sprintf("engine    : %s (lang=%s)%s\n", $engine, $lang, $dry_run ? ' [dry-run]' : ''));
+            $say(sprintf("processed : %d\n", $stats['processed']));
+            $say(sprintf("updated   : %d\n", $stats['updated']));
+            $say(sprintf("empty     : %d\n", $stats['empty']));
+            $say(sprintf("failed    : %d\n", $stats['failed']));
+            $say(sprintf("remaining : %d\n", (int) $left->n));
+        } catch (Exception $e) {
+            http_response_code(500);
+            $say('Backfill aborted: ' . $e->getMessage() . "\n");
+        }
+        exit;
+    }
+
+    /**
+     * Disable Kohana / PHP / web-server output buffering so subsequent
+     * `echo $msg; flush();` pairs reach the browser as they happen.
+     * Used by the long-running ECP cron actions so they don't appear
+     * to hang while the work is in progress.
+     */
+    private static function _stream_init($content_type = 'text/plain; charset=utf-8')
+    {
+        while (ob_get_level()) { @ob_end_clean(); }
+        @ini_set('output_buffering',         'Off');
+        @ini_set('zlib.output_compression',  'Off');
+        @ini_set('implicit_flush',           1);
+        @ob_implicit_flush(1);
+        if (!headers_sent()) {
+            header('Content-Type: ' . $content_type);
+            header('X-Accel-Buffering: no');                              // nginx hint
+            header('Cache-Control: no-cache, no-store, must-revalidate'); // disable client cache
+        }
+    }
+
+    /**
+     * Verify the tesseract binary is callable. Returns '' on success or a
+     * short human-readable error description if the engine cannot be used.
+     * Without this check, a missing binary just silently produces empty
+     * OCR results for every row — which looks identical to a hung process.
+     */
+    private static function _tesseract_check()
+    {
+        if (!function_exists('shell_exec')) {
+            return 'shell_exec() is disabled in php.ini (disable_functions)';
+        }
+        $bin = 'tesseract';
+        try {
+            $cfg = Kohana::$config->load('ocr');
+            if ($cfg && $cfg->get('tesseract_bin')) {
+                $bin = $cfg->get('tesseract_bin');
+            }
+        } catch (Exception $e) { /* config file optional */ }
+
+        $cmd = escapeshellarg($bin) . ' --version 2>&1';
+        $out = @shell_exec($cmd);
+        if (!is_string($out) || stripos($out, 'tesseract') === false) {
+            return "binary not found (tried `{$bin}`). Run `where tesseract` on the server to verify.";
+        }
+        return '';
+    }
+
+    /**
+     * Detect once per request whether the optional provenance columns
+     * exist on ecp_persons. Cached in static for the request lifetime.
+     */
+    private static function ecp_has_tracking_columns($DB)
+    {
+        static $cache = null;
+        if ($cache !== null) {
+            return $cache;
+        }
+        try {
+            $r = $DB->query(Database::SELECT,
+                "SHOW COLUMNS FROM ecp_persons LIKE 'address_text_source'", TRUE)->current();
+            $cache = !empty($r);
+        } catch (Exception $e) {
+            $cache = false;
+        }
+        return $cache;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  ECP OCR daemon — local cache builder                              */
+    /*                                                                    */
+    /*  Walks ecp.ecp_persons and OCRs name_image_base64,                 */
+    /*  father_image_base64, address_image_base64 into the LOCAL          */
+    /*  ecp_persons_ocr table on the aiesplus DB. Once populated, the     */
+    /*  Databank ECP search hits the local table first; the remote DB     */
+    /*  is only round-tripped when the user wants the original image      */
+    /*  or columns we don't cache.                                        */
+    /*                                                                    */
+    /*  Schema lives in docs/sql/ecp_persons_ocr.sql — run it once per    */
+    /*  environment before the daemon will store anything.                */
+    /* ------------------------------------------------------------------ */
+
+    /**
+     * Operate the ECP OCR daemon. Streaming output throughout so the
+     * URL doesn't look hung while OCR is in progress.
+     *
+     * Query params:
+     *   mode          oneshot (default) | daemon | stop | status
+     *   batch         rows per batch    (oneshot/daemon, default 50, max 500)
+     *   engine        tesseract (default) | gvision
+     *   lang          tesseract language, default 'eng+urd'
+     *   max_minutes   wall-clock budget (daemon mode only, default 30)
+     *   idle_sleep    seconds to nap when caught up (daemon, default 30)
+     *
+     * Examples:
+     *   /cronjob/ecp_ocr_daemon?mode=status
+     *   /cronjob/ecp_ocr_daemon?mode=oneshot&batch=200
+     *   /cronjob/ecp_ocr_daemon?mode=daemon&max_minutes=60&engine=gvision
+     *   /cronjob/ecp_ocr_daemon?mode=stop      (graceful shutdown of running daemon)
+     *
+     * Recommended deployment:
+     *   - Schedule oneshot via Windows Task Scheduler every 5 minutes
+     *     for low-priority steady-state ingest, OR
+     *   - Run daemon mode with --max_minutes=55 every hour for higher
+     *     throughput while still recycling the process regularly.
+     */
+    public function action_ecp_ocr_daemon()
+    {
+        @set_time_limit(0);
+        self::_stream_init();
+        $say = function ($s) { echo $s; @flush(); };
+
+        $mode        = isset($_GET['mode'])        ? (string) $_GET['mode']        : 'oneshot';
+        $batch       = isset($_GET['batch'])       ? (int)    $_GET['batch']       : 50;
+        $engine      = isset($_GET['engine'])      ? (string) $_GET['engine']      : 'tesseract';
+        $lang        = isset($_GET['lang'])        ? (string) $_GET['lang']        : 'eng+urd';
+        $max_minutes = isset($_GET['max_minutes']) ? (int)    $_GET['max_minutes'] : 30;
+        $idle_sleep  = isset($_GET['idle_sleep'])  ? (int)    $_GET['idle_sleep']  : 30;
+
+        $say(sprintf("[%s] ecp_ocr_daemon mode=%s\n", date('H:i:s'), $mode));
+
+        // Stop signal handling: just touch the stop-file and return.
+        if ($mode === 'stop') {
+            $ok = Helpers_EcpOcrDaemon::request_stop();
+            $say($ok
+                ? "stop-file created. Any running daemon will exit at the top of its next iteration.\n"
+                : "could not create stop-file (cache dir not writable?)\n");
+            exit;
+        }
+
+        // Status: print current heartbeat + cache fill snapshot.
+        if ($mode === 'status') {
+            $info = Helpers_EcpOcrDaemon::status();
+            $say("\n----- daemon status -----\n");
+            $say(sprintf("locked         : %s\n", $info['is_locked'] ? 'yes (running)' : 'no'));
+            $say(sprintf("cache rows     : %s (ok=%s, empty=%s, error=%s)\n",
+                number_format($info['cache_total']),
+                number_format($info['cache_ok']),
+                number_format($info['cache_empty']),
+                number_format($info['cache_error'])));
+            if ($info['remote_total'] !== null) {
+                $say(sprintf("remote rows    : %s\n", number_format($info['remote_total'])));
+                $say(sprintf("frontier id    : %s / max id %s (backlog %s)\n",
+                    number_format((int) $info['cache_max_id']),
+                    number_format((int) $info['remote_max_id']),
+                    number_format((int) $info['backlog'])));
+            }
+            $say("\nlast run:\n");
+            if ($info['last_run']) {
+                foreach ((array) $info['last_run'] as $k => $v) {
+                    $say(sprintf("  %-22s %s\n", $k, (string) $v));
+                }
+            } else {
+                $say("  (no runs recorded yet)\n");
+            }
+            exit;
+        }
+
+        // For tesseract, run the same preflight the OCR backfill action
+        // uses so a missing binary fails loudly up front.
+        if ($engine === 'tesseract') {
+            $err = self::_tesseract_check();
+            if ($err !== '') {
+                http_response_code(500);
+                $say("[FATAL] tesseract preflight: {$err}\n");
+                $say("        Install Tesseract on this host or re-run with engine=gvision.\n");
+                exit;
+            }
+            $say("[ok] tesseract binary detected\n");
+        }
+
+        $opts = array(
+            'batch_size'  => $batch,
+            'engine'      => $engine,
+            'lang'        => $lang,
+            'idle_sleep'  => $idle_sleep,
+            'max_minutes' => $max_minutes,
+        );
+
+        try {
+            if ($mode === 'daemon') {
+                $say(sprintf("[%s] entering daemon loop (max_minutes=%d, idle_sleep=%d)\n",
+                    date('H:i:s'), $max_minutes, $idle_sleep));
+                $stats = Helpers_EcpOcrDaemon::run_daemon($opts);
+            } else {
+                // default: oneshot
+                $say(sprintf("[%s] running single batch (size=%d)\n", date('H:i:s'), $batch));
+                $stats = Helpers_EcpOcrDaemon::run_oneshot($opts);
+            }
+
+            $say("\n----- summary -----\n");
+            foreach ($stats as $k => $v) {
+                $say(sprintf("%-10s : %s\n", $k, is_scalar($v) ? (string) $v : json_encode($v)));
+            }
+        } catch (Exception $e) {
+            http_response_code(500);
+            $say('Daemon aborted: ' . $e->getMessage() . "\n");
+        }
+        exit;
+    }
+
 }
