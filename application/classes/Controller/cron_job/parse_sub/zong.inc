@@ -9,11 +9,19 @@ $cnic          = '';
 $cnic_original = '';
 $is_foreigner  = 0;
 
+// Mirrors $not_found_for_telenor — when the Zong reply is a clear
+// "no data found" response (empty body or one of the no-data keywords
+// below), this flag tells the caller in Cronjob.php to close the
+// request out with status=2/processing_index=8 instead of leaving it
+// hanging on "Waiting for Parsing".
+$no_data_for_zong = 0;
+
 // 1. Body selection
 // 1. Body selection + clean (keep mostly as is, but add better From: handling)
 $body = !empty($data['received_body_raw']) ? $data['received_body_raw'] : $data['received_body'];
 if (empty(trim($body))) {
-    $not_fount = 1;
+    $not_fount        = 1;
+    $no_data_for_zong = 1;
     return;
 }
 
@@ -30,7 +38,8 @@ $lower_area = strtolower($parse_area);
 $no_data_keywords = ['not found','no data','no record','nodata','nil','network error','ported out',"can't be fetched",'more than a year','extraction problem'];
 foreach ($no_data_keywords as $kw) {
     if (strpos($lower_area, $kw) !== false) {
-        $not_fount = 1;
+        $not_fount        = 1;
+        $no_data_for_zong = 1;
         return;
     }
 }
