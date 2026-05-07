@@ -529,6 +529,7 @@ class Controller_Cronjob extends Controller {
                 $status = '';
                 $not_fount = 0;
                 $not_found_for_telenor = 0;
+                $no_data_for_zong = 0;
                 $reference_number = $data['request_id'];
                 $data['file_id'] = Helpers_Upload::get_fileid_aginst_requestid($data['request_id']);
                 $login_user = Auth::instance()->get_user();
@@ -557,8 +558,17 @@ class Controller_Cronjob extends Controller {
                 //echo $data['company_name'];exit;
                // echo $not_fount.'-'. $not_found_for_telenor;
                // exit;
-                // if request is of telenor and not found is 1 (set in telenor sub) then else old logic for all other request
-                if($data['company_name'] == 6 && $not_found_for_telenor == 1){
+                // Telco-specific "no data found" short-circuit. When the
+                // company-specific parser detected that the response was
+                // an explicit "no data" reply (vs a parseable result),
+                // close the request with status=2 / processing_index=8
+                // instead of letting it sit on "Waiting for Parsing".
+                //   company_name == 6  → Telenor  (uses $not_found_for_telenor)
+                //   company_name == 4  → Zong     (uses $no_data_for_zong)
+                $is_no_data_reply =
+                    ($data['company_name'] == 6 && $not_found_for_telenor == 1)
+                    || ($data['company_name'] == 4 && $no_data_for_zong == 1);
+                if ($is_no_data_reply) {
                         $reference_number_1 = Model_Email::email_status($reference_number, 2, 8);
                 }else{
                         if ($not_fount == 0) {
