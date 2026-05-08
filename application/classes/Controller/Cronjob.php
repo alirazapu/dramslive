@@ -2578,4 +2578,134 @@ class Controller_Cronjob extends Controller {
         exit;
     }
 
+    /**
+     * Database health check — pings every connection in
+     * application/config/database.php with a trivial SELECT 1 and
+     * prints a per-connection status table. Useful when adding a new
+     * external connection (e.g. dlms_sqlsrv) to verify that PHP has
+     * the driver loaded and the network path is reachable, all in
+     * one URL.
+     *
+     * URL: /cronjob/db_health
+     *
+     * Per-row outcome:
+     *   ok   — driver loaded, connection opened, SELECT 1 returned
+     *   fail — open failed, query failed, or driver is missing
+     *
+     * The action also surfaces whether the corresponding PHP
+     * extension is loaded (sqlsrv/pdo_sqlsrv for SQL Server, mysqli
+     * for MySQLi-typed connections, pdo_mysql for PDO+mysql) so the
+     * operator gets a precise diagnosis rather than just an
+     * exception.
+     */
+    public function action_db_health()
+    {
+        @set_time_limit(60);
+        self::_stream_init();
+        $say = function ($s) { echo $s; @flush(); };
+
+        $say(sprintf("[%s] DB health check\n", date('H:i:s')));
+        $say(str_repeat('=', 76) . "\n");
+
+        // PHP-level driver inventory.
+        $say("PHP " . PHP_VERSION . " (" . (PHP_ZTS ? 'ZTS' : 'NTS') . ", " . PHP_INT_SIZE * 8 . "-bit)\n");
+        $exts = array(
+            'mysqli'     => extension_loaded('mysqli'),
+            'pdo_mysql'  => extension_loaded('pdo_mysql'),
+            'sqlsrv'     => extension_loaded('sqlsrv'),
+            'pdo_sqlsrv' => extension_loaded('pdo_sqlsrv'),
+            'pdo'        => extension_loaded('pdo'),
+        );
+        foreach ($exts as $name => $loaded) {
+            $say(sprintf("  ext %-12s : %s\n", $name, $loaded ? 'loaded' : 'MISSING'));
+        }
+        $say("\n");
+
+        // Configured connections.
+        try {
+            $cfg = Kohana::$config->load('database')->as_array();
+        } catch (Exception $e) {
+            http_response_code(500);
+            $say("Could not load database config: " . $e->getMessage() . "\n");
+            exit;
+        }
+
+        $say(sprintf("%-18s %-12s %-32s %-8s %s\n",
+            'connection', 'type', 'host/dsn', 'status', 'detail'));
+        $say(str_repeat('-', 100) . "\n");
+
+        $any_fail = false;
+        foreach ($cfg as $name => $opts) {
+            $type   = isset($opts['type']) ? $opts['type'] : '?';
+            $detail = '';
+            $status = 'ok';
+            $host_dsn = '';
+            if ($type === 'PDO') {
+                $host_dsn = isset($opts['connection']['dsn']) ? $opts['connection']['dsn'] : '';
+            } else {
+                $host_dsn = (isset($opts['connection']['hostname']) ? $opts['connection']['hostname'] : '?')
+                          . '/' . (isset($opts['connection']['database']) ? $opts['connection']['database'] : '?');
+            }
+
+            // Ext gate: don't even attempt when the required driver
+            // is missing — Kohana's exception text is misleading
+            // ("could not find driver") and the operator wants a
+            // crisp "install <ext>" message.
+            $missing_ext = '';
+            if ($type === 'PDO') {
+                if (!$exts['pdo']) {
+                    $missing_ext = 'pdo';
+                } elseif (strpos((string) $host_dsn, 'sqlsrv:') === 0 && !$exts['pdo_sqlsrv']) {
+                    $missing_ext = 'pdo_sqlsrv';
+                } elseif (strpos((string) $host_dsn, 'mysql:')  === 0 && !$exts['pdo_mysql']) {
+                    $missing_ext = 'pdo_mysql';
+                }
+            } elseif ($type === 'MySQLi' && !$exts['mysqli']) {
+                $missing_ext = 'mysqli';
+            }
+
+            if ($missing_ext !== '') {
+                $status = 'fail';
+                $detail = 'missing PHP extension: ' . $missing_ext;
+            } else {
+                $t0 = microtime(true);
+                try {
+                    $DB  = Database::instance($name);
+                    $row = $DB->query(Database::SELECT, 'SELECT 1 AS one', TRUE)->current();
+                    $ms  = (int) round((microtime(true) - $t0) * 1000);
+                    $detail = $ms . ' ms';
+                    if (empty($row) || (is_object($row) ? !isset($row->one) : !isset($row['one']))) {
+                        $status = 'fail';
+                        $detail = 'connected but SELECT 1 returned nothing';
+                    }
+                } catch (Exception $e) {
+                    $status = 'fail';
+                    $msg = $e->getMessage();
+                    // Common PDO/SQLSRV diagnostics
+                    if (stripos($msg, 'could not find driver') !== false) {
+                        $msg .= ' [install pdo_sqlsrv extension]';
+                    } elseif (stripos($msg, 'unknown database') !== false) {
+                        $msg .= ' [database name in config does not exist on the server]';
+                    } elseif (stripos($msg, "couldn't connect") !== false || stripos($msg, 'no route') !== false) {
+                        $msg .= ' [host unreachable — firewall / network / DB down]';
+                    }
+                    $detail = substr($msg, 0, 220);
+                }
+            }
+
+            if ($status !== 'ok') $any_fail = true;
+            $say(sprintf("%-18s %-12s %-32s %-8s %s\n",
+                $name, $type, substr($host_dsn, 0, 30), $status, $detail));
+        }
+
+        $say("\n");
+        if ($any_fail) {
+            http_response_code(500);
+            $say("RESULT: one or more connections failed.\n");
+        } else {
+            $say("RESULT: all connections healthy.\n");
+        }
+        exit;
+    }
+
 }
