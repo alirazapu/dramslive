@@ -33,18 +33,6 @@ $default_prod = array(
 return array
 (
     'default' => (Kohana::$environment === Kohana::DEVELOPMENT) ? $default_dev : $default_prod,
-    'remote' => array(
-        'type'       => 'MySQL',
-        'connection' => array(
-            'hostname'   => '55.55.55.55',
-            'username'   => 'remote_user',
-            'password'   => 'mypassword',
-            'persistent' => FALSE,
-            'database'   => 'my_remote_db_name',
-        ),
-        'table_prefix' => '',
-        'charset'      => 'utf8',
-    ),
     'mobile' => array
     (
         'type'       => 'MySQLi',
@@ -75,7 +63,14 @@ return array
     (
         'type'       => 'PDO',
         'connection' => array(
-            'dsn'        => 'sqlsrv:Server=192.168.0.152,1433;Database=DLMS_FamzSolutions',
+            // Encrypt=no + TrustServerCertificate=yes are needed because the
+            // default ODBC Driver 18 connection turns encryption on and
+            // rejects untrusted server certificates. The DLMS SQL Server
+            // (192.168.0.152) does not present a CA-signed cert, so we
+            // disable encryption rather than trust an unknown cert.
+            // Verified working with this exact DSN via a standalone PDO
+            // connect from the production host.
+            'dsn'        => 'sqlsrv:Server=192.168.0.152,1433;Database=DLMS_FamzSolutions;Encrypt=no;TrustServerCertificate=yes',
             'username'   => 'junaid_sql',
             'password'   => 'JUNaid@123',
             'persistent' => FALSE,
