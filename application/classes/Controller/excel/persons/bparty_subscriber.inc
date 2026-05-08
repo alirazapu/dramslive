@@ -60,8 +60,18 @@ if (isset($_POST['xport']) && $_POST['xport'] == 'excel') {
         $person_profile_id = Helpers_Utilities::search_pid_of_mobile($other_phone);
 
         if (!empty($person_profile_id)) {
-            $bvs = 'DRAMS Person';
+            $bvs  = 'DRAMS Person';
             $name = Helpers_Person::get_person_name($person_profile_id);
+            // The on-screen view hides CNIC + Address behind the profile-
+            // link icon for DRAMS persons (see action_ajaxbpartysubscriber),
+            // but the spreadsheet needs them as flat columns. One round-
+            // trip to get_person_perofile() returns the person row already
+            // augmented with cnic_number, so we pull both from there.
+            $profile = Helpers_Person::get_person_perofile($person_profile_id);
+            if (is_object($profile)) {
+                $cnic    = !empty($profile->cnic_number) ? (string) $profile->cnic_number : '';
+                $address = !empty($profile->address)     ? (string) $profile->address     : '';
+            }
         } else {
             $sub = Helpers_Subscriber::search('msisdn', $other_phone);
             if (!empty($sub['status']) && !empty($sub['data'])) {
