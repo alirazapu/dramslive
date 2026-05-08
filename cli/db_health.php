@@ -113,13 +113,19 @@ foreach ($cfg as $name => $opts) {
             if (strpos((string) $host_dsn, 'mysql:') === 0 && !extension_loaded('pdo_mysql')) {
                 throw new RuntimeException('PHP extension pdo_mysql not loaded');
             }
+            // ATTR_TIMEOUT is intentionally NOT passed to the PDO
+            // constructor here — Microsoft's pdo_sqlsrv driver
+            // rejects it with "SQLSTATE[IMSSP]: An unsupported
+            // attribute was designated on the PDO object", which
+            // makes the script falsely report a perfectly healthy
+            // connection as failed. For SQL Server, login timeout
+            // is set via the DSN parameter "LoginTimeout=N".
             $pdo = new PDO(
                 (string) $host_dsn,
                 isset($conn['username']) ? (string) $conn['username'] : '',
                 isset($conn['password']) ? (string) $conn['password'] : '',
                 array(
                     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                    PDO::ATTR_TIMEOUT => 5,
                 )
             );
             $row    = $pdo->query('SELECT 1 AS one')->fetch(PDO::FETCH_ASSOC);
