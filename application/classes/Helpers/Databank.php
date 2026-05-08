@@ -48,7 +48,14 @@ class Helpers_Databank
             $where = array();
 
             if (!empty($filters['cnic'])) {
-                $where[] = 'p.cnic = ' . $DB->escape(trim($filters['cnic']));
+                // ECP stores CNIC as a 13-digit string (no dashes). Strip
+                // any user-supplied dashes/spaces before exact match.
+                $variants = self::_cnic_variants($filters['cnic']);
+                if (!empty($variants)) {
+                    $or = array();
+                    foreach ($variants as $v) { $or[] = 'p.cnic = ' . $DB->escape($v); }
+                    $where[] = '(' . implode(' OR ', $or) . ')';
+                }
             }
             if (!empty($filters['name'])) {
                 $where[] = 'p.name_text LIKE ' . $DB->escape('%' . trim($filters['name']) . '%');
@@ -85,6 +92,7 @@ class Helpers_Databank
                     LIMIT {$limit}";
             return $DB->query(Database::SELECT, $sql, TRUE)->as_array();
         } catch (Exception $e) {
+            self::_log_failure('search_ecp', $e, $filters);
             return array();
         }
     }
@@ -162,8 +170,9 @@ class Helpers_Databank
                 $rows = array_merge($rows, $main);
             }
         } catch (Exception $e) {
-            // Remote DB unreachable or schema mismatch — silently skip;
-            // the foreigner side may still produce results.
+            // Remote DB unreachable or schema mismatch — log it but
+            // don't abort; the foreigner side may still produce results.
+            self::_log_failure('search_subscriber_unified.subscribers_main', $e, $filters);
         }
 
         // --- afghan_accounts (foreigner) ---
@@ -208,7 +217,7 @@ class Helpers_Databank
                 $rows     = array_merge($rows, $foreign);
             }
         } catch (Exception $e) {
-            // ignore
+            self::_log_failure('search_subscriber_unified.afghan_accounts', $e, $filters);
         }
 
         return $rows;
@@ -226,7 +235,17 @@ class Helpers_Databank
             $where = array();
 
             if (!empty($filters['cnic'])) {
-                $where[] = 'p.CNIC = ' . $DB->escape(trim($filters['cnic']));
+                // CTD KPK stores CNICs as both bare digits and dashed
+                // (XXXXX-XXXXXXX-X). Mirror the IN(...) match used by
+                // Helpers_Person::get_person_external_profile_ctd_kpk
+                // so a user-supplied digit-only string still hits dashed
+                // rows and vice-versa.
+                $variants = self::_cnic_variants($filters['cnic']);
+                if (!empty($variants)) {
+                    $or = array();
+                    foreach ($variants as $v) { $or[] = 'p.CNIC = ' . $DB->escape($v); }
+                    $where[] = '(' . implode(' OR ', $or) . ')';
+                }
             }
             if (!empty($filters['name'])) {
                 $where[] = 'p.Name LIKE ' . $DB->escape('%' . trim($filters['name']) . '%');
@@ -274,6 +293,7 @@ class Helpers_Databank
                     LIMIT {$limit}";
             return $DB->query(Database::SELECT, $sql, TRUE)->as_array();
         } catch (Exception $e) {
+            self::_log_failure('search_ctd_kpk', $e, $filters);
             return array();
         }
     }
@@ -290,7 +310,20 @@ class Helpers_Databank
             $where = array();
 
             if (!empty($filters['cnic'])) {
-                $where[] = 'p.CNIC = ' . $DB->escape(trim($filters['cnic']));
+                // DLMS stores CNICs in dashed form (XXXXX-XXXXXXX-X) for
+                // most rows; some legacy rows are bare digits. Mirror the
+                // IN(...) match used by
+                // Helpers_Person::get_person_external_profile_driving_license
+                // so a digit-only search still finds the dashed rows.
+                // This was the bug for CNIC 1730113816259 — the row exists
+                // in DLMS as "17301-1381625-9" and exact-match on digits
+                // missed it.
+                $variants = self::_cnic_variants($filters['cnic']);
+                if (!empty($variants)) {
+                    $or = array();
+                    foreach ($variants as $v) { $or[] = 'p.CNIC = ' . $DB->escape($v); }
+                    $where[] = '(' . implode(' OR ', $or) . ')';
+                }
             }
             if (!empty($filters['name'])) {
                 $name_esc = $DB->escape('%' . trim($filters['name']) . '%');
@@ -318,6 +351,7 @@ class Helpers_Databank
                     WHERE " . implode(' AND ', $where);
             return $DB->query(Database::SELECT, $sql, TRUE)->as_array();
         } catch (Exception $e) {
+            self::_log_failure('search_dlms', $e, $filters);
             return array();
         }
     }
@@ -334,7 +368,15 @@ class Helpers_Databank
             $where = array();
 
             if (!empty($filters['cnic'])) {
-                $where[] = 'national_id = ' . $DB->escape(trim($filters['cnic']));
+                // employee_data stores national_id as bare 13 digits in
+                // every row we've inspected, but accept dashed input from
+                // the user too — strip non-digits via _cnic_variants[0].
+                $variants = self::_cnic_variants($filters['cnic']);
+                if (!empty($variants)) {
+                    $or = array();
+                    foreach ($variants as $v) { $or[] = 'national_id = ' . $DB->escape($v); }
+                    $where[] = '(' . implode(' OR ', $or) . ')';
+                }
             }
             if (!empty($filters['name'])) {
                 $name_esc = $DB->escape('%' . trim($filters['name']) . '%');
@@ -363,6 +405,7 @@ class Helpers_Databank
                     LIMIT {$limit}";
             return $DB->query(Database::SELECT, $sql, TRUE)->as_array();
         } catch (Exception $e) {
+            self::_log_failure('search_govt_emp', $e, $filters);
             return array();
         }
     }
@@ -378,6 +421,60 @@ class Helpers_Databank
         if ($v < $min) return $min;
         if ($v > $max) return $max;
         return $v;
+    }
+
+    /**
+     * Normalise a CNIC into the variants the external databases store.
+     * Returns up to two strings — the bare 13-digit form and the
+     * canonical dashed form (XXXXX-XXXXXXX-X). Use both with WHERE …
+     * IN (a, b) when a database is known to store one or the other
+     * (CTD KPK and DLMS both do).
+     *
+     * Trims any non-digit characters first so callers can pass
+     * "17301-1381625-9", "17301 1381625 9", or "1730113816259" and
+     * still get the same canonical pair back.
+     */
+    private static function _cnic_variants($raw)
+    {
+        $digits = preg_replace('/\D+/', '', (string) $raw);
+        if ($digits === '') {
+            return array();
+        }
+        $out = array($digits);
+        if (strlen($digits) === 13) {
+            $dashed = substr($digits, 0, 5) . '-' . substr($digits, 5, 7) . '-' . substr($digits, 12, 1);
+            $out[] = $dashed;
+        }
+        return $out;
+    }
+
+    /**
+     * Centralised exception logger for the Databank search helpers.
+     * Mirrors the call style used by zong.inc / Cronjob.php / the
+     * cdr parsers — keeps every Databank failure searchable in
+     * system_error_log via the same `error_source` prefix.
+     */
+    private static function _log_failure($helper, Exception $e, array $filters)
+    {
+        try {
+            Model_ErrorLog::log(
+                'helpers_databank_' . $helper,
+                $e->getMessage(),
+                array(
+                    'filters' => $filters,
+                    'class'   => get_class($e),
+                ),
+                $e->getTraceAsString(),
+                'database_error',
+                'databank_search',
+                'error'
+            );
+        } catch (Exception $log_failed) {
+            // Logger itself blew up — last-ditch fallback so we don't
+            // double-fault the search.
+            error_log('Helpers_Databank::' . $helper . ' failed; logger also failed: '
+                . $e->getMessage() . ' | logger: ' . $log_failed->getMessage());
+        }
     }
 
     /**

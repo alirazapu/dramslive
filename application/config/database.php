@@ -76,7 +76,15 @@ return array
             'persistent' => FALSE,
         ),
         'table_prefix' => '',
-        'charset'      => 'utf8',
+        // charset MUST be empty (or unset) for SQL Server. Kohana's
+        // Database_PDO::connect() calls set_charset() which runs
+        //   $this->_connection->exec('SET NAMES \'utf8\'')
+        // — that's MySQL-only syntax and SQL Server rejects it,
+        // throwing inside the connection bootstrap. With charset=''
+        // Kohana skips the call entirely. SQL Server's NVARCHAR is
+        // already Unicode so no client-side charset declaration is
+        // needed for this database anyway.
+        'charset'      => '',
     ),
     'ecp' => array
     (
