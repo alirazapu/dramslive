@@ -307,16 +307,33 @@ abstract class Helpers_Person
 
     public static function get_person_external_profile_driving_license($cnic = '')
     {
+        // We bypass Kohana's Database_PDO driver for DLMS — it runs
+        // `SET NAMES 'utf8'` after connect (MySQL-only syntax) which
+        // SQL Server rejects, and surfaces unsupported PDO attributes
+        // to pdo_sqlsrv. See Helpers_Databank::dlms_pdo() for the
+        // factory and the rationale.
+        $pdo = Helpers_Databank::dlms_pdo();
+        if ($pdo === null) {
+            // dlms_pdo() already logged the connect failure.
+            return NULL;
+        }
         try {
-            $DB = Database::instance('dlms_sqlsrv');
             $cnic_digits = self::normalize_cnic_for_external_sources($cnic);
             if (empty($cnic_digits)) {
                 return NULL;
             }
 
-            $cnic_dash = self::format_cnic_with_dashes($cnic_digits);
-            $cnic_digits_esc = $DB->escape($cnic_digits);
-            $cnic_dash_esc = $DB->escape($cnic_dash);
+            // Normalise on the column side. The bare-digits / dashed
+            // IN(…) match the dashboard previously used silently
+            // missed rows where the stored CNIC was space-padded
+            // (likely NCHAR(>13)) or had stray whitespace, even though
+            // the displayed value LOOKED identical to the input. Strip
+            // both dashes and spaces from the stored value before
+            // comparing — covers every observed storage variant in one
+            // expression. Test case: CNIC 1730113816259 — license
+            // search returned the row, but `p.CNIC = '1730113816259'`
+            // didn't.
+            $cnic_digits_esc = $pdo->quote($cnic_digits);
 
             $sql = "SELECT TOP (1)
                     p.PersonID,
@@ -344,11 +361,30 @@ abstract class Helpers_Person
                     WHERE PersonID = p.PersonID
                       AND Category = 'Photograph'
                 ) AS i
-                WHERE p.CNIC IN ({$cnic_digits_esc}, {$cnic_dash_esc})
+                WHERE REPLACE(REPLACE(p.CNIC, ' ', ''), '-', '') = {$cnic_digits_esc}
                 ORDER BY ld.EntryDate DESC, p.EntryDate DESC";
 
-            return $DB->query(Database::SELECT, $sql, TRUE)->current();
+            $stmt = $pdo->query($sql);
+            // FETCH_OBJ matches the stdClass shape Kohana's ->current()
+            // returned, so the action_ext_db_dlms view doesn't change.
+            $row = $stmt->fetch(PDO::FETCH_OBJ);
+            return $row !== false ? $row : NULL;
         } catch (Exception $e) {
+            // Mirror the Helpers_Databank logging surface so DLMS
+            // failures show up in the same place regardless of caller.
+            try {
+                Model_ErrorLog::log(
+                    'helpers_person_dlms',
+                    $e->getMessage(),
+                    array('cnic' => $cnic, 'class' => get_class($e)),
+                    $e->getTraceAsString(),
+                    'database_error',
+                    'dlms_lookup',
+                    'error'
+                );
+            } catch (Exception $log_e) {
+                error_log('get_person_external_profile_driving_license failed: ' . $e->getMessage());
+            }
             return NULL;
         }
     }

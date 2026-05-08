@@ -25,6 +25,60 @@ defined('SYSPATH') or die('No direct script access.');
  */
 class Helpers_Databank
 {
+    /**
+     * Cached raw PDO handle for the DLMS SQL Server. We bypass Kohana's
+     * Database_PDO driver for this one connection because the driver
+     * runs `SET NAMES 'utf8'` after connect (MySQL-only syntax) which
+     * SQL Server rejects, and surfaces other unsupported PDO attributes
+     * (ATTR_TIMEOUT) to pdo_sqlsrv. A direct PDO with the verified-
+     * working DSN + ATTR_ERRMODE only is more reliable.
+     *
+     * Set by self::dlms_pdo() on first call, reused for the request.
+     */
+    private static $_dlms_pdo = null;
+
+    /**
+     * Open (or return the cached) raw PDO connection to DLMS.
+     *
+     * Reads the DSN, username and password from
+     * application/config/database.php (the `dlms_sqlsrv` block — same
+     * source of truth as Kohana's Database::instance), but constructs
+     * the PDO object directly with only PDO::ATTR_ERRMODE set and
+     * skips Kohana's driver layer entirely.
+     *
+     * @return PDO|null  PDO on success, NULL on connect failure (logged
+     *                   via Model_ErrorLog::log so callers can fail
+     *                   silently without losing diagnostic info).
+     */
+    public static function dlms_pdo()
+    {
+        if (self::$_dlms_pdo instanceof PDO) {
+            return self::$_dlms_pdo;
+        }
+        try {
+            $cfg = Kohana::$config->load('database')->get('dlms_sqlsrv');
+            if (!is_array($cfg) || empty($cfg['connection'])) {
+                throw new Exception('dlms_sqlsrv block missing from application/config/database.php');
+            }
+            $conn = $cfg['connection'];
+            $dsn  = isset($conn['dsn'])      ? (string) $conn['dsn']      : '';
+            $user = isset($conn['username']) ? (string) $conn['username'] : '';
+            $pass = isset($conn['password']) ? (string) $conn['password'] : '';
+
+            // ATTR_ERRMODE is the ONLY attribute we set at construction.
+            // pdo_sqlsrv rejects most others (ATTR_TIMEOUT,
+            // ATTR_DEFAULT_FETCH_MODE) with "SQLSTATE[IMSSP]: An
+            // unsupported attribute was designated on the PDO object".
+            self::$_dlms_pdo = new PDO($dsn, $user, $pass, array(
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            ));
+            return self::$_dlms_pdo;
+        } catch (Exception $e) {
+            self::_log_failure('dlms_pdo_connect', $e, array());
+            return null;
+        }
+    }
+
     /* ------------------------------------------------------------------ */
     /*  ECP (electoral)                                                   */
     /* ------------------------------------------------------------------ */
@@ -305,43 +359,53 @@ class Helpers_Databank
     public static function search_dlms(array $filters, $limit = 100)
     {
         $limit = self::_clamp($limit, 1, 500);
+        $pdo   = self::dlms_pdo();
+        if ($pdo === null) {
+            // dlms_pdo() already logged the connect failure.
+            return array();
+        }
+
         try {
-            $DB    = Database::instance('dlms_sqlsrv');
             $where = array();
 
             if (!empty($filters['cnic'])) {
-                // DLMS stores CNICs in dashed form (XXXXX-XXXXXXX-X) for
-                // most rows; some legacy rows are bare digits. Mirror the
-                // IN(...) match used by
-                // Helpers_Person::get_person_external_profile_driving_license
-                // so a digit-only search still finds the dashed rows.
-                // This was the bug for CNIC 1730113816259 — the row exists
-                // in DLMS as "17301-1381625-9" and exact-match on digits
-                // missed it.
-                $variants = self::_cnic_variants($filters['cnic']);
-                if (!empty($variants)) {
-                    $or = array();
-                    foreach ($variants as $v) { $or[] = 'p.CNIC = ' . $DB->escape($v); }
-                    $where[] = '(' . implode(' OR ', $or) . ')';
+                // Normalise on the COLUMN side, not just the literal.
+                // Empirical finding: searching by license number returns
+                // CNIC `1730113816259` (no dashes) for a row that an
+                // exact `p.CNIC = '1730113816259'` query then fails to
+                // find. Most likely the column is NCHAR(>13) so the
+                // value is space-padded, OR there's a non-printing
+                // character at start/end. REPLACE strips both spaces
+                // and dashes from the stored value before comparing,
+                // so any of these storage shapes match a digit-only
+                // user input:
+                //   '1730113816259'           bare 13 digits
+                //   '17301-1381625-9'         dashed
+                //   '1730113816259   '        padded
+                //   '17301 1381625 9'         space-separated
+                $cnic_digits = preg_replace('/\D+/', '', (string) $filters['cnic']);
+                if ($cnic_digits !== '') {
+                    $where[] = "REPLACE(REPLACE(p.CNIC, ' ', ''), '-', '') = "
+                             . $pdo->quote($cnic_digits);
                 }
             }
             if (!empty($filters['name'])) {
-                $name_esc = $DB->escape('%' . trim($filters['name']) . '%');
-                $where[] = "(p.FirstName LIKE {$name_esc} OR p.LastName LIKE {$name_esc} OR p.MiddleName LIKE {$name_esc})";
+                $name_q = $pdo->quote('%' . trim($filters['name']) . '%');
+                $where[] = "(p.FirstName LIKE {$name_q} OR p.LastName LIKE {$name_q} OR p.MiddleName LIKE {$name_q})";
             }
             if (!empty($filters['father'])) {
-                $f = $DB->escape('%' . trim($filters['father']) . '%');
+                $f = $pdo->quote('%' . trim($filters['father']) . '%');
                 $where[] = "(p.FatherFName LIKE {$f} OR p.FatherLName LIKE {$f})";
             }
             if (!empty($filters['license_no'])) {
-                $where[] = 'd.LicenseNo = ' . $DB->escape(trim($filters['license_no']));
+                $where[] = 'd.LicenseNo = ' . $pdo->quote(trim($filters['license_no']));
             }
             if (empty($where)) {
                 return array();
             }
 
-            // SQL Server uses TOP (n) instead of LIMIT n
-            $sql = "SELECT TOP ({$limit}) p.PersonID, p.CNIC,
+            // SQL Server uses TOP (n) instead of LIMIT n.
+            $sql = "SELECT TOP (" . (int) $limit . ") p.PersonID, p.CNIC,
                         p.FirstName, p.MiddleName, p.LastName,
                         p.FatherFName, p.FatherMName, p.FatherLName,
                         p.DOB, p.BirthPlace, p.Gender, p.Mobile,
@@ -349,7 +413,11 @@ class Helpers_Databank
                     FROM License_Person p
                     LEFT JOIN License_Details d ON d.PersonID = p.PersonID
                     WHERE " . implode(' AND ', $where);
-            return $DB->query(Database::SELECT, $sql, TRUE)->as_array();
+            $stmt = $pdo->query($sql);
+            // PDO::FETCH_OBJ matches the stdClass shape Kohana's
+            // ->as_array() returned, so callers see no behavioural
+            // change downstream.
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (Exception $e) {
             self::_log_failure('search_dlms', $e, $filters);
             return array();
