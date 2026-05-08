@@ -33,18 +33,6 @@ $default_prod = array(
 return array
 (
     'default' => (Kohana::$environment === Kohana::DEVELOPMENT) ? $default_dev : $default_prod,
-    'remote' => array(
-        'type'       => 'MySQL',
-        'connection' => array(
-            'hostname'   => '55.55.55.55',
-            'username'   => 'remote_user',
-            'password'   => 'mypassword',
-            'persistent' => FALSE,
-            'database'   => 'my_remote_db_name',
-        ),
-        'table_prefix' => '',
-        'charset'      => 'utf8',
-    ),
     'mobile' => array
     (
         'type'       => 'MySQLi',
