@@ -5,15 +5,8 @@
 ?>
 <header class="main-header">
     <a href="<?php echo URL::site('Userdashboard/dashboard'); ?>" class="logo">
-        <span class="logo-mini" style="position: relative;top: -18px;left: -28px;display: block">
-            <img src="<?php echo URL::base(); ?>dist/img/logo-3.png" alt="logo" style="width: 150px;">
-        </span>
-        <!-- mini logo for sidebar mini 50x50 pixels -->
-        <span class="logo-mini"><!--<img src="<?php echo URL::base(); ?>dist/img/logo-2.png" alt="logo">--></span>
-        <!-- logo for regular state and mobile devices -->
-<!--        <span class="logo-lg"><img style="width: 208px;" src="<?php echo URL::base(); ?>dist/img/icon/logo.png" alt="logo"></span>-->
-        <span class="logo-lg" style="margin:auto;"><!--<img style="width: 100%;height:45px" src="<?php echo URL::base(); ?>dist/img/logo-2.png" alt="logo">-->
-        
+        <span class="logo-mini" style="position: relative;top: -2px;left: -4px;display: block">
+            <img src="<?php echo URL::base(); ?>dist/img/logo-3.png" alt="logo" style="width: 169px;">
         </span>
     </a>
 
