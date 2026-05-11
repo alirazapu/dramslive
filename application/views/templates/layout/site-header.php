@@ -5,7 +5,7 @@
 ?>
 <header class="main-header">
     <a href="<?php echo URL::site('Userdashboard/dashboard'); ?>" class="logo">
-        <span class="logo-mini" style="position: relative;top: -18px;left: -28px;">
+        <span class="logo-mini" style="position: relative;top: -18px;left: -28px;display: block">
             <img src="<?php echo URL::base(); ?>dist/img/logo-3.png" alt="logo" style="width: 150px;">
         </span>
         <!-- mini logo for sidebar mini 50x50 pixels -->
