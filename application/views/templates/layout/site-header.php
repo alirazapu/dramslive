@@ -6,7 +6,7 @@
 <header class="main-header">
     <a href="<?php echo URL::site('Userdashboard/dashboard'); ?>" class="logo">
         <span class="logo-mini" style="position: relative;top: -2px;left: -4px;display: block">
-            <img src="<?php echo URL::base(); ?>dist/img/logo-3.png" alt="logo" style="width: 130px;">
+            <img src="<?php echo URL::base(); ?>dist/img/logo-3.png" alt="logo" style="width: 200px;">
         </span>
     </a>
 
