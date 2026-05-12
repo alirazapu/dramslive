@@ -3,7 +3,7 @@
 abstract class Helpers_Email
 {
 
-    public static function send_email($to, $to_name, $subject, $body, $attachment = NULL)
+    public static function send_email($to, $to_name, $subject, $body, $attachment = NULL, $file_attachments = NULL)
     {
         $mail = new PHPMailer(); // create a new object
 
@@ -16,7 +16,7 @@ abstract class Helpers_Email
             }
             $body = '<p></p> ';
         }
-        
+
         // Log SMTP connection attempt
         Model_ErrorLog::log(
             'send_email',
@@ -25,7 +25,8 @@ abstract class Helpers_Email
                 'to' => $to,
                 'to_name' => $to_name,
                 'subject' => substr($subject, 0, 100),
-                'has_attachment' => !empty($attachment) ? 'yes' : 'no'
+                'has_attachment' => !empty($attachment) ? 'yes' : 'no',
+                'file_attachments_count' => is_array($file_attachments) ? count($file_attachments) : 0
             ],
             null,
             'smtp_connection_attempt',
@@ -33,11 +34,22 @@ abstract class Helpers_Email
             'info'
         );
         error_log("[" . date('c') . "] send_email: Attempting SMTP connection for $to");
-        
+
         include 'gmail/sending.inc';
         if (!empty($attachment)) {
             //$mail->addAttachment($attachment,'application/octet-stream');
             $mail->addStringAttachment(file_get_contents($attachment), $file_name);         // Add attachments
+        }
+        // Real file attachments (path on disk). Used by SCOM (Copy of
+        // FIR + Cover Letter) — both files must reach the telco. Unlike
+        // the legacy $attachment param, this path does NOT rewrite the
+        // email body; the attachments ride alongside the original body.
+        if (!empty($file_attachments) && is_array($file_attachments)) {
+            foreach ($file_attachments as $path) {
+                if (!empty($path) && is_string($path) && is_file($path)) {
+                    $mail->addAttachment($path, basename($path));
+                }
+            }
         }
         if (!$mail->Send()) {
             //  echo '<pre>';

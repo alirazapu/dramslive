@@ -69,9 +69,16 @@ try {
                 ->execute()
                 ->current();
             
+            // SCOM rows carry FIR + Cover Letter in user_request.file_name
+            // as <fir>|<cover>. Attach both to the outgoing SCOM email.
+            $scom_files = null;
+            if ($company_name == 8 && !empty($res['file_name'])) {
+                $scom_files = array_filter(array_map('trim', explode('|', $res['file_name'])));
+            }
+
             // Send email if request is still pending
             if (!empty($re_result) && !empty($re_result['request_id'])) {
-                $email_staus = Helpers_Email::send_email($to, $to_name, $subject, $body);
+                $email_staus = Helpers_Email::send_email($to, $to_name, $subject, $body, null, $scom_files);
             }
             
             // Update telco count

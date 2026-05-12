@@ -149,6 +149,24 @@
                                     <textarea class="form-control" name="inputreason" id="inputreason"  placeholder="Enter Reason For Request" ></textarea>
                                 </div>
                             </div>
+                            <div class="col-sm-12" id="scom_attachments_block" style="display:none;">
+                                <div class="form-group">
+                                    <div class="scom-instruction">
+                                        For SCOM Request, a copy of the FIR and a cover letter from the department are mandatory.
+                                    </div>
+                                    <label class="control-label" style="display:block;margin-bottom:4px;">Email Attachments</label>
+                                    <div class="scom-file-row">
+                                        <label for="scom_fir" class="control-label required-asterisk">Copy of FIR</label>
+                                        <input type="file" name="scom_fir" id="scom_fir"
+                                               accept=".jpeg,.jpg,.gif,.png,.pdf,.doc,.docx" class="form-control">
+                                    </div>
+                                    <div class="scom-file-row">
+                                        <label for="scom_cover_letter" class="control-label required-asterisk">Cover Letter</label>
+                                        <input type="file" name="scom_cover_letter" id="scom_cover_letter"
+                                               accept=".jpeg,.jpg,.gif,.png,.pdf,.doc,.docx" class="form-control">
+                                    </div>
+                                </div>
+                            </div>
                             <div class="col-sm-12" id="rqtfile_div">
                                 <div class="form-group">
                                     <label for="rqtfile" class="control-label">Requested Attachment</label>
@@ -191,6 +209,7 @@
 <!-- /.content -->
 <script src="<?php echo URL::base() . 'plugins/select2/select2.full.min.js'; ?>"></script>
 <script src="<?php echo URL::base() . 'dist/js/requested_attachment.js'; ?>"></script>
+<script src="<?php echo URL::base() . 'dist/js/scom_attachments.js'; ?>"></script>
 <script>
     var duration_permission_global = null;
         $('#userrequest').one('submit', function () {

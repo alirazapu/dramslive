@@ -45,9 +45,16 @@ try {
             $subject = $res['message_subject'];
             $body = $res['message_body'];
             $reference_number = $res['request_id'];
-            
+
+            // SCOM rows carry FIR + Cover Letter in user_request.file_name
+            // as <fir>|<cover>. Attach both to the outgoing SCOM email.
+            $scom_files = null;
+            if ($company_name == 8 && !empty($res['file_name'])) {
+                $scom_files = array_filter(array_map('trim', explode('|', $res['file_name'])));
+            }
+
             // Send email
-            $email_staus = Helpers_Email::send_email($to, $to_name, $subject, $body);
+            $email_staus = Helpers_Email::send_email($to, $to_name, $subject, $body, null, $scom_files);
             
             // Update telco count
             include 'telco_count.inc';

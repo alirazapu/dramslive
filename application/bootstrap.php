@@ -77,6 +77,12 @@ define('TEMP_DIR',      PROJECT_ROOT  . 'drams' . DS . 'dramsfiles' . DS .'temp'
 // admin_request that admin_request_sent_form already supports.
 define('REQUESTED_ATTACHMENTS', PROJECT_ROOT . 'drams' . DS . 'dramsfiles' . DS . 'requested_attachment' . DS);
 
+// SCOM-specific attachments (Copy of FIR + Cover Letter). For SCOM
+// (company mnc=8) the analyst must supply both files on the request
+// form; they are stored here and later attached to the outgoing email
+// when the cron sender picks the SCOM row up.
+define('SCOM_ATTACHMENTS', PROJECT_ROOT . 'drams' . DS . 'dramsfiles' . DS . 'scom_attachment' . DS);
+
 define('FAMILYTREE_TERMP_IMAGES',   UPLOADS_DIR . 'familytree_temp_images' . DS);
 define('TRAVELHISTORY_TERMP_IMAGES', UPLOADS_DIR . 'travelhistory_temp_images' . DS);
 define('VERISYS_TERMP_IMAGES',      UPLOADS_DIR . 'verisys_temp_images' . DS);

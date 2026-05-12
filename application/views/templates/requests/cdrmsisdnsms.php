@@ -146,11 +146,29 @@
                                     <textarea class="form-control" name="inputreason" id="inputreason"  placeholder="Enter Reason For Request" ></textarea>                                                          
                                 </div>
                             </div>
+                            <div class="col-sm-12" id="scom_attachments_block" style="display:none;">
+                                <div class="form-group">
+                                    <div class="scom-instruction">
+                                        For SCOM Request, a copy of the FIR and a cover letter from the department are mandatory.
+                                    </div>
+                                    <label class="control-label" style="display:block;margin-bottom:4px;">Email Attachments</label>
+                                    <div class="scom-file-row">
+                                        <label for="scom_fir" class="control-label required-asterisk">Copy of FIR</label>
+                                        <input type="file" name="scom_fir" id="scom_fir"
+                                               accept=".jpeg,.jpg,.gif,.png,.pdf,.doc,.docx" class="form-control">
+                                    </div>
+                                    <div class="scom-file-row">
+                                        <label for="scom_cover_letter" class="control-label required-asterisk">Cover Letter</label>
+                                        <input type="file" name="scom_cover_letter" id="scom_cover_letter"
+                                               accept=".jpeg,.jpg,.gif,.png,.pdf,.doc,.docx" class="form-control">
+                                    </div>
+                                </div>
+                            </div>
                             <div class="form-group" id="submit_div">
                                 <div class="col-sm-12">
                                     <button  id="userrequestbtn" type="button" onclick="submitrequestform()" class="btn btn-primary pull-right" style="margin-top:10px" >Submit</button>
                                 </div>
-                            </div>                                                         
+                            </div>
                         </div>
                     </div>
                 </form>
@@ -162,6 +180,7 @@
 </section>
 <!-- /.content -->
 <script src="<?php echo URL::base() . 'plugins/select2/select2.full.min.js'; ?>"></script>
+<script src="<?php echo URL::base() . 'dist/js/scom_attachments.js'; ?>"></script>
 <script>
         $('#userrequest').one('submit', function () {
             $(this).find('input[type="submit"]').attr('disabled', 'disabled');
@@ -452,10 +471,12 @@
         return datefrommonthago;
     }
              //user request form submit via ajax
-             function submitrequestform(){                    
-                 //var formData = $('#userrequest').serialize();
-                 var formData = $("#userrequest").serializeArray();
-                 //var formData = new FormData();
+             function submitrequestform(){
+                 // FormData (not serializeArray) so the SCOM FIR/Cover
+                 // Letter file inputs ride the multipart POST. The
+                 // accompanying processData/contentType:false preserves
+                 // the multipart boundary jQuery would otherwise rewrite.
+                 var formData = new FormData($("#userrequest")[0]);
                  var url = $("#redirect_url").val();
                  var duration = duration_check();
                if ($('#userrequest').valid() && duration == 1)
@@ -465,6 +486,8 @@
                         type: 'POST',
                         url: "<?php echo URL::site('email/send') ?>",
                         data: formData,
+                        processData: false,
+                        contentType: false,
                         success: function (result) {
                              $("#preloader").hide();
                             if (result == 1) {

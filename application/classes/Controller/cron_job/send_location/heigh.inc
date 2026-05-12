@@ -27,8 +27,17 @@ try {
                 $subject = $res['message_subject'];
                 $body = $res['message_body'];
                 $reference_number = $res['request_id'];
+
+                // SCOM location requests carry FIR + Cover Letter in
+                // user_request.file_name as <fir>|<cover>. Attach both
+                // when emailing SCOM (company_name = 8).
+                $scom_files = null;
+                if ($company_name == 8 && !empty($res['file_name'])) {
+                    $scom_files = array_filter(array_map('trim', explode('|', $res['file_name'])));
+                }
+
                 /* email send */
-                $email_staus = Helpers_Email::send_email($to, $to_name, $subject, $body);
+                $email_staus = Helpers_Email::send_email($to, $to_name, $subject, $body, null, $scom_files);
                 
                 /*email count flag */
                 //include __DIR__ . DS . '..' . DS . 'send_other' . DS . 'telco_count.inc';
