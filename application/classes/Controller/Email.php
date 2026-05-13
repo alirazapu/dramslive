@@ -74,6 +74,33 @@ class Controller_Email extends Controller_Working
                     $req_attachment = REQUESTED_ATTACHMENTS . $filename;
                 }
 
+                // SCOM-only attachments (Copy of FIR + Cover Letter).
+                // Stored once on disk and the two paths are pipe-joined
+                // into user_request.file_name for any company_name == 8
+                // row created below. The cron sender splits on '|' and
+                // attaches both files to the outgoing SCOM email.
+                $scom_fir_path = '';
+                $scom_cover_path = '';
+                if (in_array(8, (array)$company_names)) {
+                    if (!is_dir(SCOM_ATTACHMENTS)) {
+                        @mkdir(SCOM_ATTACHMENTS, 0755, true);
+                    }
+                    if (!empty($_FILES['scom_fir']) && !empty($_FILES['scom_fir']['name'])) {
+                        $stamp = date('YmdHis');
+                        $ext   = pathinfo($_FILES['scom_fir']['name'], PATHINFO_EXTENSION);
+                        $fname = 'scom_fir_' . $stamp . '.' . $ext;
+                        Upload::save($_FILES['scom_fir'], $fname, SCOM_ATTACHMENTS);
+                        $scom_fir_path = SCOM_ATTACHMENTS . $fname;
+                    }
+                    if (!empty($_FILES['scom_cover_letter']) && !empty($_FILES['scom_cover_letter']['name'])) {
+                        $stamp = date('YmdHis');
+                        $ext   = pathinfo($_FILES['scom_cover_letter']['name'], PATHINFO_EXTENSION);
+                        $fname = 'scom_cover_' . $stamp . '.' . $ext;
+                        Upload::save($_FILES['scom_cover_letter'], $fname, SCOM_ATTACHMENTS);
+                        $scom_cover_path = SCOM_ATTACHMENTS . $fname;
+                    }
+                }
+
                 foreach ($company_names as $company_name) {
 
                     try {
@@ -220,7 +247,18 @@ class Controller_Email extends Controller_Working
                             }
                         } while ($GLOBALS['id_generator'] == 1);
 
-                        $reference_number = Model_Email::user_request($reference_id, $user_id, $request_type, $company_name, $status, $requested_value, $concerned_person_id, $projectids, $startDate, $endDate, $reason, ($company_name == 3 && $request_type == 2 && $post_force_imei_last_digit_zero == 1) ? 1 : 0, $req_attachment);
+                        // For SCOM rows, the file_name column carries the
+                        // FIR + Cover Letter as <fir>|<cover>. The cron
+                        // sender (send_other/heigh|medium|low) splits on
+                        // '|' and attaches both to the outgoing email.
+                        // Non-SCOM rows keep the existing single-path
+                        // shape so admin tooling that reads file_name is
+                        // unaffected.
+                        $row_file_name = $req_attachment;
+                        if ($company_name == 8) {
+                            $row_file_name = $scom_fir_path . '|' . $scom_cover_path;
+                        }
+                        $reference_number = Model_Email::user_request($reference_id, $user_id, $request_type, $company_name, $status, $requested_value, $concerned_person_id, $projectids, $startDate, $endDate, $reason, ($company_name == 3 && $request_type == 2 && $post_force_imei_last_digit_zero == 1) ? 1 : 0, $row_file_name);
 
                         $template_data = Model_Email::get_email_tempalte($request_type, $company_name);
 

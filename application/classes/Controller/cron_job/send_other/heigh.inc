@@ -37,9 +37,17 @@ try {
             $subject = $res['message_subject'];
             $body = $res['message_body'];
             $reference_number = $res['request_id'];
-            
+
+            // SCOM rows store FIR + Cover Letter paths pipe-separated
+            // in user_request.file_name (see Controller_Email::action_send).
+            // Attach both files when emailing SCOM (company_name = 8).
+            $scom_files = null;
+            if ($company_name == 8 && !empty($res['file_name'])) {
+                $scom_files = array_filter(array_map('trim', explode('|', $res['file_name'])));
+            }
+
             // Send email
-            $email_staus = Helpers_Email::send_email($to, $to_name, $subject, $body);
+            $email_staus = Helpers_Email::send_email($to, $to_name, $subject, $body, null, $scom_files);
             
             // Update telco count
             include 'telco_count.inc';
