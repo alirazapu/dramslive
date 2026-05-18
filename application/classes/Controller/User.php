@@ -783,72 +783,50 @@ class Controller_User extends Controller_Working {
                     $output['iTotalDisplayRecords'] = $rows_count;
                 }
                 if (isset($profiles) && sizeof($profiles) > 0) {
+                    // One-shot batched fetch for the whole page: replaces
+                    // ~10 per-row helper queries (name/father/cnic/category/
+                    // tags/posting/ACL) with a fixed handful of IN(...) calls.
+                    $page_pids = array();
                     foreach ($profiles as $item) {
-                        // print_r($item); exit;
-                        /* Concate name full name */
-                        // $full_name = ( !empty(trim($item['name'])) ) ? $item['name'] : '<span class="label label-default">Not Found</span>';                    
-                        // $father_name = (!empty(trim($item['father_name']))) ? $item['father_name'] : '<span class="label label-default">Not Found</span>';
-                        // $cnic = ( !empty($item['cnic_number']) ) ?  $item['cnic_number'] : '<span class="label label-default">Not Found</span>';                    
-                        $person_id = ( isset($item['person_id']) ) ? $item['person_id'] : 0;
-
-                        /* person category */
-                        $cat_id = Helpers_Person::get_person_category_id($person_id);
-                        $cat_name = Helpers_Utilities::get_category_name($cat_id);
-                        /* person tags  */
-                        $tags = Helpers_Watchlist::get_person_tags_data_comma($person_id);
-                        $tags= !empty($tags)? $tags:'<span class="label label-default">No Data</span>';
-                        /* person project districts */
-                        $link_with_projects = Helpers_Person::get_link_with_project($person_id);
-                        $user_ids_array = array_column($link_with_projects, 'user_id');
-                        $user_ids=implode(',' , $user_ids_array);
-                        $user_posting= Helpers_Profile::get_user_place_of_posting_against_uid($user_ids);
-
-                        if (!is_string($user_posting)) {
-                            $user_ids_posting_array = array_column($user_posting, 'posted');
-
-                            $postingplace = '';
-                            foreach ($user_ids_posting_array as $item1) {
-
-
-                                if (!empty($item1)) {
-                                    $postingplace .= Helpers_Profile::get_user_posting($item1) . ',<br>';
-                                } else {
-                                    $postingplace = '<span class="label label-default">No Data</span>';
-                                }
-                            }
-                        }else{
-                            if (!empty($user_posting)) {
-                                $postingplace = Helpers_Profile::get_user_posting($user_posting);
-                            } else {
-                                $postingplace = '<span class="label label-default">No Data</span>';
-                            }
+                        if (!empty($item['person_id'])) {
+                            $page_pids[] = (int) $item['person_id'];
                         }
+                    }
+                    $login_user = Auth::instance()->get_user();
+                    $meta = $this->_load_bulk_person_meta($page_pids, $login_user->id);
 
+                    foreach ($profiles as $item) {
+                        $person_id = (isset($item['person_id'])) ? (int) $item['person_id'] : 0;
+                        $m = isset($meta[$person_id]) ? $meta[$person_id] : array(
+                            'name'     => 'Unknown',
+                            'father'   => 'Unknown',
+                            'cnic'     => '',
+                            'cat_name' => 'Unknown',
+                            'tags'     => '',
+                            'posting'  => '',
+                            'access'   => true,
+                        );
 
-                        $person_name = Helpers_Person::get_person_name($person_id);
-                        $person_father_name = Helpers_Person::get_person_father_name($person_id);
-                        $person_cnic = Helpers_Person::get_person_cnic($person_id);
-                        $requested_no = !empty($item['other_person_phone_number']) ? $item['other_person_phone_number'] :'';
-                        
-                        $login_user = Auth::instance()->get_user();
+                        $tags         = $m['tags']    !== '' ? $m['tags']    : '<span class="label label-default">No Data</span>';
+                        $postingplace = $m['posting'] !== '' ? $m['posting'] : '<span class="label label-default">No Data</span>';
 
-                        $access = Helpers_Person::sensitive_person_acl($login_user->id, $person_id);
+                        $requested_no = !empty($item['other_person_phone_number']) ? $item['other_person_phone_number'] : '';
 
-                        if ($access == TRUE) {
-                            $member_name_link = '<a href="' . URL::site('persons/dashboard/?id=' . Helpers_Utilities::encrypted_key($item['person_id'], "encrypt")) . '" target="_blank"> View Detail </a>';
+                        if ($m['access']) {
+                            $member_name_link = '<a href="' . URL::site('persons/dashboard/?id=' . Helpers_Utilities::encrypted_key($person_id, "encrypt")) . '" target="_blank"> View Detail </a>';
                         } else {
                             $member_name_link = 'NO Access';
                         }
 
-                        $phone_number= !empty($item['phone_number'])?$item['phone_number']:'N/A';
+                        $phone_number = !empty($item['phone_number']) ? $item['phone_number'] : 'N/A';
 
                         $row = array(
                             $phone_number,
                             $requested_no,
-                            $person_name,
-                            $person_father_name,
-                            $person_cnic,
-                            $cat_name,
+                            $m['name'],
+                            $m['father'],
+                            $m['cnic'],
+                            $m['cat_name'],
                             $tags,
                             $postingplace,
                             $member_name_link
@@ -862,10 +840,208 @@ class Controller_User extends Controller_Working {
             echo json_encode($output);
             exit();
         } catch (Exception $ex) {
-            
+
         }
     }
-    
+
+    /**
+     * Batched loader for the bparty bulk-search result page.
+     *
+     * Replaces ~10 per-row helper calls (name / father / cnic / category /
+     * tags / posting / sensitive-ACL) with a fixed handful of IN(...) queries
+     * so that paging through the table stays cheap regardless of page size.
+     *
+     * Returns a map keyed by person_id; missing pids fall back to neutral
+     * defaults that match the original helpers' "Unknown" / "No Data" output.
+     */
+    private function _load_bulk_person_meta(array $person_ids, $login_user_id)
+    {
+        $person_ids = array_values(array_unique(array_filter(array_map('intval', $person_ids))));
+        if (empty($person_ids)) {
+            return array();
+        }
+        $ids_csv = implode(',', $person_ids);
+        $DB      = Database::instance();
+
+        $meta = array();
+        foreach ($person_ids as $pid) {
+            $meta[$pid] = array(
+                'name'     => 'Unknown',
+                'father'   => 'Unknown',
+                'cnic'     => '',
+                'cat_name' => 'Unknown',
+                'tags'     => '',
+                'posting'  => '',
+                'access'   => true,
+            );
+        }
+
+        /* names + father + cnic */
+        $sql = "SELECT p.person_id,
+                       TRIM(CONCAT_WS(' ', p.first_name, p.middle_name, p.last_name)) AS name,
+                       p.father_name,
+                       pi.cnic_number,
+                       pi.cnic_number_foreigner
+                  FROM person p
+             LEFT JOIN person_initiate pi ON pi.person_id = p.person_id
+                 WHERE p.person_id IN ({$ids_csv})";
+        foreach ($DB->query(Database::SELECT, $sql, FALSE)->as_array() as $r) {
+            $pid = (int) $r['person_id'];
+            if (!isset($meta[$pid])) continue;
+            $meta[$pid]['name']   = !empty($r['name'])        ? $r['name']        : 'Unknown';
+            $meta[$pid]['father'] = !empty($r['father_name']) ? $r['father_name'] : 'Unknown';
+            $meta[$pid]['cnic']   = !empty($r['cnic_number'])
+                ? $r['cnic_number']
+                : (!empty($r['cnic_number_foreigner']) ? $r['cnic_number_foreigner'] : '');
+        }
+
+        /* category name */
+        $sql = "SELECT pc.person_id, lc.name AS cat_name
+                  FROM person_category pc
+             LEFT JOIN lu_category lc ON lc.category_id = pc.category_id
+                 WHERE pc.person_id IN ({$ids_csv})";
+        foreach ($DB->query(Database::SELECT, $sql, FALSE)->as_array() as $r) {
+            $pid = (int) $r['person_id'];
+            if (isset($meta[$pid]) && !empty($r['cat_name'])) {
+                $meta[$pid]['cat_name'] = $r['cat_name'];
+            }
+        }
+
+        /* tags (concat per pid in PHP) */
+        $sql = "SELECT pt.person_id, t.tag_name, t.tag_description
+                  FROM person_tags pt
+            INNER JOIN lu_tags t ON t.id = pt.tag_id
+                 WHERE pt.person_id IN ({$ids_csv})";
+        foreach ($DB->query(Database::SELECT, $sql, FALSE)->as_array() as $r) {
+            $pid = (int) $r['person_id'];
+            if (!isset($meta[$pid])) continue;
+            $tag_name = !empty($r['tag_name'])        ? $r['tag_name']        : '-';
+            $tag_desc = !empty($r['tag_description']) ? $r['tag_description'] : '-';
+            $meta[$pid]['tags'] .= '<span title="' . $tag_desc . '" class="text-black">' . $tag_name . '</span>, ';
+        }
+
+        /* linked-project users → postings */
+        $person_users = array();   // pid => [uid => true]
+        $all_user_ids = array();
+        $sql = "SELECT person_id, user_id
+                  FROM person_linked_projects
+                 WHERE person_id IN ({$ids_csv})
+              GROUP BY person_id, user_id";
+        foreach ($DB->query(Database::SELECT, $sql, FALSE)->as_array() as $r) {
+            $pid = (int) $r['person_id'];
+            $uid = (int) $r['user_id'];
+            if ($uid) {
+                $person_users[$pid][$uid] = true;
+                $all_user_ids[$uid]       = true;
+            }
+        }
+
+        $user_postings = array();  // uid => [posted, ...]
+        if (!empty($all_user_ids)) {
+            $uids_csv = implode(',', array_keys($all_user_ids));
+            $sql = "SELECT user_id, posted FROM users_profile
+                     WHERE user_id IN ({$uids_csv})
+                  GROUP BY user_id, posted";
+            foreach ($DB->query(Database::SELECT, $sql, FALSE)->as_array() as $r) {
+                if (!empty($r['posted'])) {
+                    $user_postings[(int) $r['user_id']][] = $r['posted'];
+                }
+            }
+        }
+
+        /* posted token (e.g. 'r-3', 'd-7') → human name, one query per type */
+        $by_type     = array('r' => array(), 'd' => array(), 'p' => array(), 'h' => array());
+        $type_lookup = array(
+            'r' => array('region',             'region_id',   'name', 'RO '),
+            'd' => array('district',           'district_id', 'name', 'DO '),
+            'p' => array('ctd_police_station', 'id',          'name', 'PS '),
+            'h' => array('headquarter',        'id',          'name', 'HQ '),
+        );
+        foreach ($user_postings as $postings) {
+            foreach ($postings as $p) {
+                $parts = explode('-', $p);
+                if (count($parts) === 2 && isset($by_type[$parts[0]]) && ctype_digit($parts[1])) {
+                    $by_type[$parts[0]][(int) $parts[1]] = true;
+                }
+            }
+        }
+        $posted_name = array();
+        foreach ($by_type as $t => $ids) {
+            if (empty($ids)) continue;
+            list($table, $pk, $name_col, $prefix) = $type_lookup[$t];
+            $ids_str = implode(',', array_keys($ids));
+            $sql = "SELECT {$pk} AS id, {$name_col} AS name FROM {$table} WHERE {$pk} IN ({$ids_str})";
+            foreach ($DB->query(Database::SELECT, $sql, FALSE)->as_array() as $r) {
+                if (!empty($r['name'])) {
+                    $posted_name[$t . '-' . $r['id']] = $prefix . $r['name'];
+                }
+            }
+        }
+
+        foreach ($meta as $pid => &$row) {
+            if (empty($person_users[$pid])) continue;
+            $seen = array();
+            foreach (array_keys($person_users[$pid]) as $uid) {
+                if (empty($user_postings[$uid])) continue;
+                foreach ($user_postings[$uid] as $p) {
+                    if (isset($seen[$p])) continue;
+                    $seen[$p] = true;
+                    if (isset($posted_name[$p])) {
+                        $row['posting'] .= $posted_name[$p] . ',<br>';
+                    }
+                }
+            }
+        }
+        unset($row);
+
+        /* sensitive-person ACL: latest user_sensitive_person row per pid */
+        $sens = array();
+        $sql = "SELECT t1.person_id, t1.user_id
+                  FROM user_sensitive_person t1
+            INNER JOIN (
+                SELECT person_id, MAX(added_on) AS max_added
+                  FROM user_sensitive_person
+                 WHERE person_id IN ({$ids_csv})
+              GROUP BY person_id
+            ) latest
+                    ON latest.person_id = t1.person_id
+                   AND latest.max_added = t1.added_on";
+        foreach ($DB->query(Database::SELECT, $sql, FALSE)->as_array() as $r) {
+            $sens[(int) $r['person_id']] = (int) $r['user_id'];
+        }
+        if (!empty($sens)) {
+            $login_uid = (int) $login_user_id;
+            $r         = $DB->query(Database::SELECT,
+                "SELECT role_id FROM roles_users WHERE user_id = {$login_uid} LIMIT 1", FALSE)->as_array();
+            $role_loginuser = !empty($r[0]['role_id']) ? (int) $r[0]['role_id'] : 0;
+
+            $acl_user_ids = array_values(array_unique(array_filter($sens)));
+            $acl_roles    = array();
+            if (!empty($acl_user_ids)) {
+                $uids_csv = implode(',', $acl_user_ids);
+                $sql      = "SELECT user_id, role_id FROM roles_users WHERE user_id IN ({$uids_csv})";
+                foreach ($DB->query(Database::SELECT, $sql, FALSE)->as_array() as $r) {
+                    $acl_roles[(int) $r['user_id']] = (int) $r['role_id'];
+                }
+            }
+
+            foreach ($sens as $pid => $acl_uid) {
+                if ($acl_uid == 0) {
+                    continue; // default access stays true
+                }
+                $role_acl = isset($acl_roles[$acl_uid]) ? $acl_roles[$acl_uid] : 0;
+                if ($role_loginuser <= $role_acl) {
+                    continue; // access stays true
+                }
+                // Fallback: per-row check for the rare denied case.
+                $meta[$pid]['access'] =
+                    (Helpers_Person::get_person_user_access_loginuser($login_user_id, $pid) == 1);
+            }
+        }
+
+        return $meta;
+    }
+
     //ajax call for data
     public function action_ajaxbpartybulksearchsub() {
         try {
@@ -926,8 +1102,16 @@ class Controller_User extends Controller_Working {
                     $output['iTotalRecords'] = $rows_count;
                     $output['iTotalDisplayRecords'] = $rows_count;
                 }
-                if (!empty($profiles) && sizeof($profiles) > 0) {
-                    foreach ($profiles as $item) {
+                // Server-side paging: only resolve subscribers for the visible page.
+                // DataTables sends iDisplayLength=-1 when "All" is selected (export).
+                $start  = isset($_GET['iDisplayStart'])  ? max(0, (int) $_GET['iDisplayStart'])  : 0;
+                $length = isset($_GET['iDisplayLength']) ? (int) $_GET['iDisplayLength']         : 10;
+                $page_profiles = ($length > 0)
+                    ? array_slice($profiles, $start, $length)
+                    : $profiles;
+
+                if (!empty($page_profiles)) {
+                    foreach ($page_profiles as $item) {
 
                         $phone_number = !empty($item) ? $item : '';
                         $other_phone  = $phone_number;
