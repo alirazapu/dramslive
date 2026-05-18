@@ -593,13 +593,16 @@ echo $sql; exit;
 
 
         if(!empty($bulk_search_mobile['mobile']))
-        {    
+        {
             $bulk_search_mobile['mobile'] = array_map('trim', $bulk_search_mobile['mobile']);
             $bulk_search_mobile['mobile'] = preg_replace('/[^a-zA-Z0-9_ -]/s','',$bulk_search_mobile['mobile']);
-            $mobile_nos = implode(',', $bulk_search_mobile['mobile']);
-            $subquery = " t1.other_person_phone_number in ({$mobile_nos}) ";
+            // Quote each value: other_person_phone_number is VARCHAR and may
+            // hold leading zeros, so the IN(...) list must be string-typed.
+            // Mirrors the canonical pattern in Model_Persons (e.g. line 43-44).
+            $mobile_nos = implode("','", $bulk_search_mobile['mobile']);
+            $subquery   = " t1.other_person_phone_number IN ('{$mobile_nos}') ";
         }else{
-            $subquery = " t1.other_person_phone_number in (-1) ";
+            $subquery = " t1.other_person_phone_number IN ('-1') ";
         }
         
         /* Order By */
