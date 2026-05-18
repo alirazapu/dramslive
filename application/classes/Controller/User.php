@@ -760,7 +760,7 @@ class Controller_User extends Controller_Working {
 //                    $uid = $login_user->id;
 //                    Helpers_Profile::user_activity_log($uid, 71, $search_key, $search_value);
 //                }
-                // print_r($_GET); exit;
+                print_r($_GET); exit;
 //            if (!empty($post) && sizeof($post)>1 && !empty($_GET['iDisplayStart'])) {
 //                $_GET['iDisplayStart']=0;                
 //                
