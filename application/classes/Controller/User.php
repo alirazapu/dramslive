@@ -783,11 +783,15 @@ class Controller_User extends Controller_Working {
                     $output['iTotalDisplayRecords'] = $rows_count;
                 }
                 if (isset($profiles) && sizeof($profiles) > 0) {
+                    // Materialise the Database_Result once so we can safely
+                    // iterate it twice (gather pids → bulk meta → render).
+                    $profile_rows = is_array($profiles) ? $profiles : $profiles->as_array();
+
                     // One-shot batched fetch for the whole page: replaces
                     // ~10 per-row helper queries (name/father/cnic/category/
                     // tags/posting/ACL) with a fixed handful of IN(...) calls.
                     $page_pids = array();
-                    foreach ($profiles as $item) {
+                    foreach ($profile_rows as $item) {
                         if (!empty($item['person_id'])) {
                             $page_pids[] = (int) $item['person_id'];
                         }
@@ -795,7 +799,7 @@ class Controller_User extends Controller_Working {
                     $login_user = Auth::instance()->get_user();
                     $meta = $this->_load_bulk_person_meta($page_pids, $login_user->id);
 
-                    foreach ($profiles as $item) {
+                    foreach ($profile_rows as $item) {
                         $person_id = (isset($item['person_id'])) ? (int) $item['person_id'] : 0;
                         $m = isset($meta[$person_id]) ? $meta[$person_id] : array(
                             'name'     => 'Unknown',
