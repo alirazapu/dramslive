@@ -1631,20 +1631,23 @@ echo $sql; exit;
         }
     }
     public static function bulk_mobile_data_search($data, $bulk_search_mobile, $count) {
-        
+
         $subquery = '';
-//        echo '<pre>';
-//        print_r($bulk_search_mobile);
-//        exit;
-        
+
         if(!empty($bulk_search_mobile['mobile']))
-        {   
+        {
             $bulk_search_mobile['mobile'] = array_map('trim', $bulk_search_mobile['mobile']);
             $bulk_search_mobile['mobile'] = preg_replace('/[^a-zA-Z0-9_ -]/s','',$bulk_search_mobile['mobile']);
-            $mobile_nos = implode(',', $bulk_search_mobile['mobile']);            
-            $subquery = " t1.phone_number in ({$mobile_nos}) ";
+            // Expand each uploaded number to its common storage variants
+            // (bare 10-digit, leading-0, 92 country-code, +92). Otherwise
+            // an upload of "03044555047" misses persons stored as
+            // "3044555047" or "923044555047" and only the first variant
+            // surfaces. Quoted IN(...) so each variant matches as a string.
+            $variants   = self::_expand_msisdn_variants($bulk_search_mobile['mobile']);
+            $mobile_nos = implode("','", $variants);
+            $subquery   = " t1.phone_number IN ('{$mobile_nos}') ";
         }else{
-            $subquery = " t1.phone_number in (-1) ";
+            $subquery = " t1.phone_number IN ('-1') ";
         }
         
         /* Order By */
@@ -1690,9 +1693,58 @@ echo $sql; exit;
                                 {$limit}";
 //             print_r($sql); exit;
             $members = $DB->query(Database::SELECT, $sql, FALSE);
-            //$members = DB::query(Database::SELECT, $sql)->as_array()->execute();//->current();        
+            //$members = DB::query(Database::SELECT, $sql)->as_array()->execute();//->current();
             return $members;
         }
+    }
+
+    /**
+     * Expand a list of Pakistani mobile numbers to every common storage
+     * variant, so a bulk IN(...) lookup hits rows regardless of whether
+     * the column stores "3044555047", "03044555047", "923044555047", or
+     * "+923044555047". Strips non-digits before deriving variants and
+     * always keeps the original input as a fallback. Output is
+     * deduplicated and SQL-safe (digits/plus only — escaping callers
+     * must still quote each value).
+     *
+     * Mirrors the normalisation in Helpers_Subscriber::search().
+     */
+    private static function _expand_msisdn_variants(array $numbers)
+    {
+        $out = array();
+        foreach ($numbers as $raw) {
+            $raw = (string) $raw;
+            if ($raw === '') {
+                continue;
+            }
+            $out[$raw] = $raw;
+
+            $digits = preg_replace('/\D+/', '', $raw);
+            if ($digits === '') {
+                continue;
+            }
+
+            // Reduce to canonical 10-digit form starting with '3' when possible.
+            $core = $digits;
+            if (strlen($core) === 11 && $core[0] === '0') {
+                $core = substr($core, 1);
+            } elseif (strlen($core) === 12 && substr($core, 0, 2) === '92') {
+                $core = substr($core, 2);
+            }
+
+            if (strlen($core) === 10 && $core[0] === '3') {
+                $variants = array(
+                    $core,                // 3044555047
+                    '0' . $core,          // 03044555047
+                    '92' . $core,         // 923044555047
+                    '+92' . $core,        // +923044555047
+                );
+                foreach ($variants as $v) {
+                    $out[$v] = $v;
+                }
+            }
+        }
+        return array_values($out);
     }
 
     // This class can be replaced or extended
