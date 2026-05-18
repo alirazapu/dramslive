@@ -928,51 +928,38 @@ class Controller_User extends Controller_Working {
                 }
                 if (!empty($profiles) && sizeof($profiles) > 0) {
                     foreach ($profiles as $item) {
-                        
-                        $phone_number= !empty($item)? $item:'';
-                        $rst_resp='';
-                        $other_phone=$phone_number;
-                        if(!empty($phone_number)) {
-                            
-                            $search_type = 'msisdn';
-                            $search_value = $phone_number;
-                            include 'user_functions/subscriber_api_key.inc';
-                            
-                            if(!empty($test_array['data'])) {
-                                //$rst_resp = '';
-                                $j=1;
-                                foreach ($test_array['data'] as $i=>$result) {
-                                    if (!empty($result)) {
-//                                        print_r($result); exit;
-//                                        if (!empty($result['ADDRESS1']) && $result['BVS']=='VERIFIED') {
-                                        $rst_resp .='<br><h5 class="text-primary"><u>Record-'.($i+$j).'</u></h5>';
-                                            $rst_resp .= !empty($result['CNIC']) ? '<b> CNIC:</b> '.$result['CNIC'] : 'NA';
-                                            $rst_resp .= !empty($result['FIRSTNAME']) ? '<br><b> Name: </b>'.$result['FIRSTNAME'] : 'NA';
-                                            $address1 = !empty($result['ADDRESS1']) ? $result['ADDRESS1'] : '';
-                                            $address2 = !empty($result['ADDRESS2']) ? $result['ADDRESS2'] : '';
-                                            $address3 = !empty($result['ADDRESS3']) ? $result['ADDRESS3'] : '';
-                                            $address4 = !empty($result['ADDRESS4']) ? $result['ADDRESS4'] : '';
-                                            $resident_contact = !empty($result['RESCONTACT']) ? $result['RESCONTACT'] : '';
-                                            $phone_office = !empty($result['PHONE_OFFICE']) ? $result['PHONE_OFFICE'] : '';
-                                           $rst_resp .='<br><b>Address: </b>'. $address1 . " " . $address2 . " " . $address3 . " " . $address4 . ", Home#" . $resident_contact . ", Office#" . $phone_office;
-                                            $rst_resp .= '<br><b> Biometric Verification: </b>' .(!empty($result['BVS'] || $result['BVS']=='VERIFIED') ? 'Yes' : 'No');
-                                            $rst_resp .= '<br><b> IMSI: </b>' .(!empty($result['IMSI']) ? $result['IMSI'] : '');
-                                            $rst_resp .= '<br><b> ACTIVATION DATE: </b>' .(!empty($result['ACTDATE']) ? $result['ACTDATE'] : '');
-                                            $rst_resp .= '<br><b> MNC: </b>' .(!empty($result['NETWORK']) ? $result['NETWORK'] : '');
-                                            $rst_resp .='<br>';
-//                                            break;
-//                                        }
-                                    }
-                                }
 
-                            } 
-                            else
-                                $rst_resp=$other_phone.'<p style="color: red"><b>(Not Found)</b></p>';
+                        $phone_number = !empty($item) ? $item : '';
+                        $other_phone  = $phone_number;
+                        $rst_resp     = '';
+
+                        if (!empty($phone_number)) {
+                            $sub = Helpers_Subscriber::search('msisdn', $phone_number);
+                            $row = (!empty($sub['status']) && !empty($sub['data'])) ? (array) $sub['data'] : array();
+
+                            $cnic    = !empty($row['cnic'])       ? $row['cnic']       : '';
+                            $name    = !empty($row['name'])       ? $row['name']       : '';
+                            $address = !empty($row['address'])    ? $row['address']    : '';
+                            $bvs     = !empty($row['bvs_status']) ? $row['bvs_status'] : '';
+                            $imsi    = !empty($row['imsi'])       ? $row['imsi']       : '';
+
+                            if ($name !== '')    $name    = ucwords(strtolower($name),    " \t\r\n\f\v.-");
+                            if ($address !== '') $address = ucwords(strtolower($address), " \t\r\n\f\v.-");
+
+                            if ($cnic !== '' || $name !== '' || $address !== '') {
+                                if ($cnic !== '')    $rst_resp .= '<b>CNIC: </b>'        . $cnic;
+                                if ($name !== '')    $rst_resp .= '<br><b>Name: </b>'    . $name;
+                                if ($address !== '') $rst_resp .= '<br><b>Address: </b>' . $address;
+                                if ($imsi !== '')    $rst_resp .= '<br><b>IMSI: </b>'    . $imsi;
+                                if ($bvs !== '')     $rst_resp .= ' <i>(' . $bvs . ')</i>';
+                            } else {
+                                $rst_resp = $other_phone . '<p style="color: red"><b>(Not Found)</b></p>';
+                            }
                         }
 
                         $row = array(
                             $phone_number,
-                            $rst_resp, 
+                            $rst_resp,
                         );
 
                         $output['aaData'][] = $row;
