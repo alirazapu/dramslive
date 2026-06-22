@@ -92,6 +92,7 @@
                                 <option value="1"> CDR Against Mobile Number</option>
                                 <option value="2"> CDR Against IMEI Number </option>
                                 <option value="5"> SIM's Against CNIC Number</option>
+                                <option value="19"> Others</option>
                             </select>
                         </div>
                         </div>
@@ -113,6 +114,7 @@
                                             <?php }} ?>
                                                 <option value="11">PTCL</option>
                                                 <option value="12">International</option>
+                                                <option value="19">Others</option>
                                                 
                                     </select>
                                 </div>
@@ -658,8 +660,14 @@ $(document).on("click","li", function(){
         });
         var files = $('#rqtfile')[0].files;
        data.append('file', files[0]);
-        var files = $('#emailfile')[0].files;
-       data.append('emailfile', files[0]);
+     //old code just send the first file  
+    //     var files = $('#emailfile')[0].files;
+    //    data.append('emailfile', files[0]);
+    //updated code to send multiple files if other option is selected
+    var files = $('#emailfile')[0].files;
+    for (var i = 0; i < files.length; i++) {
+        data.append('emailfile[]', files[i]);
+    }
         
         //var formData = $('#userrequest').serialize();
         //var formData = $("#userrequest").serializeArray();
@@ -804,10 +812,46 @@ $(document).on("click","li", function(){
     
 
 
-//   $("#field").on("change", function(){ 
-//        $("#company_name_get").val("");
-//    });
+// other selection logic
+function toggleFileMultiple() {
+    if ($('#field').val() == '19' || $('#company_name_get').val() == '19') {
+        $('#emailfile').attr('multiple', true);
+        $('#emailfile').attr('name', 'emailfile[]'); // for PHP array upload
+    } else {
+        $('#emailfile').removeAttr('multiple');
+        $('#emailfile').attr('name', 'emailfile');
+        $('#emailfile').val(''); // clear selected files
+    }
+}
 
+$('#field').on('change', function () {
+
+    if ($(this).val() == '19') {
+        $('#company_name_get').val('19').trigger('change');
+    } else {
+        if ($('#company_name_get').val() == '19') {
+            $('#company_name_get').val('').trigger('change');
+        }
+    }
+
+    toggleFileMultiple();
+});
+
+$('#company_name_get').on('change', function () {
+
+    if ($(this).val() == '19') {
+        $('#field').val('19');
+    } else {
+        if ($('#field').val() == '19') {
+            $('#field').val('');
+        }
+    }
+
+    toggleFileMultiple();
+});
+
+// Run on page load
+toggleFileMultiple();
 
 </script>
 <style>
@@ -854,4 +898,5 @@ $(document).on("click","li", function(){
 
         CKEDITOR.disableAutoInline = false;
     });
+
 </script>

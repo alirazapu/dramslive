@@ -2043,16 +2043,72 @@ class Controller_Adminrequest extends Controller_Working
             $user_obj = Auth::instance()->get_user();
             $email_file_name = $file_name = '';
 
+            // if (!empty($_FILES['emailfile'])) {
+            //     $directory = 'dist/uploads/user/request_approve/';
+            //     $file_name = "emailfile";
+            //     $date = date("YmdHis", time());
+            //     $ext = pathinfo($_FILES['emailfile']['name'], PATHINFO_EXTENSION);
+            //     $filename = $file_name . $date . "." . $ext;
+            //     $file = Upload::save($_FILES['emailfile'], $filename, $directory);
+            //     $email_file_name = getcwd() . DIRECTORY_SEPARATOR . $directory . $filename;
+            // }
+            $email_file_name = '';
+            $email_file_names = [];
+
             if (!empty($_FILES['emailfile'])) {
+
                 $directory = 'dist/uploads/user/request_approve/';
-                $file_name = "emailfile";
-                $date = date("YmdHis", time());
-                $ext = pathinfo($_FILES['emailfile']['name'], PATHINFO_EXTENSION);
-                $filename = $file_name . $date . "." . $ext;
-                $file = Upload::save($_FILES['emailfile'], $filename, $directory);
-                $email_file_name = getcwd() . DIRECTORY_SEPARATOR . $directory . $filename;
+
+                // Multiple files
+                if (is_array($_FILES['emailfile']['name'])) {
+
+                    foreach ($_FILES['emailfile']['name'] as $key => $name) {
+
+                        if (empty($name)) {
+                            continue;
+                        }
+
+                        $date = date("YmdHis") . '_' . $key;
+                        $ext = pathinfo($name, PATHINFO_EXTENSION);
+                        $filename = "emailfile" . $date . "." . $ext;
+
+                        $file_data = [
+                            'name'     => $_FILES['emailfile']['name'][$key],
+                            'type'     => $_FILES['emailfile']['type'][$key],
+                            'tmp_name' => $_FILES['emailfile']['tmp_name'][$key],
+                            'error'    => $_FILES['emailfile']['error'][$key],
+                            'size'     => $_FILES['emailfile']['size'][$key]
+                        ];
+
+                        Upload::save($file_data, $filename, $directory);
+
+                        $email_file_names[] = getcwd() . DIRECTORY_SEPARATOR . $directory . $filename;
+                    }
+
+                    // Keep old variable for backward compatibility
+                    if (!empty($email_file_names)) {
+                        $email_file_name = $email_file_names[0];
+                    }
+
+                } else {
+
+                    // Your original code unchanged
+                    $file_name = "emailfile";
+                    $date = date("YmdHis", time());
+                    $ext = pathinfo($_FILES['emailfile']['name'], PATHINFO_EXTENSION);
+                    $filename = $file_name . $date . "." . $ext;
+
+                    Upload::save($_FILES['emailfile'], $filename, $directory);
+
+                    $email_file_name = getcwd() . DIRECTORY_SEPARATOR . $directory . $filename;
+
+                    // Also put into array
+                    $email_file_names[] = $email_file_name;
+                }
             }
 
+
+            //print_r($email_file_names);die();
             if (!empty($_FILES['file'])) {
                 $directory = 'dist/uploads/user/request_approve/';
                 $file_name = "rqtaprvd";
@@ -2092,9 +2148,16 @@ class Controller_Adminrequest extends Controller_Working
                     if ($total_count['total'] <= 1450) {
                         //// limit check end
                         // Use centralized email helper
-                        $email_config = Helpers_CompanyEmail::get_email($company_name, $request_type);
-                        $to = $email_config['email'] ?? '';
-                        $to_name = $email_config['name'] ?? '';
+                        // 14 is for other request type others
+                        if($company_name != 19){
+                            $email_config = Helpers_CompanyEmail::get_email($company_name, $request_type);
+                            $to = $email_config['email'] ?? '';
+                            $to_name = $email_config['name'] ?? '';
+                        } else {
+                            $to = $cust_email;
+                            $to_name = '';
+                        }
+                        
                         
                         // Validate email configuration
                         if (empty($to)) {
@@ -2225,7 +2288,28 @@ class Controller_Adminrequest extends Controller_Working
                             }
                         }
 
-                        $email_staus = Helpers_Email::send_email($cust_email, $to_name, $subject, $body, $email_file_name);
+                        //$email_staus = Helpers_Email::send_email($cust_email, $to_name, $subject, $body, $email_file_name);
+                        if (!empty($email_file_names)) {
+
+                                $email_status = Helpers_Email::send_email(
+                                    $cust_email,
+                                    $to_name,
+                                    $subject,
+                                    $body,
+                                    NULL,
+                                    $email_file_names
+                                );
+
+                            } else {
+
+                                $email_status = Helpers_Email::send_email(
+                                    $cust_email,
+                                    $to_name,
+                                    $subject,
+                                    $body,
+                                    $email_file_name
+                                );
+                            }
                         /*
                           if ($email_staus == 1) {
                           $reference_number = Model_Email::email_sended($to, $subject, $body, $reference_number, 0, 1);
