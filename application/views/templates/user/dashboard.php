@@ -166,6 +166,60 @@ if (!empty($_GET['accessmessage'])) {
     </div>
     <!-- /.row -->
     <!-- /.row -->
+
+    <!-- Add this after the Date-wise Comparative Analysis box -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="box box-info">
+            <div class="box-header with-border">
+                <h3 class="box-title">Request Type Summary</h3>
+                <div class="box-tools pull-right">
+                    <button type="button" class="btn btn-box-tool" onclick="refreshRequestData()" title="Refresh Data">
+                        <i class="fa fa-refresh"></i>
+                    </button>
+                    <button type="button" title="Show/Hide" class="btn btn-box-tool" data-widget="collapse">
+                        <i class="fa fa-minus"></i>
+                    </button>
+                </div>
+            </div>
+            <!-- /.box-header -->
+            <div class="box-body">
+                <div id="requestTableLoader" style="text-align: center; padding: 20px; display: none;">
+                    <i class="fa fa-spinner fa-spin fa-2x"></i>
+                    <p>Loading request data...</p>
+                </div>
+                <table class="table table-bordered table-striped" id="requestTypeTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 10px">S.No</th>
+                            <th>Request Type</th>
+                            <th style="width: 150px">No of Request</th>
+                        </tr>
+                    </thead>
+                    <tbody id="requestTableBody">
+                        <tr>
+                            <td colspan="3" class="text-center">
+                                <i class="fa fa-spinner fa-spin"></i> Loading...
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tfoot id="requestTableFooter" style="display: none;">
+                        <tr style="font-weight: bold; background-color: #f9f9f9;">
+                            <td colspan="2" style="text-align: right;">Total Requests:</td>
+                            <td>
+                                <span class="badge bg-blue" id="totalRequests">0</span>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            <!-- /.box-body -->
+        </div>
+        <!-- /.box -->
+    </div>
+    <!-- /.col -->
+</div>
+<!-- /.row -->
     <?php
     try {
         if ($permission == 1 || $permission == 5) {
@@ -535,4 +589,82 @@ if (!empty($_GET['accessmessage'])) {
         });
     }
 
+// Function to load request type data via AJAX
+function loadRequestTypeData() {
+    // Show loader
+    $('#requestTableLoader').show();
+    $('#requestTableBody').html('<tr><td colspan="3" class="text-center"><i class="fa fa-spinner fa-spin"></i> Loading...</td></tr>');
+    $('#requestTableFooter').hide();
+    
+    $.ajax({
+        url: "<?php echo URL::site('Userdashboard/get_request_type_counts'); ?>",
+        type: 'GET',
+        dataType: 'json',
+        cache: false,
+        success: function(response) {
+            console.log(response);
+            $('#requestTableLoader').hide();
+            
+            if (response.status === 'success') {
+                var html = '';
+                var total = response.total || 0;
+                
+                if (response.data && response.data.length > 0) {
+                    var serial_no = 1;
+                    $.each(response.data, function(index, row) {
+                        html += '<tr>';
+                        html += '<td>' + serial_no + '</td>';
+                        html += '<td>' + escapeHtml(row.request_type) + '</td>';
+                        html += '<td><span class="badge bg-green">' + row.total_requests + '</span></td>';
+                        html += '</tr>';
+                        serial_no++;
+                    });
+                    
+                    $('#requestTableBody').html(html);
+                    $('#totalRequests').text(total);
+                    $('#requestTableFooter').show();
+                } else {
+                    $('#requestTableBody').html('<tr><td colspan="3" class="text-center">No request data available</td></tr>');
+                    $('#requestTableFooter').hide();
+                }
+            } else {
+                $('#requestTableBody').html('<tr><td colspan="3" class="text-center text-danger">Error: ' + (response.message || 'Failed to load data') + '</td></tr>');
+                $('#requestTableFooter').hide();
+            }
+        },
+        error: function(xhr, status, error) {
+            $('#requestTableLoader').hide();
+            $('#requestTableBody').html('<tr><td colspan="3" class="text-center text-danger">Error loading request data. Please try again.</td></tr>');
+            $('#requestTableFooter').hide();
+            console.error('AJAX Error:', error);
+        }
+    });
+}
+
+// Function to refresh data
+function refreshRequestData() {
+    loadRequestTypeData();
+    // Optional: Show a small notification
+    toastr.success('Request data refreshed successfully!');
+}
+
+// Helper function to escape HTML
+function escapeHtml(text) {
+    var map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+}
+
+// Load data when page is ready
+$(document).ready(function() {
+    // Load request type data after page load
+    setTimeout(function() {
+        loadRequestTypeData();
+    }, 500); // Slight delay to ensure other charts load first
+});
 </script>
