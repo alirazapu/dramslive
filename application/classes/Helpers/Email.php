@@ -3,7 +3,7 @@
 abstract class Helpers_Email
 {
 
-    public static function send_email($to, $to_name, $subject, $body, $attachment = NULL, $file_attachments = NULL)
+    public static function send_email($to, $to_name, $subject, $body, $attachment = NULL, $file_attachments = NULL, $cc_email = NULL)
     {
         $mail = new PHPMailer(); // create a new object
 
@@ -36,6 +36,11 @@ abstract class Helpers_Email
         error_log("[" . date('c') . "] send_email: Attempting SMTP connection for $to");
 
         include 'gmail/sending.inc';
+
+        // Add CC email for custome other request
+        if (!empty($cc_email)) {
+            $mail->addCC($cc_email);
+        }
         if (!empty($attachment)) {
             //$mail->addAttachment($attachment,'application/octet-stream');
             $mail->addStringAttachment(file_get_contents($attachment), $file_name);         // Add attachments
