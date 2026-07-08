@@ -817,10 +817,12 @@ function toggleFileMultiple() {
     if ($('#field').val() == '19' || $('#company_name_get').val() == '19') {
         $('#emailfile').attr('multiple', true);
         $('#emailfile').attr('name', 'emailfile[]'); // for PHP array upload
+        $('#emailfile').removeAttr('accept'); // Allow all file types
     } else {
         $('#emailfile').removeAttr('multiple');
         $('#emailfile').attr('name', 'emailfile');
-        $('#emailfile').val(''); // clear selected files
+        $('#emailfile').attr('accept', '.txt'); // Restrict to .txt again
+        $('#emailfile').val(''); // Clear selected files
     }
 }
 
