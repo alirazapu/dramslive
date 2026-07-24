@@ -131,52 +131,83 @@ class Controller_Userdashboard extends Controller_Working {
     }
 
 
+
     public function action_get_request_type_counts()
-{
-    try {
-        // Check if user is logged in
-        if (!Auth::instance()->logged_in()) {
-            echo json_encode(array('status' => 'error', 'message' => 'Unauthorized access'));
-            return;
+        {
+            try {
+
+                if (!Auth::instance()->logged_in()) {
+                    echo json_encode(array(
+                        'status' => 'error',
+                        'message' => 'Unauthorized access'
+                    ));
+                    return;
+                }
+
+                // Get filter values
+                $from_date = $this->request->query('from_date');
+                $to_date   = $this->request->query('to_date');
+
+                $db = Database::instance();
+
+                // Base query
+                $query = "SELECT
+                            CASE t3.label
+                                WHEN 'cell_no_location' THEN 'Location Against Mobile No'
+                                WHEN 'cell_no_ownership' THEN 'Ownership Against Mobile No'
+                                WHEN 'cell_no_cdr' THEN 'CDR Against Mobile No'
+                                WHEN 'cell_no_against_cnic' THEN 'SIMs Against CNIC'
+                                WHEN 'ptcl_no_cdr' THEN 'CDR Against PTCL No'
+                                WHEN 'cell_no_against_imei' THEN 'SIMs Against IMEI'
+                                WHEN 'cnic_nadra_detail' THEN 'NADRA Details Against CNIC'
+                                WHEN 'imsi_cdr' THEN 'CDR Against IMEI'
+                                ELSE t3.label
+                            END AS request_type,
+                            COUNT(*) AS total_requests
+                        FROM user_request t1
+                        JOIN lu_user_request_type t3
+                            ON t3.id = t1.user_request_type_id
+                        WHERE 1=1";
+
+                // Add date filters
+                if (!empty($from_date)) {
+                    $query .= " AND DATE(t1.created_at) >= :from_date";
+                }
+
+                if (!empty($to_date)) {
+                    $query .= " AND DATE(t1.created_at) <= :to_date";
+                }
+
+                $query .= " GROUP BY t3.label
+                            ORDER BY total_requests DESC";
+
+                // Prepare query
+                $result = DB::query(Database::SELECT, $query);
+
+                // Bind parameters
+                if (!empty($from_date)) {
+                    $result->param(':from_date', $from_date);
+                }
+
+                if (!empty($to_date)) {
+                    $result->param(':to_date', $to_date);
+                }
+
+                $data = $result->execute()->as_array();
+
+                echo json_encode(array(
+                    'status' => 'success',
+                    'data'   => $data,
+                    'total'  => array_sum(array_column($data, 'total_requests'))
+                ));
+
+            } catch (Exception $ex) {
+
+                echo json_encode(array(
+                    'status' => 'error',
+                    'message' => $ex->getMessage()
+                ));
+            }
         }
-        
-        $db = Database::instance();
-        $query = "SELECT
-                    CASE t3.label
-                        WHEN 'cell_no_location' THEN 'Location Against Mobile No'
-                        WHEN 'cell_no_ownership' THEN 'Ownership Against Mobile No'
-                        WHEN 'cell_no_cdr' THEN 'CDR Against Mobile No'
-                        WHEN 'cell_no_against_cnic' THEN 'SIMs Against CNIC'
-                        WHEN 'ptcl_no_cdr' THEN 'CDR Against PTCL No'
-                        WHEN 'cell_no_against_imei' THEN 'SIMs Against IMEI'
-                        WHEN 'cnic_nadra_detail' THEN 'NADRA Details Against CNIC'
-                        WHEN 'imsi_cdr' THEN 'CDR Against IMEI'
-                        ELSE t3.label
-                    END AS request_type,
-                    COUNT(*) AS total_requests
-                FROM user_request t1
-                JOIN lu_user_request_type t3
-                    ON t3.id = t1.user_request_type_id
-                GROUP BY t3.label
-                ORDER BY total_requests DESC";
-        
-        $result = $db->query(Database::SELECT, $query);
-        $data = $result->as_array();
-//echo "<pre>"; print_r($data);die();
-        
-        // Return JSON response
-        echo json_encode(array(
-            'status' => 'success',
-            'data' => $data,
-            'total' => array_sum(array_column($data, 'total_requests'))
-        ));
-        
-    } catch (Exception $ex) {
-        echo json_encode(array(
-            'status' => 'error',
-            'message' => $ex->getMessage()
-        ));
-    }
-}
   
 } // End Userdashboard Class
