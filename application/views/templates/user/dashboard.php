@@ -184,6 +184,27 @@ if (!empty($_GET['accessmessage'])) {
             </div>
             <!-- /.box-header -->
             <div class="box-body">
+			               <div class="row" style="margin-bottom: 15px;">
+                    <div class="col-md-3">
+                        <label>From Date</label>
+                        <input type="date" id="fromDate" class="form-control">
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label>To Date</label>
+                        <input type="date" id="toDate" class="form-control">
+                    </div>
+                    
+                    <div class="col-md-3" style="padding-top: 25px;">
+                        <button type="button" class="btn btn-primary" onclick="loadRequestTypeData()">
+                            <i class="fa fa-filter"></i> Filter
+                        </button>
+                        
+                        <button type="button" class="btn btn-default" onclick="clearRequestFilter()">
+                            Clear
+                        </button>
+                    </div>
+             </div>
                 <div id="requestTableLoader" style="text-align: center; padding: 20px; display: none;">
                     <i class="fa fa-spinner fa-spin fa-2x"></i>
                     <p>Loading request data...</p>
@@ -590,27 +611,42 @@ if (!empty($_GET['accessmessage'])) {
     }
 
 // Function to load request type data via AJAX
+
+
 function loadRequestTypeData() {
+    // Get filter values
+    var fromDate = $('#fromDate').val();
+    var toDate = $('#toDate').val();
+
     // Show loader
     $('#requestTableLoader').show();
-    $('#requestTableBody').html('<tr><td colspan="3" class="text-center"><i class="fa fa-spinner fa-spin"></i> Loading...</td></tr>');
+    $('#requestTableBody').html(
+        '<tr><td colspan="3" class="text-center"><i class="fa fa-spinner fa-spin"></i> Loading...</td></tr>'
+    );
     $('#requestTableFooter').hide();
-    
+
     $.ajax({
         url: "<?php echo URL::site('Userdashboard/get_request_type_counts'); ?>",
         type: 'GET',
         dataType: 'json',
         cache: false,
+
+        // SEND DATES TO CONTROLLER
+        data: {
+            from_date: fromDate,
+            to_date: toDate
+        },
+
         success: function(response) {
-            console.log(response);
             $('#requestTableLoader').hide();
-            
+
             if (response.status === 'success') {
                 var html = '';
                 var total = response.total || 0;
-                
+
                 if (response.data && response.data.length > 0) {
                     var serial_no = 1;
+
                     $.each(response.data, function(index, row) {
                         html += '<tr>';
                         html += '<td>' + serial_no + '</td>';
@@ -619,26 +655,38 @@ function loadRequestTypeData() {
                         html += '</tr>';
                         serial_no++;
                     });
-                    
+
                     $('#requestTableBody').html(html);
                     $('#totalRequests').text(total);
                     $('#requestTableFooter').show();
                 } else {
-                    $('#requestTableBody').html('<tr><td colspan="3" class="text-center">No request data available</td></tr>');
-                    $('#requestTableFooter').hide();
+                    $('#requestTableBody').html(
+                        '<tr><td colspan="3" class="text-center">No request data available</td></tr>'
+                    );
                 }
             } else {
-                $('#requestTableBody').html('<tr><td colspan="3" class="text-center text-danger">Error: ' + (response.message || 'Failed to load data') + '</td></tr>');
-                $('#requestTableFooter').hide();
+                $('#requestTableBody').html(
+                    '<tr><td colspan="3" class="text-center text-danger">Error: ' +
+                    (response.message || 'Failed to load data') +
+                    '</td></tr>'
+                );
             }
         },
+
         error: function(xhr, status, error) {
             $('#requestTableLoader').hide();
-            $('#requestTableBody').html('<tr><td colspan="3" class="text-center text-danger">Error loading request data. Please try again.</td></tr>');
-            $('#requestTableFooter').hide();
-            console.error('AJAX Error:', error);
+            $('#requestTableBody').html(
+                '<tr><td colspan="3" class="text-center text-danger">Error loading request data</td></tr>'
+            );
+            console.error(error);
         }
     });
+}
+
+function clearRequestFilter() {
+    $('#fromDate').val('');
+    $('#toDate').val('');
+    loadRequestTypeData();
 }
 
 // Function to refresh data
