@@ -1530,6 +1530,7 @@ echo $personID;
     function requestimeicdr(imei, personID) {
         var request = "existing";
         var url = window.location.href;
+        $('#custom-form').empty();
         var newForm = jQuery('<form name="custom_form_cdr_imei" id="custom_form_bd_cdr_imei" action="<?php echo URL::site("userrequest/requestcdrimei/?id=" . $_GET['id']); ?>" method="POST">');
         newForm.append(jQuery('<input>', {
             'name': 'imei',
