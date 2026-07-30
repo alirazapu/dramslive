@@ -35,7 +35,7 @@ $parse_area = !empty($parts[0]) ? trim($parts[0]) : $clean;   // everything befo
 $lower_area = strtolower($parse_area);
 
 // 3. No-data check (keep as is, but use $lower_area)
-$no_data_keywords = ['not found','no data','no record','nodata','nil','network error','ported out',"can't be fetched",'more than a year','extraction problem'];
+$no_data_keywords = ['not found','no data','no record','nodata','nil','network error','ported out',"can't be fetched",'more than a year','extraction problem','na'];
 foreach ($no_data_keywords as $kw) {
     if (strpos($lower_area, $kw) !== false) {
         $not_fount        = 1;
