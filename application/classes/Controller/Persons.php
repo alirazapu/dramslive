@@ -3419,6 +3419,112 @@ exit();
         }
     }
 
+    // person request history  
+    public function action_person_request_history()
+    {
+
+                        
+        try {
+            //set Session for person id 
+            $_GET = Helpers_Utilities::remove_injection($_GET);
+            $person_id = (int)Helpers_Utilities::encrypted_key($_GET['id'], "decrypt");
+$totalsims = Helpers_Person::get_person_total_SIMs_array($person_id);
+$nic_number = !empty($person_id) ? Helpers_Person::get_person_cnic($person_id) : '';
+$totaldevices = Helpers_Person::get_person_devices_array($person_id);
+
+$phone_numbers = array_unique(array_column($totalsims, 'phone_number'));
+$imei_numbers = array_unique(array_column($totaldevices, 'imei_number'));
+
+
+$request_history = Helpers_Person::get_person_request_history(
+    $phone_numbers,
+    $imei_numbers,
+    $nic_number
+);
+
+        ?>
+
+      <table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Username</th>
+            <th>Company</th>
+            <th>Request Value</th>
+            <th>Request Type</th>
+            <th>Reason</th>
+            <th>Created At</th>
+            <th>Sending Date</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        <?php if (!empty($request_history)): ?>
+
+            <?php foreach ($request_history as $key => $request): ?>
+
+                <tr>
+                    <td><?php echo $key + 1; ?></td>
+
+                    <td>
+                        <?php echo HTML::chars($request['username']); ?>
+                    </td>
+
+                    <td>
+                        <?php echo HTML::chars($request['company_name']); ?>
+                    </td>
+
+                    <td>
+                        <?php echo HTML::chars($request['request_value']); ?>
+                    </td>
+
+                    <td>
+                        <?php echo HTML::chars($request['email_type_name']); ?>
+                    </td>
+
+                    <td>
+                        <?php echo HTML::chars($request['reason']); ?>
+                    </td>
+
+                    <td>
+                        <?php
+                        echo !empty($request['created_at'])
+                            ? date('d-m-Y H:i:s', strtotime($request['created_at']))
+                            : '-';
+                        ?>
+                    </td>
+
+                    <td>
+                        <?php
+                        echo !empty($request['sending_date'])
+                            ? date('d-m-Y H:i:s', strtotime($request['sending_date']))
+                            : '-';
+                        ?>
+                    </td>
+                </tr>
+
+            <?php endforeach; ?>
+
+        <?php else: ?>
+
+            <tr>
+                <td colspan="8" class="text-center">
+                    No request history found.
+                </td>
+            </tr>
+
+        <?php endif; ?>
+    </tbody>
+</table>
+
+        <?php
+
+        
+        } catch (Exception $ex) {
+            echo json_encode(2);
+        }
+    }
+
     private static function ext_db_join_name(array $parts)
     {
         $out = array();

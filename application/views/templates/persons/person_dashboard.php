@@ -944,27 +944,49 @@ if ($isforeigner == 1) {
         </div>
     </div>
     <!-- /.External Database Panels -->
-<div class="row">
-<div class="col-md-12">  
-                    <div class="box box-danger box-solid collapsed-box">
-                        <div class="box-header with-border">
-                            <h3 class="box-title">Other Information</h3>
+            <div class="row">
+                    <div class="col-md-12">  
+                                <div class="box box-danger box-solid collapsed-box">
+                                    <div class="box-header with-border">
+                                        <h3 class="box-title">Other Information</h3>
 
-                            <div class="box-tools pull-right">
-                                <button type="button" title="Show/Hide" id="other_information" class="panelisopen btn btn-box-tool" data-widget="collapse"><i class="fa fa-plus"></i>
-                                </button>                
-                            </div>
-                        </div>
-                        <div class="box-body" >
-                            <div  id="person_affiliations_and_social_links">    
-<?php
-echo Helpers_Layout::get_ajax_loader();
-?>                            
-                            </div> 
-                        </div>                        
+                                        <div class="box-tools pull-right">
+                                            <button type="button" title="Show/Hide" id="other_information" class="panelisopen btn btn-box-tool" data-widget="collapse"><i class="fa fa-plus"></i>
+                                            </button>                
+                                        </div>
+                                    </div>
+                                    <div class="box-body" >
+                                        <div  id="person_affiliations_and_social_links">    
+                                        <?php
+                                        echo Helpers_Layout::get_ajax_loader();
+                                        ?>                            
+                                        </div> 
+                                    </div>                        
+                                </div>
                     </div>
-                </div>
-</div>
+            </div>
+
+                        <div class="row">
+                    <div class="col-md-12">  
+                                <div class="box box-success box-solid collapsed-box">
+                                    <div class="box-header with-border">
+                                        <h3 class="box-title">Request History</h3>
+
+                                        <div class="box-tools pull-right">
+                                            <button type="button" title="Show/Hide" id="request_history" class="panelisopen btn btn-box-tool" data-widget="collapse"><i class="fa fa-plus"></i>
+                                            </button>                
+                                        </div>
+                                    </div>
+                                    <div class="box-body" >
+                                        <div  id="person_request_history">    
+                                        <?php
+                                        echo Helpers_Layout::get_ajax_loader();
+                                        ?>                            
+                                        </div> 
+                                    </div>                        
+                                </div>
+                    </div>
+            </div>
     <!-- /.row -->
 
 </section>
@@ -2767,6 +2789,35 @@ echo $personID;
                             swal("System Error", "Contact Support Team.", "error");
                         }
                         $("#person_affiliations_and_social_links").html(msg);
+                    }
+                });
+            }
+        } else {
+            $(this).addClass("panelisopen");
+        }
+    });
+
+    // request history
+        $('#request_history').click(function () {
+        if ($(this).hasClass("panelisopen")) {
+            $(this).removeClass("panelisopen");
+            if (!$(this).hasClass("already-done")) {
+                //ajax call to update person_affiliations_and_social_links
+                $.ajax({
+                    url: "<?php echo URL::site("Persons/person_request_history"); ?>",
+                    //type: 'POST',
+                    //data: result,
+                    data: {id: '<?php echo $_GET['id']; ?>'},
+                    cache: false,
+                    //dataType: "text",
+                    dataType: 'html',
+                    success: function (msg) {
+                        $("#request_history").addClass("panelisopen");
+                        if (msg === '2')
+                        {
+                            swal("System Error", "Contact Support Team.", "error");
+                        }
+                        $("#person_request_history").html(msg);
                     }
                 });
             }
