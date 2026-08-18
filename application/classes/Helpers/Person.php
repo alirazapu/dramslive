@@ -1300,6 +1300,22 @@ public static function get_person_for_dashboard_perofile($person_id)
         $results = $DB->query(Database::SELECT, $sql, TRUE);
         return $results;
     }
+    public static function get_person_total_SIMs_array($person_id = NULL)
+        {
+            $DB = Database::instance();
+
+            $sql = "SELECT *
+                    FROM person_phone_number AS t1";
+
+            if (!empty($person_id)) {
+                $sql .= " WHERE t1.person_id = $person_id
+                        OR t1.sim_owner = $person_id";
+            }
+
+            $results = $DB->query(Database::SELECT, $sql)->as_array();
+
+            return $results;
+        }
 
     //    Get the Total other numbers of person
     public static function get_person_total_ptcl_numbers($person_id)
@@ -1392,6 +1408,90 @@ public static function get_person_for_dashboard_perofile($person_id)
         $results = $DB->query(Database::SELECT, $sql, TRUE);
         return $results;
     }
+    public static function get_person_devices_array($person_id = NULL)
+    {
+        $DB = Database::instance();
+
+        $sql = "SELECT 
+                    t1.phone_name,
+                    t1.imei_number,
+                    MIN(t2.first_use) AS in_use_since,
+                    MAX(t2.last_use) AS last_interaction_at,
+                    t2.phone_number,
+                    t1.id AS device_id,
+                    t1.person_id
+                FROM person_phone_device t1
+                INNER JOIN person_device_numbers t2 
+                    ON t1.id = t2.device_id
+                INNER JOIN person_phone_number t3 
+                    ON t2.phone_number = t3.phone_number
+                WHERE t3.person_id = $person_id
+                GROUP BY 
+                    t1.id,
+                    t2.phone_number,
+                    t1.phone_name,
+                    t1.imei_number,
+                    t1.person_id";
+
+        $results = $DB->query(Database::SELECT, $sql)->as_array();
+
+        return $results;
+    }
+public static function get_person_request_history($phone_numbers = array(), $imei_numbers = array(), $cnic = '')
+{
+    $DB = Database::instance();
+
+    // Combine phone numbers and IMEI numbers
+    $values = array_merge($phone_numbers, $imei_numbers);
+
+    // Add CNIC
+    if (!empty($cnic)) {
+        $values[] = $cnic;
+    }
+
+    // Remove empty and duplicate values
+    $values = array_values(array_unique(array_filter($values)));
+
+    if (empty($values)) {
+        return array();
+    }
+
+    // Escape and quote each value
+    $escaped_values = array();
+
+    foreach ($values as $value) {
+        $escaped_values[] = $DB->escape((string)$value);
+    }
+
+
+    $sql = "SELECT 
+                ur.user_id,
+                u.username,
+                mc.company_name,
+                ur.requested_value AS request_value,
+                ur.reason,
+                ur.created_at,
+                ur.sending_date,
+                ett.email_type_name
+            FROM user_request AS ur
+            LEFT JOIN email_templates_type AS ett
+                ON ur.user_request_type_id = ett.id
+            LEFT JOIN mobile_companies AS mc
+                ON ur.company_name = mc.company_id
+            LEFT JOIN users AS u
+                ON ur.user_id = u.id
+            WHERE ur.requested_value IN (" . implode(',', $escaped_values) . ")
+            ORDER BY ur.request_id ASC";
+
+    // Uncomment this temporarily if you want to see the SQL
+     //echo '<pre>' . $sql . '</pre>';
+     //exit;
+
+    $results = $DB->query(Database::SELECT, $sql);
+
+    return $results->as_array();
+}
+
 
     //    Get the Total Devices of person against the given id
     public static function get_link_with_project_last_five($person_id)
