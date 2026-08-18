@@ -1477,7 +1477,7 @@ public static function get_person_request_history($phone_numbers = array(), $ime
             LEFT JOIN email_templates_type AS ett
                 ON ur.user_request_type_id = ett.id
             LEFT JOIN mobile_companies AS mc
-                ON ur.company_name = mc.company_id
+                ON ur.company_name = mc.mnc
             LEFT JOIN users AS u
                 ON ur.user_id = u.id
             WHERE ur.requested_value IN (" . implode(',', $escaped_values) . ")
