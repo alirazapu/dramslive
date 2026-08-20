@@ -861,9 +861,48 @@ abstract class Helpers_Profile {
         date_default_timezone_set("Asia/Karachi");
         $date = date("Y-m-d H:i:s");
         $date_only = date("Y-m-d");
-        $query = DB::insert('user_activity_timeline', array('user_id', 'user_activity_type_id', 'person_id', 'activity_time'))
-                ->values(array($user_id, $activity_id, $person_id, $date))
-                ->execute();
+        // $query = DB::insert('user_activity_timeline', array('user_id', 'user_activity_type_id', 'person_id', 'activity_time'))
+        //         ->values(array($user_id, $activity_id, $person_id, $date))
+        //         ->execute();
+$ip_address = Request::$client_ip;
+
+$user_agent = isset($_SERVER['HTTP_USER_AGENT'])
+    ? $_SERVER['HTTP_USER_AGENT']
+    : '';
+
+$request_uri = isset($_SERVER['REQUEST_URI'])
+    ? $_SERVER['REQUEST_URI']
+    : '';
+
+$http_method = isset($_SERVER['REQUEST_METHOD'])
+    ? $_SERVER['REQUEST_METHOD']
+    : '';
+
+$session_id = session_id();
+
+$query = DB::insert('user_activity_timeline', array(
+    'user_id',
+    'user_activity_type_id',
+    'person_id',
+    'activity_time',
+    'ip_address',
+    'user_agent',
+    'request_uri',
+    'http_method',
+    'session_id'
+))
+->values(array(
+    $user_id,
+    $activity_id,
+    $person_id,
+    $date,
+    $ip_address,
+    $user_agent,
+    $request_uri,
+    $http_method,
+    $session_id
+))
+->execute();
         $activity_array = array(50, 51, 62, 64, 59, 54, 47, 44, 41, 38, 35, 11, 27, 28, 8, 10, 19, 20, 21, 4, 5, 71, 75, 77, 78, 79, 80, 26, 48, 81, 82, 83);
         //if($activity_id == 62 || $activity_id == 59 || $activity_id == 54 ||$activity_id == 47 || $activity_id == 44 || $activity_id == 41 || $activity_id == 38 || $activity_id == 35 || $activity_id == 11 || $activity_id == 27 ||$activity_id == 28 ||$activity_id == 8 || $activity_id == 10 || $activity_id == 19 || $activity_id == 20 || $activity_id == 21 || $activity_id == 4 || $activity_id == 5 || $activity_id == 71 || $activity_id == 75 || $activity_id == 76 || $activity_id == 77 || $activity_id == 78  || $activity_id == 79 || $activity_id == 80)
         if (in_array($activity_id, $activity_array)) {
