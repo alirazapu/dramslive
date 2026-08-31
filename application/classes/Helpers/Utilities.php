@@ -2801,6 +2801,15 @@ abstract class Helpers_Utilities {
         return $result;
     }
 
+    //Cancel Travel History Request
+    public static function request_cancel_travelhistory($request_id) {
+        $DB = Database::instance();
+        $sql = "UPDATE user_request as t1 set t1.status = 3
+                where t1.request_id = {$request_id} and t1.user_request_type_id = 12 and t1.status = 1";
+        $result = $DB->query(Database::UPDATE, $sql, TRUE);
+        return $result;
+    }
+
     //Request Reply sent
     public static function request_reply_sent($request_id) {
         $DB = Database::instance();

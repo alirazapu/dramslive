@@ -413,7 +413,7 @@
     }
     
     function requeueverisys(request_id){
-        //var stat = $("#stcng").val(); 
+        //var stat = $("#stcng").val();
         var result = {request_id : request_id}
         $.ajax({
             url: "<?php echo URL::site("Userrequest/request_requeue_verisys"); ?>",
@@ -425,10 +425,42 @@
                 refreshGrid();
                 if (msg == 1)
                 {
-                    swal("Congratulations!", "Request Moved To Queue.", "success");                    
+                    swal("Congratulations!", "Request Moved To Queue.", "success");
                 }else{
                     swal("System Error", "Contact Support Team.", "error");
-                }                
+                }
+            }
+        });
+    }
+
+    function canceltravelhistory(request_id){
+        $.confirm({
+            'title'     : 'Cancel Request Confirmation',
+            'message'   : 'Are you sure you want to cancel this request ?',
+            'buttons'   : {
+                'Yes'   : {
+                    'class' : 'gray',
+                    'action': function(){
+                        $.ajax({
+                            url: "<?php echo URL::site("Userrequest/cancel_travelhistory"); ?>",
+                            type: 'POST',
+                            data: {request_id : request_id},
+                            cache: false,
+                            success: function (msg) {
+                                refreshGrid();
+                                if (msg == 1)
+                                {
+                                    swal("Cancelled!", "Request has been cancelled.", "success");
+                                }else{
+                                    swal("System Error", "Contact Support Team.", "error");
+                                }
+                            }
+                        });
+                    }
+                },
+                'No'    : {
+                    'class' : 'gray'
+                }
             }
         });
     }
