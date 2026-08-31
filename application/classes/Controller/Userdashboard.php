@@ -204,6 +204,14 @@ public function action_get_request_type_counts()
         ));
     }
 }
+public function action_get_ip()
+{
+
+echo "REMOTE_ADDR: " . ($_SERVER['REMOTE_ADDR'] ?? 'N/A') . "<br>";
+echo "SERVER_ADDR: " . ($_SERVER['SERVER_ADDR'] ?? 'N/A') . "<br>";
+echo "X_FORWARDED_FOR: " . ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? 'N/A') . "<br>";
+echo "X_REAL_IP: " . ($_SERVER['HTTP_X_REAL_IP'] ?? 'N/A') . "<br>";
+}
 
   
 } // End Userdashboard Class
