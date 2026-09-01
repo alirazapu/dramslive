@@ -840,14 +840,14 @@ abstract class Helpers_Profile {
      *  Person Login in or Logout check status
      */
 
-    public static function is_login($user_id, $status = True, $public_ip = NULL) {
+    public static function is_login($user_id, $status = True, $public_ip = NULL, $geo_lat = NULL, $geo_lng = NULL, $geo_accuracy = NULL) {
 
         if ($status) {
             $result = DB::update("users")->set(array('is_login' => 1))->where('id', '=', $user_id)->execute();
-            Helpers_Profile::user_activity_log($user_id, 1, Null, Null, Null, Null, NULL, $public_ip);
+            Helpers_Profile::user_activity_log($user_id, 1, Null, Null, Null, Null, NULL, $public_ip, $geo_lat, $geo_lng, $geo_accuracy);
         } else {
             $result = DB::update("users")->set(array('is_login' => 0))->where('id', '=', $user_id)->execute();
-            Helpers_Profile::user_activity_log($user_id, 2, Null, Null, Null, Null, NULL, $public_ip);
+            Helpers_Profile::user_activity_log($user_id, 2, Null, Null, Null, Null, NULL, $public_ip, $geo_lat, $geo_lng, $geo_accuracy);
         }
         return $result;
     }
@@ -856,7 +856,7 @@ abstract class Helpers_Profile {
      *  Person Activity Log
      */
 
-    public static function user_activity_log($user_id, $activity_id, $search_key = Null, $search_value = Null, $person_id = Null, $company = Null, $user = NULL, $public_ip = NULL) {
+    public static function user_activity_log($user_id, $activity_id, $search_key = Null, $search_value = Null, $person_id = Null, $company = Null, $user = NULL, $public_ip = NULL, $geo_lat = NULL, $geo_lng = NULL, $geo_accuracy = NULL) {
         $month = date("F");
         date_default_timezone_set("Asia/Karachi");
         $date = date("Y-m-d H:i:s");
@@ -892,7 +892,10 @@ $query = DB::insert('user_activity_timeline', array(
     'user_agent',
     'request_uri',
     'http_method',
-    'session_id'
+    'session_id',
+    'geo_lat',
+    'geo_lng',
+    'geo_accuracy'
 ))
 ->values(array(
     $user_id,
@@ -903,7 +906,10 @@ $query = DB::insert('user_activity_timeline', array(
     $user_agent,
     $request_uri,
     $http_method,
-    $session_id
+    $session_id,
+    $geo_lat,
+    $geo_lng,
+    $geo_accuracy
 ))
 ->execute();
         $activity_array = array(50, 51, 62, 64, 59, 54, 47, 44, 41, 38, 35, 11, 27, 28, 8, 10, 19, 20, 21, 4, 5, 71, 75, 77, 78, 79, 80, 26, 48, 81, 82, 83);
