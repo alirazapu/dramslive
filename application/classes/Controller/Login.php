@@ -221,7 +221,8 @@ class Controller_Login extends Controller
                             $user_obj = ORM::factory('User', $user_obj);
                         }
                         $public_ip = filter_var($this->request->post('public_ip'), FILTER_VALIDATE_IP) ?: NULL;
-                        Helpers_Profile::is_login($user_obj->id, TRUE, $public_ip);
+                        $geo = Helpers_Utilities::validate_geo_coordinates($this->request->post('geo_lat'), $this->request->post('geo_lng'), $this->request->post('geo_accuracy'));
+                        Helpers_Profile::is_login($user_obj->id, TRUE, $public_ip, $geo['lat'], $geo['lng'], $geo['accuracy']);
                         $permission = Helpers_Utilities::get_user_permission($user_obj->id);
                         $this->redirect('Userdashboard/dashboard');
                     } else {
@@ -388,7 +389,8 @@ class Controller_Login extends Controller
                             $user_obj = Auth::instance()->get_user();
                             try {
                                 $public_ip = filter_var($this->request->post('public_ip'), FILTER_VALIDATE_IP) ?: NULL;
-                                Helpers_Profile::is_login($user_obj->id, TRUE, $public_ip);
+                                $geo = Helpers_Utilities::validate_geo_coordinates($this->request->post('geo_lat'), $this->request->post('geo_lng'), $this->request->post('geo_accuracy'));
+                                Helpers_Profile::is_login($user_obj->id, TRUE, $public_ip, $geo['lat'], $geo['lng'], $geo['accuracy']);
                                 $permission = Helpers_Utilities::get_user_permission($user_obj->id);
                             } catch (Exception $e) {
                             }

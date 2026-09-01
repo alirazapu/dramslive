@@ -2942,7 +2942,7 @@ class Model_Userreport {
             return $members['count'];
         }
         /*  Fetch all Records */ else {
-            $sql = "Select t3.role_id, t2.user_id, t2.region_id, t2.posted, t2.job_title, t1.user_activity_type_id, t1.person_id, t1.activity_time,t1.timeline_id, t1.ip_address, t1.user_agent, t1.session_id
+            $sql = "Select t3.role_id, t2.user_id, t2.region_id, t2.posted, t2.job_title, t1.user_activity_type_id, t1.person_id, t1.activity_time,t1.timeline_id, t1.ip_address, t1.user_agent, t1.session_id, t1.geo_lat, t1.geo_lng, t1.geo_accuracy
                     from user_activity_timeline as t1
                     join users_profile as t2 on t2.user_id = t1.user_id  
                     JOIN roles_users as t3 on   t3.user_id = t1.user_id

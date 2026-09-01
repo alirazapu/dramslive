@@ -192,6 +192,7 @@
                                         <th class="no-sort">IP Address</th>
                                         <th class="no-sort">User Agent</th>
                                         <th class="no-sort">Session ID</th>
+                                        <th class="no-sort">Location</th>
                                         <th>Activity Time</th>
                                     </tr>
                                 </thead>
@@ -208,6 +209,7 @@
                                         <th>IP Address</th>
                                         <th>User Agent</th>
                                         <th>Session ID</th>
+                                        <th>Location</th>
                                         <th>Activity Time</th>
                                     </tr>
                                 </tfoot>
@@ -714,6 +716,34 @@
     <!-- /.modal-dialog -->
 </div>
 
+<div class="modal modal-info fade" id="modal-iplocation">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title">IP Address Location</h4>
+            </div>
+                <div class="modal-body" style='background-color: #fff !important ; color: #000 !important;'>
+
+                    <div class="form-group">
+                        <table class="table table-striped">
+                            <tbody id="iplocation_data">
+
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default pull-left" data-dismiss="modal">Close</button>
+                </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+
 <script src="<?php echo URL::base() . 'plugins/select2/select2.full.min.js'; ?>"></script>
 
 <script>
@@ -836,7 +866,7 @@
             oSettings.oApi._fnDraw(oSettings);
         };
         objDT = $('#penallog').dataTable(
-                {"aaSorting": [[9, "desc"]],
+                {"aaSorting": [[10, "desc"]],
                     "bPaginate": true,
                     "bProcessing": true,
                     //"bStateSave": true,
@@ -1461,6 +1491,38 @@
                 }
             });
         }
+    }
+    function ip_location(ip) {
+        var request = $.ajax({
+            url: "<?php echo URL::site("userreports/ip_location"); ?>",
+            type: "POST",
+            dataType: 'html',
+            data: {ip: ip},
+            success: function (response)
+            {
+                if (response == 2)
+                {
+                    swal("System Error", "Contact Technical Support Team.", "error");
+                }
+                $("#modal-iplocation").modal("show");
+
+                //appending modal background inside the blue div
+                $('.modal-backdrop').appendTo('.blue');
+
+                //remove the padding right and modal-open class from the body tag which bootstrap adds when a modal is shown
+                $('body').removeClass("modal-open");
+                $('body').css("padding-right", "");
+                setTimeout(function () {
+                    // Do something after 1 second
+                    $(".modal-backdrop.fade.in").remove();
+                }, 300);
+
+                $("#iplocation_data").html(response);
+            },
+            error: function (jqXHR, textStatus) {
+                alert('Failed to recognize');
+            }
+        });
     }
     function excel(id) {
         $('#xport').val('excel');

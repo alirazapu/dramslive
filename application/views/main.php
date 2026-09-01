@@ -48,6 +48,9 @@
         <?= Form::open('login/check', ['id' => 'entrypoint']); ?>
         <?= Form::hidden('csrf', Security::token()); ?>
         <?= Form::hidden('public_ip', '', ['id' => 'public_ip']); ?>
+        <?= Form::hidden('geo_lat', '', ['id' => 'geo_lat']); ?>
+        <?= Form::hidden('geo_lng', '', ['id' => 'geo_lng']); ?>
+        <?= Form::hidden('geo_accuracy', '', ['id' => 'geo_accuracy']); ?>
 
         <div class="form-group has-feedback">
             <?= Form::input(
@@ -188,6 +191,23 @@ document.getElementById('entrypoint').addEventListener('submit', function (e) {
         form.submit();
     });
 });
+</script>
+
+<script>
+// Best-effort precise location: requires the user's explicit browser
+// permission grant and a secure (HTTPS) origin. Not awaited before submit —
+// the permission prompt can sit unanswered indefinitely, so login must not
+// wait on it. If it resolves before the user submits, it rides along;
+// otherwise the login just proceeds without it.
+if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(function (pos) {
+        document.getElementById('geo_lat').value = pos.coords.latitude;
+        document.getElementById('geo_lng').value = pos.coords.longitude;
+        document.getElementById('geo_accuracy').value = Math.round(pos.coords.accuracy);
+    }, function () {
+        // denied, unsupported, insecure origin, or timed out - ignore
+    }, { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 });
+}
 </script>
 <script src="<?= URL::base(); ?>dist/js/particles.js"></script>
 <script src="<?= URL::base(); ?>dist/js/particles-app.js"></script>

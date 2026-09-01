@@ -1072,7 +1072,67 @@ abstract class Helpers_Utilities {
     }
 
     /*
-     *  Get time difference between two dates provided 
+     * Resolve an IP address to an approximate geographic location
+     * (city/region/country/ISP/coordinates) via ip-api.com.
+     *
+     * City-level accuracy only (ISP-registered location, not GPS-accurate),
+     * and private/reserved IPs (LAN, VPN tunnel addresses) can't be resolved
+     * at all since they aren't globally routable.
+     *
+     * @param string $ip_address
+     * @return array{status:string,message?:string,country?:string,regionName?:string,city?:string,isp?:string,org?:string,lat?:float,lon?:float,query?:string}
+     */
+    public static function get_ip_location($ip_address) {
+        if (!filter_var($ip_address, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+            return array('status' => 'fail', 'message' => 'Private or invalid IP address, cannot be geolocated');
+        }
+
+        $context = stream_context_create(array('http' => array('timeout' => 3)));
+        $fields = 'status,message,country,regionName,city,isp,org,lat,lon,query';
+        $response = @file_get_contents("http://ip-api.com/json/{$ip_address}?fields={$fields}", false, $context);
+
+        if ($response === FALSE) {
+            return array('status' => 'fail', 'message' => 'Lookup service unavailable');
+        }
+
+        $data = json_decode($response, TRUE);
+        if (!is_array($data)) {
+            return array('status' => 'fail', 'message' => 'Invalid response from lookup service');
+        }
+
+        return $data;
+    }
+
+    /*
+     * Validate browser-reported geolocation (navigator.geolocation) values
+     * before they're stored. Returns NULLs for any component that's missing
+     * or out of range, so the caller can safely pass the result straight
+     * through to an insert.
+     *
+     * @param mixed $lat
+     * @param mixed $lng
+     * @param mixed $accuracy_meters
+     * @return array{lat:?float,lng:?float,accuracy:?int}
+     */
+    public static function validate_geo_coordinates($lat, $lng, $accuracy_meters = NULL) {
+        $lat = filter_var($lat, FILTER_VALIDATE_FLOAT);
+        $lng = filter_var($lng, FILTER_VALIDATE_FLOAT);
+
+        if ($lat === FALSE || $lng === FALSE || $lat < -90 || $lat > 90 || $lng < -180 || $lng > 180) {
+            return array('lat' => NULL, 'lng' => NULL, 'accuracy' => NULL);
+        }
+
+        $accuracy_meters = filter_var($accuracy_meters, FILTER_VALIDATE_INT, array('options' => array('min_range' => 0)));
+
+        return array(
+            'lat' => $lat,
+            'lng' => $lng,
+            'accuracy' => ($accuracy_meters === FALSE) ? NULL : $accuracy_meters,
+        );
+    }
+
+    /*
+     *  Get time difference between two dates provided
      *
      * @param int $date_first the date from which the difference need to be calculated
      * @param int $date_second the date to which the difference need to be calculated

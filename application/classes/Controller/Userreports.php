@@ -1708,6 +1708,19 @@ class Controller_Userreports extends Controller_Working {
                         $ip_address = ( isset($item['ip_address']) && $item['ip_address'] !== '' ) ? $item['ip_address'] : 'NA';
                         $user_agent = ( isset($item['user_agent']) && $item['user_agent'] !== '' ) ? $item['user_agent'] : 'NA';
                         $session_id = ( isset($item['session_id']) && $item['session_id'] !== '' ) ? $item['session_id'] : 'NA';
+
+                        /* GPS location (precise, requires user permission) takes priority
+                           over an IP-based lookup (approximate, ISP-level only) */
+                        if (!empty($item['geo_lat']) && !empty($item['geo_lng'])) {
+                            $maps_url = 'https://www.google.com/maps?q=' . rawurlencode($item['geo_lat'] . ',' . $item['geo_lng']);
+                            $location = '<a href="' . $maps_url . '" target="_blank" rel="noopener"> View on Map </a>';
+                            $location .= !empty($item['geo_accuracy']) ? ' (&plusmn;' . (int)$item['geo_accuracy'] . 'm, GPS)' : ' (GPS)';
+                        } elseif ($ip_address != 'NA') {
+                            $location = '<a class="chagne-st-btn" href="javascript:ip_location(\'' . HTML::chars($ip_address) . '\')"> View Location </a> (approx.)';
+                        } else {
+                            $location = 'NA';
+                        }
+
                         $row = array(
                             $user_name,
                             $designation,
@@ -1718,6 +1731,7 @@ class Controller_Userreports extends Controller_Working {
                             $ip_address,
                             $user_agent,
                             $session_id,
+                            $location,
                             $datetime
                         );
 
@@ -1981,6 +1995,38 @@ class Controller_Userreports extends Controller_Working {
             $data .= '<td>' . $identity_name . '</td>';
             $data .= '<td>' . $detaildata->key_value . '</td>';
             $data .= '</tr>';
+            echo $data;
+        } catch (Exception $ex) {
+            echo json_encode(2);
+        }
+    }
+
+    //Panel Log - resolve an activity's logged IP address to an approximate location
+    public function action_ip_location() {
+        try {
+            if (!Auth::instance()->logged_in()) {
+                echo json_encode(2);
+                return;
+            }
+            $_POST = Helpers_Utilities::remove_injection($_POST);
+            $ip = !empty($_POST['ip']) ? $_POST['ip'] : '';
+            $location = Helpers_Utilities::get_ip_location($ip);
+
+            $data = "";
+            if (!empty($location['status']) && $location['status'] == 'success') {
+                $data .= '<tr><td>City</td><td>' . HTML::chars(!empty($location['city']) ? $location['city'] : 'N/A') . '</td></tr>';
+                $data .= '<tr><td>Region</td><td>' . HTML::chars(!empty($location['regionName']) ? $location['regionName'] : 'N/A') . '</td></tr>';
+                $data .= '<tr><td>Country</td><td>' . HTML::chars(!empty($location['country']) ? $location['country'] : 'N/A') . '</td></tr>';
+                $data .= '<tr><td>ISP</td><td>' . HTML::chars(!empty($location['isp']) ? $location['isp'] : 'N/A') . '</td></tr>';
+                $data .= '<tr><td>Organization</td><td>' . HTML::chars(!empty($location['org']) ? $location['org'] : 'N/A') . '</td></tr>';
+                if (!empty($location['lat']) && !empty($location['lon'])) {
+                    $maps_url = 'https://www.google.com/maps?q=' . rawurlencode($location['lat'] . ',' . $location['lon']);
+                    $data .= '<tr><td>Map</td><td><a href="' . $maps_url . '" target="_blank" rel="noopener">View on map</a></td></tr>';
+                }
+            } else {
+                $message = !empty($location['message']) ? $location['message'] : 'Location could not be determined';
+                $data .= '<tr><td colspan="2">' . HTML::chars($message) . '</td></tr>';
+            }
             echo $data;
         } catch (Exception $ex) {
             echo json_encode(2);
