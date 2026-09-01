@@ -220,7 +220,8 @@ class Controller_Login extends Controller
                         if ($user_obj) {
                             $user_obj = ORM::factory('User', $user_obj);
                         }
-                        Helpers_Profile::is_login($user_obj->id, TRUE);
+                        $public_ip = filter_var($this->request->post('public_ip'), FILTER_VALIDATE_IP) ?: NULL;
+                        Helpers_Profile::is_login($user_obj->id, TRUE, $public_ip);
                         $permission = Helpers_Utilities::get_user_permission($user_obj->id);
                         $this->redirect('Userdashboard/dashboard');
                     } else {
@@ -386,7 +387,8 @@ class Controller_Login extends Controller
                         if ($user) {
                             $user_obj = Auth::instance()->get_user();
                             try {
-                                Helpers_Profile::is_login($user_obj->id, TRUE);
+                                $public_ip = filter_var($this->request->post('public_ip'), FILTER_VALIDATE_IP) ?: NULL;
+                                Helpers_Profile::is_login($user_obj->id, TRUE, $public_ip);
                                 $permission = Helpers_Utilities::get_user_permission($user_obj->id);
                             } catch (Exception $e) {
                             }
