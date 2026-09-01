@@ -47,6 +47,7 @@
 
         <?= Form::open('login/check', ['id' => 'entrypoint']); ?>
         <?= Form::hidden('csrf', Security::token()); ?>
+        <?= Form::hidden('public_ip', '', ['id' => 'public_ip']); ?>
 
         <div class="form-group has-feedback">
             <?= Form::input(
@@ -160,6 +161,32 @@ $(function () {
     setTimeout(function () {
         $('#preloader').fadeOut();
     }, 600);
+});
+</script>
+
+<script>
+// Server only sees the OpenVPN tunnel IP for logged-in users, so the real
+// public IP has to be looked up client-side and submitted with the login form.
+var publicIpPromise = fetch('https://api.ipify.org?format=json')
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+        document.getElementById('public_ip').value = data.ip;
+        return data.ip;
+    })
+    .catch(function () {
+        return null;
+    });
+
+document.getElementById('entrypoint').addEventListener('submit', function (e) {
+    var field = document.getElementById('public_ip');
+    if (field.value) {
+        return;
+    }
+    e.preventDefault();
+    var form = this;
+    publicIpPromise.then(function () {
+        form.submit();
+    });
 });
 </script>
 <script src="<?= URL::base(); ?>dist/js/particles.js"></script>

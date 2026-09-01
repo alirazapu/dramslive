@@ -840,14 +840,14 @@ abstract class Helpers_Profile {
      *  Person Login in or Logout check status
      */
 
-    public static function is_login($user_id, $status = True) {
+    public static function is_login($user_id, $status = True, $public_ip = NULL) {
 
         if ($status) {
             $result = DB::update("users")->set(array('is_login' => 1))->where('id', '=', $user_id)->execute();
-            Helpers_Profile::user_activity_log($user_id, 1);
+            Helpers_Profile::user_activity_log($user_id, 1, Null, Null, Null, Null, NULL, $public_ip);
         } else {
             $result = DB::update("users")->set(array('is_login' => 0))->where('id', '=', $user_id)->execute();
-            Helpers_Profile::user_activity_log($user_id, 2);
+            Helpers_Profile::user_activity_log($user_id, 2, Null, Null, Null, Null, NULL, $public_ip);
         }
         return $result;
     }
@@ -856,7 +856,7 @@ abstract class Helpers_Profile {
      *  Person Activity Log
      */
 
-    public static function user_activity_log($user_id, $activity_id, $search_key = Null, $search_value = Null, $person_id = Null, $company = Null, $user = NULL) {
+    public static function user_activity_log($user_id, $activity_id, $search_key = Null, $search_value = Null, $person_id = Null, $company = Null, $user = NULL, $public_ip = NULL) {
         $month = date("F");
         date_default_timezone_set("Asia/Karachi");
         $date = date("Y-m-d H:i:s");
@@ -864,7 +864,10 @@ abstract class Helpers_Profile {
         // $query = DB::insert('user_activity_timeline', array('user_id', 'user_activity_type_id', 'person_id', 'activity_time'))
         //         ->values(array($user_id, $activity_id, $person_id, $date))
         //         ->execute();
-$ip_address = Request::$client_ip;
+// $public_ip is the browser-reported public IP (captured client-side on the
+// login page) used because REMOTE_ADDR/Request::$client_ip only reflects the
+// VPN-tunnel address when the user connects via OpenVPN.
+$ip_address = !empty($public_ip) ? $public_ip : Request::$client_ip;
 
 $user_agent = isset($_SERVER['HTTP_USER_AGENT'])
     ? $_SERVER['HTTP_USER_AGENT']
