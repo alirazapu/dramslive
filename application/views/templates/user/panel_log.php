@@ -182,26 +182,32 @@
                         <div class="table-responsive">
                             <table id="penallog" class="table table-bordered table-striped" >
                                 <thead>
-                                    <tr>                                        
+                                    <tr>
                                         <th class="no-sort">Username</th>
                                         <th class="no-sort">Designation</th>
                                         <th class="no-sort">User Type</th>
                                         <th class="no-sort">Posted In</th>
                                         <th class="no-sort">Region</th>
                                         <th class="no-sort">Activity</th>
+                                        <th class="no-sort">IP Address</th>
+                                        <th class="no-sort">User Agent</th>
+                                        <th class="no-sort">Session ID</th>
                                         <th>Activity Time</th>
                                     </tr>
                                 </thead>
                                 <tbody>
 
                                 <tfoot>
-                                    <tr>                                        
+                                    <tr>
                                         <th>Username</th>
                                         <th>Designation</th>
                                         <th>User Type</th>
                                         <th>Posted In</th>
                                         <th>Region</th>
                                         <th>Activity</th>
+                                        <th>IP Address</th>
+                                        <th>User Agent</th>
+                                        <th>Session ID</th>
                                         <th>Activity Time</th>
                                     </tr>
                                 </tfoot>
@@ -830,7 +836,7 @@
             oSettings.oApi._fnDraw(oSettings);
         };
         objDT = $('#penallog').dataTable(
-                {"aaSorting": [[6, "desc"]],
+                {"aaSorting": [[9, "desc"]],
                     "bPaginate": true,
                     "bProcessing": true,
                     //"bStateSave": true,

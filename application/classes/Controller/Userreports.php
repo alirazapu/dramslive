@@ -1705,6 +1705,9 @@ class Controller_Userreports extends Controller_Working {
                                 $activity = ( isset($item['user_activity_type_id']) ) ? Helpers_Utilities::get_user_activity_name($item['user_activity_type_id']) : 'NA';
                         }
                         $datetime = ( isset($item['activity_time']) ) ? $item['activity_time'] : 'NA';
+                        $ip_address = ( isset($item['ip_address']) && $item['ip_address'] !== '' ) ? $item['ip_address'] : 'NA';
+                        $user_agent = ( isset($item['user_agent']) && $item['user_agent'] !== '' ) ? $item['user_agent'] : 'NA';
+                        $session_id = ( isset($item['session_id']) && $item['session_id'] !== '' ) ? $item['session_id'] : 'NA';
                         $row = array(
                             $user_name,
                             $designation,
@@ -1712,6 +1715,9 @@ class Controller_Userreports extends Controller_Working {
                             $district,
                             $region,
                             $activity,
+                            $ip_address,
+                            $user_agent,
+                            $session_id,
                             $datetime
                         );
 
