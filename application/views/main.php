@@ -45,6 +45,8 @@
         <br/><br/>
         <p>Enter your username and password</p>
 
+        <?php $account_disabled = !empty($account_disabled); ?>
+
         <?= Form::open('login/check', ['id' => 'entrypoint']); ?>
         <?= Form::hidden('csrf', Security::token()); ?>
         <?= Form::hidden('public_ip', '', ['id' => 'public_ip']); ?>
@@ -56,7 +58,9 @@
             <?= Form::input(
                 'username',
                 HTML::chars(Arr::get($_POST, 'username')),
-                ['class' => 'form-control', 'placeholder' => 'Username']
+                $account_disabled
+                    ? ['class' => 'form-control', 'placeholder' => 'Username', 'disabled' => 'disabled']
+                    : ['class' => 'form-control', 'placeholder' => 'Username']
             ); ?>
             <span class="glyphicon glyphicon-user form-control-feedback"></span>
         </div>
@@ -65,7 +69,9 @@
             <?= Form::password(
                 'password',
                 '',
-                ['class' => 'form-control', 'placeholder' => 'Password']
+                $account_disabled
+                    ? ['class' => 'form-control', 'placeholder' => 'Password', 'disabled' => 'disabled']
+                    : ['class' => 'form-control', 'placeholder' => 'Password']
             ); ?>
             <span class="glyphicon glyphicon-lock form-control-feedback"></span>
         </div>
@@ -84,7 +90,10 @@
 
         <div class="row">
             <div class="col-xs-12">
-                <?= Form::submit('login', 'Sign In', ['class' => 'btn btn-primary btn-block']); ?>
+                <?= Form::submit('login', 'Sign In', $account_disabled
+                    ? ['class' => 'btn btn-primary btn-block', 'disabled' => 'disabled']
+                    : ['class' => 'btn btn-primary btn-block']
+                ); ?>
             </div>
         </div>
 

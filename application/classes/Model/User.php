@@ -1563,6 +1563,14 @@ echo $sql; exit;
         return $query;
     }
 
+    // Update user's WhatsApp/contact mobile number
+    public function update_user_mobile_number($user_id, $mobile_number) {
+        $query = DB::update('users_profile')->set(array('mobile_number' => $mobile_number))
+                ->where('user_id', '=', $user_id)
+                ->execute();
+        return $query;
+    }
+
     public static function bulk_data_person($data, $bulk_search_cnic, $count) {
         $foreigner_subquery = '';
         $local_subquery = '';

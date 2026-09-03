@@ -34,6 +34,7 @@ class Controller_Login extends Controller
 
                 // Token is valid → log in the user
                 Auth::instance()->force_login($user);
+                $this->start_single_session($user);
 
                 // Remove token after use (one-time login)
                 $user->login_token   = NULL;
@@ -193,6 +194,9 @@ class Controller_Login extends Controller
         $check_ip_exist = Helpers_Utilities::checkblockIP($current_ip, $block_user_name);
 
         if (!Auth::instance()->logged_in()) {
+            $name = FALSE;
+            $psw = FALSE;
+
             try {
                 if (!empty($_POST['username']) || !empty($_POST['password'])) {
                     $name = Helpers_Utilities::your_php_validation($_POST['username'], 'alphanumricdecimal', 8, 20);
@@ -204,6 +208,24 @@ class Controller_Login extends Controller
             } catch (Exception $e) {
 
             }
+
+            // Look up the account being attempted (if any) so wrong-password
+            // attempts count toward the per-account lockout below, even when
+            // the submitted value fails the format check further down - it's
+            // still a wrong-password attempt against a real account either way.
+            $login_account = (!empty($_POST['username']) && $_POST['username'] !== 'na')
+                ? ORM::factory('User')->where('username', '=', $_POST['username'])->find()
+                : ORM::factory('User');
+
+            if ($login_account->loaded() && (int)$login_account->is_active === 0) {
+                $message = "Your account has been disabled due to multiple failed login attempts. Please contact the administrator.";
+                $view = View::factory('main')->bind('message', $message);
+                $view->account_disabled = TRUE;
+                $view->roles = Helpers_Utilities::get_roles_data();
+                $this->response->body($view);
+                return;
+            }
+
             if ($name == TRUE && $psw == TRUE) {
                 $_POST = Helpers_Utilities::remove_injection($_POST);
                 $request = !empty($_POST['type']) ? $_POST['type'] : '';
@@ -213,22 +235,72 @@ class Controller_Login extends Controller
                 $message = 'error';
                 if (HTTP_Request::POST == $this->request->method()) {
                     $remember = array_key_exists('remember', $this->request->post()) ? (bool)$this->request->post('remember') : FALSE;
-                    $user = Auth::instance()->login($this->request->post('username'), $this->request->post('password'), $remember, $request);
+
+                    // Remember-me is not honoured until after OTP verification below,
+                    // so the autologin cookie can't be used to skip the OTP step.
+                    $user = Auth::instance()->login($this->request->post('username'), $this->request->post('password'), FALSE, $request);
                     if ($user) {
 
                         $user_obj = Auth::instance()->get_user();
                         if ($user_obj) {
                             $user_obj = ORM::factory('User', $user_obj);
                         }
+
+                        if ($login_account->loaded() && (int)$login_account->failed_login_attempts !== 0) {
+                            $login_account->failed_login_attempts = 0;
+                            $login_account->save();
+                        }
+
                         $public_ip = filter_var($this->request->post('public_ip'), FILTER_VALIDATE_IP) ?: NULL;
                         $geo = Helpers_Utilities::validate_geo_coordinates($this->request->post('geo_lat'), $this->request->post('geo_lng'), $this->request->post('geo_accuracy'));
-                        Helpers_Profile::is_login($user_obj->id, TRUE, $public_ip, $geo['lat'], $geo['lng'], $geo['accuracy']);
-                        $permission = Helpers_Utilities::get_user_permission($user_obj->id);
-                        $this->redirect('Userdashboard/dashboard');
+
+                        // Password was correct, but log back out immediately: the
+                        // user isn't signed in until the WhatsApp OTP is verified
+                        // (see action_otp / action_verify_otp below).
+                        Auth::instance()->logout();
+
+                        $profile = Helpers_Profile::get_user_perofile($user_obj->id);
+                        $mobile_number = !empty($profile->mobile_number) ? $profile->mobile_number : NULL;
+
+                        if ($mobile_number) {
+                            $otp = Helpers_Whatsapp::generate_otp();
+
+                            Session::instance()->set('otp_pending', array(
+                                'user_id'   => $user_obj->id,
+                                'code'      => $otp,
+                                'expires'   => time() + (int)Kohana::$config->load('whatsapp')->get('otp_ttl', 300),
+                                'attempts'  => 0,
+                                'remember'  => $remember,
+                                'public_ip' => $public_ip,
+                                'geo'       => $geo,
+                            ));
+
+                            $sent = Helpers_Whatsapp::send_otp($mobile_number, $otp);
+
+                            if ($sent['status']) {
+                                $this->redirect('login/otp');
+                            }
+
+                            // WhatsApp send failed - don't lock the user out over a gateway hiccup.
+                            try {
+                                Kohana::$log->add(Log::ERROR, 'WhatsApp OTP send failed: ' . (isset($sent['message']) ? $sent['message'] : 'unknown error'));
+                            } catch (Exception $e) {
+                            }
+                            Session::instance()->delete('otp_pending');
+                            $this->complete_login_and_redirect($user_obj, $remember, $public_ip, $geo);
+                        } else {
+                            // No WhatsApp number on file - can't verify OTP, so don't log in.
+                            $message = "No WhatsApp number found on your account. Please contact the administrator.";
+                            $view = View::factory('main')->bind('message', $message);
+                            $view->roles = Helpers_Utilities::get_roles_data();
+                            $this->response->body($view);
+                        }
                     } else {
                         $_SESSION["attempts"] = $_SESSION["attempts"] + 1;
-                        $message = "Login Fail";
+                        $message = $login_account->loaded() ? $this->register_failed_login($login_account) : "Login Fail";
+
                         $view = View::factory('main')->bind('message', $message);
+                        $view->account_disabled = $login_account->loaded() && (int)$login_account->is_active === 0;
                         $view->roles = Helpers_Utilities::get_roles_data();
                         $this->response->body($view);
                     }
@@ -240,9 +312,10 @@ class Controller_Login extends Controller
                     $this->response->body($view);
                 }
             } else {
-                $message = "Please enter correct input";
+                $message = $login_account->loaded() ? $this->register_failed_login($login_account) : "Please enter correct input";
                 $view = View::factory('main')                                           //->set('places', array('Rome', 'Paris', 'London', 'New York', 'Tokyo'));
                 ->bind('message', $message);                                       //$this->response->body(View::factory('main'));
+                $view->account_disabled = $login_account->loaded() && (int)$login_account->is_active === 0;
                 $view->roles = Helpers_Utilities::get_roles_data();
                 $this->response->body($view);
             }
@@ -387,6 +460,7 @@ class Controller_Login extends Controller
                         $user = Auth::instance()->login($this->request->post('username'), $this->request->post('password'), $remember, $request);
                         if ($user) {
                             $user_obj = Auth::instance()->get_user();
+                            $this->start_single_session($user_obj);
                             try {
                                 $public_ip = filter_var($this->request->post('public_ip'), FILTER_VALIDATE_IP) ?: NULL;
                                 $geo = Helpers_Utilities::validate_geo_coordinates($this->request->post('geo_lat'), $this->request->post('geo_lng'), $this->request->post('geo_accuracy'));
@@ -449,6 +523,165 @@ class Controller_Login extends Controller
             $_SESSION["attempts"] = 0;
             $this->response->body(View::factory('templates/user/block'));
         }
+    }
+
+    /* WhatsApp OTP verification (second factor after password) */
+
+    public function action_otp()
+    {
+        $pending = Session::instance()->get('otp_pending');
+
+        if (empty($pending)) {
+            $this->redirect('login');
+        }
+
+        $message = Session::instance()->get_once('otp_message');
+        $seconds_left = max(0, $pending['expires'] - time());
+
+        $view = View::factory('templates/user/otp')
+            ->bind('message', $message)
+            ->bind('seconds_left', $seconds_left);
+        $this->response->body($view);
+    }
+
+    public function action_verify_otp()
+    {
+        $pending = Session::instance()->get('otp_pending');
+
+        if (empty($pending)) {
+            $this->redirect('login');
+        }
+
+        if (HTTP_Request::POST != $this->request->method()) {
+            $this->redirect('login/otp');
+        }
+
+        if (time() > $pending['expires']) {
+            Session::instance()->delete('otp_pending');
+            Session::instance()->set('error_message', 'Your OTP has expired. Please log in again.');
+            $this->redirect('login');
+        }
+
+        $entered = trim((string)$this->request->post('otp'));
+
+        if ($entered === '' || !hash_equals((string)$pending['code'], $entered)) {
+            $pending['attempts']++;
+
+            if ($pending['attempts'] >= 5) {
+                Session::instance()->delete('otp_pending');
+                Session::instance()->set('error_message', 'Too many incorrect attempts. Please log in again.');
+                $this->redirect('login');
+            }
+
+            Session::instance()->set('otp_pending', $pending);
+            Session::instance()->set('otp_message', 'Incorrect code. Please try again.');
+            $this->redirect('login/otp');
+        }
+
+        $user_obj = ORM::factory('User', $pending['user_id']);
+
+        Session::instance()->delete('otp_pending');
+
+        $this->complete_login_and_redirect($user_obj, $pending['remember'], $pending['public_ip'], $pending['geo']);
+    }
+
+    public function action_resend_otp()
+    {
+        $pending = Session::instance()->get('otp_pending');
+
+        if (empty($pending)) {
+            $this->redirect('login');
+        }
+
+        $user_obj = ORM::factory('User', $pending['user_id']);
+        $profile = Helpers_Profile::get_user_perofile($user_obj->id);
+        $mobile_number = !empty($profile->mobile_number) ? $profile->mobile_number : NULL;
+
+        if ($mobile_number) {
+            $otp = Helpers_Whatsapp::generate_otp();
+
+            $pending['code'] = $otp;
+            $pending['expires'] = time() + (int)Kohana::$config->load('whatsapp')->get('otp_ttl', 300);
+            $pending['attempts'] = 0;
+            Session::instance()->set('otp_pending', $pending);
+
+            $sent = Helpers_Whatsapp::send_otp($mobile_number, $otp);
+            Session::instance()->set('otp_message', $sent['status'] ? 'A new code has been sent.' : 'Failed to resend code, please try again.');
+        }
+
+        $this->redirect('login/otp');
+    }
+
+    /**
+     * Restrict the account to a single active browser session: mint a fresh
+     * token, store it on the user row, and stash it in this session. Any
+     * other session carrying an older token gets kicked out on its next
+     * request (see Controller_Working::before()).
+     */
+    private function start_single_session($user_obj)
+    {
+        $token = bin2hex(random_bytes(32));
+
+        $user_obj->current_session_token = $token;
+        $user_obj->save();
+
+        Session::instance()->set('session_token', $token);
+    }
+
+    /**
+     * Count a wrong-password attempt against an account; disable it
+     * (is_active = 0) once it reaches 3. Returns the flash message to show
+     * on the login page, including how many attempts are left.
+     */
+    private function register_failed_login($login_account)
+    {
+        $login_account->failed_login_attempts = (int)$login_account->failed_login_attempts + 1;
+
+        if ($login_account->failed_login_attempts >= 3) {
+            $login_account->is_active = 0;
+            $login_account->save();
+
+            return "Your account has been disabled due to multiple failed login attempts. Please contact the administrator.";
+        }
+
+        $login_account->save();
+
+        $remaining = 3 - $login_account->failed_login_attempts;
+        return "Login Fail. {$remaining} attempt(s) remaining before your account is locked.";
+    }
+
+    /**
+     * Finish logging a user in after OTP verification (or immediately, for
+     * users without a WhatsApp number on file): force the auth session,
+     * recreate the remember-me autologin cookie if requested, record the
+     * login, and redirect to the dashboard.
+     */
+    private function complete_login_and_redirect($user_obj, $remember, $public_ip, $geo)
+    {
+        if (!Auth::instance()->logged_in()) {
+            Auth::instance()->force_login($user_obj);
+        }
+
+        $this->start_single_session($user_obj);
+
+        if ($remember === TRUE) {
+            $auth_config = Kohana::$config->load('auth');
+            $token = ORM::factory('User_Token')->values(array(
+                'user_id'    => $user_obj->pk(),
+                'expires'    => time() + $auth_config->get('lifetime'),
+                'user_agent' => sha1(Request::$user_agent),
+            ))->create();
+            Cookie::set('authautologin', $token->token, $auth_config->get('lifetime'));
+        }
+
+        try {
+            Helpers_Profile::is_login($user_obj->id, TRUE, $public_ip, $geo['lat'], $geo['lng'], $geo['accuracy']);
+            Helpers_Utilities::get_user_permission($user_obj->id);
+        } catch (Exception $e) {
+
+        }
+
+        $this->redirect('Userdashboard/dashboard');
     }
 
 }

@@ -31,6 +31,14 @@ class Controller_Working extends Controller_Template {
         //Helpers_Layout::get_query_string();
 
         parent::before();
+
+        // Authenticated pages must never be served from the browser's disk
+        // cache or back/forward cache - otherwise a kicked-out session (see
+        // the single-session check below) can still appear "logged in" from
+        // a stale cached render that never re-hits the server.
+        $this->response->headers('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+        $this->response->headers('Pragma', 'no-cache');
+
         $controller = $this->request->controller();
         $action = $this->request->action();
         $data1 = 'yasers22';
@@ -42,6 +50,18 @@ class Controller_Working extends Controller_Template {
 								$user = ORM::factory('User', $user);
 							}
         if(isset($user->id)) {
+            // Single-session enforcement: a newer login elsewhere overwrites
+            // current_session_token, which invalidates this session here.
+            $session_token = Session::instance()->get('session_token');
+            if (empty($session_token) || $session_token !== $user->current_session_token) {
+                // logout(FALSE, ...) only clears the auth key and regenerates
+                // the session id - logout(TRUE, ...) would fully destroy the
+                // session and silently drop the flash message set below.
+                Auth::instance()->logout(FALSE, TRUE);
+                Session::instance()->set('error_message', 'You have been logged out because your account was signed in from another browser or device.');
+                $this->redirect('login');
+            }
+
             $this->role_id = Helpers_Utilities::get_user_role_id($user->id);
             //  Session::instance('native');
             if (!empty($user->id))

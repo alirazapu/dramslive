@@ -2195,12 +2195,16 @@ class Controller_User extends Controller_Working {
 
     public function action_logout() {
         try {
-            //Auth::instance()->logout();	
+            //Auth::instance()->logout();
             $user_obj = Auth::instance()->get_user();
             Helpers_Profile::is_login($user_obj->id, False);
+            if ($user_obj) {
+                $user_obj->current_session_token = NULL;
+                $user_obj->save();
+            }
             Auth::instance()->logout(TRUE, TRUE);
         } catch (Exception $e) {
-            
+
         }
         $this->redirect();
     }
@@ -3360,6 +3364,32 @@ class Controller_User extends Controller_Working {
                 echo json_encode(6);
             }
         } catch (Exception $ex) {            
+            echo json_encode(6);
+        }
+    }
+
+    // Update a user's WhatsApp/contact mobile number (used for login OTP)
+    public function action_update_mobile_number() {
+        try {
+            $login_user = Auth::instance()->get_user();
+            $permission = Helpers_Utilities::get_user_permission($login_user->id);
+
+            if ($permission != 1 && $permission != 5) {
+                echo json_encode(6);
+                return;
+            }
+
+            $user_id = !empty($_POST['user_id']) ? (int)$_POST['user_id'] : 0;
+            $mobile_number = !empty($_POST['mobile_number']) ? trim($_POST['mobile_number']) : '';
+
+            if (!empty($user_id) && preg_match('/^[0-9]{7,15}$/', $mobile_number)) {
+                $model_reference = new Model_User();
+                $result = $model_reference->update_user_mobile_number($user_id, $mobile_number);
+                echo json_encode($result);
+            } else {
+                echo json_encode(6);
+            }
+        } catch (Exception $ex) {
             echo json_encode(6);
         }
     }

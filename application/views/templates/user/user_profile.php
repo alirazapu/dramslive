@@ -86,7 +86,15 @@
                             </div>  
                             <div class="form-group col-md-3">
                                 <label for="mobile_number">Mobile Number</label>
+                                <?php if ($permission == 1 || $permission == 5) { ?>
+                                <form class="ipf-form" name="memberform" action="<?php echo url::site().'user/update_mobile_number'?>" id="update_mobile" method="post">
+                                    <input type="hidden" name="user_id" value="<?php echo $data->user_id; ?>">
+                                    <input type="number" class="form-control" id="mobile_number" name="mobile_number" value="<?php echo $data->mobile_number; ?>" placeholder="Enter Mobile Number">
+                                    <button type="submit" class="btn btn-primary btn-sm" style="margin-top: 6px;">Update</button>
+                                </form>
+                                <?php } else { ?>
                                 <input disabled type="number" class="form-control" id="mobile_number" name="mobile_number" value="<?php echo $data->mobile_number; ?>" placeholder="Enter Mobile Number">
+                                <?php } ?>
                             </div>
                             <div class="form-group col-md-3">
                                 <label for="mobile_number">CNIC Number</label>
@@ -299,14 +307,39 @@
                         cache: false,
                         contentType: false,
                         processData: false,
-                        success: function (msg) {                            
+                        success: function (msg) {
                             if (msg == 1) {
                                 swal("Congratulations!", "User Role Updated Successfully.", "success");
                                 location.reload();
                              }else{
                                 swal("System Error", "Contact Support Team.", "error");
                             }
-                            
+
+                        },
+                        error: function (data) {
+                        console.log("error");
+                        console.log(data);
+                        }
+                    });
+                });
+             $('#update_mobile').on('submit', function (e) {
+                 e.preventDefault();
+                 var formData = new FormData(this);
+                $.ajax({
+                        type: 'POST',
+                        url: $(this).attr('action'),
+                        data: formData,
+                        cache: false,
+                        contentType: false,
+                        processData: false,
+                        success: function (msg) {
+                            if (msg == 1) {
+                                swal("Congratulations!", "Mobile Number Updated Successfully.", "success");
+                                location.reload();
+                             }else{
+                                swal("System Error", "Please enter a valid mobile number (7-15 digits).", "error");
+                            }
+
                         },
                         error: function (data) {
                         console.log("error");
