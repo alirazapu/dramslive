@@ -42,7 +42,8 @@ class Helpers_Whatsapp {
         curl_setopt_array($ch, array(
             CURLOPT_URL            => $url,
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 30,
+            CURLOPT_CONNECTTIMEOUT => (int) self::config()->get('connect_timeout', 5),
+            CURLOPT_TIMEOUT        => (int) self::config()->get('timeout', 15),
         ));
 
         $response  = curl_exec($ch);
@@ -130,6 +131,14 @@ class Helpers_Whatsapp {
      */
     public static function send_message($mobile_number, $message)
     {
+        if (self::api_key() === NULL || self::api_key() === '' || self::config()->get('base_url') === NULL)
+        {
+            return array(
+                'status'  => false,
+                'message' => 'WhatsApp gateway is not configured.',
+            );
+        }
+
         $account = self::get_connected_account();
 
         if (!$account)
@@ -156,7 +165,8 @@ class Helpers_Whatsapp {
             CURLOPT_POST           => true,
             CURLOPT_POSTFIELDS     => $post_data,
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 30,
+            CURLOPT_CONNECTTIMEOUT => (int) self::config()->get('connect_timeout', 5),
+            CURLOPT_TIMEOUT        => (int) self::config()->get('timeout', 15),
         ));
 
         $response  = curl_exec($ch);
@@ -172,18 +182,39 @@ class Helpers_Whatsapp {
 
         curl_close($ch);
 
-        if ($http_code === 200)
+        if ($http_code !== 200)
         {
             return array(
-                'status' => true,
-                'data'   => json_decode($response, true),
+                'status'  => false,
+                'message' => 'HTTP Error ' . $http_code,
+            );
+        }
+
+        // [!!] The gateway answers HTTP 200 even when it rejects the request -
+        // failures come back as {"status":401|400|404,...}. Only the body's
+        // own status field says whether the message was actually queued, so
+        // HTTP 200 alone must never be treated as success.
+        $body = json_decode($response, true);
+
+        if (!is_array($body) || !isset($body['status']))
+        {
+            return array(
+                'status'  => false,
+                'message' => 'Malformed gateway response',
+            );
+        }
+
+        if ((int) $body['status'] !== 200)
+        {
+            return array(
+                'status'  => false,
+                'message' => 'Gateway error ' . (int) $body['status'] . ': ' . (isset($body['message']) ? $body['message'] : 'unknown'),
             );
         }
 
         return array(
-            'status'   => false,
-            'message'  => 'HTTP Error ' . $http_code,
-            'response' => $response,
+            'status' => true,
+            'data'   => $body,
         );
     }
 

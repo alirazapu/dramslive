@@ -131,6 +131,28 @@ if ($env_var) {
     Kohana::$environment = Kohana::PRODUCTION;
 }
 
+// The env var above selects the *environment* (and therefore the database),
+// but the base URL must follow the host the request actually arrived on -
+// otherwise browsing dev.ctd.drams.com emits ctd.drams.com in every form
+// action and redirect, bouncing the user onto a different host mid-flow
+// (which breaks the login/OTP round-trip outright).
+// Whitelisted so a forged Host header cannot rewrite our generated URLs.
+$allowed_hosts = [
+    'ctd.drams.com',
+    'dev.ctd.drams.com',
+    'stage.ctd.drams.com',
+    'test.ctd.drams.com',
+];
+
+if (!empty($_SERVER['HTTP_HOST'])) {
+    $request_host = strtolower($_SERVER['HTTP_HOST']);
+    $host_only    = explode(':', $request_host)[0];
+
+    if (in_array($host_only, $allowed_hosts, TRUE)) {
+        $base_url = $scheme . $request_host;
+    }
+}
+
 Kohana::init([
     'base_url'   => $base_url,
     'index_file' => false,

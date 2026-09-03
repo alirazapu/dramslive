@@ -32,7 +32,7 @@
         <h3>Verify it's you</h3>
         <b style="color:#40a64a">DRAMS - Digital Records Analysis &amp; Monitoring System</b>
         <br/><br/>
-        <p>We sent a verification code to your WhatsApp number. Enter it below to continue.</p>
+        <p>We sent a verification code to your <?= ($channel === 'email') ? 'e-mail address' : 'WhatsApp number'; ?>. Enter it below to continue.</p>
 
         <p id="otp-timer" style="font-weight:bold;"></p>
 
@@ -76,6 +76,7 @@
 <script>
 (function () {
     var secondsLeft = <?= (int)$seconds_left; ?>;
+    var resendCooldown = <?= (int)$resend_in; ?>;
     var timerEl = document.getElementById('otp-timer');
     var submitBtn = document.getElementById('otp-submit');
     var resendBtn = document.getElementById('resend-btn');
@@ -89,14 +90,19 @@
             return;
         }
         timerEl.style.color = '';
-        timerEl.textContent = 'Code expires in 0:' + (secondsLeft < 10 ? '0' : '') + secondsLeft;
-        resendBtn.disabled = true;
+        var mins = Math.floor(secondsLeft / 60);
+        var secs = secondsLeft % 60;
+        timerEl.textContent = 'Code expires in ' + mins + ':' + (secs < 10 ? '0' : '') + secs;
+        resendBtn.disabled = resendCooldown > 0;
     }
 
     render();
 
     var interval = setInterval(function () {
         secondsLeft--;
+        if (resendCooldown > 0) {
+            resendCooldown--;
+        }
         render();
         if (secondsLeft <= 0) {
             clearInterval(interval);

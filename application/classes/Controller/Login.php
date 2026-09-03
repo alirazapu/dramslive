@@ -259,42 +259,41 @@ class Controller_Login extends Controller
                         // (see action_otp / action_verify_otp below).
                         Auth::instance()->logout();
 
-                        $profile = Helpers_Profile::get_user_perofile($user_obj->id);
-                        $mobile_number = !empty($profile->mobile_number) ? $profile->mobile_number : NULL;
-
-                        if ($mobile_number) {
-                            $otp = Helpers_Whatsapp::generate_otp();
-
-                            Session::instance()->set('otp_pending', array(
-                                'user_id'   => $user_obj->id,
-                                'code'      => $otp,
-                                'expires'   => time() + (int)Kohana::$config->load('whatsapp')->get('otp_ttl', 300),
-                                'attempts'  => 0,
-                                'remember'  => $remember,
-                                'public_ip' => $public_ip,
-                                'geo'       => $geo,
-                            ));
-
-                            $sent = Helpers_Whatsapp::send_otp($mobile_number, $otp);
-
-                            if ($sent['status']) {
-                                $this->redirect('login/otp');
-                            }
-
-                            // WhatsApp send failed - don't lock the user out over a gateway hiccup.
-                            try {
-                                Kohana::$log->add(Log::ERROR, 'WhatsApp OTP send failed: ' . (isset($sent['message']) ? $sent['message'] : 'unknown error'));
-                            } catch (Exception $e) {
-                            }
-                            Session::instance()->delete('otp_pending');
+                        // OTP is a per-account opt-in (users.is_login_otp_enabled).
+                        // Accounts without it keep the original login behaviour.
+                        if ((int)$user_obj->is_login_otp_enabled !== 1) {
                             $this->complete_login_and_redirect($user_obj, $remember, $public_ip, $geo);
-                        } else {
-                            // No WhatsApp number on file - can't verify OTP, so don't log in.
-                            $message = "No WhatsApp number found on your account. Please contact the administrator.";
-                            $view = View::factory('main')->bind('message', $message);
-                            $view->roles = Helpers_Utilities::get_roles_data();
-                            $this->response->body($view);
+                            return;
                         }
+
+                        $otp = Helpers_Whatsapp::generate_otp();
+
+                        Session::instance()->set('otp_pending', array(
+                            'user_id'     => $user_obj->id,
+                            'code_hash'   => hash('sha256', $otp),
+                            'expires'     => time() + (int)Kohana::$config->load('whatsapp')->get('otp_ttl', 300),
+                            'attempts'    => 0,
+                            'resend_at'   => time() + (int)Kohana::$config->load('whatsapp')->get('resend_cooldown', 30),
+                            'resends'     => 0,
+                            'remember'    => $remember,
+                            'public_ip'   => $public_ip,
+                            'geo'         => $geo,
+                        ));
+
+                        $delivery = $this->deliver_otp($user_obj, $otp);
+
+                        if ($delivery['status']) {
+                            Session::instance()->set('otp_channel', $delivery['channel']);
+                            $this->redirect('login/otp');
+                        }
+
+                        // Neither WhatsApp nor e-mail could deliver the code. The
+                        // account has OTP enabled, so we must NOT sign the user in.
+                        Session::instance()->delete('otp_pending');
+                        $message = "We could not send your verification code. Please try again or contact the administrator.";
+                        $view = View::factory('main')->bind('message', $message);
+                        $view->roles = Helpers_Utilities::get_roles_data();
+                        $this->response->body($view);
                     } else {
                         $_SESSION["attempts"] = $_SESSION["attempts"] + 1;
                         $message = $login_account->loaded() ? $this->register_failed_login($login_account) : "Login Fail";
@@ -537,9 +536,13 @@ class Controller_Login extends Controller
 
         $message = Session::instance()->get_once('otp_message');
         $seconds_left = max(0, $pending['expires'] - time());
+        $channel = Session::instance()->get('otp_channel', 'whatsapp');
+        $resend_in = max(0, (int)Arr::get($pending, 'resend_at', 0) - time());
 
         $view = View::factory('templates/user/otp')
             ->bind('message', $message)
+            ->bind('channel', $channel)
+            ->bind('resend_in', $resend_in)
             ->bind('seconds_left', $seconds_left);
         $this->response->body($view);
     }
@@ -564,7 +567,7 @@ class Controller_Login extends Controller
 
         $entered = trim((string)$this->request->post('otp'));
 
-        if ($entered === '' || !hash_equals((string)$pending['code'], $entered)) {
+        if ($entered === '' || !hash_equals((string)$pending['code_hash'], hash('sha256', $entered))) {
             $pending['attempts']++;
 
             if ($pending['attempts'] >= 5) {
@@ -593,23 +596,112 @@ class Controller_Login extends Controller
             $this->redirect('login');
         }
 
+        $config = Kohana::$config->load('whatsapp');
+        $max_resends = (int)$config->get('max_resends', 3);
+        $cooldown = (int)$config->get('resend_cooldown', 30);
+
+        // Server-side cooldown: the disabled button in the view is only a hint.
+        if (isset($pending['resend_at']) && time() < $pending['resend_at']) {
+            Session::instance()->set('otp_message', 'Please wait a moment before requesting another code.');
+            $this->redirect('login/otp');
+        }
+
+        if ((int)Arr::get($pending, 'resends', 0) >= $max_resends) {
+            Session::instance()->delete('otp_pending');
+            Session::instance()->set('error_message', 'Too many code requests. Please log in again.');
+            $this->redirect('login');
+        }
+
         $user_obj = ORM::factory('User', $pending['user_id']);
+        $otp = Helpers_Whatsapp::generate_otp();
+
+        // Issuing a new code replaces the old one and resets the guess counter.
+        $pending['code_hash'] = hash('sha256', $otp);
+        $pending['expires']   = time() + (int)$config->get('otp_ttl', 300);
+        $pending['attempts']  = 0;
+        $pending['resends']   = (int)Arr::get($pending, 'resends', 0) + 1;
+        $pending['resend_at'] = time() + $cooldown;
+        Session::instance()->set('otp_pending', $pending);
+
+        $delivery = $this->deliver_otp($user_obj, $otp);
+
+        if ($delivery['status']) {
+            Session::instance()->set('otp_channel', $delivery['channel']);
+        }
+
+        Session::instance()->set('otp_message', $delivery['status'] ? 'A new code has been sent.' : 'Failed to resend code, please try again.');
+
+        $this->redirect('login/otp');
+    }
+
+    /**
+     * Deliver a login OTP: WhatsApp first, e-mail as fallback.
+     *
+     * E-mail is attempted ONLY when WhatsApp did not actually deliver -
+     * missing number, missing/invalid gateway config, network/timeout
+     * failure, or a provider-level rejection. The SAME code is used for
+     * both channels so a late-arriving WhatsApp message stays valid.
+     *
+     * @return array ['status' => bool, 'channel' => 'whatsapp'|'email'|NULL]
+     */
+    private function deliver_otp($user_obj, $otp)
+    {
         $profile = Helpers_Profile::get_user_perofile($user_obj->id);
         $mobile_number = !empty($profile->mobile_number) ? $profile->mobile_number : NULL;
 
         if ($mobile_number) {
-            $otp = Helpers_Whatsapp::generate_otp();
-
-            $pending['code'] = $otp;
-            $pending['expires'] = time() + (int)Kohana::$config->load('whatsapp')->get('otp_ttl', 300);
-            $pending['attempts'] = 0;
-            Session::instance()->set('otp_pending', $pending);
-
             $sent = Helpers_Whatsapp::send_otp($mobile_number, $otp);
-            Session::instance()->set('otp_message', $sent['status'] ? 'A new code has been sent.' : 'Failed to resend code, please try again.');
+
+            if (!empty($sent['status'])) {
+                return array('status' => TRUE, 'channel' => 'whatsapp');
+            }
+
+            $this->log_otp_failure('WhatsApp', $user_obj->id, Arr::get($sent, 'message', 'unknown error'));
+        } else {
+            $this->log_otp_failure('WhatsApp', $user_obj->id, 'no mobile number on file');
         }
 
-        $this->redirect('login/otp');
+        // --- Fallback: e-mail ---
+        if (empty($user_obj->email)) {
+            $this->log_otp_failure('Email', $user_obj->id, 'no e-mail address on file');
+            return array('status' => FALSE, 'channel' => NULL);
+        }
+
+        $ttl_minutes = max(1, (int)round(Kohana::$config->load('whatsapp')->get('otp_ttl', 300) / 60));
+        $unit = $ttl_minutes === 1 ? 'minute' : 'minutes';
+
+        $body = '<p>Your DRAMS login verification code is: <b>' . HTML::chars($otp) . '</b></p>'
+              . '<p>This code expires in ' . $ttl_minutes . ' ' . $unit . '. Do not share it with anyone.</p>';
+
+        try {
+            $result = Helpers_Email::send_email($user_obj->email, $user_obj->username, 'DRAMS login verification code', $body);
+        } catch (Exception $e) {
+            $this->log_otp_failure('Email', $user_obj->id, $e->getMessage());
+            return array('status' => FALSE, 'channel' => NULL);
+        }
+
+        if ((int)$result === 1) {
+            return array('status' => TRUE, 'channel' => 'email');
+        }
+
+        $this->log_otp_failure('Email', $user_obj->id, 'SMTP send returned ' . var_export($result, TRUE));
+
+        return array('status' => FALSE, 'channel' => NULL);
+    }
+
+    /**
+     * Record a failed OTP delivery. Never logs the code itself.
+     */
+    private function log_otp_failure($channel, $user_id, $reason)
+    {
+        try {
+            Kohana::$log->add(Log::ERROR, 'OTP delivery failed via :channel for user :user - :reason', array(
+                ':channel' => $channel,
+                ':user'    => $user_id,
+                ':reason'  => $reason,
+            ));
+        } catch (Exception $e) {
+        }
     }
 
     /**

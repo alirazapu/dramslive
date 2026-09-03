@@ -20,3 +20,6 @@ dramsfiles/*
 uploads/htaccess/index.php
 application/config/database.php
 /.claude
+
+# WhatsApp gateway credentials (local only)
+application/config/whatsapp.local.php
