@@ -66,6 +66,189 @@ class Helpers_Whatsapp {
     }
 
     /**
+     * Health-check the gateway before an OTP is handed to it.
+     *
+     * Hits /api/get/devices and reports only whether the API answered at
+     * all: a missing key, a dead host, a timeout or a provider-level
+     * rejection all come back as status FALSE. The caller can then skip
+     * WhatsApp and go straight to e-mail instead of issuing a code that
+     * would silently go nowhere.
+     *
+     * [!!] Deliberately does NOT fail on an empty device list. The
+     * configured account id is not always listed for this key (see the
+     * note on get_devices()), so an empty list is not proof of an outage
+     * and treating it as one would push every login onto e-mail.
+     *
+     * @return array ['status' => bool, 'message' => string]
+     */
+    public static function check_gateway()
+    {
+        if (self::api_key() === NULL || self::api_key() === '' || self::config()->get('base_url') === NULL)
+        {
+            return array('status' => FALSE, 'message' => 'WhatsApp gateway is not configured.');
+        }
+
+        $devices = self::get_devices();
+
+        if (!is_array($devices) || !isset($devices['status']))
+        {
+            return array('status' => FALSE, 'message' => 'Malformed response from /api/get/devices');
+        }
+
+        // get_devices() reports transport-level failures as status => FALSE;
+        // the gateway reports its own rejections as a numeric body status,
+        // which is why HTTP 200 alone is never enough to call it healthy.
+        if ($devices['status'] === FALSE)
+        {
+            return array('status' => FALSE, 'message' => Arr::get($devices, 'message', 'unknown error'));
+        }
+
+        if ((int) $devices['status'] !== 200)
+        {
+            return array(
+                'status'  => FALSE,
+                'message' => 'Gateway error ' . (int) $devices['status'] . ': ' . Arr::get($devices, 'message', 'unknown'),
+            );
+        }
+
+        return array('status' => TRUE, 'message' => 'OK');
+    }
+
+    /**
+     * Who gets the gateway-down alert.
+     *
+     * Config 'alert_email' takes either an array or a comma/semicolon
+     * separated string, so extra admins can be added there (or via the
+     * WHATSAPP_ALERT_EMAIL environment variable) without touching code.
+     * Malformed entries are dropped rather than handed to PHPMailer.
+     *
+     * @return array Valid addresses; empty means the alert is switched off
+     */
+    protected static function alert_recipients()
+    {
+        $configured = self::config()->get('alert_email');
+
+        if (empty($configured))
+            return array();
+
+        $list = is_array($configured) ? $configured : preg_split('/[,;]/', $configured);
+
+        $recipients = array();
+
+        foreach ($list as $address)
+        {
+            $address = trim((string) $address);
+
+            if ($address !== '' AND filter_var($address, FILTER_VALIDATE_EMAIL))
+                $recipients[] = $address;
+        }
+
+        return array_values(array_unique($recipients));
+    }
+
+    /**
+     * E-mail the administrators that the WhatsApp gateway is not working.
+     *
+     * Throttled (config 'alert_throttle') so a gateway that stays down does
+     * not send one e-mail per login; the throttle covers the whole recipient
+     * list, not each address. Swallows its own errors on purpose - a failed
+     * alert must never take the login down with it.
+     *
+     * @param  string $reason  Why the gateway was considered down
+     * @return bool   TRUE if at least one recipient was reached
+     */
+    public static function notify_gateway_down($reason)
+    {
+        try
+        {
+            $recipients = self::alert_recipients();
+
+            if (empty($recipients) || !self::alert_throttle_passed())
+                return FALSE;
+
+            $subject = 'DRAMS alert: WhatsApp OTP gateway is not responding';
+
+            $body = '<p>The DRAMS WhatsApp OTP gateway did not respond, so login verification codes are'
+                  . ' falling back to e-mail.</p>'
+                  . '<p><b>Reason:</b> ' . HTML::chars((string) $reason) . '</p>'
+                  . '<p><b>Gateway:</b> ' . HTML::chars(self::base_url()) . '</p>'
+                  . '<p><b>Time:</b> ' . date('Y-m-d H:i:s') . '</p>'
+                  . '<p>No further alert will be sent for '
+                  . (int) self::config()->get('alert_throttle', 3600) . ' seconds.</p>';
+
+            $sent = FALSE;
+
+            foreach ($recipients as $to)
+            {
+                // A separate message per address rather than one CC list: a
+                // bad or bouncing address must not cost the other admins
+                // their copy of the alert.
+                try
+                {
+                    if ((int) Helpers_Email::send_email($to, 'DRAMS Administrator', $subject, $body) === 1)
+                        $sent = TRUE;
+                }
+                catch (Exception $e)
+                {
+                    self::log_alert_failure($e->getMessage(), $to);
+                }
+            }
+
+            return $sent;
+        }
+        catch (Exception $e)
+        {
+            self::log_alert_failure($e->getMessage());
+
+            return FALSE;
+        }
+    }
+
+    /**
+     * Record that an alert could not be sent. Logging is itself wrapped
+     * because this runs inside the login path's error handling.
+     */
+    protected static function log_alert_failure($error, $recipient = 'all recipients')
+    {
+        try
+        {
+            Kohana::$log->add(Log::ERROR, 'WhatsApp gateway-down alert to :to could not be sent: :error', array(
+                ':to'    => $recipient,
+                ':error' => $error,
+            ));
+        }
+        catch (Exception $ignored)
+        {
+        }
+    }
+
+    /**
+     * Rate limit for notify_gateway_down(). The Cache module is not enabled
+     * in bootstrap.php, so a timestamp file in Kohana's cache directory is
+     * the lightest state that survives between requests.
+     *
+     * @return bool TRUE if an alert may be sent now
+     */
+    protected static function alert_throttle_passed()
+    {
+        $throttle = (int) self::config()->get('alert_throttle', 3600);
+
+        if ($throttle <= 0)
+            return TRUE;
+
+        $file = rtrim(Kohana::$cache_dir, '/\\') . DIRECTORY_SEPARATOR . 'whatsapp_gateway_alert.txt';
+
+        if (is_file($file) AND (time() - (int) file_get_contents($file)) < $throttle)
+            return FALSE;
+
+        // Stamp before sending, not after: SMTP can take seconds, and a
+        // parallel login in that window must not fire a duplicate alert.
+        @file_put_contents($file, time(), LOCK_EX);
+
+        return TRUE;
+    }
+
+    /**
      * The account (device) to send from. Prefers the fixed id in config
      * (application/config/whatsapp.php) since /api/get/devices does not
      * reliably list every account for this API key; falls back to
