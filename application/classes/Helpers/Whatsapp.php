@@ -27,15 +27,17 @@ class Helpers_Whatsapp {
     /**
      * List WhatsApp devices (accounts) registered under the configured API key.
      *
-     * [!!] The reference helper called /api/get/wa.accounts, but that endpoint
-     * returns a 403 "no permission" for this key. /api/get/devices is the one
-     * this key can actually use.
+     * [!!] /api/get/devices returns HTTP 200 with an always-empty data array
+     * for this key (confirmed live). /api/get/wa.accounts is the endpoint
+     * that actually lists the account and its live connection status - an
+     * earlier version of this key got a 403 from it, but that is no longer
+     * the case.
      *
      * @return array Decoded API response
      */
     public static function get_devices()
     {
-        $url = self::base_url() . '/api/get/devices?secret=' . urlencode(self::api_key());
+        $url = self::base_url() . '/api/get/wa.accounts?secret=' . urlencode(self::api_key());
 
         $ch = curl_init();
 
@@ -285,6 +287,84 @@ class Helpers_Whatsapp {
         }
 
         return $pick_id($devices['data'][0]);
+    }
+
+    /**
+     * Check whether an actual WhatsApp device/account is connected -
+     * distinct from check_gateway(), which only confirms the API itself
+     * answers. This looks at the device list and reports the connection
+     * status of the configured account (or the first device returned, if
+     * none is configured).
+     *
+     * @return array ['status' => bool, 'message' => string, 'device' => array|NULL]
+     */
+    public static function test_device_connection()
+    {
+        $account = self::config()->get('account');
+        $devices = self::get_devices();
+
+        if (!is_array($devices) || !isset($devices['status']))
+        {
+            return array('status' => FALSE, 'message' => 'Malformed response from /api/get/devices', 'device' => NULL);
+        }
+
+        if ($devices['status'] === FALSE)
+        {
+            return array('status' => FALSE, 'message' => Arr::get($devices, 'message', 'unknown error'), 'device' => NULL);
+        }
+
+        if ((int) $devices['status'] !== 200)
+        {
+            return array(
+                'status'  => FALSE,
+                'message' => 'Gateway error ' . (int) $devices['status'] . ': ' . Arr::get($devices, 'message', 'unknown'),
+                'device'  => NULL,
+            );
+        }
+
+        if (empty($devices['data']))
+        {
+            return array('status' => FALSE, 'message' => 'No devices returned by gateway', 'device' => NULL);
+        }
+
+        $target = NULL;
+
+        if (!empty($account))
+        {
+            foreach ($devices['data'] as $device)
+            {
+                $id = Arr::get($device, 'account', Arr::get($device, 'account_unique', Arr::get($device, 'unique', Arr::get($device, 'id'))));
+
+                if ((string) $id === (string) $account)
+                {
+                    $target = $device;
+                    break;
+                }
+            }
+
+            if ($target === NULL)
+            {
+                return array(
+                    'status'  => FALSE,
+                    'message' => "Configured account '{$account}' was not found in the device list",
+                    'device'  => NULL,
+                );
+            }
+        }
+        else
+        {
+            $target = $devices['data'][0];
+        }
+
+        $connected = isset($target['status']) && strtolower($target['status']) === 'connected';
+
+        return array(
+            'status'  => $connected,
+            'message' => $connected
+                ? 'Device is connected'
+                : 'Device is NOT connected (status: ' . Arr::get($target, 'status', 'unknown') . ')',
+            'device'  => $target,
+        );
     }
 
     /**

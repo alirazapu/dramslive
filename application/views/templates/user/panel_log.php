@@ -41,6 +41,8 @@
                                     <select class="form-control " name="field" id='field' onchange="showDiv(this)">
                                         <option value="def"> Please Select Type</option>
                                         <option <?php echo ((!empty($search_post['field']) && ($search_post['field'] == 'name')) ? 'selected' : ''); ?> value="name">User Name</option>
+                                        <option <?php echo ((!empty($search_post['field']) && ($search_post['field'] == 'ip')) ? 'selected' : ''); ?> value="ip">IP Address</option>
+                                        <option <?php echo ((!empty($search_post['field']) && ($search_post['field'] == 'session')) ? 'selected' : ''); ?> value="session">Session ID</option>
                                         <option <?php echo ((!empty($search_post['field']) && ($search_post['field'] == 'designation')) ? 'selected' : ''); ?>  value="designation"> Designation</option>
                                         <option <?php echo ((!empty($search_post['field']) && ($search_post['field'] == 'usertype')) ? 'selected' : ''); ?>  value="usertype"> User Type</option>
                                         <option <?php echo ((!empty($search_post['field']) && ($search_post['field'] == 'posting')) ? 'selected' : ''); ?> value="posting"> Posting</option>                                          
@@ -782,7 +784,7 @@
             document.getElementById('usertype-hide').style.display = "none";
             //disable
             // $('#searchfield').attr("disabled","disabled");
-        } else if (elem == 'name')
+        } else if (elem == 'name' || elem == 'ip' || elem == 'session')
         {
             //Hide
             document.getElementById('posting-hide').style.display = "none";
@@ -796,7 +798,7 @@
             document.getElementById('usertype-hide').style.display = "none";
             //disable
             // $('#searchfield').attr("disabled","disabled");
-        } 
+        }
         else if (elem == 'designation')
         {
             //Hide
@@ -954,7 +956,7 @@
             document.getElementById('designation-hide').style.display = "none";
                         //hide-show user type
             document.getElementById('usertype-hide').style.display = "none";
-        } else if (elem.value == 'name')
+        } else if (elem.value == 'name' || elem.value == 'ip' || elem.value == 'session')
         {
             //Hide
             document.getElementById('posting-hide').style.display = "none";
@@ -966,7 +968,7 @@
             document.getElementById('designation-hide').style.display = "none";
                         //hide-show user type
             document.getElementById('usertype-hide').style.display = "none";
-        } 
+        }
         else if (elem.value == 'designation' )
         {
             //Hide

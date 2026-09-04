@@ -2826,6 +2826,12 @@ class Model_Userreport {
                 case "name":
                     $data['field'] = "and ( CONCAT(TRIM(t2.first_name), ' ', TRIM(t2.last_name))  like '%{$data['key']}%' )";
                     break;
+                case "ip":
+                    $data['field'] = "and ( t1.ip_address like '%{$data['key']}%' )";
+                    break;
+                case "session":
+                    $data['field'] = "and ( t1.session_id like '%{$data['key']}%' )";
+                    break;
                 case "designation":
                     $data['field'] = "and ( t2.job_title = '{$data['designation']}')";
                     //print_r($data['field']); exit;
