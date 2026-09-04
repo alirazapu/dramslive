@@ -113,7 +113,6 @@ class Controller_Userrequest extends Controller_Working {
                         $user_id = ( isset($item['user_id']) ) ? $item['user_id'] : 0;
                         $user_role_name = (isset($user_id) ) ? Helpers_Utilities::get_user_role_name($user_id) : 'N/A';
                         $user_name = ( isset($item['user_id']) ) ? Helpers_Utilities::get_user_name($item['user_id']) : 'NA';
-                        $username = ( isset($item['user_id']) ) ? '<br><span><b>'.Helpers_Utilities::get_username($item['user_id']). '</b></span>' : '--';
                         $user_request = ( isset($item['email_type_name']) ) ? $item['email_type_name'] : 'NA';
                         $user_request .= '<span><br><b>ID:';
                         $user_request .= ( isset($item['request_id']) ) ? $item['request_id'] : 'NA';
@@ -256,7 +255,7 @@ class Controller_Userrequest extends Controller_Working {
                             $member_name_link .= '<a  style="display: none;" class="btn btn-block btn-danger btn-xs"  href="#" onclick="deleteuserrequest(' . $enc_request_id . ',' . $enc_request_id . ')"> Delete Request  </a>';
                         }
                         $row = array(
-                            $user_name . $username,
+                            $user_name,
 //                      $user_role_name,                        
                             $user_request,
                             $company_name.'<br>'.$cnic_no,

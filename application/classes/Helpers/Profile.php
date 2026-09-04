@@ -525,7 +525,7 @@ abstract class Helpers_Profile {
 
     public static function get_user_log_info($user_ud) {
         $DB = Database::instance();
-        $sql = "SELECT username, email, logins, Last_login, is_active
+        $sql = "SELECT username, email, logins, Last_login, is_active, is_login_otp_enabled
                              from users
                              where id = {$user_ud} AND (login_sites = 0 OR login_sites = 2 OR login_sites = 4 OR login_sites = 5)";
         $results = $DB->query(Database::SELECT, $sql, TRUE)->current();

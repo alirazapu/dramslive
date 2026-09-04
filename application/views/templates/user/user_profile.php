@@ -96,13 +96,15 @@
                                 <input disabled type="number" class="form-control" id="mobile_number" name="mobile_number" value="<?php echo $data->mobile_number; ?>" placeholder="Enter Mobile Number">
                                 <?php } ?>
                             </div>
-                            <?php if ((int)$login_user->id === 1 && (int)$data->user_id === 1) { ?>
+                            <?php /* Only user_id 1 may see or change this - for their own account and for every other user. */ ?>
+                            <?php if ((int)$login_user->id === 1) { $otp_on = (isset($user_log_info->is_login_otp_enabled) && (int)$user_log_info->is_login_otp_enabled === 1); ?>
                             <div class="form-group col-md-3">
                                 <label for="otp_login_enabled">Login OTP Verification</label>
                                 <form class="ipf-form" action="<?php echo url::site().'user/update_otp_setting'?>" id="update_otp_setting" method="post">
+                                    <input type="hidden" name="user_id" value="<?php echo (int)$data->user_id; ?>">
                                     <select class="form-control" name="otp_login_enabled" id="otp_login_enabled">
-                                        <option value="1" <?php echo ((int)$login_user->is_login_otp_enabled === 1) ? 'selected' : ''; ?>>Enabled</option>
-                                        <option value="0" <?php echo ((int)$login_user->is_login_otp_enabled === 1) ? '' : 'selected'; ?>>Disabled</option>
+                                        <option value="1" <?php echo $otp_on ? 'selected' : ''; ?>>Enabled</option>
+                                        <option value="0" <?php echo $otp_on ? '' : 'selected'; ?>>Disabled</option>
                                     </select>
                                     <button type="submit" class="btn btn-primary btn-sm" style="margin-top: 6px;">Update</button>
                                 </form>

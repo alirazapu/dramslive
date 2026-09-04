@@ -3371,9 +3371,10 @@ class Controller_User extends Controller_Working {
     /**
      * Enable/disable login OTP verification.
      *
-     * [!!] Restricted to user_id 1. The target row is ALWAYS the
-     * authenticated user's own id - never a value taken from the request -
-     * so a forged user_id cannot flip the flag on someone else's account.
+     * [!!] Restricted to user_id 1, who may set the flag for their own
+     * account and for any other user. Every other account - including
+     * other administrators - is rejected here, so the check cannot be
+     * bypassed by posting straight to this endpoint.
      */
     public function action_update_otp_setting() {
         try {
@@ -3390,11 +3391,26 @@ class Controller_User extends Controller_Working {
             }
 
             $enabled = (isset($_POST['otp_login_enabled']) AND (int)$_POST['otp_login_enabled'] === 1) ? 1 : 0;
+            $target_user_id = !empty($_POST['user_id']) ? (int)$_POST['user_id'] : 0;
+
+            if ($target_user_id <= 0) {
+                echo json_encode(6);
+                return;
+            }
+
+            // The target must be a real account - otherwise the update
+            // silently affects nothing and still reports success.
+            $target = ORM::factory('User', $target_user_id);
+
+            if (!$target->loaded()) {
+                echo json_encode(6);
+                return;
+            }
 
             $model_reference = new Model_User();
-            $result = $model_reference->update_user_otp_setting((int)$login_user->id, $enabled);
+            $model_reference->update_user_otp_setting($target_user_id, $enabled);
 
-            echo json_encode($result ? 1 : 6);
+            echo json_encode(1);
         } catch (Exception $ex) {
             echo json_encode(6);
         }
