@@ -28,7 +28,7 @@ return array(
     'base_url' => $secret('base_url', 'WHATSAPP_BASE_URL', 'http://api.bebansoft.com'),
 
     // How long an OTP stays valid, in seconds.
-    'otp_ttl' => 60,
+    'otp_ttl' => 180,
 
     // Digits in the generated OTP code.
     'otp_length' => 6,

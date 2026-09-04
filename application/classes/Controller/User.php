@@ -3368,6 +3368,38 @@ class Controller_User extends Controller_Working {
         }
     }
 
+    /**
+     * Enable/disable login OTP verification.
+     *
+     * [!!] Restricted to user_id 1. The target row is ALWAYS the
+     * authenticated user's own id - never a value taken from the request -
+     * so a forged user_id cannot flip the flag on someone else's account.
+     */
+    public function action_update_otp_setting() {
+        try {
+            $login_user = Auth::instance()->get_user();
+
+            if (!$login_user OR (int)$login_user->id !== 1) {
+                echo json_encode(6);
+                return;
+            }
+
+            if (HTTP_Request::POST != $this->request->method()) {
+                echo json_encode(6);
+                return;
+            }
+
+            $enabled = (isset($_POST['otp_login_enabled']) AND (int)$_POST['otp_login_enabled'] === 1) ? 1 : 0;
+
+            $model_reference = new Model_User();
+            $result = $model_reference->update_user_otp_setting((int)$login_user->id, $enabled);
+
+            echo json_encode($result ? 1 : 6);
+        } catch (Exception $ex) {
+            echo json_encode(6);
+        }
+    }
+
     // Update a user's WhatsApp/contact mobile number (used for login OTP)
     public function action_update_mobile_number() {
         try {

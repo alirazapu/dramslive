@@ -1563,6 +1563,13 @@ echo $sql; exit;
         return $query;
     }
 
+    // Enable/disable login OTP verification for a user
+    public function update_user_otp_setting($user_id, $enabled) {
+        return DB::update('users')->set(array('is_login_otp_enabled' => (int)$enabled ? 1 : 0))
+                ->where('id', '=', (int)$user_id)
+                ->execute();
+    }
+
     // Update user's WhatsApp/contact mobile number
     public function update_user_mobile_number($user_id, $mobile_number) {
         $query = DB::update('users_profile')->set(array('mobile_number' => $mobile_number))

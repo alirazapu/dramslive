@@ -96,6 +96,18 @@
                                 <input disabled type="number" class="form-control" id="mobile_number" name="mobile_number" value="<?php echo $data->mobile_number; ?>" placeholder="Enter Mobile Number">
                                 <?php } ?>
                             </div>
+                            <?php if ((int)$login_user->id === 1 && (int)$data->user_id === 1) { ?>
+                            <div class="form-group col-md-3">
+                                <label for="otp_login_enabled">Login OTP Verification</label>
+                                <form class="ipf-form" action="<?php echo url::site().'user/update_otp_setting'?>" id="update_otp_setting" method="post">
+                                    <select class="form-control" name="otp_login_enabled" id="otp_login_enabled">
+                                        <option value="1" <?php echo ((int)$login_user->is_login_otp_enabled === 1) ? 'selected' : ''; ?>>Enabled</option>
+                                        <option value="0" <?php echo ((int)$login_user->is_login_otp_enabled === 1) ? '' : 'selected'; ?>>Disabled</option>
+                                    </select>
+                                    <button type="submit" class="btn btn-primary btn-sm" style="margin-top: 6px;">Update</button>
+                                </form>
+                            </div>
+                            <?php } ?>
                             <div class="form-group col-md-3">
                                 <label for="mobile_number">CNIC Number</label>
                                 <input disabled type="number" class="form-control" id="cnic_number" name="cnic_number" value="<?php echo !empty($data->cnic_number) ? $data->cnic_number : 'N/A'; ?>" placeholder="Enter Mobile Number">
@@ -315,6 +327,30 @@
                                 swal("System Error", "Contact Support Team.", "error");
                             }
 
+                        },
+                        error: function (data) {
+                        console.log("error");
+                        console.log(data);
+                        }
+                    });
+                });
+             $('#update_otp_setting').on('submit', function (e) {
+                 e.preventDefault();
+                 var formData = new FormData(this);
+                $.ajax({
+                        type: 'POST',
+                        url: $(this).attr('action'),
+                        data: formData,
+                        cache: false,
+                        contentType: false,
+                        processData: false,
+                        success: function (msg) {
+                            if (msg == 1) {
+                                swal("Congratulations!", "Login OTP setting updated successfully.", "success");
+                                location.reload();
+                             }else{
+                                swal("Not Allowed", "You are not permitted to change this setting.", "error");
+                            }
                         },
                         error: function (data) {
                         console.log("error");
