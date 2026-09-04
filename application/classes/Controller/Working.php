@@ -50,6 +50,22 @@ class Controller_Working extends Controller_Template {
 								$user = ORM::factory('User', $user);
 							}
         if(isset($user->id)) {
+            // Idle timeout. gc_maxlifetime alone is not enough: PHP only uses
+            // it to decide which files GC *may* delete, and never checks it
+            // when reading a session - so a file that survives GC would keep
+            // the user logged in indefinitely. Checking last_activity here
+            // makes the timeout exact and predictable.
+            $last_activity = Session::instance()->get('last_activity');
+
+            if ($last_activity !== NULL AND (time() - (int)$last_activity) > DRAMS_SESSION_LIFETIME) {
+                Auth::instance()->logout(FALSE, TRUE);
+                Session::instance()->delete('last_activity');
+                Session::instance()->set('error_message', 'Your session expired after a period of inactivity. Please log in again.');
+                $this->redirect('login');
+            }
+
+            Session::instance()->set('last_activity', time());
+
             // Single-session enforcement: a newer login elsewhere overwrites
             // current_session_token, which invalidates this session here.
             $session_token = Session::instance()->get('session_token');

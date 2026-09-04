@@ -131,6 +131,51 @@ if ($env_var) {
     Kohana::$environment = Kohana::PRODUCTION;
 }
 
+/**
+ * Session hardening. Must run before anything calls Session::instance(),
+ * because these are read by session_start().
+ *
+ * [!!] save_path gets its own directory. The XAMPP default tmp directory is
+ * shared with every other app on this box, and PHP's garbage collector
+ * applies the *collecting* app's gc_maxlifetime to every file in the
+ * directory - so a neighbouring app with a shorter lifetime would keep
+ * expiring DRAMS logins early. An isolated path makes the timeout ours.
+ *
+ * Note gc_maxlifetime only makes a session file *eligible* for deletion; PHP
+ * does not check it on read. The authoritative idle timeout is enforced in
+ * Controller_Working::before(), which is what users actually experience.
+ */
+define('DRAMS_SESSION_LIFETIME', 3600); // 1 hour idle
+
+// A subdirectory of the path PHP already uses: guaranteed writable by the
+// web server user, correct on Windows and Linux alike, and outside the web
+// root (session files carry the auth key, so they must never be servable).
+// sys_get_temp_dir() is deliberately NOT used - under Apache it resolves to
+// a different directory than it does on the CLI.
+$default_save_path = ini_get('session.save_path');
+$session_path = ($default_save_path !== FALSE AND $default_save_path !== '')
+    ? rtrim($default_save_path, "\\/") . DIRECTORY_SEPARATOR . 'drams_sessions'
+    : NULL;
+
+if ($session_path !== NULL) {
+    if (!is_dir($session_path)) {
+        @mkdir($session_path, 0700, TRUE);
+    }
+
+    if (is_dir($session_path) AND is_writable($session_path)) {
+        ini_set('session.save_path', $session_path);
+    }
+}
+
+ini_set('session.gc_maxlifetime', DRAMS_SESSION_LIFETIME);
+ini_set('session.gc_divisor', 100);        // actually sweep; the 1/1000 default rarely fires
+ini_set('session.cookie_lifetime', 0);     // cookie dies when the browser closes
+ini_set('session.use_strict_mode', 1);     // reject attacker-supplied session ids
+// [!!] HttpOnly is NOT set here. Kohana's Session_Native calls
+// session_set_cookie_params() from Cookie::$httponly, overwriting any ini
+// value - so the real switch lives in application/config/cookie.php.
+ini_set('session.use_only_cookies', 1);    // never accept a session id from the URL
+
 // The env var above selects the *environment* (and therefore the database),
 // but the base URL must follow the host the request actually arrived on -
 // otherwise browsing dev.ctd.drams.com emits ctd.drams.com in every form
@@ -264,6 +309,17 @@ Kohana::modules([
 // Cookie settings
 Cookie::$salt      = 'ctdkpkdrams';
 Kohana_Cookie::$expiration = 86400; // 1 day (instead of 1 second – probably a typo?)
+
+// [!!] application/config/cookie.php is NOT auto-applied - Kohana's Cookie
+// class reads these statics only, which is why the statics above are set
+// here. HttpOnly must therefore be set here too, and it must happen before
+// anything starts the session: Session_Native feeds Cookie::$httponly into
+// session_set_cookie_params(), overriding the php.ini value.
+// Keeps JavaScript (and therefore any XSS) away from both the session
+// cookie and the "authautologin" remember-me token.
+Cookie::$httponly  = TRUE;
+// Cookie::$secure must become TRUE once the site is served over HTTPS only.
+Cookie::$secure    = FALSE;
 
 // -----------------------------------------------------------------------------
 // Routes
