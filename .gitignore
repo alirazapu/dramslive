@@ -23,3 +23,6 @@ application/config/database.php
 
 # WhatsApp gateway credentials (local only)
 application/config/whatsapp.local.php
+
+# Gateway-down alert throttle stamp (runtime state)
+application/cache/whatsapp_gateway_alert.txt

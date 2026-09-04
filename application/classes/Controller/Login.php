@@ -638,9 +638,13 @@ class Controller_Login extends Controller
      * Deliver a login OTP: WhatsApp first, e-mail as fallback.
      *
      * E-mail is attempted ONLY when WhatsApp did not actually deliver -
-     * missing number, missing/invalid gateway config, network/timeout
+     * missing number, a failed gateway health check, a network/timeout
      * failure, or a provider-level rejection. The SAME code is used for
      * both channels so a late-arriving WhatsApp message stays valid.
+     *
+     * Any WhatsApp-side failure also triggers a (throttled) alert e-mail to
+     * the address in config 'alert_email', so the gateway going dark is
+     * noticed instead of quietly costing every user the slower channel.
      *
      * @return array ['status' => bool, 'channel' => 'whatsapp'|'email'|NULL]
      */
@@ -650,13 +654,29 @@ class Controller_Login extends Controller
         $mobile_number = !empty($profile->mobile_number) ? $profile->mobile_number : NULL;
 
         if ($mobile_number) {
-            $sent = Helpers_Whatsapp::send_otp($mobile_number, $otp);
+            // Ask the gateway whether it is alive before handing it a code.
+            // A dead API answers /api/send/whatsapp with a plausible-looking
+            // HTTP 200, so probing /api/get/devices first is what actually
+            // tells us the account is still usable.
+            $gateway = Helpers_Whatsapp::check_gateway();
 
-            if (!empty($sent['status'])) {
-                return array('status' => TRUE, 'channel' => 'whatsapp');
+            if (empty($gateway['status'])) {
+                $reason = Arr::get($gateway, 'message', 'unknown error');
+                $this->log_otp_failure('WhatsApp', $user_obj->id, 'gateway check failed - ' . $reason);
+                Helpers_Whatsapp::notify_gateway_down($reason);
+            } else {
+                $sent = Helpers_Whatsapp::send_otp($mobile_number, $otp);
+
+                if (!empty($sent['status'])) {
+                    return array('status' => TRUE, 'channel' => 'whatsapp');
+                }
+
+                // The check passed but the send did not, so the gateway is
+                // still broken from the user's point of view - same alert.
+                $reason = Arr::get($sent, 'message', 'unknown error');
+                $this->log_otp_failure('WhatsApp', $user_obj->id, $reason);
+                Helpers_Whatsapp::notify_gateway_down('Send failed: ' . $reason);
             }
-
-            $this->log_otp_failure('WhatsApp', $user_obj->id, Arr::get($sent, 'message', 'unknown error'));
         } else {
             $this->log_otp_failure('WhatsApp', $user_obj->id, 'no mobile number on file');
         }

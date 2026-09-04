@@ -43,4 +43,13 @@ return array(
     'connect_timeout' => 5,
     'timeout'         => 15,
 
+    // Who gets told when the gateway stops answering (see
+    // Helpers_Whatsapp::notify_gateway_down). Comma-separated for more than
+    // one recipient - each address gets its own copy. Empty disables the alert.
+    'alert_email' => $secret('alert_email', 'WHATSAPP_ALERT_EMAIL', 'ali.razapu@gmail.com,junaid.pk18@gmail.com'),
+
+    // Minimum seconds between two gateway-down alerts. Without it a gateway
+    // that stays down would e-mail on every single login attempt. 0 = no throttle.
+    'alert_throttle' => 3600,
+
 );
