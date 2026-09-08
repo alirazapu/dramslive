@@ -3416,6 +3416,47 @@ class Controller_User extends Controller_Working {
         }
     }
 
+    /**
+     * Reactivate an account auto-disabled by the 3 failed-login-attempts
+     * lockout (see Controller_Login::register_failed_login). Resets both
+     * is_active and the failed-attempt counter so the account is not
+     * immediately re-locked on the next login attempt.
+     */
+    public function action_activate_user() {
+        try {
+            $login_user = Auth::instance()->get_user();
+            $permission = Helpers_Utilities::get_user_permission($login_user->id);
+
+            if ($permission != 1 && $permission != 5) {
+                $this->redirect('Userdashboard/dashboard');
+                return;
+            }
+
+            if (HTTP_Request::POST != $this->request->method()) {
+                $this->redirect('Userdashboard/dashboard');
+                return;
+            }
+
+            $target_user_id = !empty($_POST['user_id']) ? (int)$_POST['user_id'] : 0;
+            $target = ORM::factory('User', $target_user_id);
+
+            if (!$target->loaded()) {
+                $this->redirect('Userdashboard/dashboard');
+                return;
+            }
+
+            $target->is_active = 1;
+            $target->failed_login_attempts = 0;
+            $target->save();
+
+            Helpers_Profile::user_activity_log($login_user->id, 21, NULL, NULL, NULL, NULL, $target_user_id);
+
+            $this->redirect('user/user_profile/' . Helpers_Utilities::encrypted_key($target_user_id, "encrypt") . '?accessmessage=' . rawurlencode('Account activated successfully.'));
+        } catch (Exception $ex) {
+            $this->redirect('Userdashboard/dashboard');
+        }
+    }
+
     // Update a user's WhatsApp/contact mobile number (used for login OTP)
     public function action_update_mobile_number() {
         try {

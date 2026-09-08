@@ -239,7 +239,13 @@
                             <div class="form-group col-md-6">
                                 <label for="astatus">Account Status</label>
                                 <input disabled type="text" class="form-control" id="astatus" value="<?php if(isset($user_log_info->is_active)){ switch ($user_log_info->is_active){ case "1": echo 'Active'; break; case "0": echo 'In-Active'; break;}} else{    echo 'N/A';}?>" name="astatus" placeholder=" Status">
-                            </div> 
+                                <?php if (isset($user_log_info->is_active) && (int)$user_log_info->is_active === 0 && ($permission == 1 || $permission == 5)) { ?>
+                                <form class="ipf-form" action="<?php echo url::site().'user/activate_user'?>" id="activate_user" method="post" onsubmit="return confirm('Activate this account? This clears the failed-login lockout.');">
+                                    <input type="hidden" name="user_id" value="<?php echo (int)$data->user_id; ?>">
+                                    <button type="submit" class="btn btn-success btn-sm" style="margin-top: 6px;"><i class="fa fa-unlock"></i> Activate Account</button>
+                                </form>
+                                <?php } ?>
+                            </div>
                             <?php 
                                     if(!empty($data->created_by)){
                                 ?>
