@@ -173,6 +173,7 @@ class Controller_Login extends Controller
     public function action_check()
     {
         $_POST = Helpers_Utilities::remove_injection($_POST);
+        $public_ip = filter_var($this->request->post('public_ip'), FILTER_VALIDATE_IP) ?: NULL;
         $result = Helpers_Utilities::setwetcookies();
         if ($result == 1)
             $this->redirect('errors');
@@ -218,6 +219,8 @@ class Controller_Login extends Controller
                 : ORM::factory('User');
 
             if ($login_account->loaded() && (int)$login_account->is_active === 0) {
+                $this->log_login_attempt('password_attempt', 'blocked', $_POST['username'], $login_account->id, $public_ip, 'account_disabled');
+
                 $message = "Your account has been disabled due to multiple failed login attempts. Please contact the administrator.";
                 $view = View::factory('main')->bind('message', $message);
                 $view->account_disabled = TRUE;
@@ -251,8 +254,9 @@ class Controller_Login extends Controller
                             $login_account->save();
                         }
 
-                        $public_ip = filter_var($this->request->post('public_ip'), FILTER_VALIDATE_IP) ?: NULL;
                         $geo = Helpers_Utilities::validate_geo_coordinates($this->request->post('geo_lat'), $this->request->post('geo_lng'), $this->request->post('geo_accuracy'));
+
+                        $this->log_login_attempt('password_attempt', 'success', $user_obj->username, $user_obj->id, $public_ip);
 
                         // Password was correct, but log back out immediately: the
                         // user isn't signed in until the WhatsApp OTP is verified
@@ -270,6 +274,7 @@ class Controller_Login extends Controller
 
                         Session::instance()->set('otp_pending', array(
                             'user_id'     => $user_obj->id,
+                            'username'    => $user_obj->username,
                             'code_hash'   => hash('sha256', $otp),
                             'expires'     => time() + (int)Kohana::$config->load('whatsapp')->get('otp_ttl', 300),
                             'attempts'    => 0,
@@ -281,6 +286,8 @@ class Controller_Login extends Controller
                         ));
 
                         $delivery = $this->deliver_otp($user_obj, $otp);
+
+                        $this->log_login_attempt('otp_sent', $delivery['status'] ? 'success' : 'failed', $user_obj->username, $user_obj->id, $public_ip, $delivery['status'] ? $delivery['channel'] : 'delivery_failed');
 
                         if ($delivery['status']) {
                             Session::instance()->set('otp_channel', $delivery['channel']);
@@ -298,8 +305,11 @@ class Controller_Login extends Controller
                         $_SESSION["attempts"] = $_SESSION["attempts"] + 1;
                         $message = $login_account->loaded() ? $this->register_failed_login($login_account) : "Login Fail";
 
+                        $just_locked = $login_account->loaded() && (int)$login_account->is_active === 0;
+                        $this->log_login_attempt('password_attempt', 'failed', $_POST['username'], $login_account->loaded() ? $login_account->id : NULL, $public_ip, $just_locked ? 'account_locked' : 'wrong_password');
+
                         $view = View::factory('main')->bind('message', $message);
-                        $view->account_disabled = $login_account->loaded() && (int)$login_account->is_active === 0;
+                        $view->account_disabled = $just_locked;
                         $view->roles = Helpers_Utilities::get_roles_data();
                         $this->response->body($view);
                     }
@@ -312,9 +322,13 @@ class Controller_Login extends Controller
                 }
             } else {
                 $message = $login_account->loaded() ? $this->register_failed_login($login_account) : "Please enter correct input";
+
+                $just_locked = $login_account->loaded() && (int)$login_account->is_active === 0;
+                $this->log_login_attempt('password_attempt', 'failed', Arr::get($_POST, 'username'), $login_account->loaded() ? $login_account->id : NULL, $public_ip, $just_locked ? 'account_locked' : 'invalid_input_format');
+
                 $view = View::factory('main')                                           //->set('places', array('Rome', 'Paris', 'London', 'New York', 'Tokyo'));
                 ->bind('message', $message);                                       //$this->response->body(View::factory('main'));
-                $view->account_disabled = $login_account->loaded() && (int)$login_account->is_active === 0;
+                $view->account_disabled = $just_locked;
                 $view->roles = Helpers_Utilities::get_roles_data();
                 $this->response->body($view);
             }
@@ -560,6 +574,7 @@ class Controller_Login extends Controller
         }
 
         if (time() > $pending['expires']) {
+            $this->log_login_attempt('otp_verify', 'failed', Arr::get($pending, 'username'), $pending['user_id'], $pending['public_ip'], 'expired');
             Session::instance()->delete('otp_pending');
             Session::instance()->set('error_message', 'Your OTP has expired. Please log in again.');
             $this->redirect('login');
@@ -571,17 +586,21 @@ class Controller_Login extends Controller
             $pending['attempts']++;
 
             if ($pending['attempts'] >= 5) {
+                $this->log_login_attempt('otp_verify', 'failed', Arr::get($pending, 'username'), $pending['user_id'], $pending['public_ip'], 'max_attempts_exceeded');
                 Session::instance()->delete('otp_pending');
                 Session::instance()->set('error_message', 'Too many incorrect attempts. Please log in again.');
                 $this->redirect('login');
             }
 
+            $this->log_login_attempt('otp_verify', 'failed', Arr::get($pending, 'username'), $pending['user_id'], $pending['public_ip'], 'incorrect_code');
             Session::instance()->set('otp_pending', $pending);
             Session::instance()->set('otp_message', 'Incorrect code. Please try again.');
             $this->redirect('login/otp');
         }
 
         $user_obj = ORM::factory('User', $pending['user_id']);
+
+        $this->log_login_attempt('otp_verify', 'success', Arr::get($pending, 'username'), $pending['user_id'], $pending['public_ip']);
 
         Session::instance()->delete('otp_pending');
 
@@ -624,6 +643,8 @@ class Controller_Login extends Controller
         Session::instance()->set('otp_pending', $pending);
 
         $delivery = $this->deliver_otp($user_obj, $otp);
+
+        $this->log_login_attempt('otp_sent', $delivery['status'] ? 'success' : 'failed', Arr::get($pending, 'username'), $pending['user_id'], $pending['public_ip'], $delivery['status'] ? $delivery['channel'] . ' (resend)' : 'delivery_failed (resend)');
 
         if ($delivery['status']) {
             Session::instance()->set('otp_channel', $delivery['channel']);
@@ -721,6 +742,48 @@ class Controller_Login extends Controller
                 ':reason'  => $reason,
             ));
         } catch (Exception $e) {
+        }
+    }
+
+    /**
+     * Record one login-flow event into access_log: a password attempt
+     * (before OTP), an OTP dispatch, or an OTP verification (after OTP).
+     * Never logs the OTP code or password itself.
+     *
+     * @param string      $event_type 'password_attempt' | 'otp_sent' | 'otp_verify'
+     * @param string      $status     'success' | 'failed' | 'blocked'
+     * @param string|null $username   username as submitted, even if unknown
+     * @param int|null    $user_id    matched users.id, when known
+     * @param string|null $public_ip  client-reported public IP (VPN-safe)
+     * @param string|null $reason     short detail, e.g. wrong_password, expired_otp
+     */
+    private function log_login_attempt($event_type, $status, $username = NULL, $user_id = NULL, $public_ip = NULL, $reason = NULL)
+    {
+        try {
+            $now = date('Y-m-d H:i:s');
+
+            DB::insert('access_log', array(
+                'ip', 'public_ip', 'username', 'user_id', 'user_agent',
+                'event_type', 'status', 'reason', 'url', 'host', 'activity_time', 'created_at',
+            ))->values(array(
+                Arr::get($_SERVER, 'REMOTE_ADDR'),
+                $public_ip,
+                $username,
+                $user_id,
+                Arr::get($_SERVER, 'HTTP_USER_AGENT'),
+                $event_type,
+                $status,
+                $reason,
+                Arr::get($_SERVER, 'REQUEST_URI'),
+                Arr::get($_SERVER, 'HTTP_HOST'),
+                $now,
+                $now,
+            ))->execute();
+        } catch (Exception $e) {
+            try {
+                Kohana::$log->add(Log::ERROR, 'login attempt logging failed - :reason', array(':reason' => $e->getMessage()));
+            } catch (Exception $e2) {
+            }
         }
     }
 
