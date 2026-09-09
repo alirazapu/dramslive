@@ -178,12 +178,13 @@
                         <div class="table-responsive">
                             <table id="userslist" class="table table-bordered table-striped">
                                 <thead>
-                                    <tr>                
+                                    <tr>
                                         <th>User Name</th>
                                         <th class="no-sort">Username</th>
                                         <th class="no-sort">User Type / Designation</th>
-                                        <th class="no-sort">Posted / CNIC</th>                                         
-                                        <th class="no-sort">Mobile#</th>                                          
+                                        <th class="no-sort">Posted / CNIC</th>
+                                        <th class="no-sort">Mobile#</th>
+                                        <th class="no-sort">OTP</th>
                                         <th  class="no-sort">Action</th>
                                     </tr>
                                 </thead>
@@ -195,8 +196,9 @@
                                         <th>User Name</th>
                                         <th>Username</th>
                                         <th>User Type / Designation</th>
-                                        <th>Posted / CNIC</th>                                        
-                                        <th>Mobile#</th>                                        
+                                        <th>Posted / CNIC</th>
+                                        <th>Mobile#</th>
+                                        <th>OTP</th>
                                         <th  class="no-sort">Action</th>
                                     </tr>
                                 </tfoot>
