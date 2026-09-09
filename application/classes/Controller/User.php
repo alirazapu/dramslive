@@ -2963,6 +2963,8 @@ class Controller_User extends Controller_Working {
                 $post_data['is_active'] = 1;
                 $post_data['is_active_cis'] = 0;
                 $post_data['login_sites'] = 0;
+                // New accounts require WhatsApp/e-mail OTP on login by default.
+                $post_data['is_login_otp_enabled'] = 1;
                 $new_user = ORM::factory('user')->create_user($post_data, array(
                     'username',
                     'password',
@@ -2970,6 +2972,7 @@ class Controller_User extends Controller_Working {
                     'login_sites',
                     'is_active',
                     'is_active_cis',
+                    'is_login_otp_enabled',
                 ));
                 $type_name = isset($_POST['type']) ? $_POST['type'] : '';
                 $new_user->add('roles', ORM::factory('Role', array('name' => $type_name)));
