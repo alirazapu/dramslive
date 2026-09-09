@@ -102,6 +102,8 @@ class Controller_Userreports extends Controller_Working {
                         $id_encrypted = "'" . Helpers_Utilities::encrypted_key($item['id'], "encrypt") . "'";
                         $login_user = Auth::instance()->get_user();
                         $permission = Helpers_Utilities::get_user_permission($login_user->id);
+                        $otp_enabled = (isset($item['is_login_otp_enabled']) && (int)$item['is_login_otp_enabled'] === 1);
+                        $otp_status = $otp_enabled ? '<span class="label label-success">Enabled</span>' : '<span class="label label-default">Disabled</span>';
                         $html = '<a class="btn btn-small action" href="' . URL::site('user/user_profile/' . $id_encrypted) . '"><i class="fa fa-folder-open-o"></i> View Profile</a>';
                         if ($trasfered_flag == 0) {
                             if ($countfavt != 0 || $permission == 2) {
@@ -128,6 +130,7 @@ class Controller_Userreports extends Controller_Working {
                             $user_role_name . $designation,
                             $posting_cnic,
                             $mobile_number,
+                            $otp_status,
                             $html
                         );
 
