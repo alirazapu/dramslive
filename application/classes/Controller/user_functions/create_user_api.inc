@@ -35,6 +35,8 @@ if (!empty($user_data)) {
                             $user_img = "";
                         }
 
+                        // New accounts require WhatsApp/e-mail OTP on login by default.
+                        $user_data['is_login_otp_enabled'] = 1;
                         $new_user = ORM::factory('User')->create_user($user_data, array(
                             'username',
                             'password',
@@ -42,6 +44,7 @@ if (!empty($user_data)) {
                             'login_sites',
                             'is_active',
                             'is_active_cis',
+                            'is_login_otp_enabled',
                         ));
                         $new_user->add('roles', ORM::factory('Role', array('name' => $user_data['type'])));
 
