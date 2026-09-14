@@ -158,7 +158,7 @@ class Controller_Userrequest extends Controller_Working {
                                     $status_flag = '<span class="label label-success">Request Completed</span>';
                                     break;
                                 case 3:
-                                    $status_flag = '<span class="label label-danger">Request Error</span>';
+                                    $status_flag = '<span class="label label-default">Request Cancelled</span>';
                                     break;
                             }
                             if ($status == 1) {
@@ -191,7 +191,9 @@ class Controller_Userrequest extends Controller_Working {
 
                                     break;
                                 case 3:
-                                    $status_flag = '<span class="label label-danger">Email Sending Error</span>';
+                                    $status_flag = ($request_type_id == 10 || $request_type_id == 12)
+                                        ? '<span class="label label-default">Request Cancelled</span>'
+                                        : '<span class="label label-danger">Email Sending Error</span>';
                                     break;
                                 case 4:
                                     $status_flag = '<span class="label label-warning">Request Rejected</span>';
@@ -1308,11 +1310,14 @@ class Controller_Userrequest extends Controller_Working {
                             case 2:
                                 $status_flag = '<span class="label label-success">Request Completed</span>';
                                 break;
+                            case 3:
+                                $status_flag = '<span class="label label-danger">Request Cancelled</span>';
+                                break;
                             default :
                                 $status_flag = '';
                         }
 
-                        if ($status != 2) {
+                        if ($status == 1) {
                             $searchString = ',';
                             if (strpos($project_id, $searchString) !== false) {
                                 $myArray = explode(',', $project_id);
@@ -1320,17 +1325,20 @@ class Controller_Userrequest extends Controller_Working {
                             }
                             $member_name_link1 = '<a href="#" onclick="findphonenumber(' . $requested_value . ',' . $request_id . ',' . $project_id . ',' . $user_id . ')">Proceed </a>';
                             $member_name_link2 = '<a href="' . URL::site('userrequest/request_status_detail/' . Helpers_Utilities::encrypted_key($item['request_id'], 'encrypt')) . '" > View Detail </a>';
-                            $member_name_link = $member_name_link1 . ", " . $member_name_link2;
-                        } else {
+                            $member_name_link3 = '<a href="#" onclick="cancelnadra(' . $request_id_en . ')">Cancel </a>';
+                            $member_name_link = $member_name_link1 . ', ' . $member_name_link2 . ', ' . $member_name_link3;
+                        } elseif ($status == 2) {
                             $member_name_link = '<a href="' . URL::site('userrequest/request_status_detail/' . Helpers_Utilities::encrypted_key($item['request_id'], 'encrypt')) . '" > View Detail </a>';
                             $member_name_link .= ' , ';
                             $member_name_link .= '<a href="#" onclick="requeueverisys(' . $request_id_en . ')">ReQueue </a>';
+                        } else {
+                            $member_name_link = '<a href="' . URL::site('userrequest/request_status_detail/' . Helpers_Utilities::encrypted_key($item['request_id'], 'encrypt')) . '" > View Detail </a>';
                         }
 
                         $row = array(
                             $user_name,
                             $region_name,
-//                      $user_role_name,                        
+//                      $user_role_name,
                             $user_request,
                             $requested_value,
                             $perons_name,
@@ -1347,9 +1355,40 @@ class Controller_Userrequest extends Controller_Working {
             echo json_encode($output);
             exit();
         } catch (Exception $ex) {
-            
+
         }
     }
+
+    //cancel a pending nadra request
+    public function action_cancel_nadra() {
+        try {
+            $this->auto_rednder = false;
+            if (Auth::instance()->logged_in()) {
+                $login_user = Auth::instance()->get_user();
+                $access_nadra_request = Helpers_Profile::get_user_access_permission($login_user->id, 12);
+                if ((Helpers_Utilities::chek_role_access($this->role_id, 16) == 1) && $access_nadra_request == 1) {
+                    $post = Helpers_Utilities::remove_injection($this->request->post());
+                    $request_id = isset($post['request_id']) ? $post['request_id'] : '';
+                    $request_id = Helpers_Utilities::encrypted_key($request_id, 'decrypt');
+                    if (!empty($request_id)) {
+                        $result = Helpers_Utilities::request_cancel_nadra($request_id);
+                        echo json_encode(1);
+                    } else {
+                        echo json_encode(2);
+                    }
+                } else {
+                    echo json_encode(2);
+                }
+            } else {
+                echo json_encode(2);
+            }
+            exit();
+        } catch (Exception $ex) {
+            echo json_encode(2);
+            exit();
+        }
+    }
+
     //ajax call for data
     public function action_ajaxuserfamilytreerequests() {
         try {
@@ -1423,11 +1462,14 @@ class Controller_Userrequest extends Controller_Working {
                             case 2:
                                 $status_flag = '<span class="label label-success">Request Completed</span>';
                                 break;
+                            case 3:
+                                $status_flag = '<span class="label label-danger">Request Cancelled</span>';
+                                break;
                             default :
                                 $status_flag = '';
                         }
 
-                        if ($status != 2) {
+                        if ($status == 1) {
                             $searchString = ',';
                             if (strpos($project_id, $searchString) !== false) {
                                 $myArray = explode(',', $project_id);
@@ -1435,11 +1477,14 @@ class Controller_Userrequest extends Controller_Working {
                             }
                             $member_name_link1 = '<a href="#" onclick="findphonenumber(' . $requested_value . ',' . $request_id . ',' . $project_id . ',' . $user_id . ')">Proceed </a>';
                             $member_name_link2 = '<a href="' . URL::site('userrequest/request_status_detail/' . Helpers_Utilities::encrypted_key($item['request_id'], 'encrypt')) . '" > View Detail </a>';
-                            $member_name_link = $member_name_link1 . ", " . $member_name_link2;
-                        } else {
+                            $member_name_link3 = '<a href="#" onclick="cancelfamilytree(' . $request_id_en . ')">Cancel </a>';
+                            $member_name_link = $member_name_link1 . ', ' . $member_name_link2 . ', ' . $member_name_link3;
+                        } elseif ($status == 2) {
                             $member_name_link = '<a href="' . URL::site('userrequest/request_status_detail/' . Helpers_Utilities::encrypted_key($item['request_id'], 'encrypt')) . '" > View Detail </a>';
                             $member_name_link .= ' , ';
                             $member_name_link .= '<a href="#" onclick="requeueverisys(' . $request_id_en . ')">ReQueue </a>';
+                        } else {
+                            $member_name_link = '<a href="' . URL::site('userrequest/request_status_detail/' . Helpers_Utilities::encrypted_key($item['request_id'], 'encrypt')) . '" > View Detail </a>';
                         }
 
                         $row = array(
@@ -1463,6 +1508,36 @@ class Controller_Userrequest extends Controller_Working {
             exit();
         } catch (Exception $ex) {
 
+        }
+    }
+
+    //cancel a pending family tree request
+    public function action_cancel_familytree() {
+        try {
+            $this->auto_rednder = false;
+            if (Auth::instance()->logged_in()) {
+                $login_user = Auth::instance()->get_user();
+                $access_nadra_request = Helpers_Profile::get_user_access_permission($login_user->id, 12);
+                if ((Helpers_Utilities::chek_role_access($this->role_id, 16) == 1) && $access_nadra_request == 1) {
+                    $post = Helpers_Utilities::remove_injection($this->request->post());
+                    $request_id = isset($post['request_id']) ? $post['request_id'] : '';
+                    $request_id = Helpers_Utilities::encrypted_key($request_id, 'decrypt');
+                    if (!empty($request_id)) {
+                        $result = Helpers_Utilities::request_cancel_familytree($request_id);
+                        echo json_encode(1);
+                    } else {
+                        echo json_encode(2);
+                    }
+                } else {
+                    echo json_encode(2);
+                }
+            } else {
+                echo json_encode(2);
+            }
+            exit();
+        } catch (Exception $ex) {
+            echo json_encode(2);
+            exit();
         }
     }
 
