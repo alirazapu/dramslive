@@ -66,14 +66,18 @@ if (isset($_POST['xport']) && $_POST['xport'] == 'excel') {
     );
     $i = 4;
     foreach ($data1 as $item) {
-        $user_name = ( isset($item['user_id']) ) ? Helpers_Utilities::get_user_name($item['user_id']) : 'NA';        
+        $user_name = ( isset($item['user_id']) ) ? Helpers_Utilities::get_user_name($item['user_id']) : 'NA';
         $requested_value = ( isset($item['requested_value']) ) ? $item['requested_value'] : 'NA';
         $reason = ( isset($item['reason']) ) ? $item['reason'] : 'NA';
         $concerned_person_id = ( isset($item['concerned_person_id']) ) ? $item['concerned_person_id'] : 'NA';
         if ($concerned_person_id > 0) {
             $perons_name = ( isset($item['concerned_person_id']) ) ? Helpers_Person::get_person_name($item['concerned_person_id']) : 'NA';
         } else {
-            $perons_name = " ";
+            /* No concerned person tagged on the request - try to resolve the person from the requested value itself (mobile/IMEI/IMSI/CNIC) */
+            $matched_person = ( isset($item['requested_value']) && isset($item['user_request_type_id']) )
+                    ? Helpers_Person::get_person_by_request_value($item['user_request_type_id'], $item['requested_value'])
+                    : NULL;
+            $perons_name = !empty($matched_person) ? $matched_person['name'] : " ";
         }
         //now
         $created_at = ( isset($item['created_at']) ) ? $item['created_at'] : 'NA';

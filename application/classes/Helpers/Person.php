@@ -56,6 +56,68 @@ abstract class Helpers_Person
         //echo $name; exit;
         return $name;
     }
+
+    /*
+     * Resolve the person linked to a user_request's requested_value, based on
+     * what kind of value the request type represents (mobile number, IMEI,
+     * IMSI or CNIC) - same tables used by the User/search_person lookup.
+     *
+     * @param int $request_type_id  user_request.user_request_type_id
+     * @param string $value         user_request.requested_value
+     *
+     * return array('person_id' => int, 'name' => string) or NULL when not resolvable
+     */
+    public static function get_person_by_request_value($request_type_id, $value)
+    {
+        $mobile_types = array(1, 3, 4, 6, 9, 18);
+        $imei_types = array(2);
+        $imsi_types = array(13);
+        $cnic_types = array(5, 8, 10, 12);
+
+        if (in_array($request_type_id, $mobile_types)) {
+            $phone_number = intval($value);
+            $sql = "SELECT t1.person_id, CONCAT_WS(' ', t1.first_name, t1.middle_name, t1.last_name) as name
+                        FROM person_phone_number AS t2
+                        JOIN person AS t1 ON (t1.person_id = t2.sim_owner)
+                        WHERE t2.phone_number = {$phone_number}
+                        LIMIT 1";
+        } elseif (in_array($request_type_id, $imei_types)) {
+            $imei = intval($value);
+            $sql = "SELECT t1.person_id, CONCAT_WS(' ', t1.first_name, t1.middle_name, t1.last_name) as name
+                        FROM person_phone_device AS t3
+                        JOIN person AS t1 ON (t1.person_id = t3.person_id)
+                        WHERE t3.imei_number = {$imei}
+                        LIMIT 1";
+        } elseif (in_array($request_type_id, $imsi_types)) {
+            $imsi = intval($value);
+            $sql = "SELECT t1.person_id, CONCAT_WS(' ', t1.first_name, t1.middle_name, t1.last_name) as name
+                        FROM person_phone_number AS t2
+                        JOIN person AS t1 ON (t1.person_id = t2.sim_owner)
+                        WHERE t2.imsi_number = {$imsi}
+                        LIMIT 1";
+        } elseif (in_array($request_type_id, $cnic_types)) {
+            $cnic = intval($value);
+            $sql = "SELECT t1.person_id, CONCAT_WS(' ', t1.first_name, t1.middle_name, t1.last_name) as name
+                        FROM person_initiate AS pi
+                        JOIN person AS t1 USING (person_id)
+                        WHERE pi.cnic_number = {$cnic}
+                        LIMIT 1";
+        } else {
+            return NULL;
+        }
+
+        $DB = Database::instance();
+        $result = $DB->query(Database::SELECT, $sql, TRUE)->current();
+
+        if (empty($result) || empty($result->person_id)) {
+            return NULL;
+        }
+
+        $name = !empty(trim($result->name)) ? trim($result->name) : 'Unknown';
+
+        return array('person_id' => $result->person_id, 'name' => $name);
+    }
+
     public static function get_last_activity($a_number, $b_number, $person_id)
     {
         $DB = Database::instance();

@@ -955,6 +955,7 @@ class Controller_Userreports extends Controller_Working {
                     $output['iTotalDisplayRecords'] = $rows_count;
                 }
                 if (isset($profiles) && sizeof($profiles) > 0) {
+                    $login_user = Auth::instance()->get_user();
                     foreach ($profiles as $item) {
 
                         $user_name = ( isset($item['user_id']) ) ? Helpers_Utilities::get_user_name($item['user_id']) : 'NA';
@@ -964,6 +965,7 @@ class Controller_Userreports extends Controller_Working {
                         $requested_value = ( isset($item['requested_value']) ) ? $item['requested_value'] : 'NA';
 
                         $requested_value .= ( isset($item['request_id']) ) ? '<br/><b>' . $item['request_id'] . '<b>' : '';
+
                         $reason = ( isset($item['reason']) ) ? $item['reason'] : 'NA';
                         $concerned_person_id = ( isset($item['concerned_person_id']) ) ? $item['concerned_person_id'] : 'NA';
                         if ($concerned_person_id > 0) {
@@ -972,7 +974,23 @@ class Controller_Userreports extends Controller_Working {
                             $perons_name .= '<a href="' . URL::site('persons/dashboard/?id=' . Helpers_Utilities::encrypted_key($item['concerned_person_id'], "encrypt")) . '" > View Profile </a>';
                             $perons_name .= ']';
                         } else {
-                            $perons_name = " ";
+                            /* No concerned person tagged on the request - try to resolve the person from the requested value itself (mobile/IMEI/IMSI/CNIC) */
+                            $matched_person = ( isset($item['requested_value']) && isset($item['user_request_type_id']) )
+                                    ? Helpers_Person::get_person_by_request_value($item['user_request_type_id'], $item['requested_value'])
+                                    : NULL;
+                            if (!empty($matched_person)) {
+                                $has_access = Helpers_Person::sensitive_person_acl($login_user->id, $matched_person['person_id']);
+                                if ($has_access) {
+                                    $perons_name = $matched_person['name'];
+                                    $perons_name .= '[';
+                                    $perons_name .= '<a href="' . URL::site('persons/dashboard/?id=' . Helpers_Utilities::encrypted_key($matched_person['person_id'], 'encrypt')) . '" > View Profile </a>';
+                                    $perons_name .= ']';
+                                } else {
+                                    $perons_name = 'NO Access';
+                                }
+                            } else {
+                                $perons_name = " ";
+                            }
                         }
                         $created_at = ( isset($item['created_at']) ) ? $item['created_at'] : 'NA';
                         $view_request_status = '<a href="' . URL::site('userrequest/request_status_detail/' . Helpers_Utilities::encrypted_key($item['request_id'], 'encrypt')) . '" > View Detail </a>';
