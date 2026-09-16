@@ -543,24 +543,24 @@ function UpdateRequestStatusDetails() {
 
     $(document).ready(function () {
         <?php
-        $person_total_ownership_requests_error= Helpers_Utilities::get_person_total_subscriber_requests_p_error($user_id);
-        $person_total_current_location_requests_error= Helpers_Utilities::get_person_total_current_location_p_error($user_id);
-        $person_total_sims_against_cnic_requests_error= Helpers_Utilities::get_person_total_sims_against_cnic_p_error($user_id);
-        $person_total_sim_against_imsi_requests_error= Helpers_Utilities::get_person_total_sims_against_imsi_p_error($user_id);
+        // Parsing-error counters only ever get shown to role 8 (field officer),
+        // so check the role first and skip the 4 COUNT queries entirely for
+        // everyone else, instead of running them and then discarding the result.
         $user_role= Helpers_Utilities::get_user_role_id($user_id);
+        $parsing_errors = ($user_role == 8) ? Helpers_Utilities::get_person_total_parsing_errors_map($user_id) : array();
         ?>
         <?php if($user_role==8){ ?>
-        <?php if(!empty($person_total_ownership_requests_error)){ ?>
-        msgboxbox.show("<?php echo 'Parsing Errors, Subscriber Against Mobile Number : '.$person_total_ownership_requests_error  ?>", null);
+        <?php if(!empty($parsing_errors[1])){ ?>
+        msgboxbox.show("<?php echo 'Parsing Errors, Subscriber Against Mobile Number : '.$parsing_errors[1]  ?>", null);
         <?php }
-        if(!empty($person_total_current_location_requests_error)){ ?>
-        msgboxbox.show("<?php echo 'Parsing Errors, Current Location : '.$person_total_current_location_requests_error  ?>", null);
+        if(!empty($parsing_errors[3])){ ?>
+        msgboxbox.show("<?php echo 'Parsing Errors, Current Location : '.$parsing_errors[3]  ?>", null);
         <?php }
-        if(!empty($person_total_sims_against_cnic_requests_error)){ ?>
-        msgboxbox.show("<?php echo 'Parsing Errors, Sims Against CNIC : '.$person_total_sims_against_cnic_requests_error  ?>", null);
+        if(!empty($parsing_errors[5])){ ?>
+        msgboxbox.show("<?php echo 'Parsing Errors, Sims Against CNIC : '.$parsing_errors[5]  ?>", null);
         <?php }
-        if(!empty($person_total_sim_against_imsi_requests_error)){ ?>
-        msgboxbox.show("<?php echo 'Parsing Errors, Sims Against IMSI : '.$person_total_sim_against_imsi_requests_error  ?>", null);
+        if(!empty($parsing_errors[7])){ ?>
+        msgboxbox.show("<?php echo 'Parsing Errors, Sims Against IMSI : '.$parsing_errors[7]  ?>", null);
         <?php } ?>
         <?php } ?>
     });

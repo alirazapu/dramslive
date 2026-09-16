@@ -105,21 +105,46 @@ class Controller_Userrequest extends Controller_Working {
                     $output['iTotalDisplayRecords'] = $rows_count;
                 }
                 if (isset($profiles) && sizeof($profiles) > 0) {
+                    // Batch the per-row lookups the loop below needs (user name,
+                    // company, concerned person) into one query each instead of
+                    // one query per row - the grid renders 10-50+ rows per page,
+                    // so this was multiplying into dozens of extra round trips.
+                    // $profiles is a (buffered/seekable) Database_Result, so it's
+                    // safe to iterate it here and again in the main loop below.
+                    $user_ids = array();
+                    $person_ids = array();
+                    foreach ($profiles as $item) {
+                        if (!empty($item['user_id'])) {
+                            $user_ids[] = $item['user_id'];
+                        }
+                        if (!empty($item['concerned_person_id'])) {
+                            $person_ids[] = $item['concerned_person_id'];
+                        }
+                    }
+                    $user_names_map = Helpers_Utilities::get_user_names_by_ids($user_ids);
+                    $person_names_map = Helpers_Person::get_person_names_by_ids($person_ids);
+
+                    $companies_map = Helpers_Utilities::get_companies_map_by_mnc();
+
+                    // Logged-in user's own permission level - identical for every
+                    // row, so it belongs outside the loop, not recomputed per row.
+                    $login_user = Auth::instance()->get_user();
+                    $permission = Helpers_Utilities::get_user_permission($login_user->id);
+
                     foreach ($profiles as $item) {
 
                         $request_type_id = ( isset($item['user_request_type_id']) ) ? $item['user_request_type_id'] : 0;
                         $request_id = ( isset($item['request_id']) ) ? $item['request_id'] : 'NA';
                         $request_reference_id = ( isset($item['reference_id']) ) ? $item['reference_id'] : 0;
                         $user_id = ( isset($item['user_id']) ) ? $item['user_id'] : 0;
-                        $user_role_name = (isset($user_id) ) ? Helpers_Utilities::get_user_role_name($user_id) : 'N/A';
-                        $user_name = ( isset($item['user_id']) ) ? Helpers_Utilities::get_user_name($item['user_id']) : 'NA';
+                        $user_name = ( isset($item['user_id']) && isset($user_names_map[$item['user_id']]) ) ? $user_names_map[$item['user_id']] : 'NA';
                         $user_request = ( isset($item['email_type_name']) ) ? $item['email_type_name'] : 'NA';
                         $user_request .= '<span><br><b>ID:';
                         $user_request .= ( isset($item['request_id']) ) ? $item['request_id'] : 'NA';
                         $user_request .= ' Ref#' . $request_reference_id;
                         $user_request .= '</b></span>';
                         $company_name = '<span><b>';
-                        $company_name .= (isset($item['company_name']) && !empty($item['company_name']) ) ? Helpers_Utilities::get_companies_data($item['company_name'])->company_name : '--';
+                        $company_name .= (isset($item['company_name']) && !empty($item['company_name']) && isset($companies_map[$item['company_name']]) ) ? $companies_map[$item['company_name']]->company_name : '--';
                         $company_name .= '</b></span><br><span>';
                         $company_name .= (isset($item['requested_value']) && !empty($item['requested_value']) ) ? $item['requested_value'] : '--';
                         $company_name .= '</span>';
@@ -135,7 +160,7 @@ class Controller_Userrequest extends Controller_Working {
                         $concerned_person_id = ( isset($item['concerned_person_id']) ) ? $item['concerned_person_id'] : 'NA';
                         $enc_request_id = trim(Helpers_Utilities::encrypted_key($item['request_id'], 'encrypt'));
                         if ($concerned_person_id > 0) {
-                            $perons_name = ( isset($item['concerned_person_id']) ) ? Helpers_Person::get_person_name($item['concerned_person_id']) : 'NA';
+                            $perons_name = isset($person_names_map[$concerned_person_id]) ? $person_names_map[$concerned_person_id] : 'NA';
                             $perons_name .= '</br>[';
                             $perons_name .= '<a href="' . URL::site('persons/dashboard/?id=' . Helpers_Utilities::encrypted_key($item['concerned_person_id'], "encrypt")) . '" > View Profile </a>';
                             $perons_name .= ']';
@@ -245,8 +270,6 @@ class Controller_Userrequest extends Controller_Working {
                             }
                         }
                         $member_name_link = '<a class="btn btn-block btn-info btn-xs" href="' . URL::site('userrequest/request_status_detail/' . $enc_request_id) . ' " > View Detail </a> ';
-                        $login_user = Auth::instance()->get_user();
-                        $permission = Helpers_Utilities::get_user_permission($login_user->id);
                         /* if (($permission == 1 || $permission == 2) && ($request_type_id != 8) && ($status == 2)) {
                           $member_name_link .= '<a class="btn btn-block btn-warning btn-xs" style="background-color:#ff82b6" href="' . URL::site('userrequest/request_reread_status_detail/' . $enc_request_id) . '" > Req.Reread </a>';
                           } */
