@@ -167,12 +167,21 @@ class Model_Userrequest {
         // Count query
         // ==========================
         if ($count === 'true') {
+            // email_templates_type is never filtered/selected here, so the join is
+            // dropped entirely. email_messages is only needed when a filter reads
+            // one of its columns (received_body / message_date); otherwise its only
+            // effect on the count is excluding the handful of requests that have no
+            // linked email (message_id = 0), which "message_id != 0" reproduces
+            // without joining against the much larger email_messages table.
+            $needs_email_join = ($where_body !== '' || $search_datetime !== '');
+            $email_join = $needs_email_join ? "JOIN email_messages em ON em.message_id = t1.message_id" : '';
+            $message_filter = $needs_email_join ? '' : ' AND t1.message_id != 0';
+
             $sql = "SELECT COUNT(*) AS count
                     FROM user_request t1
-                    JOIN email_templates_type t2 ON t1.user_request_type_id = t2.id
-                    JOIN email_messages em ON em.message_id = t1.message_id
-                    {$where_clause} {$and_status} {$and_reply} {$and_processing} 
-                    {$where_body} {$where_user} {$where_person} {$search} {$data['field']} {$data['mnc']} {$search_date} {$search_datetime}";
+                    {$email_join}
+                    {$where_clause} {$and_status} {$and_reply} {$and_processing}
+                    {$where_body} {$where_user} {$where_person} {$search} {$data['field']} {$data['mnc']} {$search_date} {$search_datetime} {$message_filter}";
             $members = $DB->query(Database::SELECT, $sql, FALSE)->current();
             return $members['count'];
         }

@@ -58,6 +58,26 @@ abstract class Helpers_Person
     }
 
     /*
+     * Batched version of get_person_name() - one query for a whole list of
+     * person ids instead of one query per id, for grids that render many rows.
+     *
+     * return array [person_id => name]
+     */
+    public static function get_person_names_by_ids($person_ids)
+    {
+        $person_ids = array_unique(array_map('intval', $person_ids));
+        if (empty($person_ids)) {
+            return array();
+        }
+        $DB = Database::instance();
+        $sql = "SELECT T1.person_id, CONCAT_WS(' ', T1.first_name, T1.middle_name, T1.last_name) as name
+                         from person AS T1
+                         WHERE T1.person_id IN (" . implode(',', $person_ids) . ")";
+        $results = $DB->query(Database::SELECT, $sql, FALSE)->as_array('person_id', 'name');
+        return $results;
+    }
+
+    /*
      * Resolve the person linked to a user_request's requested_value, based on
      * what kind of value the request type represents (mobile number, IMEI,
      * IMSI or CNIC) - same tables used by the User/search_person lookup.

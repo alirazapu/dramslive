@@ -417,6 +417,25 @@ abstract class Helpers_Utilities {
         $name = isset($results->name) && !empty($results->name) ? $results->name : "Unknown";
         return $name;
     }
+
+    /*
+     * Batched version of get_user_name() - one query for a whole list of user
+     * ids instead of one query per id, for grids that render many rows at once.
+     *
+     * return array [user_id => name]
+     */
+    public static function get_user_names_by_ids($user_ids) {
+        $user_ids = array_unique(array_map('intval', $user_ids));
+        if (empty($user_ids)) {
+            return array();
+        }
+        $DB = Database::instance('default');
+        $sql = "SELECT user_id, CONCAT_WS(' ', first_name, last_name) as name
+                         from users_profile
+                         where user_id IN (" . implode(',', $user_ids) . ")";
+        $results = $DB->query(Database::SELECT, $sql, FALSE)->as_array('user_id', 'name');
+        return $results;
+    }
     public static function get_user_pid($user_ud) {
         $DB = Database::instance('default');
         $sql = "SELECT person_id
@@ -1155,6 +1174,25 @@ abstract class Helpers_Utilities {
         $data = new Model_Email;
         $data1 = $data->typeselection($id);
         return $data1;
+    }
+
+    /*
+     * All companies keyed by mnc code, regardless of is_active - matches the
+     * semantics of get_companies_data($mnc) (which also ignores is_active) so
+     * grids resolving many rows' company names can do it with one query
+     * instead of one get_companies_data() call per row.
+     *
+     * return array [mnc => stdClass company row]
+     */
+    public static function get_companies_map_by_mnc() {
+        $DB = Database::instance();
+        $sql = "SELECT * FROM mobile_companies";
+        $results = $DB->query(Database::SELECT, $sql, TRUE);
+        $map = array();
+        foreach ($results as $company) {
+            $map[$company->mnc] = $company;
+        }
+        return $map;
     }
 
 //    get company Name by id
@@ -3878,11 +3916,34 @@ abstract class Helpers_Utilities {
     public static function get_person_total_sims_against_imsi_p_error($user_id) {
         $DB = Database::instance();
         $sql = "SELECT count(request_id) as count
-                from user_request ur 
+                from user_request ur
                 where user_id=$user_id and user_request_type_id=7 and processing_index =3 ";
         $results = $DB->query(Database::SELECT, $sql, TRUE)->current();
         $count = isset($results->count) && !empty($results->count) ? $results->count : 0;
         return $count;
+    }
+
+    /*
+     * Combines the 4 single-type parsing-error counters above (subscriber,
+     * current location, sims-against-cnic, sims-against-imsi) into one query
+     * grouped by request type, for pages that show all 4 at once (e.g. the
+     * Request Status page load) instead of running 4 separate COUNT queries.
+     *
+     * return array [user_request_type_id => count] for types 1, 3, 5, 7
+     */
+    public static function get_person_total_parsing_errors_map($user_id) {
+        $user_id = (int) $user_id;
+        $DB = Database::instance();
+        $sql = "SELECT user_request_type_id, count(request_id) as count
+                from user_request
+                where user_id={$user_id} and user_request_type_id IN (1,3,5,7) and processing_index=3
+                group by user_request_type_id";
+        $results = $DB->query(Database::SELECT, $sql, TRUE);
+        $map = array(1 => 0, 3 => 0, 5 => 0, 7 => 0);
+        foreach ($results as $row) {
+            $map[$row->user_request_type_id] = $row->count;
+        }
+        return $map;
     }
 
     public static function get_person_db_match_count($person_id) {
