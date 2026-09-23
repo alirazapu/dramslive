@@ -16,6 +16,15 @@ $mail->FromName = $result['send']['name'];
 $mail->setFrom($mail->Username, $mail->FromName);
 $mail->Subject = $subject;
 $mail->Body = $body;
-$mail->AddAddress($to, $to_name);
+// Custom Email Adress on the "Others" admin request flow allows a
+// comma/semicolon separated list of addresses; every other flow only
+// ever passes a single address, so this loop is a no-op for them.
+$to_addresses = array_filter(array_map('trim', preg_split('/[,;]+/', (string) $to)));
+if (empty($to_addresses)) {
+    $to_addresses = array($to);
+}
+foreach ($to_addresses as $to_address) {
+    $mail->AddAddress($to_address, $to_name);
+}
 
 ?>
