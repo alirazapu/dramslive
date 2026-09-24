@@ -2064,7 +2064,7 @@ abstract class Helpers_Utilities {
     public static function get_nadra_request_status($cnic) {
         $DB = Database::instance();
         $sql = "SELECT * FROM 
-                    user_request where requested_value = '{$cnic}' and user_request_type_id=8 && status <> 2 ";
+                    user_request where requested_value = '{$cnic}' and user_request_type_id=8 && status NOT IN (2,3) ";
         $results = $DB->query(Database::SELECT, $sql, TRUE)->current();
         $results = isset($results->request_id) && !empty($results->request_id) ? 1 : 0;
         // print_r($results); exit;
@@ -2074,7 +2074,7 @@ abstract class Helpers_Utilities {
     public static function get_famlytree_request_status($cnic) {
         $DB = Database::instance();
         $sql = "SELECT * FROM 
-                    user_request where requested_value = '{$cnic}' and user_request_type_id=10";
+                    user_request where requested_value = '{$cnic}' and user_request_type_id=10 and status <> 3";
         $results = $DB->query(Database::SELECT, $sql, TRUE)->current();
         $results = isset($results->request_id) && !empty($results->request_id) ? 1 : 0;
         // print_r($results); exit;
