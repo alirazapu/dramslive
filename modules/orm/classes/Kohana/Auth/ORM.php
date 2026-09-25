@@ -104,6 +104,12 @@ class Kohana_Auth_ORM extends Auth {
 5 = ALL
 6 = CIS + CTFU
  */
+		// Unknown username (or user without a role): fail login normally
+		if ( ! $user->loaded() OR ! isset($user->role_name))
+		{
+			return FALSE;
+		}
+
 		// If the passwords match, perform a login
 		if ($user->has('roles', ORM::factory('Role', array('name' => $user->role_name))) AND $user->password === $password AND ($user->login_sites==0 || $user->login_sites==2 || $user->login_sites==4 || $user->login_sites==5))
 		{
