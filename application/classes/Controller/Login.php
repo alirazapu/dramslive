@@ -303,7 +303,7 @@ class Controller_Login extends Controller
                         $this->response->body($view);
                     } else {
                         $_SESSION["attempts"] = $_SESSION["attempts"] + 1;
-                        $message = $login_account->loaded() ? $this->register_failed_login($login_account) : "Login Fail";
+                        $message = $login_account->loaded() ? $this->register_failed_login($login_account) : "Invalid username or password";
 
                         $just_locked = $login_account->loaded() && (int)$login_account->is_active === 0;
                         $this->log_login_attempt('password_attempt', 'failed', $_POST['username'], $login_account->loaded() ? $login_account->id : NULL, $public_ip, $just_locked ? 'account_locked' : 'wrong_password');
