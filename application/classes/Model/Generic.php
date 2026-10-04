@@ -73,7 +73,14 @@ class Model_Generic {
         $project_id_ctx        = isset($data['project_id'])         ? (int) $data['project_id']         : 0;
         $concerned_person_id_ctx = isset($data['concerned_person_id']) ? (int) $data['concerned_person_id'] : 0;
 
-        if (in_array($project_id_ctx, self::PROJECTS_SKIP_CNIC_CREATE, true) && $concerned_person_id_ctx > 0) {
+        // Multi Number Request replies get the same guard, decided per request
+        // (Model_Multirequest::fill_in_person_id) instead of by project id.
+        $fill_in_person_id = Model_Multirequest::fill_in_person_id($data);
+        if ($fill_in_person_id > 0) {
+            $concerned_person_id_ctx = $fill_in_person_id;
+        }
+
+        if ((in_array($project_id_ctx, self::PROJECTS_SKIP_CNIC_CREATE, true) || $fill_in_person_id > 0) && $concerned_person_id_ctx > 0) {
             // ----------------------------------------------------------------
             // Project-1629 guard: use the existing person referenced by the
             // request's concerned_person_id.  Do NOT call update_cnic_number()
@@ -84,7 +91,7 @@ class Model_Generic {
 
             Model_ErrorLog::log(
                 'ManualSubInfoinsert',
-                'Project-1629 guard: enriching existing person, skipping CNIC-based person creation',
+                ($fill_in_person_id > 0 ? 'Multi Number Request' : 'Project-1629') . ' guard: enriching existing person, skipping CNIC-based person creation',
                 [
                     'request_id'          => isset($data['requestid'])        ? $data['requestid']        : null,
                     'project_id'          => $project_id_ctx,
@@ -210,8 +217,9 @@ class Model_Generic {
         $sub_update_status = $content->update_imei_mobile_number($array_imei);
 
         // update person details (unconditional overwrite — default path only)
-        // For projects in PROJECTS_SKIP_CNIC_CREATE the fill-blanks update was already applied above.
-        if (!in_array($project_id_ctx, self::PROJECTS_SKIP_CNIC_CREATE, true)) {
+        // For projects in PROJECTS_SKIP_CNIC_CREATE and Multi Number Request fill-ins
+        // the fill-blanks update was already applied above.
+        if (!in_array($project_id_ctx, self::PROJECTS_SKIP_CNIC_CREATE, true) && $fill_in_person_id == 0) {
             if ( isset($person_id) && !empty($person_id) &&
                 isset($data['person_name']) && isset($data['person_name1']) &&
                 !empty($data['person_name']) && !empty($data['person_name1']) &&

@@ -3154,8 +3154,13 @@ class Controller_Userrequest extends Controller_Working {
             $msisdn = !empty($_POST['msisdn']) ? $_POST['msisdn'] : 0;
             $permissionperiod = date('Y-m-d H:i:s', strtotime(date('Y-m-d') . ' -1 days')); //1 days permission denied period, user can not request if current location request is pending within 1 day             
             $permission = Helpers_Email::get_location_request_permission(4, $msisdn, $permissionperiod);
+            $ufone_subscriber_request = ($permission == 1) ? 0 : Helpers_Email::get_open_ufone_subscriber_request($msisdn);
             if ($permission == 1) {
                 $message = "Not Permitted: Previous request is initiated within last 24 hours, check in request status";
+            } elseif ($ufone_subscriber_request) {
+                // A Location reply could be matched to that request (Ufone replies are matched by mobile number).
+                $permission = 1;
+                $message = "Not Permitted: Ufone Subscriber request #{$ufone_subscriber_request} for this number is still open. Ufone replies are matched by mobile number, so request the location after that reply arrives, check in request status";
             } else {
                 $message = "Permitted: Permission granted to request data from company";
             }

@@ -1231,6 +1231,22 @@ abstract class Helpers_Email
 
     }
 
+    // Open Ufone Subscriber request of the number (request_id), or 0. Ufone
+    // replies carry "92<number>" instead of the reference and
+    // emailreadstatuscheckUpdate() hands them to any sent Subscriber or
+    // Location request of that number, so a Location request must wait for it.
+    // Open = queued, sent, send error that will be retried, or waiting for parse.
+    public static function get_open_ufone_subscriber_request($msisdn)
+    {
+        $sql = "SELECT request_id
+                FROM user_request
+                WHERE requested_value = :msisdn AND user_request_type_id = 3 AND company_name = 3
+                AND (status IN (0, 1) OR processing_index = 4 OR (status = 3 AND processing_index = 1))
+                LIMIT 1";
+        $row = DB::query(Database::SELECT, $sql)->param(':msisdn', (string)$msisdn)->execute()->current();
+        return !empty($row['request_id']) ? (int)$row['request_id'] : 0;
+    }
+
     //get request send permission for international number
     public static function get_cdrint_request_permission($requesttype, $msisdn)
     {

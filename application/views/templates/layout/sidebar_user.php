@@ -417,6 +417,31 @@ try {
                 </li>           
             <?php } ?>
                 
+<?php
+// Multi Number Request: sending and the batch report each need their own
+// per-user right (Access Control List).
+$multi_request_access = Model_Multirequest::has_access($user->id);
+$multi_request_report = Model_Multirequest::has_report_access($user->id);
+if ($multi_request_access || $multi_request_report) { ?>
+                <li class="treeview <?php echo ($current_url == 'Multirequest') ? 'active' : ''; ?>">
+                    <a href="#">
+                        <i class="fa fa-list-ol"></i>
+                        <span>Multi Number Request</span>
+                        <span class="pull-right-container">
+                            <i class="fa fa-angle-left pull-right"></i>
+                        </span>
+                    </a>
+                    <ul class="treeview-menu">
+                        <?php if ($multi_request_access) { ?>
+                            <li class="<?php echo ($current_url == 'Multirequest' && $menu_name == 'index') ? 'active' : ''; ?>"><a href="<?php echo URL::site('multirequest/index'); ?>"><i class="fa fa-circle-o"></i> New Request</a></li>
+                        <?php } ?>
+                        <?php if ($multi_request_report) { ?>
+                            <li class="<?php echo ($current_url == 'Multirequest' && $menu_name == 'report') ? 'active' : ''; ?>"><a href="<?php echo URL::site('multirequest/report'); ?>"><i class="fa fa-circle-o"></i> Batch Report</a></li>
+                        <?php } ?>
+                    </ul>
+                </li>
+<?php } ?>
+
 <?php if (Helpers_Utilities::chek_role_array_access($role_id, array(29,30)) == 1) { ?>
                 <li class="treeview <?php echo ($current_url == 'Intprojects' || ($current_url == 'Userreports' && ($menu_name == 'project_request_type' || $menu_name == 'project_request_send_detail'))) ? 'active' : ''; ?>">
                     <a href="#">

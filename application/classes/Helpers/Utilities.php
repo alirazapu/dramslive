@@ -2214,14 +2214,17 @@ abstract class Helpers_Utilities {
         } else {
             $where = "where id not in (1,2,14,15,16,17,18,19)";
         }
+        // The Multi Number Request rights are left out of both counts, so
+        // adding them did not lower every user's level.
+        $excluded = Model_Multirequest::ACCESS_TYPE_ID . ',' . Model_Multirequest::REPORT_ACCESS_TYPE_ID;
         $sql = "SELECT count(*) as tp
-                     FROM  lu_user_access_type";
+                     FROM  lu_user_access_type WHERE id NOT IN ({$excluded})";
 
         $results = $DB->query(Database::SELECT, $sql, TRUE)->current();
         $total_permissions = $results->tp;
         $sql1 = "SELECT COUNT(*) as ap 
              FROM user_access_matrix
-                WHERE permission=1 AND user_id= {$user_id}";
+                WHERE permission=1 AND user_id= {$user_id} AND user_activity_type NOT IN ({$excluded})";
         $results1 = $DB->query(Database::SELECT, $sql1, TRUE)->current();
         $active_permissions = $results1->ap;
         $right_level = round(($active_permissions / $total_permissions) * 100, 2);
