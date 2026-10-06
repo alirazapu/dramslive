@@ -1554,9 +1554,11 @@ exit();
                         $longitude = (isset($item['longitude'])) ? $item['longitude'] : 'NA';
                         $latitude = (isset($item['latitude'])) ? $item['latitude'] : 'NA';
                         $location = (isset($item['address'])) ? $item['address'] : 'NA';
+                        $imei = (!empty($item['imei_number'])) ? $item['imei_number'] : 'NA';
 
                         $row = array(
                             $phone_number,
+                            $imei,
                             $other_phone1.' '.$person_profile_link,
                             $type,
                             $duration,
@@ -2982,27 +2984,76 @@ exit();
             $person_id = (int)Helpers_Utilities::encrypted_key($_GET['id'], "decrypt");
             $dcount = 1;
             $totaldevices = Helpers_Person::get_person_devices($person_id);
+            $imei_periods = Helpers_Person::get_person_imei_usage_period($person_id);
+            $device_imeis = array();
+            foreach ($totaldevices as $totaldevice) {
+                $device_imeis[] = trim($totaldevice->imei_number ?? '');
+            }
+            $imei_sims = Helpers_Person::get_person_imei_sims($person_id, $device_imeis);
+            $shown_imeis = array();
             ?>
             <ul class="todo-list">
                 <?php
                 foreach ($totaldevices as $totaldevice) {
-                    if ($dcount < 6) {
 						$imei = trim($totaldevice->imei_number ?? '');
 
 						if ($imei === '' || $imei === '0' || $imei === 0) {
 							continue;                    // ← This is the key fix
 						}
+                        // one row per IMEI (device query returns one row per IMEI + SIM)
+                        if (isset($shown_imeis[$imei])) {
+                            continue;
+                        }
+                        $shown_imeis[$imei] = true;
+                        $sims = !empty($imei_sims[$imei]) ? array_values($imei_sims[$imei]) : array();
+                        $sim_count = count($sims);
+                        // first 5 visible, rest hidden until "Show All" is clicked
+                        $is_extra = ($dcount > 5);
+                        // usage period from call log; "No call record" when IMEI has no calls
+                        if (!empty($imei_periods[$imei]['first_used'])) {
+                            $first_day = date('d-M-Y', strtotime($imei_periods[$imei]['first_used']));
+                            $last_day = date('d-M-Y', strtotime($imei_periods[$imei]['last_used']));
+                            $calls = (int)$imei_periods[$imei]['total_calls'];
+                            $calls_text = $calls . ($calls == 1 ? ' call' : ' calls');
+                            $usage_html = '<small class="text-muted" title="' . $calls_text . ' in call log"><i class="fa fa-calendar"></i> '
+                                . ($first_day == $last_day ? $calls_text . ' on ' . $first_day : $first_day . ' to ' . $last_day)
+                                . '</small>';
+                        } else {
+                            // device table date (if any) only as tooltip
+                            $seen = !empty($totaldevice->in_use_since) ? $totaldevice->in_use_since : $totaldevice->last_interaction_at;
+                            $seen_title = !empty($seen) ? 'Device first seen: ' . date('d-M-Y', strtotime($seen)) : 'No calls found for this IMEI';
+                            $usage_html = '<small class="text-warning" title="' . $seen_title . '"><i class="fa fa-ban"></i> No call record</small>';
+                        }
                         ?>
-                        <li class="dashboard-sticky-danger">
+                        <li class="dashboard-sticky-danger<?php echo $is_extra ? ' extra-device' : ''; ?>"<?php echo $is_extra ? ' style="display:none;"' : ''; ?>>
                             <span class="text-black"> <b><?php echo $dcount . ":"; ?></b> <?php echo $totaldevice->phone_name; ?> </span><span
-                                    class="text-black">(<?php echo $totaldevice->imei_number; ?>)<a href="#"
+                                    class="text-black">(<?php echo $totaldevice->imei_number; ?>) <?php echo $usage_html; ?>
+                                <?php if ($sim_count > 0) { ?>
+                                    <a href="javascript:void(0)" title="<?php echo implode(', ', $sims); ?>"
+                                       onclick="var li = $(this).closest('li'), list = li.find('.imei-sim-list');
+                                                list.toggle();
+                                                li.css('height', list.is(':visible') ? 'auto' : '');
+                                                $('#person_total_devices_details').css('height', 'auto');
+                                                return false;"><span
+                                                class="label label-info"><i class="fa fa-credit-card"></i> <?php echo $sim_count . ($sim_count == 1 ? ' SIM' : ' SIMs'); ?></span></a>
+                                <?php } else { ?>
+                                    <span class="label label-default">0 SIMs</span>
+                                <?php } ?><a href="#"
                                                                                                     onclick="requestimeicdr(<?php echo $totaldevice->imei_number . ',' . $person_id; ?>)"> <span
                                             class="label label-primary pull-right">Request CDR</span> </a></span>
+                            <?php if ($sim_count > 0) { ?>
+                                <div class="imei-sim-list" style="display:none; clear: both; margin: 4px 0 2px 16px; padding: 4px 6px; background: #fdf6e9; border-left: 3px solid #f39c12; white-space: normal; line-height: 22px;">
+                                    <small class="text-black"><b>SIMs used in this IMEI:</b></small><br>
+                                    <?php foreach ($sims as $sim) { ?>
+                                        <span class="label label-default" style="display: inline-block; margin: 0 3px 3px 0; font-size: 11px; font-weight: normal;"><?php echo $sim; ?></span>
+                                    <?php } ?>
+                                </div>
+                            <?php } ?>
                         </li>
                         <?php
                         $dcount++;
-                    }
                 }
+                $extra_count = $dcount - 6;
                 for ($i = 0; $i < 6 - $dcount; $i++) {
                     ?>
                     <li class="dashboard-sticky-danger">
@@ -3010,6 +3061,17 @@ exit();
                 <?php }
                 ?>
                 <li class="dashboard-sticky-danger pull-right">
+                    <?php if ($extra_count > 0) { ?>
+                        <a href="javascript:void(0)" id="toggle_all_devices" title="Show/Hide all devices"
+                           onclick="var box = $('#person_total_devices_details'), isOpen = box.find('.extra-device:first').is(':visible');
+                                    box.find('.extra-device').toggle(!isOpen);
+                                    box.css('height', isOpen ? '140px' : 'auto');
+                                    if (isOpen) { box.find('.imei-sim-list').hide(); box.find('li').css('height', ''); }
+                                    $(this).find('span').html(isOpen ? '<i class=&quot;fa fa-plus&quot;></i> Show All (+<?php echo $extra_count; ?>)' : '<i class=&quot;fa fa-minus&quot;></i> Show Less');
+                                    return false;"><span
+                                    class="text-orange hov"><i class="fa fa-plus"></i> Show All (+<?php echo $extra_count; ?>)</span></a>
+                        &nbsp;|&nbsp;
+                    <?php } ?>
                     <a href="<?php echo URL::site('personsreports/person_devices/?id=' . $_GET['id']); ?>"> <span
                                 class="text-orange hov"> <i class="fa fa-mobile-phone"></i> View Details</span> </a>
                 </li>

@@ -80,6 +80,24 @@
                                     <input type="text" class="form-control" id="searchfield" value="<?php echo (!empty($search_post['key']) ? $search_post['key'] : ''); ?>" name="key" placeholder="Enter Text">
                                 </div>
                             </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="imei_number">IMEI (Optional)</label>
+                                    <select class="form-control" name="imei_number" id="imei_number">
+                                        <option value="">All IMEIs</option>
+                                        <?php try{
+                                        $imei_list = Helpers_Person::get_person_call_log_imeis($person_id);
+                                        foreach ($imei_list as $imei) {
+                                            ?>
+                                            <option <?php echo (!empty($search_post['imei_number']) && ($search_post['imei_number'] == $imei)) ? 'selected' : '' ?> value="<?php echo $imei ?>"><?php echo $imei ?></option>
+                                        <?php }
+                                        }  catch (Exception $ex){
+
+                                        }
+                                        ?>
+                                    </select>
+                                </div>
+                            </div>
                             <!-- /.col -->
                             <!-- /.col -->
                             <div id="blocktohide">
@@ -144,6 +162,7 @@
                                 <thead>
                                     <tr>
                                         <th style="width: 10%">Party A</th>
+                                        <th style="width: 12%">IMEI</th>
                                         <th style="width: 12%">Party B</th>
                                         <th style="width: 10%">Call Type</th>
                                         <th style="width: 12%">Call Duration</th>
@@ -159,6 +178,7 @@
                                 <tfoot>
                                     <tr>
                                         <th>Party A</th>
+                                        <th>IMEI</th>
                                         <th>Party B</th>
                                         <th>Call Type</th>
                                         <th>Call Duration</th>
@@ -260,7 +280,7 @@
             oSettings.oApi._fnDraw(oSettings);
         };
         objDT = $('#celllogtable').dataTable(
-                {"aaSorting": [[4, "desc"]],
+                {"aaSorting": [[5, "desc"]],
                     "bPaginate": true,
                     "bProcessing": true,
                     //"bStateSave": true,
@@ -271,7 +291,7 @@
                     "bLengthChange": true,
                     "oLanguage": {
                         "sProcessing": "Loading...",
-                        "sSearch": "Search By Party B or Location:"
+                        "sSearch": "Search By Party B, IMEI or Location:"
                     },
                     "columnDefs": [{
                             "targets": 'no-sort',

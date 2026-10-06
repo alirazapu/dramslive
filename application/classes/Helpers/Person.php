@@ -1519,6 +1519,65 @@ public static function get_person_for_dashboard_perofile($person_id)
 
         return $results;
     }
+    /* IMEI usage period (first/last call) from person_call_log, keyed by imei_number */
+    public static function get_person_imei_usage_period($person_id = NULL)
+    {
+        $person_id = (int) $person_id;
+        $sql = "SELECT imei_number,
+                    MIN(call_at) AS first_used,
+                    MAX(call_at) AS last_used,
+                    COUNT(*) AS total_calls
+                FROM person_call_log
+                WHERE person_id = $person_id
+                  AND imei_number IS NOT NULL AND imei_number NOT IN ('', '0')
+                GROUP BY imei_number";
+        $rows = DB::query(Database::SELECT, $sql)->execute()->as_array();
+        $periods = array();
+        foreach ($rows as $row) {
+            $periods[trim($row['imei_number'])] = $row;
+        }
+        return $periods;
+    }
+    /* SIMs used in each IMEI (device table + person's call log), keyed by imei_number */
+    public static function get_person_imei_sims($person_id = NULL, $imeis = array())
+    {
+        $person_id = (int) $person_id;
+        $imeis = array_filter(array_map(function ($imei) {
+            return preg_replace('/[^0-9]/', '', $imei);
+        }, $imeis));
+        if (empty($imeis)) {
+            return array();
+        }
+        $imei_in = "'" . implode("','", array_unique($imeis)) . "'";
+        $sql = "SELECT d.imei_number, n.phone_number
+                FROM person_phone_device d
+                INNER JOIN person_device_numbers n ON n.device_id = d.id
+                WHERE d.imei_number IN ($imei_in)
+                UNION
+                SELECT imei_number, phone_number
+                FROM person_call_log
+                WHERE person_id = $person_id AND imei_number IN ($imei_in)";
+        $rows = DB::query(Database::SELECT, $sql)->execute()->as_array();
+        $sims = array();
+        foreach ($rows as $row) {
+            $phone = trim($row['phone_number']);
+            if ($phone !== '' && $phone !== '0') {
+                $sims[trim($row['imei_number'])][$phone] = $phone;
+            }
+        }
+        return $sims;
+    }
+    /* distinct IMEIs found in person_call_log for a person (cell log IMEI filter) */
+    public static function get_person_call_log_imeis($person_id = NULL)
+    {
+        $person_id = (int) $person_id;
+        $sql = "SELECT DISTINCT imei_number
+                FROM person_call_log
+                WHERE person_id = $person_id
+                  AND imei_number IS NOT NULL AND imei_number NOT IN ('', '0')
+                ORDER BY imei_number";
+        return DB::query(Database::SELECT, $sql)->execute()->as_array(NULL, 'imei_number');
+    }
 public static function get_person_request_history($phone_numbers = array(), $imei_numbers = array(), $cnic = '')
 {
     $DB = Database::instance();
