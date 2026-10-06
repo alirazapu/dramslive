@@ -1560,12 +1560,54 @@ public static function get_person_for_dashboard_perofile($person_id)
         $rows = DB::query(Database::SELECT, $sql)->execute()->as_array();
         $sims = array();
         foreach ($rows as $row) {
-            $phone = trim($row['phone_number']);
-            if ($phone !== '' && $phone !== '0') {
+            // normalise 923XXXXXXXXX / 03XXXXXXXXX to 3XXXXXXXXX
+            $phone = preg_replace('/[^0-9]/', '', $row['phone_number']);
+            if (strlen($phone) == 12 && substr($phone, 0, 2) == '92') {
+                $phone = substr($phone, 2);
+            } elseif (strlen($phone) == 11 && substr($phone, 0, 1) == '0') {
+                $phone = substr($phone, 1);
+            }
+            // keep only valid mobile numbers (3XXXXXXXXX), skip short codes/landlines/garbage
+            if (preg_match('/^3[0-9]{9}$/', $phone)) {
                 $sims[trim($row['imei_number'])][$phone] = $phone;
             }
         }
         return $sims;
+    }
+    /*
+     * Owners of a list of mobile numbers (person_phone_number), one query.
+     * When a number is linked to $current_person_id that owner wins.
+     * return array [phone_number => array('person_id' => int, 'name' => string)]
+     */
+    public static function get_sim_owners($phone_numbers = array(), $current_person_id = 0)
+    {
+        $phone_numbers = array_unique(array_filter(array_map(function ($phone) {
+            return preg_replace('/[^0-9]/', '', $phone);
+        }, $phone_numbers)));
+        if (empty($phone_numbers)) {
+            return array();
+        }
+        $sql = "SELECT phone_number, person_id
+                FROM person_phone_number
+                WHERE phone_number IN ('" . implode("','", $phone_numbers) . "')
+                  AND person_id > 0";
+        $rows = DB::query(Database::SELECT, $sql)->execute()->as_array();
+        $owner_ids = array();
+        foreach ($rows as $row) {
+            $phone = $row['phone_number'];
+            if (!isset($owner_ids[$phone]) || $row['person_id'] == $current_person_id) {
+                $owner_ids[$phone] = (int) $row['person_id'];
+            }
+        }
+        $names = self::get_person_names_by_ids(array_values($owner_ids));
+        $owners = array();
+        foreach ($owner_ids as $phone => $pid) {
+            $owners[$phone] = array(
+                'person_id' => $pid,
+                'name' => !empty($names[$pid]) ? trim($names[$pid]) : 'Unknown',
+            );
+        }
+        return $owners;
     }
     /* distinct IMEIs found in person_call_log for a person (cell log IMEI filter) */
     public static function get_person_call_log_imeis($person_id = NULL)

@@ -2990,6 +2990,12 @@ exit();
                 $device_imeis[] = trim($totaldevice->imei_number ?? '');
             }
             $imei_sims = Helpers_Person::get_person_imei_sims($person_id, $device_imeis);
+            // owner of every SIM (one query): own / other profile / not in system
+            $all_sims = array();
+            foreach ($imei_sims as $sim_list) {
+                $all_sims = array_merge($all_sims, array_values($sim_list));
+            }
+            $sim_owners = Helpers_Person::get_sim_owners($all_sims, $person_id);
             $shown_imeis = array();
             ?>
             <ul class="todo-list">
@@ -3043,10 +3049,35 @@ exit();
                                             class="label label-primary pull-right">Request CDR</span> </a></span>
                             <?php if ($sim_count > 0) { ?>
                                 <div class="imei-sim-list" style="display:none; clear: both; margin: 4px 0 2px 16px; padding: 4px 6px; background: #fdf6e9; border-left: 3px solid #f39c12; white-space: normal; line-height: 22px;">
-                                    <small class="text-black"><b>SIMs used in this IMEI:</b></small><br>
-                                    <?php foreach ($sims as $sim) { ?>
-                                        <span class="label label-default" style="display: inline-block; margin: 0 3px 3px 0; font-size: 11px; font-weight: normal;"><?php echo $sim; ?></span>
-                                    <?php } ?>
+                                    <small class="text-black"><b>SIMs used in this IMEI:</b>
+                                        <span class="text-muted">(<i class="fa fa-square text-green"></i> This person &nbsp;
+                                        <i class="fa fa-square text-red"></i> Other person &nbsp;
+                                        <i class="fa fa-square text-gray"></i> Not in system)</span></small><br>
+                                    <?php
+                                    // own SIMs first, then other persons, then unknown
+                                    usort($sims, function ($a, $b) use ($sim_owners, $person_id) {
+                                        $rank = function ($sim) use ($sim_owners, $person_id) {
+                                            if (empty($sim_owners[$sim])) return 2;
+                                            return ($sim_owners[$sim]['person_id'] == $person_id) ? 0 : 1;
+                                        };
+                                        return $rank($a) - $rank($b);
+                                    });
+                                    $chip_style = 'display: inline-block; margin: 0 3px 3px 0; font-size: 11px; font-weight: normal; color: #fff;';
+                                    foreach ($sims as $sim) {
+                                        if (!empty($sim_owners[$sim]) && $sim_owners[$sim]['person_id'] == $person_id) { ?>
+                                            <span class="label label-success" style="<?php echo $chip_style; ?>" title="SIM of this person"><i class="fa fa-user"></i> <?php echo $sim; ?></span>
+                                        <?php } elseif (!empty($sim_owners[$sim])) {
+                                            $owner = $sim_owners[$sim];
+                                            $owner_enc = Helpers_Utilities::encrypted_key($owner['person_id'], 'encrypt'); ?>
+                                            <a href="<?php echo URL::site('persons/dashboard/?id=' . $owner_enc); ?>" target="_blank"
+                                               class="label label-danger" style="<?php echo $chip_style; ?>"
+                                               title="Used by other person: <?php echo HTML::chars($owner['name']); ?> (click to open profile)"><i class="fa fa-user-secret"></i> <?php echo $sim; ?> &ndash; <?php echo HTML::chars($owner['name']); ?></a>
+                                        <?php } else { ?>
+                                            <a href="javascript:void(0)" onclick="external_search_model('<?php echo $sim; ?>', 0); return false;"
+                                               class="label" style="<?php echo $chip_style; ?> background: #999;"
+                                               title="Not linked to any profile (click to check subscriber)"><i class="fa fa-question-circle"></i> <?php echo $sim; ?></a>
+                                        <?php }
+                                    } ?>
                                 </div>
                             <?php } ?>
                         </li>
