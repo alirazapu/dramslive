@@ -3234,7 +3234,19 @@ body.modal-open {
                     return;
                 }
 
-                let html = `<h4>CDR Files for SIM: <span class="text-primary">${response.sim}</span></h4><hr>`;
+                let html = `<h4>CDR Files for SIM: <span class="text-primary">${response.sim}</span></h4>`;
+
+                // more than one file: offer all of them combined into one Excel file
+                if (response.files.length > 1) {
+                    html += `<form action="<?php echo URL::site('persons/download_merged_cdr'); ?>" method="post" target="_blank" style="margin:0 0 5px 0;" class="text-right">
+                            <input type="hidden" name="sim" value="${response.sim}">
+                            <input type="hidden" name="person_id" value="${response.person_id_enc}">
+                            <button type="submit" class="btn btn-success btn-sm" title="All CDR files of this SIM in one Excel file (duplicate rows removed)">
+                                <i class="fa fa-files-o"></i> Download All Combined (${response.files.length} files)
+                            </button>
+                        </form>`;
+                }
+                html += `<hr>`;
 
                 // Loop through files and create rows
                 response.files.forEach(function(file) {

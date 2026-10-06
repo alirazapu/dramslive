@@ -3202,12 +3202,19 @@ exit();
             $_GET = Helpers_Utilities::remove_injection($_GET);
             $person_id = (int)Helpers_Utilities::encrypted_key($_GET['id'], "decrypt");
             $totalsims = Helpers_Person::get_person_total_SIMs($person_id);
+            // SIMs that have CDR files (Download button shown only for these)
+            $sim_numbers = array();
+            foreach ($totalsims as $totalsim) {
+                $sim_numbers[] = $totalsim->phone_number;
+            }
+            $sims_with_files = Helpers_Requests::get_sims_with_files($sim_numbers, 1);
             $simscount = 1;
             ?>
             <ul class="todo-list">
                 <?php
                 foreach ($totalsims as $totalsim) {
-                    if ($simscount < 6) {
+                        // first 5 visible, rest hidden until "Show All" is clicked
+                        $is_extra = ($simscount > 5);
 
                         $sim = $totalsim->phone_number;
                         $status = $totalsim->status;
@@ -3249,7 +3256,7 @@ exit();
                             $simstatus = "NA";
                         }
                         ?></span>-->
-                        <li class="dashboard-sticky-green">
+                        <li class="dashboard-sticky-green<?php echo $is_extra ? ' extra-sim' : ''; ?>"<?php echo $is_extra ? ' style="display:none;"' : ''; ?>>
                             <div style="padding-left: 2px !important; padding-right: 2px !important; "
                                  class="col-md-3 col-sm-12">
                                 <?php if (!empty($simuser)) { ?>
@@ -3294,9 +3301,11 @@ exit();
                             <div style="padding-left: 2px !important; padding-right: 2px !important;"
                                  class="col-md-6 col-sm-12">
                                 <span class="pull-right text-black" title="Click To Request Data From Company">
+                                    <?php if (!empty($sims_with_files[trim($sim)])) { ?>
                                     <a href="#" onclick="requestcdrdownload('<?php echo $sim; ?>','<?php echo $person_id; ?>'); return false;">
                                     <span class="label label-warning">Download</span>
                                     </a>
+                                    <?php } ?>
 <!--                                    <a href="#" onclick="requestbranchlessbanking(<?php /* echo $sim . ',' . $person_id; */ ?>)"> <span class="label label-warning">Branchless Banking</span> </a>-->
                                     <a href="#" onclick="requestlocation(<?php echo $sim . ',' . $person_id; ?>)"> <span
                                                 class="label label-primary">Location</span> </a>
@@ -3325,8 +3334,8 @@ exit();
 
                         <?php
                         $simscount++;
-                    }//end of if
                 }
+                $extra_sims = $simscount - 6;
 
                 for ($i = 0; $i < 6 - $simscount; $i++) {
                     ?>
@@ -3335,6 +3344,16 @@ exit();
                 <?php }
                 ?>
                 <li class="dashboard-sticky-green pull-right">
+                    <?php if ($extra_sims > 0) { ?>
+                        <a href="javascript:void(0)" id="toggle_all_sims" title="Show/Hide all SIMs"
+                           onclick="var box = $('#person_total_sims_detail'), isOpen = box.find('.extra-sim:first').is(':visible');
+                                    box.find('.extra-sim').toggle(!isOpen);
+                                    box.css('height', isOpen ? '140px' : 'auto');
+                                    $(this).find('span').html(isOpen ? '<i class=&quot;fa fa-plus&quot;></i> Show All (+<?php echo $extra_sims; ?>)' : '<i class=&quot;fa fa-minus&quot;></i> Show Less');
+                                    return false;"><span
+                                    class="text-green hov"><i class="fa fa-plus"></i> Show All (+<?php echo $extra_sims; ?>)</span></a>
+                        &nbsp;|&nbsp;
+                    <?php } ?>
                     <a href="<?php echo URL::site('personsreports/person_sims/?id=' . $_GET['id']); ?>"> <span
                                 class="text-green hov"> <i class="fa fa-mobile-phone"></i> View Details</span> </a>
                 </li>
@@ -5389,6 +5408,65 @@ public function action_get_cdr_data()
     ]);
 
     return;
+}
+
+/*
+ *  Download all CDR files of a SIM combined into one xlsx (Helpers_Cdrmerge)
+ */
+public function action_download_merged_cdr()
+{
+    $this->auto_render = FALSE;
+    $login_user = Auth::instance()->get_user();
+    $user_id = !empty($login_user->id) ? $login_user->id : 0;
+
+    $_POST = Helpers_Utilities::remove_injection($_POST);
+    $sim = preg_replace('/[^0-9]/', '', isset($_POST['sim']) ? $_POST['sim'] : '');
+    if ($sim === '') {
+        echo 'SIM is required';
+        return;
+    }
+
+    @set_time_limit(600);
+    @ini_set('memory_limit', '1024M');
+
+    $work_dir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'cdr_merge_' . uniqid();
+    mkdir($work_dir);
+    $out_path = $work_dir . DIRECTORY_SEPARATOR . 'combined.xlsx';
+
+    try {
+        $result = Helpers_Cdrmerge::merge_sim_cdr_files($sim, $out_path);
+
+        if ($result['rows'] == 0) {
+            Helpers_Cdrmerge::remove_dir($work_dir);
+            echo '<h4>No CDR rows could be combined for SIM ' . $sim . '.</h4>';
+            if (!empty($result['skipped'])) {
+                echo '<ul><li>' . implode('</li><li>', array_map('HTML::chars', $result['skipped'])) . '</li></ul>';
+            }
+            return;
+        }
+
+        if (!empty($_POST['person_id'])) {
+            $decrypted_pid = Helpers_Utilities::encrypted_key($_POST['person_id'], 'decrypt');
+            Helpers_Profile::user_activity_log($user_id, 90, NULL, NULL, $decrypted_pid);
+        }
+
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+        $download_name = 'CDR_' . $sim . '_combined_' . date('Ymd_His') . '.xlsx';
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $download_name . '"');
+        header('Content-Length: ' . filesize($out_path));
+        header('Cache-Control: public, must-revalidate, max-age=0');
+        header('Pragma: public');
+        header('Expires: 0');
+        readfile($out_path);
+        Helpers_Cdrmerge::remove_dir($work_dir);
+        exit;
+    } catch (Exception $ex) {
+        Helpers_Cdrmerge::remove_dir($work_dir);
+        echo 'Error while combining CDR files: ' . HTML::chars($ex->getMessage());
+    }
 }
 
     // ECP address search lives in Controller_Databank (databank/ecp_address
