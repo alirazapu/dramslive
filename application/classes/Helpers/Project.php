@@ -6,13 +6,17 @@ defined('SYSPATH') or die('No direct script access.');
  * Project access rules
  *
  * - Admin and Development Tech Support see and manage every project.
- * - Users with the "Project Management" right (Access Control List) can
- *   create projects and manage members of the projects they created.
+ * - Admin and regional tech support users with the "Project Management"
+ *   right (Access Control List) can create projects; users with the right
+ *   manage members of the projects they created.
  * - Everyone else sees only projects they created or are assigned to.
  */
 class Helpers_Project {
 
     const RIGHT_INTERNAL_NAME = 'project_management';
+
+    /* roles allowed to create projects: 1 = admin, 4 = regional tech support (rts) */
+    public static $create_roles = array(1, 4);
 
     /* admin (permission 1) and development tech support (permission 5) */
     public static function is_super_user($user_id) {
@@ -32,9 +36,15 @@ class Helpers_Project {
         return !empty($result);
     }
 
-    /* can create new projects */
+    /* can create new projects: admin or regional tech support role, with the Project Management right */
     public static function can_create($user_id) {
-        return self::is_super_user($user_id) || self::has_project_right($user_id);
+        $user_id = (int) $user_id;
+        $sql = "SELECT role_id FROM roles_users where user_id = {$user_id} LIMIT 1";
+        $role = DB::query(Database::SELECT, $sql)->execute()->current();
+        if (empty($role) || !in_array((int) $role['role_id'], self::$create_roles, TRUE)) {
+            return FALSE;
+        }
+        return self::has_project_right($user_id);
     }
 
     /* user created or is assigned to at least one project */
