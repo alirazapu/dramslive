@@ -3774,13 +3774,23 @@ exit();
             }
             $post = Helpers_Utilities::remove_injection($post);
 
+            $access_project_id = !empty($post['project_id']) ? (int) Helpers_Utilities::encrypted_key($post['project_id'], 'decrypt') : 0;
+            if (!Helpers_Project::can_view_details(Auth::instance()->get_user()->id, $access_project_id)) {
+                $this->template->content = View::factory('templates/user/access_denied');
+                return;
+            }
+
             /* Set Session for post data carrying for the  ajax call */
             Session::instance()->set('project_request_type_post', $post);
             /* Excel Export File Included */
             include 'excel/project_request_type.inc';
+            /* request type wise summary */
+            $summary_project_id = !empty($post['project_id']) ? (int) Helpers_Utilities::encrypted_key($post['project_id'], 'decrypt') : 0;
+            $summary = Model_Userreport::project_request_type_summary($post, $summary_project_id);
             //Call to view
             $this->template->content = View::factory('templates/user/project_request_type')
-                    ->set('search_post', $post);
+                    ->set('search_post', $post)
+                    ->set('summary', $summary);
         } catch (Exception $ex) {
             $this->template->content = View::factory('templates/user/exception_error_page')
                     ->bind('exception', $ex);
@@ -3887,6 +3897,10 @@ exit();
             $userid = (int) Helpers_Utilities::encrypted_key($post['userid'], 'decrypt');
             $request_type = (int) Helpers_Utilities::encrypted_key($post['request_type'], 'decrypt');
             $project_id = (int) Helpers_Utilities::encrypted_key($post['project_id'], 'decrypt');
+            if (!Helpers_Project::can_view_details(Auth::instance()->get_user()->id, $project_id)) {
+                $this->template->content = View::factory('templates/user/access_denied');
+                return;
+            }
             /* Set Session for post data carrying for the  ajax call */
             Session::instance()->set('project_request_send_detail_post', $post);
             /* Excel Export File Included */

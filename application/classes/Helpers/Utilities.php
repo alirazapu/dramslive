@@ -861,48 +861,10 @@ abstract class Helpers_Utilities {
 
         $login_user = Auth::instance()->get_user();
         $DB = Database::instance();
-        $permission = Helpers_Utilities::get_user_permission($login_user->id);
-        $login_user_profile = Helpers_Profile::get_user_perofile($login_user->id);
-        $posting_region = $login_user_profile->region_id;
-        
-        $posting = $login_user_profile->posted;
-        $result = explode('-', $posting);
-        
-        $where_clause = 'where 1';
-        if ($posting_region == 11) {
-            if ($permission == 1 || $permission == 2 || $permission == 5)
-                $where_clause = " where 1 ";
-            else
-                $where_clause = "where ip.region_id = 11";
-        } else {
-            if ($result[0] == 'd') {
-                $where_clause = " where ( ip.region_id = {$posting_region} and ip.district_id = {$result[1]})";
-            } elseif ($result[0] == 'p') {
-//                $distict = 0;
-//                switch ($result[1]) {
-//                    case 901:
-//                        $distict = 901;
-//                        break;
-//                    case 3:
-//                        $distict = 902;
-//                        break;
-//                    case 4:
-//                        $distict = 903;
-//                        break;
-//                    case 5:
-//                        $distict = 904;
-//                        break;
-//                    case 8:
-//                        $distict = 905;
-//                        break;
-//                }
-                //$where_clause = " where ( ip.region_id = {$posting_region} and ip.district_id = {$result[1]})";
-                $where_clause = " where ( ip.region_id = {$posting_region})";
-            } else {
-                $where_clause = " where ( ip.region_id = {$posting_region})";
-            }
-        }
-		$where_clause .= " AND ip.project_status!=1";        
+
+        /* only projects the user created or is assigned to (admin / dev tech support see all) */
+        $where_clause = " where " . Helpers_Project::access_condition($login_user->id, 'ip');
+		$where_clause .= " AND ip.project_status!=1";
         // print_r($where_clause); exit;
         $DB = Database::instance();
         $sql = "SELECT * 
