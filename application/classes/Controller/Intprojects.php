@@ -149,13 +149,16 @@
                     if ($can_manage) {
                         $member_name_link .= ' <a class="btn btn-small action" href="'.URL::base().'intprojects/members/'.$projectid_encrypted.'"><i class="fa fa-users"></i> Members</a>';
                     }
+                    $creator_name = trim($item['creator_name']);
+                    $created_by = $creator_name != '' ? HTML::chars($creator_name) : 'NA';
                     $row = array(
-                        $pname,       
+                        $pname,
                         $region_name,
                         $district_name,
-                        $organiztions, 
+                        $organiztions,
                         $status,
                         $pdetails,
+                        $created_by,
                         $request_count,
                         $member_name_link
                     );

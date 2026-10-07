@@ -124,9 +124,11 @@ class Model_Intprojects {
         }
         /*  Fetch all Records */
         else {
-            $sql = "SELECT * 
-                    FROM int_projects AS t1  
+            $sql = "SELECT t1.*, t2.name,
+                           concat(ifnull(up.first_name, ''), ' ', ifnull(up.last_name, '')) as creator_name
+                    FROM int_projects AS t1
                     join region as t2 on t2.region_id = t1.region_id
+                    left join users_profile as up on up.user_id = t1.created_by
                     {$where_clause}
                     {$where_project_name}
                     {$where_region_name}
