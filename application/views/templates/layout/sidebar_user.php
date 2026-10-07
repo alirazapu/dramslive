@@ -417,7 +417,9 @@ try {
                 </li>           
             <?php } ?>
                 
-<?php if (Helpers_Utilities::chek_role_array_access($role_id, array(29,30)) == 1) { ?>
+<?php $can_create_project = Helpers_Project::can_create($user->id); ?>
+<?php $can_list_project = Helpers_Project::can_list($user->id, $role_id); ?>
+<?php if ($can_list_project || $can_create_project) { ?>
                 <li class="treeview <?php echo ($current_url == 'Intprojects' || ($current_url == 'Userreports' && ($menu_name == 'project_request_type' || $menu_name == 'project_request_send_detail'))) ? 'active' : ''; ?>">
                     <a href="#">
                         <i class="fa  fa-list"></i>
@@ -428,10 +430,10 @@ try {
                     </a>
 
                     <ul class="treeview-menu">
-                        <?php if (Helpers_Utilities::chek_role_access($role_id, 29) == 1) { ?>
+                        <?php if ($can_list_project) { ?>
                         <li class="<?php echo ($menu_name == 'index') ? 'active' : ''; ?>"><a href="<?php echo URL::site('intprojects'); ?>"><i class="fa fa-circle-o"></i> List Projects </a></li>
                         <?php } ?>
-                        <?php if (Helpers_Utilities::chek_role_access($role_id, 30) == 1) { ?>
+                        <?php if ($can_create_project) { ?>
                         <li class="<?php echo ($menu_name == 'showform') ? 'active' : ''; ?>"><a href="<?php echo URL::site('intprojects/showform'); ?>"><i class="fa fa-circle-o"></i> Add New Project</a></li>            
                         <?php } ?>
                     </ul>

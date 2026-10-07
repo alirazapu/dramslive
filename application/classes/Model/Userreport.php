@@ -4043,6 +4043,96 @@ class Model_Userreport {
         }
     }
 
+    /*
+     * Project requests organised by request type (project_request_type page summary).
+     * status: 0 In Queue, 1 Sent, 2 Email Received, 3 Sending Error, 4 Rejected
+     * return array('totals' => array, 'types' => array of type rows, each with 'users' list)
+     */
+    public static function project_request_type_summary($data, $project_id) {
+        $project_id = (int) $project_id;
+        $sdate = !empty($data['sdate']) ? Helpers_Utilities::encrypted_key($data['sdate'], 'decrypt') : '';
+        $edate = !empty($data['edate']) ? Helpers_Utilities::encrypted_key($data['edate'], 'decrypt') : '';
+        $search_date = '';
+        if (!empty($sdate)) {
+            $end = !empty($edate) ? $edate : date('Y-m-d');
+            $search_date = " and t1.created_at between '" . date('Y-m-d', strtotime($sdate)) . " 00:00:00' and '" . date('Y-m-d', strtotime($end)) . " 23:59:59' ";
+        }
+        $status_cols = "SUM(t1.status = 0) as in_queue,
+                        SUM(t1.status = 1) as sent,
+                        SUM(t1.status = 2) as received,
+                        SUM(t1.status = 3) as send_error,
+                        SUM(t1.status = 4) as rejected";
+
+        /* per request type */
+        $sql = "SELECT t1.user_request_type_id, t3.email_type_name as type_name,
+                       COUNT(*) as total,
+                       COUNT(DISTINCT t1.requested_value) as unique_values,
+                       COUNT(DISTINCT t1.user_id) as users,
+                       MIN(t1.created_at) as first_request, MAX(t1.created_at) as last_request,
+                       {$status_cols}
+                FROM user_request as t1
+                left join email_templates_type as t3 on t3.id = t1.user_request_type_id
+                where t1.project_id = {$project_id} {$search_date}
+                GROUP BY t1.user_request_type_id, t3.email_type_name
+                ORDER BY total desc";
+        $types = DB::query(Database::SELECT, $sql)->execute()->as_array('user_request_type_id');
+
+        /* per request type + user */
+        $sql = "SELECT t1.user_request_type_id, t1.user_id, t2.region_id, t2.posted,
+                       COUNT(*) as total,
+                       MIN(t1.created_at) as first_request, MAX(t1.created_at) as last_request,
+                       {$status_cols}
+                FROM user_request as t1
+                join users_profile as t2 on t2.user_id = t1.user_id
+                where t1.project_id = {$project_id} {$search_date}
+                GROUP BY t1.user_request_type_id, t1.user_id, t2.region_id, t2.posted
+                ORDER BY total desc";
+        $user_rows = DB::query(Database::SELECT, $sql)->execute()->as_array();
+
+        $totals = array('total' => 0, 'types' => count($types), 'users' => 0, 'received' => 0, 'pending' => 0, 'failed' => 0);
+        foreach ($types as $type_id => $type) {
+            $types[$type_id]['type_name'] = !empty($type['type_name']) ? $type['type_name'] : 'Unknown';
+            $types[$type_id]['users_list'] = array();
+            $totals['total'] += $type['total'];
+            $totals['received'] += $type['received'];
+            $totals['pending'] += $type['in_queue'] + $type['sent'];
+            $totals['failed'] += $type['send_error'] + $type['rejected'];
+        }
+        /* per user across all request types (project team list) */
+        $users = array();
+        foreach ($user_rows as $row) {
+            $type_id = $row['user_request_type_id'];
+            if (isset($types[$type_id])) {
+                $types[$type_id]['users_list'][] = $row;
+            }
+            $uid = $row['user_id'];
+            if (!isset($users[$uid])) {
+                $users[$uid] = array(
+                    'user_id' => $uid, 'region_id' => $row['region_id'], 'posted' => $row['posted'],
+                    'total' => 0, 'received' => 0, 'pending' => 0, 'failed' => 0,
+                    'first_request' => $row['first_request'], 'last_request' => $row['last_request'],
+                    'types' => array(),
+                );
+            }
+            $users[$uid]['total'] += $row['total'];
+            $users[$uid]['received'] += $row['received'];
+            $users[$uid]['pending'] += $row['in_queue'] + $row['sent'];
+            $users[$uid]['failed'] += $row['send_error'] + $row['rejected'];
+            $users[$uid]['first_request'] = min($users[$uid]['first_request'], $row['first_request']);
+            $users[$uid]['last_request'] = max($users[$uid]['last_request'], $row['last_request']);
+            $users[$uid]['types'][$type_id] = array(
+                'name' => isset($types[$type_id]) ? $types[$type_id]['type_name'] : 'Unknown',
+                'total' => $row['total'],
+            );
+        }
+        uasort($users, function ($a, $b) {
+            return $b['total'] - $a['total'];
+        });
+        $totals['users'] = count($users);
+
+        return array('totals' => $totals, 'types' => $types, 'users' => $users);
+    }
+
     /* Number of Request Send Ajax Call Data */
 
     public function project_request_send_detail($data, $count, $userid, $request_type, $project_id) {
