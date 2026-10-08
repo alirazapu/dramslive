@@ -1578,6 +1578,21 @@ echo $sql; exit;
         return $query;
     }
 
+    // Returns 1 on success, 2 if the email already belongs to another user
+    public function update_user_email($user_id, $email) {
+        $exists = DB::select('id')->from('users')
+                ->where('email', '=', $email)
+                ->where('id', '!=', $user_id)
+                ->execute()->current();
+        if (!empty($exists)) {
+            return 2;
+        }
+        DB::update('users')->set(array('email' => $email))
+                ->where('id', '=', $user_id)
+                ->execute();
+        return 1;
+    }
+
     public static function bulk_data_person($data, $bulk_search_cnic, $count) {
         $foreigner_subquery = '';
         $local_subquery = '';

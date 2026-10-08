@@ -3498,6 +3498,32 @@ class Controller_User extends Controller_Working {
         }
     }
 
+    // Update a user's login email address
+    public function action_update_email() {
+        try {
+            $login_user = Auth::instance()->get_user();
+            $permission = Helpers_Utilities::get_user_permission($login_user->id);
+
+            if ($permission != 1 && $permission != 5) {
+                echo json_encode(6);
+                return;
+            }
+
+            $user_id = !empty($_POST['user_id']) ? (int)$_POST['user_id'] : 0;
+            $email = !empty($_POST['email']) ? trim($_POST['email']) : '';
+
+            if (!empty($user_id) && filter_var($email, FILTER_VALIDATE_EMAIL) && strlen($email) <= 254) {
+                $model_reference = new Model_User();
+                $result = $model_reference->update_user_email($user_id, $email);
+                echo json_encode($result);
+            } else {
+                echo json_encode(6);
+            }
+        } catch (Exception $ex) {
+            echo json_encode(6);
+        }
+    }
+
     public function action_bulk_data_search() {
 //        try {
             if (Auth::instance()->logged_in()) {
