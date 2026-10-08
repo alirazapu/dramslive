@@ -116,7 +116,15 @@
                             </div>
                             <div class="form-group col-md-6">
                                 <label for="email">Email</label>
+                                <?php if ($permission == 1 || $permission == 5) { ?>
+                                <form class="ipf-form" action="<?php echo url::site().'user/update_email'?>" id="update_email" method="post">
+                                    <input type="hidden" name="user_id" value="<?php echo (int)$data->user_id; ?>">
+                                    <input type="email" class="form-control" name="email" id="email" value="<?php echo isset($user_log_info->email) ? htmlspecialchars($user_log_info->email) : ''; ?>" placeholder="Enter Email Address" required>
+                                    <button type="submit" class="btn btn-primary btn-sm" style="margin-top: 6px;">Update</button>
+                                </form>
+                                <?php } else { ?>
                                 <input disabled type="email" class="form-control" name="email" id="email" value="<?php echo ( isset($user_log_info->email) ) ? $user_log_info->email : 'NA' ; ?>" placeholder="Enter Email Address">
+                                <?php } ?>
                             </div>
                             <div class="form-group col-md-6">
                                 <label for="home_district">Select Home District</label>
@@ -384,6 +392,32 @@
                                 swal("System Error", "Please enter a valid mobile number (7-15 digits).", "error");
                             }
 
+                        },
+                        error: function (data) {
+                        console.log("error");
+                        console.log(data);
+                        }
+                    });
+                });
+             $('#update_email').on('submit', function (e) {
+                 e.preventDefault();
+                 var formData = new FormData(this);
+                $.ajax({
+                        type: 'POST',
+                        url: $(this).attr('action'),
+                        data: formData,
+                        cache: false,
+                        contentType: false,
+                        processData: false,
+                        success: function (msg) {
+                            if (msg == 1) {
+                                swal("Congratulations!", "Email Updated Successfully.", "success");
+                                location.reload();
+                             }else if (msg == 2) {
+                                swal("Duplicate Email", "This email is already used by another user.", "error");
+                             }else{
+                                swal("System Error", "Please enter a valid email address.", "error");
+                            }
                         },
                         error: function (data) {
                         console.log("error");
