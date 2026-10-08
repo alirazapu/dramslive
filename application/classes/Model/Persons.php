@@ -39,6 +39,11 @@ class Model_Persons
         if (!empty($data['phone_number'])) {
             $searchsql_phone = " and phone_number = {$data['phone_number']}";
         }
+        $searchsql_imei = '';
+        if (!empty($data['imei_number'])) {
+            $imei_number = preg_replace('/[^A-Za-z0-9]/', '', $data['imei_number']);
+            $searchsql_imei = " and imei_number = '{$imei_number}'";
+        }
         if (!empty($data['otherphone'])) {
             $o_person_phone = implode("' , '", $data['otherphone']);
             $searchsql_ophone = " and other_person_phone_number IN ('{$o_person_phone}')";
@@ -74,7 +79,7 @@ class Model_Persons
             $searchsql .= " and call_at between '{$start_date}' and '{$end_date}' ";
         }
 
-        /* Sorted Data */
+        /* Sorted Data (columns: 0 Party A, 1 IMEI, 2 Party B, 3 Type, 4 Duration, 5 Date, 6 Lat/Long, 7 Location) */
         $order_by_param = "phone_number";
         if (isset($data['iSortCol_0'])) {
             switch ($data['iSortCol_0']) {
@@ -82,18 +87,21 @@ class Model_Persons
                     $order_by_param = "phone_number";
                     break;
                 case "1":
-                    $order_by_param = "other_person_phone_number";
+                    $order_by_param = "imei_number";
                     break;
                 case "2":
-                    $order_by_param = "is_outgoing";
+                    $order_by_param = "other_person_phone_number";
                     break;
                 case "3":
-                    $order_by_param = "duration_in_seconds";
+                    $order_by_param = "is_outgoing";
                     break;
                 case "4":
-                    $order_by_param = "call_at";
+                    $order_by_param = "duration_in_seconds";
                     break;
                 case "5":
+                    $order_by_param = "call_at";
+                    break;
+                case "7":
                     $order_by_param = "address";
                     break;
             }
@@ -112,7 +120,7 @@ class Model_Persons
         /* Search via table */
         if (isset($data['sSearch']) && !empty($data['sSearch'])) {
             $data['sSearch'] = preg_replace('/[^A-Za-z0-9\_\|\-\. ]/', '', $data['sSearch']);
-            $search = "and (other_person_phone_number like '%{$data['sSearch']}%' or address like '%{$data['sSearch']}%' )";
+            $search = "and (other_person_phone_number like '%{$data['sSearch']}%' or imei_number like '%{$data['sSearch']}%' or address like '%{$data['sSearch']}%' )";
         } else {
             $search = "";
         }
@@ -125,7 +133,7 @@ class Model_Persons
                         {$search}
                         {$searchsql_phone}
                         {$time_filter}   
-                        {$searchsql_ophone}   
+                        {$searchsql_ophone} {$searchsql_imei}   
                         {$searchsql}";
             $members = DB::query(Database::SELECT, $sql)->execute()->current();
             return $members['count'];
@@ -136,7 +144,7 @@ class Model_Persons
                             {$searchsql}
                             {$time_filter}  
                                 {$searchsql_phone}   
-                        {$searchsql_ophone}
+                        {$searchsql_ophone} {$searchsql_imei}
                         {$searchsql_duration}
                         {$searchsql_lat}
                         {$searchsql_long}

@@ -18,7 +18,7 @@
         $result = explode('-', $posting);
         $permission = Helpers_Utilities::get_user_permission($login_user->id);
         
-        if (Helpers_Utilities::chek_role_access($this->role_id, 29) == 1) {
+        if (Helpers_Project::can_list($login_user->id, $this->role_id)) {
             /* Posted Data */
             $post = $this->request->post();
             
@@ -132,24 +132,33 @@
                     $request_count = 'Total = <b>';
                     $request_count .= Helpers_Utilities::project_request_count($projectid,$post);
                     $request_count .= '</b> </br>';
-                    $request_count .= ' <a href="' . URL::site('Userreports/project_request_type/?project_id=' . Helpers_Utilities::encrypted_key($projectid, "encrypt").'&sdate='.$enc_sdate.'&edate='.$enc_edate) . '" > View Details</a>';
+                    if (Helpers_Project::can_view_details(Auth::instance()->get_user()->id, $projectid)) {
+                        $request_count .= ' <a href="' . URL::site('Userreports/project_request_type/?project_id=' . Helpers_Utilities::encrypted_key($projectid, "encrypt").'&sdate='.$enc_sdate.'&edate='.$enc_edate) . '" > View Details</a>';
+                    }
                     //$request_count .= ']';
                     $status= (isset($item['project_status']) && $item['project_status']== 0) ? 'Open' : 'Close';                                        
                     $pdetails=   !empty($item['details']) ? '<div class="wrap-tab">' . $item['details'] . '</div>' : "NA";
                     $p_org_name=!empty($item['org_name']) ? $item['org_name'] : "NA"; 
                     $projectid_encrypted = Helpers_Utilities::encrypted_key($projectid,"encrypt");
+                    $can_manage = Helpers_Project::can_manage(Auth::instance()->get_user()->id, $projectid);
                     if ($status == 'Open') {
-                    $member_name_link = '<a class="btn btn-small action" href="'.URL::base().'intprojects/showform/'.$projectid_encrypted.'"><i class="fa fa-edit"></i> Edit</a>';
+                        $member_name_link = $can_manage ? '<a class="btn btn-small action" href="'.URL::base().'intprojects/showform/'.$projectid_encrypted.'"><i class="fa fa-edit"></i> Edit</a>' : '';
                     } else {
-                    $member_name_link = 'Project Closed';   
+                        $member_name_link = 'Project Closed';
                     }
+                    if ($can_manage) {
+                        $member_name_link .= ' <a class="btn btn-small action" href="'.URL::base().'intprojects/members/'.$projectid_encrypted.'"><i class="fa fa-users"></i> Members</a>';
+                    }
+                    $creator_name = trim($item['creator_name']);
+                    $created_by = $creator_name != '' ? HTML::chars($creator_name) : 'NA';
                     $row = array(
-                        $pname,       
+                        $pname,
                         $region_name,
                         $district_name,
-                        $organiztions, 
+                        $organiztions,
                         $status,
                         $pdetails,
+                        $created_by,
                         $request_count,
                         $member_name_link
                     );
@@ -203,11 +212,13 @@
         //$access_email_add = Helpers_Profile::get_user_access_permission($login_user_id, 16);
         $access_message = 'Access denied, Contact your technical support team';
        // print_r($access_email_add); exit;
-        if (Helpers_Utilities::chek_role_access($this->role_id, 30) == 1) {
+        $id = $this->request->param('id');
+        $id = Helpers_Utilities::encrypted_key($id, 'decrypt');
+        $id = Helpers_Utilities::remove_injection($id);
+        /* edit needs manage rights on the project, add needs the Project Management right */
+        $allowed = (isset($id) && ($id != NULL)) ? Helpers_Project::can_manage($login_user_id, $id) : Helpers_Project::can_create($login_user_id);
+        if ($allowed) {
             if (Auth::instance()->logged_in()) {
-                $id = $this->request->param('id');
-                $id = Helpers_Utilities::encrypted_key($id, 'decrypt');
-                $id = Helpers_Utilities::remove_injection($id);
                 if (isset($id) && ($id != NULL)) {
                     $user_obj = Auth::instance()->get_user();
                     try{
@@ -249,6 +260,10 @@
             if (Auth::instance()->logged_in()) {
                 $user_obj = Auth::instance()->get_user();
                 $_POST = Helpers_Utilities::remove_injection($_POST);
+                $allowed = empty($_POST['id']) ? Helpers_Project::can_create($user_obj->id) : Helpers_Project::can_manage($user_obj->id, $_POST['id']);
+                if (!$allowed) {
+                    $this->redirect('user/access_denied');
+                }
                 if ((isset($_POST)) && ($_POST != '') && ($_POST['id'] == '')) {
                     // echo '<pre>';                print_r($_POST); exit;
                     $_POST['user_id'] = $user_obj->id;
@@ -279,6 +294,77 @@
 //            print_r($ex);
 //            exit;
 //        }
+    }
+
+    /* project members page (owner with Project Management right, admin, dev tech support) */
+    public function action_members() {
+        try {
+            $login_user = Auth::instance()->get_user();
+            $project_id = (int) Helpers_Utilities::encrypted_key($this->request->param('id'), 'decrypt');
+            if (empty($project_id) || !Helpers_Project::can_manage($login_user->id, $project_id)) {
+                $this->template->content = View::factory('templates/user/access_denied');
+                return;
+            }
+            $this->template->content = View::factory('templates/user/int_project_members')
+                    ->set('project', Helpers_Project::get_project($project_id))
+                    ->set('project_enc', $this->request->param('id'))
+                    ->set('members', Helpers_Project::get_members($project_id));
+        } catch (Exception $ex) {
+            $this->template->content = View::factory('templates/user/exception_error_page')
+                    ->bind('exception', $ex);
+        }
+    }
+
+    /* ajax: users that can be added to a project (select2) */
+    public function action_member_search() {
+        $this->auto_render = FALSE;
+        $results = array();
+        try {
+            $login_user = Auth::instance()->get_user();
+            $project_id = (int) Helpers_Utilities::encrypted_key($this->request->query('project'), 'decrypt');
+            $term = (string) $this->request->query('q');
+            if (!empty($project_id) && strlen(trim($term)) >= 2 && Helpers_Project::can_manage($login_user->id, $project_id)) {
+                foreach (Helpers_Project::search_users($project_id, $term) as $row) {
+                    $results[] = array(
+                        'id' => $row['id'],
+                        'text' => trim($row['first_name'] . ' ' . $row['last_name']) . ' (' . $row['username'] . ')'
+                        . (!empty($row['job_title']) ? ' - ' . $row['job_title'] : ''),
+                    );
+                }
+            }
+        } catch (Exception $ex) {
+            $results = array();
+        }
+        echo json_encode(array('results' => $results));
+        exit;
+    }
+
+    /* add a member to a project */
+    public function action_member_add() {
+        $login_user = Auth::instance()->get_user();
+        $project_enc = $this->request->post('project');
+        $project_id = (int) Helpers_Utilities::encrypted_key($project_enc, 'decrypt');
+        $user_id = (int) $this->request->post('user_id');
+        if (empty($project_id) || !Security::check($this->request->post('csrf')) || !Helpers_Project::can_manage($login_user->id, $project_id)) {
+            $this->redirect('user/access_denied');
+        }
+        if (!empty($user_id)) {
+            Helpers_Project::add_member($project_id, $user_id, $login_user->id);
+        }
+        $this->redirect('intprojects/members/' . $project_enc . '?message=1');
+    }
+
+    /* remove a member from a project */
+    public function action_member_remove() {
+        $login_user = Auth::instance()->get_user();
+        $project_enc = $this->request->post('project');
+        $project_id = (int) Helpers_Utilities::encrypted_key($project_enc, 'decrypt');
+        $user_id = (int) $this->request->post('user_id');
+        if (empty($project_id) || !Security::check($this->request->post('csrf')) || !Helpers_Project::can_manage($login_user->id, $project_id)) {
+            $this->redirect('user/access_denied');
+        }
+        Helpers_Project::remove_member($project_id, $user_id);
+        $this->redirect('intprojects/members/' . $project_enc . '?message=2');
     }
 
     public function action_region_district() {

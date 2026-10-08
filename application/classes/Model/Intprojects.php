@@ -102,24 +102,9 @@ class Model_Intprojects {
             $search = "";
         }
         $login_user = Auth::instance()->get_user();
-        $login_user_profile = Helpers_Profile::get_user_perofile($login_user->id);
-    //    print_r($login_user_profile); exit;
-        $posting_region = $login_user_profile->region_id;
-        $posting = $login_user_profile->posted;
-        $result = explode('-', $posting);
-//        print_r($result);
-//        exit;
 
-
-
-        $where_clause = 'where t1.region_id = 0';
-            if ($posting_region == 11) {
-            $where_clause = " where 1 ";
-        } else if ($result[0] == 'r') {
-            $where_clause = " where ( t1.region_id = {$posting_region} )";
-        } else {
-            $where_clause = " where ( t1.region_id = {$posting_region} and t1.district_id = {$result[1]})";
-        }
+        /* only projects the user created or is assigned to (admin / dev tech support see all) */
+        $where_clause = " where " . Helpers_Project::access_condition($login_user->id, 't1');
         $DB = Database::instance();   
         /* For Total Record Count */
         if($count=='true')
@@ -139,9 +124,11 @@ class Model_Intprojects {
         }
         /*  Fetch all Records */
         else {
-            $sql = "SELECT * 
-                    FROM int_projects AS t1  
+            $sql = "SELECT t1.*, t2.name,
+                           concat(ifnull(up.first_name, ''), ' ', ifnull(up.last_name, '')) as creator_name
+                    FROM int_projects AS t1
                     join region as t2 on t2.region_id = t1.region_id
+                    left join users_profile as up on up.user_id = t1.created_by
                     {$where_clause}
                     {$where_project_name}
                     {$where_region_name}
@@ -170,8 +157,10 @@ class Model_Intprojects {
     }
     /* get all project data */
     public static function get_project_list($data) {
+        $login_user = Auth::instance()->get_user();
+        $access = Helpers_Project::access_condition($login_user->id, 'int_projects');
         $query = "SELECT * FROM int_projects
-                  where project_status = 0 and project_name like '%{$data}%'";
+                  where project_status = 0 and project_name like '%{$data}%' and {$access}";
         $sql = DB::query(Database::SELECT, $query);
         $result = $sql->execute();        
         return $result;

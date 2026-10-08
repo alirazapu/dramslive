@@ -55,7 +55,7 @@ if(isset($_POST['xport']) && $_POST['xport']=='excel')
                             $data = array(
                                      'Users' => array(
                                              1 => array('','CTD KPK (CDR Call Log)/'.$pname,'',''),
-                                             2 => array('Party A', 'Party B', 'Call Type','Call Duration','Date & Time','Location'),
+                                             2 => array('Party A', 'IMEI', 'Party B', 'Call Type','Call Duration','Date & Time','Location'),
                                      ),
 
                              );
@@ -68,9 +68,10 @@ if(isset($_POST['xport']) && $_POST['xport']=='excel')
                                 $duration .= "  Seconds";
                                 $datetime = ( isset($item['call_at']) ) ? $item['call_at'] : 'NA';
                                 $location = ( isset($item['address']) ) ? $item['address'] : 'NA';
+                                $imei = ( !empty($item['imei_number']) ) ? $item['imei_number'] : 'NA';
                                
                                
-                             $data['Users'][$i] = array($phone_number,$other_phone,$type,$duration, $datetime,$location);   
+                             $data['Users'][$i] = array($phone_number,$imei,$other_phone,$type,$duration, $datetime,$location);   
                              $i = $i + 1 ;
                             }
                           $XLSX->setData( $data, 1 );

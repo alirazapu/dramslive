@@ -11,7 +11,7 @@ $default_dev = array(
         'username'   => 'root',
         'password'   => '',
         'persistent' => FALSE,
-        'database'   => 'aiesdev',
+        'database'   => 'aiesplus',
     ),
     'table_prefix' => '',
     'charset'      => 'utf8',

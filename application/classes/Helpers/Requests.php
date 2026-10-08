@@ -174,5 +174,29 @@ abstract class Helpers_Requests {
             ->as_array();
         return $query;
     }
+
+    /*
+     * Batched check for get_requests_by_sim(): which of these SIMs have at
+     * least one downloadable (not deleted) file - one query for the whole list.
+     * return array [sim => true]
+     */
+    public static function get_sims_with_files($sims = array(), $type = 1)
+    {
+        $sims = array_unique(array_filter(array_map('trim', $sims)));
+        if (empty($sims)) {
+            return array();
+        }
+        $rows = DB::select('user_request.requested_value')
+            ->distinct(TRUE)
+            ->from('user_request')
+            ->join('files', 'INNER')
+            ->on('files.request_id', '=', 'user_request.request_id')
+            ->where('user_request.requested_value', 'IN', $sims)
+            ->and_where('user_request.user_request_type_id', '=', $type)
+            ->and_where('files.is_deleted', '=', 0)
+            ->execute()
+            ->as_array(NULL, 'requested_value');
+        return array_fill_keys(array_map('trim', $rows), TRUE);
+    }
 }
 ?>

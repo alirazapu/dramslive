@@ -138,7 +138,8 @@
                             <div class="col-sm-3">
                                 <div class="form-group" >
                                     <label  class="control-label">Custom Email Adress</label>
-                                    <input type="email"   class="form-control" name="emiladdress" id="emiladdress" value="" placeholder="Email Address">
+                                    <input type="text"   class="form-control" name="emiladdress" id="emiladdress" value="" placeholder="Email Address">
+                                    <small id="emiladdress_hint" class="text-muted" style="display:none">Separate multiple emails with a comma</small>
                                       
                                 </div>
                             </div>
@@ -510,9 +511,10 @@ $(document).on("click","li", function(){
                 },
                 emiladdress:{
                     required: true,
+                    multiemail: true,
                 },
             },
-            messages: {                
+            messages: {
                 inputreason: {
                     required: "Enter reason for request",
                     maxlenght: "Maximum character limit is 500",
@@ -520,6 +522,22 @@ $(document).on("click","li", function(){
                 }
             },
         });
+
+        // Accepts one email, or several separated by commas/semicolons -
+        // replaces the built-in single-address "email" rule for this field.
+        jQuery.validator.addMethod("multiemail", function (value, element) {
+            if (this.optional(element)) {
+                return true;
+            }
+            var emails = value.split(/\s*[,;]\s*/);
+            var emailRegex = /^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+            for (var i = 0; i < emails.length; i++) {
+                if (emails[i] === '' || !emailRegex.test(emails[i])) {
+                    return false;
+                }
+            }
+            return true;
+        }, "Please enter one or more valid email addresses, separated by commas.");
 
 
 
@@ -658,6 +676,11 @@ $(document).on("click","li", function(){
         $.each(form_data, function (key, input) {
             data.append(input.name, input.value);
         });
+        // company_name_get is disabled (not serialized) when request type
+        // "Others" is selected, so its value must be appended explicitly.
+        if ($('#company_name_get').prop('disabled')) {
+            data.append('company_name_get', $('#company_name_get').val());
+        }
         var files = $('#rqtfile')[0].files;
        data.append('file', files[0]);
      //old code just send the first file  
@@ -826,17 +849,34 @@ function toggleFileMultiple() {
     }
 }
 
+// hint that multiple, comma separated addresses are accepted in
+// Custom Email Adress when request type / company is "Others" (19).
+// Validation itself (see the "multiemail" method below) always allows
+// a comma separated list, for any request type.
+function toggleCustomEmailMultiple() {
+    if ($('#field').val() == '19' || $('#company_name_get').val() == '19') {
+        $('#emiladdress').attr('placeholder', 'Email Address (comma separated for multiple)');
+        $('#emiladdress_hint').show();
+    } else {
+        $('#emiladdress').attr('placeholder', 'Email Address');
+        $('#emiladdress_hint').hide();
+    }
+}
+
 $('#field').on('change', function () {
 
     if ($(this).val() == '19') {
         $('#company_name_get').val('19').trigger('change');
+        $('#company_name_get').prop('disabled', true).trigger('change.select2');
     } else {
         if ($('#company_name_get').val() == '19') {
             $('#company_name_get').val('').trigger('change');
         }
+        $('#company_name_get').prop('disabled', false).trigger('change.select2');
     }
 
     toggleFileMultiple();
+    toggleCustomEmailMultiple();
 });
 
 $('#company_name_get').on('change', function () {
@@ -850,10 +890,15 @@ $('#company_name_get').on('change', function () {
     }
 
     toggleFileMultiple();
+    toggleCustomEmailMultiple();
 });
 
 // Run on page load
 toggleFileMultiple();
+toggleCustomEmailMultiple();
+if ($('#field').val() == '19') {
+    $('#company_name_get').prop('disabled', true).trigger('change.select2');
+}
 
 </script>
 <style>

@@ -122,6 +122,18 @@ class Controller_User extends Controller_Working {
 
             if (Auth::instance()->logged_in()) {
                 $post = Session::instance()->get('search_person_post', array());
+                // no search criteria entered: skip the query instead of listing all profiles
+                $has_criteria = FALSE;
+                foreach (array('personname', 'fathername', 'cnic', 'phonenumber', 'imei', 'imsi', 'organization', 'category') as $field) {
+                    if (isset($post[$field]) && $post[$field] !== '' && $post[$field] !== array()) {
+                        $has_criteria = TRUE;
+                        break;
+                    }
+                }
+                if (!$has_criteria) {
+                    echo json_encode($output);
+                    exit();
+                }
                 if (!empty($post)) {
                     $search_value = NULL;
                     $search_key = NULL;

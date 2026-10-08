@@ -211,7 +211,8 @@
                                         <th style="width:10%" class="no-sort" title="Project District">District</th>                                                   
                                         <th style="width:20%" class="no-sort" title="Project Organizations">Organizations</th>                                                   
                                         <th style="width:5%"  title="Project Status">Status</th>                                                   
-                                        <th style="width:35%" class="no-sort">Details</th>                                                                               
+                                        <th style="width:35%" class="no-sort">Details</th>
+                                        <th style="" class="no-sort" title="Project Created By">Created By</th>
                                         <th style="" class="no-sort">Requests</th>                                                                               
                                         <th style="" class="no-sort">Options</th>
                                     </tr>
@@ -225,7 +226,8 @@
                                         <th>District</th>                                                                           
                                         <th>Organizations</th>                                                                           
                                         <th>Status</th>                                                                           
-                                        <th>Details</th>                                                                               
+                                        <th>Details</th>
+                                        <th>Created By</th>
                                         <th>Requests</th>                                                                               
                                         <th>Options</th>
                                     </tr>
