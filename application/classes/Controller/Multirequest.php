@@ -72,6 +72,16 @@ class Controller_Multirequest extends Controller_Working {
         if (mb_strlen($reason) < 5 || mb_strlen($reason) > 500 || !preg_match('/^[-a-zA-Z0-9_ .,\/]+$/', $reason)) {
             $errors[] = 'Reason must be 5 to 500 characters: letters, numbers, space and - _ . , / only.';
         }
+        // Requested By and Requested Attachment are optional, as on the admin custom request form.
+        $rqtbyname = isset($post['rqtbyname']) ? trim(strip_tags($post['rqtbyname'])) : '';
+        if (mb_strlen($rqtbyname) > 250) {
+            $errors[] = 'Requested By must be at most 250 characters.';
+        }
+        $attachment = (!empty($_FILES['rqtfile']) && !empty($_FILES['rqtfile']['name'])) ? $_FILES['rqtfile'] : NULL;
+        if ($attachment && (!Upload::valid($attachment) || $attachment['error'] !== UPLOAD_ERR_OK
+                || !Upload::type($attachment, array('jpg', 'jpeg', 'gif', 'png')) || !Upload::size($attachment, '5M'))) {
+            $errors[] = 'Requested Attachment must be a jpg, jpeg, gif or png image of at most 5 MB.';
+        }
 
         $start_date = $end_date = NULL;
         if (isset($request_types[$request_type]) && Model_Multirequest::needs_dates($request_type)) {
@@ -103,9 +113,26 @@ class Controller_Multirequest extends Controller_Working {
             return;
         }
 
+        $file_name = '';
         try {
-            $result = Model_Multirequest::create_batch($user->id, $request_type, $company, (string) $project_id, $reason, $start_date, $end_date, $numbers['valid']);
+            if ($attachment) {
+                // Same folder and naming as Controller_Email::action_send(); one
+                // copy on disk, referenced by every request of the batch.
+                if (!is_dir(REQUESTED_ATTACHMENTS)) {
+                    @mkdir(REQUESTED_ATTACHMENTS, 0755, true);
+                }
+                $saved_name = 'rqtmulti' . date('YmdHis') . '_' . $user->id . '.' . strtolower(pathinfo($attachment['name'], PATHINFO_EXTENSION));
+                if (!Upload::save($attachment, $saved_name, REQUESTED_ATTACHMENTS)) {
+                    $this->_json(array('status' => 0, 'message' => 'The Requested Attachment could not be saved. Please try again.'));
+                    return;
+                }
+                $file_name = REQUESTED_ATTACHMENTS . $saved_name;
+            }
+            $result = Model_Multirequest::create_batch($user->id, $request_type, $company, (string) $project_id, $reason, $start_date, $end_date, $numbers['valid'], $rqtbyname, $file_name);
         } catch (Exception $e) {
+            if ($file_name !== '' && is_file($file_name)) {
+                @unlink($file_name);
+            }
             Model_ErrorLog::log(
                 'action_multirequest_submit',
                 $e->getMessage(),
@@ -118,6 +145,10 @@ class Controller_Multirequest extends Controller_Working {
             return;
         }
         if (isset($result['error'])) {
+            // No request was created, so nothing references the attachment.
+            if ($file_name !== '' && is_file($file_name)) {
+                @unlink($file_name);
+            }
             $this->_json(array('status' => 0, 'message' => $result['error'], 'skipped' => $result['skipped'], 'duplicates' => $numbers['duplicates']));
             return;
         }
@@ -147,6 +178,24 @@ class Controller_Multirequest extends Controller_Working {
             'notes' => $notes,
             'duplicates' => $numbers['duplicates'],
         ));
+    }
+
+    /* "Requested By" autocomplete for the form: HTML <ul> like adminrequest/autocomplete. */
+    public function action_requested_by() {
+        $this->auto_render = FALSE;
+        $user = Auth::instance()->get_user();
+        if (!Model_Multirequest::has_access($user->id)) {
+            $this->response->status(403);
+            return;
+        }
+        $term = trim((string) $this->request->post('rqtbyname'));
+        $output = '<ul class="list-unstyled">';
+        if ($term !== '') {
+            foreach (Model_Multirequest::requested_by_names($term) as $name) {
+                $output .= '<li>' . HTML::chars(ucwords($name)) . '</li>';
+            }
+        }
+        $this->response->body($output . '</ul>');
     }
 
     public function action_report() {
@@ -206,7 +255,16 @@ class Controller_Multirequest extends Controller_Working {
         }
         $cells[] = HTML::chars($row['requested_value']);
         $cells[] = HTML::chars(Helpers_Utilities::get_request_type_name((int) $row['user_request_type_id'])) . '<br><b>' . HTML::chars($company) . '</b>';
-        $cells[] = HTML::chars(isset($user_names[$row['user_id']]) ? $user_names[$row['user_id']] : 'Unknown');
+        $sent_by = HTML::chars(isset($user_names[$row['user_id']]) ? $user_names[$row['user_id']] : 'Unknown');
+        if (!empty($row['rqtbyname'])) {
+            $sent_by .= '<br><small>Requested By: ' . HTML::chars($row['rqtbyname']) . '</small>';
+        }
+        if (!empty($row['request_id']) && !empty($row['file_name'])) {
+            // Persons::action_attachment() streams user_request.file_name after checking its folder.
+            $sent_by .= '<br><a href="' . URL::site('persons/attachment') . '?s=user&r=' . rawurlencode(Helpers_Utilities::encrypted_key($row['request_id'], 'encrypt'))
+                    . '" target="_blank"><i class="fa fa-paperclip"></i> Attachment</a>';
+        }
+        $cells[] = $sent_by;
         $cells[] = empty($row['created_at']) ? '--' : HTML::chars($row['created_at']);
 
         if (empty($row['request_id'])) {

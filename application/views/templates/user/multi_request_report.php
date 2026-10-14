@@ -88,7 +88,7 @@
                             <th>Request</th>
                             <th class="no-sort">Mobile #</th>
                             <th class="no-sort">Request Type / Company</th>
-                            <th class="no-sort">Requested By</th>
+                            <th class="no-sort">Sent By / Requested By</th>
                             <th>Created</th>
                             <th class="no-sort">Sending Status</th>
                             <th class="no-sort">Response Received</th>

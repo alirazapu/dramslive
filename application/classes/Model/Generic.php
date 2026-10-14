@@ -299,7 +299,7 @@ class Model_Generic {
         // print_r($data); exit;
         //update person location history details
         $query = DB::insert('person_location_history', array('person_id', 'phone_number', 'mnc', 'network', 'lac_id', 'cell_id', 'sector', 'latitude', 'longitude', 'address', 'moved_in_at', 'moved_out_at', 'status'))
-                ->values(array($data['person_id'], $data['locationmsisdn'], $data['loccompany'], $data['locnetwork'], $data['loclac'], $data['loccellid'], '', $data['loclat'], $data['loclong'], $data['locaddress'], $locationdate, '', $data['locstatus']))
+                ->values(array($data['person_id'], $data['locationmsisdn'], $data['loccompany'], $data['locnetwork'], $data['loclac'], $data['loccellid'], isset($data['locsector']) ? $data['locsector'] : '', $data['loclat'], $data['loclong'], $data['locaddress'], $locationdate, '', $data['locstatus']))
                 ->execute();
 
         Helpers_Profile::user_activity_log($uid, 24, NULL, NULL, $data['person_id']);

@@ -107,7 +107,7 @@ class Model_Multirequest {
      * or has no Name/CNIC. Returns array('batch_id', 'items') or
      * array('error' => message) when no number could be requested.
      */
-    public static function create_batch($user_id, $request_type, $company, $project_id, $reason, $start_date, $end_date, array $numbers) {
+    public static function create_batch($user_id, $request_type, $company, $project_id, $reason, $start_date, $end_date, array $numbers, $rqtbyname = '', $file_name = '') {
         // One submission at a time, so a double click or a second tab cannot
         // pass the open request check before the first submission inserts.
         $lock = fopen(DOCROOT . 'application/logs/user_request_batch.lock', 'c');
@@ -125,15 +125,15 @@ class Model_Multirequest {
                 return array('error' => 'No request was created: every number was skipped.', 'skipped' => $skipped);
             }
 
-            $batch = DB::insert('user_request_batch', array('user_id', 'user_request_type_id', 'company_name'))
-                    ->values(array($user_id, $request_type, $company))
+            $batch = DB::insert('user_request_batch', array('user_id', 'user_request_type_id', 'company_name', 'rqtbyname', 'file_name'))
+                    ->values(array($user_id, $request_type, $company, $rqtbyname !== '' ? $rqtbyname : NULL, $file_name !== '' ? $file_name : NULL))
                     ->execute();
             $batch_id = $batch[0];
 
             $items = array();
             foreach ($plan as $item) {
                 if ($item['skip'] === '') {
-                    $item = self::create_number_requests($batch_id, $item, $user_id, $request_type, $company, $project_id, $reason, $start_date, $end_date);
+                    $item = self::create_number_requests($batch_id, $item, $user_id, $request_type, $company, $project_id, $reason, $start_date, $end_date, $file_name);
                 }
                 if ($item['skip'] !== '') {
                     // Failing to record one skipped number must not stop the numbers after it.
@@ -211,7 +211,7 @@ class Model_Multirequest {
     }
 
     /* Inserts the profile (if needed) and the request(s) of one number in one transaction. */
-    private static function create_number_requests($batch_id, array $item, $user_id, $request_type, $company, $project_id, $reason, $start_date, $end_date) {
+    private static function create_number_requests($batch_id, array $item, $user_id, $request_type, $company, $project_id, $reason, $start_date, $end_date, $file_name) {
         $number = $item['number'];
         $profile = $item['profile'];
         // Ids come from the shared id_generator before the transaction starts,
@@ -235,10 +235,10 @@ class Model_Multirequest {
             if ($new_person_id) {
                 self::insert_profile($new_person_id, $number, $company, $project_id, $user_id, $profile['unowned_row_id']);
             }
-            $item['request_id'] = self::insert_request($user_id, $request_type, $company, $number, $concerned_person_id, $project_id, $reason, $start_date, $end_date, $item['reference_id']);
+            $item['request_id'] = self::insert_request($user_id, $request_type, $company, $number, $concerned_person_id, $project_id, $reason, $start_date, $end_date, $item['reference_id'], $file_name);
             self::insert_item($batch_id, $number, $item['request_id'], 0, $new_person_id ? 1 : 0, $item['note'] !== '' ? $item['note'] : NULL);
             if ($item['auto_subscriber']) {
-                $item['subscriber_request_id'] = self::insert_request($user_id, self::TYPE_SUBSCRIBER, $company, $number, $owner_first, $project_id, $reason, NULL, NULL, $item['subscriber_reference_id']);
+                $item['subscriber_request_id'] = self::insert_request($user_id, self::TYPE_SUBSCRIBER, $company, $number, $owner_first, $project_id, $reason, NULL, NULL, $item['subscriber_reference_id'], $file_name);
                 self::insert_item($batch_id, $number, $item['subscriber_request_id'], 1, 0, NULL);
             }
             $DB->commit();
@@ -412,15 +412,18 @@ class Model_Multirequest {
      * a single request, queued at status 0 / processing_index 0 for the send
      * cron. Priority is always Normal (1), so a batch never uses up the High
      * priority daily quota single Administrator requests rely on.
+     * file_name is the Requested Attachment, stored as Controller_Email::action_send()
+     * stores it; the send crons attach file_name only for SCOM, which a batch
+     * never uses, so it is never emailed to the Telco.
      */
-    private static function insert_request($user_id, $request_type, $company, $number, $person_id, $project_id, $reason, $start_date, $end_date, $reference_id) {
+    private static function insert_request($user_id, $request_type, $company, $number, $person_id, $project_id, $reason, $start_date, $end_date, $reference_id, $file_name = '') {
         $email = self::build_email($request_type, $company, $number, $reference_id, $start_date, $end_date);
         $date = date('Y-m-d H:i:s');
         $message = DB::insert('email_messages', array('sender_id', 'message_body', 'message_subject', 'message_date'))
                 ->values(array($email['to'], $email['body'], $email['subject'], $date))
                 ->execute();
-        $request = DB::insert('user_request', array('reference_id', 'user_id', 'user_request_type_id', 'message_id', 'company_name', 'status', 'processing_index', 'concerned_person_id', 'project_id', 'requested_value', 'startDate', 'endDate', 'reason', 'request_priority'))
-                ->values(array($reference_id, $user_id, $request_type, $message[0], $company, 0, 0, $person_id, $project_id, $number, $start_date, $end_date, $reason, 1))
+        $request = DB::insert('user_request', array('reference_id', 'user_id', 'user_request_type_id', 'message_id', 'company_name', 'status', 'processing_index', 'concerned_person_id', 'project_id', 'requested_value', 'startDate', 'endDate', 'reason', 'request_priority', 'file_name'))
+                ->values(array($reference_id, $user_id, $request_type, $message[0], $company, 0, 0, $person_id, $project_id, $number, $start_date, $end_date, $reason, 1, $file_name !== '' ? $file_name : NULL))
                 ->execute();
         DB::insert('person_linked_projects', array('user_id', 'request_type_id', 'person_id', 'project_id', 'requested_value', 'request_time'))
                 ->values(array($user_id, $request_type, $person_id, $project_id, $number, $date))
@@ -594,7 +597,7 @@ class Model_Multirequest {
         $limit = ($limit > 0 && $limit <= 500) ? $limit : 25;
 
         $sql = 'SELECT bi.id, bi.batch_id, bi.requested_value, bi.request_id, bi.is_auto_subscriber, bi.profile_created, bi.note,
-                       b.user_id, b.company_name, b.created_at AS batch_created_at,
+                       b.user_id, b.company_name, b.rqtbyname, b.created_at AS batch_created_at, ur.file_name,
                        COALESCE(ur.user_request_type_id, b.user_request_type_id) AS user_request_type_id,
                        ur.reference_id, ur.status, ur.processing_index, ur.concerned_person_id,
                        ur.created_at, ur.sending_date, ur.request_send_count, em.received_date,
@@ -610,6 +613,31 @@ class Model_Multirequest {
             $query->param($key, $value);
         }
         return $query->execute()->as_array();
+    }
+
+    /* "Requested By" suggestions: the names Controller_Adminrequest::action_autocomplete()
+       offers from the admin request tables, plus those entered on earlier batches. */
+    public static function requested_by_names($term) {
+        $like = str_replace(array('|', '%', '_'), array('||', '|%', '|_'), $term);
+        $sql = "SELECT name FROM (
+                    SELECT rqtbyname AS name FROM user_request_batch       WHERE rqtbyname LIKE :like ESCAPE '|'
+                    UNION
+                    SELECT rqtbyname AS name FROM admin_request            WHERE rqtbyname LIKE :like ESCAPE '|'
+                    UNION
+                    SELECT rqtbyname AS name FROM admin_nadra_request      WHERE rqtbyname LIKE :like ESCAPE '|'
+                    UNION
+                    SELECT rqtbyname AS name FROM admin_familytree_request WHERE rqtbyname LIKE :like ESCAPE '|'
+                    UNION
+                    SELECT rqtbyname AS name FROM admin_travel_request     WHERE rqtbyname LIKE :like ESCAPE '|'
+                ) AS combined
+                WHERE name IS NOT NULL AND TRIM(name) != ''
+                GROUP BY name
+                ORDER BY name ASC
+                LIMIT 20";
+        return DB::query(Database::SELECT, $sql)
+                ->param(':like', '%' . $like . '%')
+                ->execute()
+                ->as_array(NULL, 'name');
     }
 
     /* Latest error or warning system_error_log holds for each request (array of error_source, error_message). */

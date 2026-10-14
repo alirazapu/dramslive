@@ -22,7 +22,31 @@ try {
     ];
     
     $check_body = ['na', 'n', 'no data', 'nil', '', ' '];
-    
+
+    /* Jazz also replies in a newer one-line layout, positions taken from the
+       unfiltered split so an empty field cannot shift the ones after it:
+         GSM/UMTS: MSISDN|2026-October-08 12:19:31|Attached|LAC|Cell|IMSI|GSM/UMTS|, Address|Lat|Long|IMEI
+         LTE:      MSISDN|2026-October-08 12:35:14|Attached|TAC|eNodeB|Cell|IMSI|LTE|, Address|Lat|Long|IMEI
+       The IMEI field is followed by the quoted request (date, FIR no., MSISDN).
+       Jazz sometimes wraps a line inside the date ("2026-June-30" / "13:43:33"),
+       so the space between date and time may be missing or be a line break.
+       Any other reply falls through to the original layout parsing below. */
+    $jazz_fields = array_map('trim', explode('|', strip_tags($data['received_body'])));
+    $jazz_network_key = false;
+    if (isset($jazz_fields[1])) {
+        $jazz_fields[1] = preg_replace('/^(\d{4}-[A-Za-z]+-\d{2})\s*(\d{1,2}:\d{2}(:\d{2})?)$/', '$1 $2', $jazz_fields[1]);
+    }
+    if (count($jazz_fields) >= 11
+            && preg_match('/^\d{4}-[A-Za-z]+-\d{2} \d{1,2}:\d{2}(:\d{2})?$/', $jazz_fields[1])
+            && preg_match('/^(attached|detached|deattach(ed)?|purged)$/i', $jazz_fields[2])) {
+        foreach (array(6, 7) as $key) {
+            if (isset($jazz_fields[$key]) && preg_match('/^(gsm|umts|lte|nr|[2-5]g)(\/(gsm|umts|lte|nr|[2-5]g))*$/i', $jazz_fields[$key])) {
+                $jazz_network_key = $key;
+                break;
+            }
+        }
+    }
+
     // Check for not-found patterns
     $body_lower = strtolower(trim($data['received_body']));
     foreach ($check_array as $str_check) {
@@ -67,7 +91,72 @@ try {
         
         $reference_number = Model_Email::email_status($reference_number, 2, 5);
         $not_fount = 1;
-        
+
+    } elseif ($jazz_network_key !== false) {
+        // Newer one-line layout (see $jazz_fields above)
+        $n = $jazz_network_key;
+        $loc_data['locationmsisdn'] = substr(preg_replace('/\D/', '', $jazz_fields[0]), -10);
+
+        $jazz_date = DateTime::createFromFormat('Y-F-d H:i:s', $jazz_fields[1]);
+        if (!$jazz_date) {
+            $jazz_date = DateTime::createFromFormat('Y-F-d H:i', $jazz_fields[1]);
+        }
+        if ($jazz_date) {
+            $loc_data['locdate'] = $jazz_date->format('Y-m-d H:i:s');
+        }
+
+        $jazz_status = strtolower($jazz_fields[2]);
+        if ($jazz_status === 'attached') {
+            $loc_data['locstatus'] = 1;
+        } elseif ($jazz_status === 'purged') {
+            $loc_data['locstatus'] = 2;
+        } else {
+            $loc_data['locstatus'] = 0;
+        }
+
+        // GSM/UMTS: LAC|Cell. LTE: TAC|eNodeB|Cell - TAC as LAC, eNodeB as cell, cell as sector.
+        if (ctype_digit($jazz_fields[3])) {
+            $loc_data['loclac'] = $jazz_fields[3];
+        }
+        if (ctype_digit($jazz_fields[4])) {
+            $loc_data['loccellid'] = $jazz_fields[4];
+        }
+        if ($n == 7 && ctype_digit($jazz_fields[5])) {
+            $loc_data['locsector'] = $jazz_fields[5];
+        }
+
+        if (ctype_digit($jazz_fields[$n - 1])) {
+            $loc_data['locimsi'] = $jazz_fields[$n - 1];
+        }
+
+        $jazz_network = strtolower($jazz_fields[$n]);
+        if (strpos($jazz_network, 'lte') !== false || strpos($jazz_network, '4g') !== false) {
+            $loc_data['locnetwork'] = 3;
+        } elseif ($jazz_network === 'umts' || $jazz_network === '3g') {
+            $loc_data['locnetwork'] = 2;
+        } elseif ($jazz_network === 'gsm' || $jazz_network === '2g') {
+            $loc_data['locnetwork'] = 1;
+        } else {
+            $loc_data['locnetwork'] = 0; // e.g. GSM/UMTS: 2G or 3G, Jazz does not say which
+        }
+
+        $jazz_address = trim(trim($jazz_fields[$n + 1] ?? ''), ', ');
+        $loc_data['locaddress'] = mb_substr($jazz_address . ' Network: ' . $jazz_fields[$n] . ' Last Activity: ' . $jazz_fields[1], 0, 500);
+
+        $jazz_lat = $jazz_fields[$n + 2] ?? '';
+        $jazz_long = $jazz_fields[$n + 3] ?? '';
+        if (is_numeric($jazz_lat) && is_numeric($jazz_long)) {
+            // Same rule as the original layout: in Pakistan latitude < longitude.
+            $loc_data['loclat'] = min($jazz_lat, $jazz_long);
+            $loc_data['loclong'] = max($jazz_lat, $jazz_long);
+        }
+
+        // 14 or 15 leading digits: the quoted request's date (mm/dd/yyyy) follows
+        // the IMEI, with no separator once the line break has been removed.
+        if (isset($jazz_fields[$n + 4]) && preg_match('/^\d{14,15}?(?=\d{1,2}\/\d{1,2}\/\d{4}|\D|$)/', $jazz_fields[$n + 4], $jazz_imei)) {
+            $loc_data['locimei'] = str_pad($jazz_imei[0], 15, '0', STR_PAD_RIGHT);
+        }
+
     } else {
         // Filter parsed values - keep only meaningful data
         $array_parse = array();

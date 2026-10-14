@@ -17,6 +17,8 @@ CREATE TABLE IF NOT EXISTS `user_request_batch` (
   `user_id` int(10) unsigned NOT NULL,
   `user_request_type_id` int(10) unsigned NOT NULL COMMENT 'Request type chosen for the batch (email_templates_type.id)',
   `company_name` int(2) NOT NULL COMMENT 'MNC (Mobile Network Value)',
+  `rqtbyname` varchar(250) DEFAULT NULL COMMENT 'Requested By (name entered on the form)',
+  `file_name` varchar(250) DEFAULT NULL COMMENT 'Requested Attachment path (also on each user_request.file_name)',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`batch_id`),
   KEY `idx_user_id` (`user_id`),
@@ -52,6 +54,14 @@ CREATE TABLE IF NOT EXISTS `user_request_batch_item` (
 INSERT INTO `lu_user_access_type` (`id`, `label`, `internal_name`, `description`)
 VALUES (13, 'Multi Number Request', 'multi_number_request', 'Send one Telco request per mobile number for a list of numbers'),
        (14, 'Multi Number Request Report', 'multi_number_request_report', 'View the Multi Number Request batch report');
+
+-- ---------------------------------------------------------------------
+-- 3b. Servers that already ran this script before Requested By /
+--     Requested Attachment were added: run only these two columns.
+-- ---------------------------------------------------------------------
+-- ALTER TABLE `user_request_batch`
+--   ADD COLUMN `rqtbyname` varchar(250) DEFAULT NULL COMMENT 'Requested By (name entered on the form)' AFTER `company_name`,
+--   ADD COLUMN `file_name` varchar(250) DEFAULT NULL COMMENT 'Requested Attachment path (also on each user_request.file_name)' AFTER `rqtbyname`;
 
 -- ---------------------------------------------------------------------
 -- 4. Verification

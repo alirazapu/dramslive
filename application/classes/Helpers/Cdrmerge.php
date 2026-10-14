@@ -14,7 +14,7 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
  * Combine all CDR files of a SIM (user_request + files) into one xlsx.
  *
  * - xlsx / csv are streamed with Spout, xls is read with PhpSpreadsheet,
- *   zip archives are extracted and their xlsx / xls / csv files used.
+ *   zip / rar archives are extracted and their xlsx / xls / csv files used.
  * - A "Source File" column tells which CDR file each row came from.
  * - Files with the same header share one header row; a file with a different
  *   header (e.g. other operator format) gets its own header row before its data.
@@ -108,7 +108,7 @@ class Helpers_Cdrmerge
         return $result;
     }
 
-    /* readable spreadsheet paths for one CDR file (zip archives are extracted) */
+    /* readable spreadsheet paths for one CDR file (zip / rar archives are extracted) */
     private static function source_paths($path, $work_dir, &$skipped)
     {
         $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
@@ -142,6 +142,46 @@ class Helpers_Cdrmerge
             $zip->close();
             if (empty($paths)) {
                 $skipped[] = basename($path) . ': no xlsx/xls/csv file inside zip';
+            }
+            return $paths;
+        }
+        if ($ext == 'rar') {
+            if (!class_exists('RarArchive')) {
+                $skipped[] = basename($path) . ': rar extension is not enabled in PHP';
+                return array();
+            }
+            $rar = RarArchive::open($path);
+            if ($rar === FALSE) {
+                $skipped[] = basename($path) . ': rar could not be opened';
+                return array();
+            }
+            $entries = $rar->getEntries();
+            if ($entries === FALSE) {
+                $rar->close();
+                $skipped[] = basename($path) . ': rar could not be read';
+                return array();
+            }
+            $extract_dir = $work_dir . DIRECTORY_SEPARATOR . 'rar_' . uniqid();
+            mkdir($extract_dir);
+            $paths = array();
+            foreach ($entries as $i => $entry) {
+                if ($entry->isDirectory()) {
+                    continue;
+                }
+                $name = str_replace('\\', '/', $entry->getName());
+                $entry_ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+                if (!in_array($entry_ext, self::$readable_ext)) {
+                    continue;
+                }
+                // flat, safe file name (no paths from inside the archive)
+                $target = $extract_dir . DIRECTORY_SEPARATOR . $i . '_' . preg_replace('/[^A-Za-z0-9_.-]/', '_', basename($name));
+                if ($entry->extract(FALSE, $target)) {
+                    $paths[] = $target;
+                }
+            }
+            $rar->close();
+            if (empty($paths)) {
+                $skipped[] = basename($path) . ': no xlsx/xls/csv file inside rar';
             }
             return $paths;
         }

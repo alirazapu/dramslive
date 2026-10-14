@@ -97,6 +97,29 @@
                                 </select>
                             </div>
                         </div>
+                        <!-- Requested By + Requested Attachment, as on the admin advance custom request form -->
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <label for="rqtbyname" class="control-label">Requested By</label>
+                                <input type="text" class="form-control" name="rqtbyname" id="rqtbyname" value="" placeholder="Name" maxlength="250">
+                                <div id="rqtbynamelist"></div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <label for="rqtfile" class="control-label">Requested Attachment</label>
+                                <!-- Paste-zone behaviour in dist/js/requested_attachment.js -->
+                                <div class="rqt-paste-zone" tabindex="0">
+                                    <div class="rqt-hint">
+                                        <i class="fa fa-paperclip"></i>
+                                        Click, drop, or
+                                        <kbd>Ctrl</kbd>+<kbd>V</kbd> to paste a screenshot.
+                                    </div>
+                                    <input type="file" accept=".jpeg,.jpg,.gif,.png" id="rqtfile" name="rqtfile" placeholder="Select Image">
+                                    <div class="rqt-preview"></div>
+                                </div>
+                            </div>
+                        </div>
                         <div class="col-sm-12">
                             <div class="form-group">
                                 <label for="reason" class="control-label">Reason For This Request</label>
@@ -122,7 +145,31 @@
     </div>
 </section>
 <!-- /.content -->
+<style>
+    /* Requested By suggestions overlay the next row (same as the admin custom request form). */
+    #rqtbynamelist {
+        position: relative;
+    }
+    #rqtbynamelist ul.list-unstyled {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        background-color: #def;
+        padding: 10px;
+        margin: 0;
+        cursor: pointer;
+        z-index: 1050;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+        border: 1px solid #b6cfe1;
+        border-radius: 3px;
+    }
+    #rqtbynamelist ul.list-unstyled li:hover {
+        background-color: #cde;
+    }
+</style>
 <script src="<?php echo URL::base() . 'plugins/select2/select2.full.min.js'; ?>"></script>
+<script src="<?php echo URL::base() . 'dist/js/requested_attachment.js'; ?>"></script>
 <script>
     var MAX_NUMBERS = <?php echo (int) $max_numbers; ?>;
     var CDR_TYPES = ['1', '6'];
@@ -220,6 +267,34 @@
         $('#request_type').on('change', onRequestTypeChange);
         $('#numbers').on('input change', updateNumbersSummary);
 
+        // Requested By suggestions (multirequest/requested_by).
+        var rqtTimer = null;
+        $('#rqtbyname').on('keyup', function () {
+            var term = $.trim($(this).val());
+            clearTimeout(rqtTimer);
+            if (term === '') {
+                $('#rqtbynamelist').html('').fadeOut();
+                return;
+            }
+            rqtTimer = setTimeout(function () {
+                $.post('<?php echo URL::site('multirequest/requested_by'); ?>', {rqtbyname: term}, function (data) {
+                    $('#rqtbynamelist').html(data);
+                    $('#rqtbynamelist li').length ? $('#rqtbynamelist').fadeIn() : $('#rqtbynamelist').fadeOut();
+                });
+            }, 250);
+        });
+        // mousedown so the pick registers before the input's blur hides the list.
+        $(document).on('mousedown', '#rqtbynamelist li', function (e) {
+            e.preventDefault();
+            $('#rqtbyname').val($.trim($(this).text()));
+            $('#rqtbynamelist').empty().fadeOut('fast');
+        });
+        $(document).on('mousedown', function (e) {
+            if (!$(e.target).closest('#rqtbyname, #rqtbynamelist').length) {
+                $('#rqtbynamelist').fadeOut('fast');
+            }
+        });
+
         jQuery.validator.addMethod('alphanumericspecial', function (value, element) {
             return this.optional(element) || /^[-a-zA-Z0-9_ .,\/]+$/.test(value);
         }, 'Only letters, Numbers,Dot & Space/underscore Allowed.');
@@ -237,6 +312,7 @@
                 start_date: {required: function () { return CDR_TYPES.indexOf($('#request_type').val()) !== -1; }},
                 end_date: {required: function () { return CDR_TYPES.indexOf($('#request_type').val()) !== -1; }},
                 reason: {required: true, alphanumericspecial: true, minlength: 5, maxlength: 500},
+                rqtbyname: {maxlength: 250},
                 numbers: {required: true, mobilenumbers: true}
             },
             messages: {
@@ -256,11 +332,23 @@
             }
             var button = $(this);
             button.prop('disabled', true).text('Please wait...');
+            // FormData so the Requested Attachment (clicked, dropped or pasted into #rqtfile) is sent too.
+            var data = new FormData();
+            $.each($('#multirequestform').serializeArray(), function (i, input) {
+                data.append(input.name, input.value);
+            });
+            var rqt = $('#rqtfile')[0].files;
+            if (rqt && rqt[0]) {
+                data.append('rqtfile', rqt[0]);
+            }
             $.ajax({
                 url: '<?php echo URL::site('multirequest/submit'); ?>',
                 type: 'POST',
                 dataType: 'json',
-                data: $('#multirequestform').serialize(),
+                data: data,
+                cache: false,
+                contentType: false,
+                processData: false,
                 success: function (res) {
                     if (res.status == 1) {
                         var subscriber = res.created.filter(function (item) { return item.subscriber_request_id > 0; }).length;
@@ -279,6 +367,11 @@
                         }
                         $('#numbers').val('');
                         updateNumbersSummary();
+                        // The batch keeps its attachment; clear it so the next batch does not reuse it by accident.
+                        var clearAttachment = document.querySelector('.rqt-paste-zone .rqt-clear');
+                        if (clearAttachment) {
+                            clearAttachment.click();
+                        }
                         swal({title: 'Requests Queued', text: html, type: 'success', html: true});
                     } else {
                         var lines = res.errors ? res.errors : [res.message];
