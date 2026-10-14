@@ -132,6 +132,35 @@ class Controller_Speciallocation extends Controller_Working {
         ));
     }
 
+    /* Form helper: the profile the number would be linked to, checked while typing. */
+    public function action_check_number() {
+        $this->auto_render = FALSE;
+        $this->response->headers('Content-Type', 'application/json');
+        $user = Auth::instance()->get_user();
+        if (!Model_Speciallocation::has_access($user->id)) {
+            $this->_json(array('status' => 0, 'message' => 'Not permitted.'), 403);
+            return;
+        }
+        $number = Model_Multirequest::normalize_number($this->request->post('msisdn'));
+        if ($number === '') {
+            $this->_json(array('status' => 0, 'message' => 'Enter a valid mobile number (3XXXXXXXXX).'));
+            return;
+        }
+        $pid = $this->request->post('pid');
+        $person_id = Model_Speciallocation::profile_for_number($number, !empty($pid) ? (int) Helpers_Utilities::encrypted_key($pid, 'decrypt') : 0);
+        if (!$person_id) {
+            $this->_json(array('status' => 0, 'message' => 'No profile for this number. Create the profile (or send a Subscriber request) first.'));
+            return;
+        }
+        $person = DB::select('first_name', 'last_name')->from('person')->where('person_id', '=', $person_id)->execute()->current();
+        $name = !empty($person) ? trim($person['first_name'] . ' ' . $person['last_name']) : '';
+        $blocked = Helpers_Email::check_in_blocked_number_list($number);
+        $this->_json(array(
+            'status' => $blocked ? 0 : 1,
+            'message' => $blocked ? 'This number is in the blocked number list.' : 'Profile #' . $person_id . ($name !== '' ? ' ' . $name : ' (no name yet)'),
+        ));
+    }
+
     public function action_report() {
         $user = Auth::instance()->get_user();
         $all = Model_Speciallocation::has_report_access($user->id);

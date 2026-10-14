@@ -39,6 +39,7 @@
                             <div class="form-group">
                                 <label for="msisdn" class="control-label">Mobile Number</label>
                                 <input type="text" class="form-control" name="msisdn" id="msisdn" value="<?php echo HTML::chars($msisdn); ?>" placeholder="3001234567" maxlength="15">
+                                <p class="help-block" id="msisdn_profile"></p>
                             </div>
                         </div>
                         <div class="col-sm-6">
@@ -167,9 +168,39 @@
         }
     }
 
+    // Profile lookup while typing (speciallocation/check_number). numberOk is
+    // null until the typed number has been checked.
+    var numberOk = null;
+    var checkTimer = null;
+    var checkXhr = null;
+    function checkNumber() {
+        var number = normalizeNumber($('#msisdn').val());
+        clearTimeout(checkTimer);
+        if (checkXhr) {
+            checkXhr.abort();
+        }
+        numberOk = null;
+        if (number === '') {
+            $('#msisdn_profile').text('').css('color', '');
+            return;
+        }
+        $('#msisdn_profile').html('<i class="fa fa-spinner fa-spin"></i> Checking profile...').css('color', '');
+        checkTimer = setTimeout(function () {
+            checkXhr = $.post('<?php echo URL::site('speciallocation/check_number'); ?>', {msisdn: number, pid: $('input[name="pid"]').val()}, function (res) {
+                numberOk = res.status == 1;
+                $('#msisdn_profile').html((numberOk ? '<i class="fa fa-check"></i> ' : '<i class="fa fa-times"></i> ') + escapeHtml(res.message))
+                        .css('color', numberOk ? '#00a65a' : '#dd4b39');
+            }, 'json');
+        }, 400);
+    }
+
     $(function () {
         $('.select2').select2();
         $('.schedule-input').on('change', updateScheduleSummary);
+        $('#msisdn').on('input change', checkNumber);
+        if ($('#msisdn').val() !== '') {
+            checkNumber();
+        }
 
         jQuery.validator.addMethod('alphanumericspecial', function (value, element) {
             return this.optional(element) || /^[-a-zA-Z0-9_ .,\/]+$/.test(value);
@@ -206,6 +237,10 @@
 
         $('#speciallocationbtn').on('click', function () {
             if (!$('#speciallocationform').valid()) {
+                return;
+            }
+            if (numberOk === false) {
+                swal('Request not sent', $('#msisdn_profile').text(), 'error');
                 return;
             }
             var button = $(this);
