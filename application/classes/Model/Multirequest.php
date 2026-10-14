@@ -322,7 +322,7 @@ class Model_Multirequest {
      * rows have no owner and no user; missing_id when they point at a profile
      * that does not exist.
      */
-    private static function find_profile($number) {
+    public static function find_profile($number) {
         $profile = array('owner_id' => 0, 'user_id' => 0, 'unowned_row_id' => 0, 'missing_id' => 0);
         $rows = DB::query(Database::SELECT, 'SELECT id, sim_owner, person_id FROM person_phone_number WHERE phone_number = :number ORDER BY id DESC')
                 ->param(':number', $number)
@@ -416,7 +416,7 @@ class Model_Multirequest {
      * stores it; the send crons attach file_name only for SCOM, which a batch
      * never uses, so it is never emailed to the Telco.
      */
-    private static function insert_request($user_id, $request_type, $company, $number, $person_id, $project_id, $reason, $start_date, $end_date, $reference_id, $file_name = '') {
+    public static function insert_request($user_id, $request_type, $company, $number, $person_id, $project_id, $reason, $start_date, $end_date, $reference_id, $file_name = '') {
         $email = self::build_email($request_type, $company, $number, $reference_id, $start_date, $end_date);
         $date = date('Y-m-d H:i:s');
         $message = DB::insert('email_messages', array('sender_id', 'message_body', 'message_subject', 'message_date'))

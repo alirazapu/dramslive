@@ -442,6 +442,29 @@ if ($multi_request_access || $multi_request_report) { ?>
                 </li>
 <?php } ?>
 
+<?php
+// Special Location Request: sending needs its own right (Access Control List);
+// the list shows the user's own requests, or everyone's with the report right.
+$special_location_access = Model_Speciallocation::has_access($user->id);
+$special_location_report = Model_Speciallocation::has_report_access($user->id);
+if ($special_location_access || $special_location_report) { ?>
+                <li class="treeview <?php echo ($current_url == 'Speciallocation') ? 'active' : ''; ?>">
+                    <a href="#">
+                        <i class="fa fa-crosshairs"></i>
+                        <span>Special Location Request</span>
+                        <span class="pull-right-container">
+                            <i class="fa fa-angle-left pull-right"></i>
+                        </span>
+                    </a>
+                    <ul class="treeview-menu">
+                        <?php if ($special_location_access) { ?>
+                            <li class="<?php echo ($current_url == 'Speciallocation' && $menu_name == 'index') ? 'active' : ''; ?>"><a href="<?php echo URL::site('speciallocation/index'); ?>"><i class="fa fa-circle-o"></i> New Request</a></li>
+                        <?php } ?>
+                        <li class="<?php echo ($current_url == 'Speciallocation' && in_array($menu_name, array('report', 'detail'))) ? 'active' : ''; ?>"><a href="<?php echo URL::site('speciallocation/report'); ?>"><i class="fa fa-circle-o"></i> Location Requests</a></li>
+                    </ul>
+                </li>
+<?php } ?>
+
 <?php $can_create_project = Helpers_Project::can_create($user->id); ?>
 <?php $can_list_project = Helpers_Project::can_list($user->id, $role_id); ?>
 <?php if ($can_list_project || $can_create_project) { ?>

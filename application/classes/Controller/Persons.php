@@ -3309,6 +3309,10 @@ exit();
 <!--                                    <a href="#" onclick="requestbranchlessbanking(<?php /* echo $sim . ',' . $person_id; */ ?>)"> <span class="label label-warning">Branchless Banking</span> </a>-->
                                     <a href="#" onclick="requestlocation(<?php echo $sim . ',' . $person_id; ?>)"> <span
                                                 class="label label-primary">Location</span> </a>
+                                    <?php if (Model_Speciallocation::has_access(Auth::instance()->get_user()->id)) { ?>
+                                    <a href="<?php echo URL::site('speciallocation/index') . '?msisdn=' . rawurlencode(trim($sim)) . '&pid=' . rawurlencode(Helpers_Utilities::encrypted_key($person_id, 'encrypt')); ?>"
+                                       title="Send this location request repeatedly"><span class="label label-danger">Special Location</span></a>
+                                    <?php } ?>
                                     <a href="#" onclick="external_search_model(<?php echo $sim . ',0'; ?>)"><span
                                                 class="label label-primary">Subscriber</span></a>
                                     <a href="#" onclick="requestcdr(<?php echo $sim . ',' . $person_id; ?>)"><span

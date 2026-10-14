@@ -77,6 +77,25 @@ class Controller_Cronjob extends Controller {
         }
     }
 
+    /* Special Location Request: creates the next round of every request that
+       is due (Model_Speciallocation). Run every minute; email_send_loc sends them. */
+    public function action_special_location_tick() {
+        try {
+            $created = Model_Speciallocation::run_due();
+            echo 'Special location rounds created: ' . $created;
+        } catch (Exception $e) {
+            Model_ErrorLog::log(
+                'action_special_location_tick',
+                $e->getMessage(),
+                array('exception' => get_class($e)),
+                $e->getTraceAsString(),
+                'processing_failure',
+                'special_location'
+            );
+            error_log("[" . date('c') . "] action_special_location_tick failed: " . $e->getMessage());
+        }
+    }
+
     public function action_email_send() {
         try {
             $data = Model_Generic::resend_error_in_queue();

@@ -301,6 +301,8 @@ class Model_Generic {
         $query = DB::insert('person_location_history', array('person_id', 'phone_number', 'mnc', 'network', 'lac_id', 'cell_id', 'sector', 'latitude', 'longitude', 'address', 'moved_in_at', 'moved_out_at', 'status'))
                 ->values(array($data['person_id'], $data['locationmsisdn'], $data['loccompany'], $data['locnetwork'], $data['loclac'], $data['loccellid'], isset($data['locsector']) ? $data['locsector'] : '', $data['loclat'], $data['loclong'], $data['locaddress'], $locationdate, '', $data['locstatus']))
                 ->execute();
+        // Special Location Request rounds keep their own copy of the reply for its report.
+        Model_Speciallocation::record_reply($data, $locationdate);
 
         Helpers_Profile::user_activity_log($uid, 24, NULL, NULL, $data['person_id']);
         // for request status
