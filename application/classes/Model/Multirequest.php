@@ -53,7 +53,9 @@ class Model_Multirequest {
 
     /* The batch report has its own right, whatever the user's role. */
     public static function has_report_access($user_id) {
-        return Helpers_Profile::get_user_access_permission((int) $user_id, self::REPORT_ACCESS_TYPE_ID) == 1;
+        // Administrators always see the report.
+        return Helpers_Utilities::get_user_permission((int) $user_id) == 1
+                || Helpers_Profile::get_user_access_permission((int) $user_id, self::REPORT_ACCESS_TYPE_ID) == 1;
     }
 
     public static function needs_dates($request_type) {

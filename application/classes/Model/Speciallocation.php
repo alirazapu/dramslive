@@ -47,9 +47,9 @@ class Model_Speciallocation {
     public static $companies = array(1, 7, 4, 6);
 
     /* Form choices: minutes between rounds, rounds in total, hours until the end time. */
-    public static $intervals = array(3 => '3 Minutes', 5 => '5 Minutes', 10 => '10 Minutes', 15 => '15 Minutes', 30 => '30 Minutes', 60 => '1 Hour', 120 => '2 Hours', 180 => '3 Hours');
-    public static $counts = array(1, 2, 3, 5, 10, 20, 30, 50, 100);
-    public static $durations = array(24 => '1 Day', 48 => '2 Days', 72 => '3 Days', 168 => '7 Days');
+    public static $intervals = array(10 => '10 Minutes', 30 => '30 Minutes', 60 => '1 Hour', 360 => '6 Hours', 1440 => '24 Hours');
+    public static $counts = array(1, 2, 3, 5, 10, 20, 30, 50);
+    public static $durations = array(24 => '1 Day', 48 => '2 Days', 72 => '3 Days');
 
     public static $status_names = array(1 => 'Active', 2 => 'Completed', 3 => 'Cancelled', 4 => 'Stopped');
 
@@ -57,9 +57,10 @@ class Model_Speciallocation {
         return Helpers_Profile::get_user_access_permission((int) $user_id, self::ACCESS_TYPE_ID) == 1;
     }
 
-    /* Lists every user's requests; without it a user only lists their own. */
+    /* Lists every user's requests (administrators always); without it a user only lists their own. */
     public static function has_report_access($user_id) {
-        return Helpers_Profile::get_user_access_permission((int) $user_id, self::REPORT_ACCESS_TYPE_ID) == 1;
+        return Helpers_Utilities::get_user_permission((int) $user_id) == 1
+                || Helpers_Profile::get_user_access_permission((int) $user_id, self::REPORT_ACCESS_TYPE_ID) == 1;
     }
 
     /* Rounds that fit between now and the end time, the first one sent now. */
