@@ -2993,7 +2993,7 @@ exit();
             // owner of every SIM (one query): own / other profile / not in system
             $all_sims = array();
             foreach ($imei_sims as $sim_list) {
-                $all_sims = array_merge($all_sims, array_values($sim_list));
+                $all_sims = array_merge($all_sims, array_map('strval', array_keys($sim_list)));
             }
             $sim_owners = Helpers_Person::get_sim_owners($all_sims, $person_id);
             $shown_imeis = array();
@@ -3011,7 +3011,8 @@ exit();
                             continue;
                         }
                         $shown_imeis[$imei] = true;
-                        $sims = !empty($imei_sims[$imei]) ? array_values($imei_sims[$imei]) : array();
+                        $sim_periods = !empty($imei_sims[$imei]) ? $imei_sims[$imei] : array();
+                        $sims = array_map('strval', array_keys($sim_periods));
                         $sim_count = count($sims);
                         // first 5 visible, rest hidden until "Show All" is clicked
                         $is_extra = ($dcount > 5);
@@ -3054,16 +3055,35 @@ exit();
                                         <i class="fa fa-square text-red"></i> Other person &nbsp;
                                         <i class="fa fa-square text-gray"></i> Not in system)</span></small><br>
                                     <?php
-                                    // own SIMs first, then other persons, then unknown
-                                    usort($sims, function ($a, $b) use ($sim_owners, $person_id) {
+                                    // own SIMs first, then other persons, then unknown; inside each group by first use (unknown dates last)
+                                    usort($sims, function ($a, $b) use ($sim_owners, $person_id, $sim_periods) {
                                         $rank = function ($sim) use ($sim_owners, $person_id) {
                                             if (empty($sim_owners[$sim])) return 2;
                                             return ($sim_owners[$sim]['person_id'] == $person_id) ? 0 : 1;
                                         };
-                                        return $rank($a) - $rank($b);
+                                        if ($rank($a) != $rank($b)) {
+                                            return $rank($a) - $rank($b);
+                                        }
+                                        $fa = !empty($sim_periods[$a]['first_used']) ? $sim_periods[$a]['first_used'] : '9999';
+                                        $fb = !empty($sim_periods[$b]['first_used']) ? $sim_periods[$b]['first_used'] : '9999';
+                                        return strcmp($fa, $fb);
                                     });
                                     $chip_style = 'display: inline-block; margin: 0 3px 3px 0; font-size: 11px; font-weight: normal; color: #fff;';
                                     foreach ($sims as $sim) {
+                                        // usage period of this SIM in this IMEI
+                                        $period = !empty($sim_periods[$sim]) ? $sim_periods[$sim] : array();
+                                        if (!empty($period['first_used']) && !empty($period['last_used'])) {
+                                            $sim_first = date('d-M-Y', strtotime($period['first_used']));
+                                            $sim_last = date('d-M-Y', strtotime($period['last_used']));
+                                            $sim_calls = (int)$period['total_calls'];
+                                            $period_html = '<i class="fa fa-calendar"></i> ' . ($sim_first == $sim_last ? $sim_first : $sim_first . ' &rarr; ' . $sim_last)
+                                                . ' (' . Helpers_Person::get_usage_duration_text($period['first_used'], $period['last_used'])
+                                                . ($sim_calls > 0 ? ', ' . $sim_calls . ($sim_calls == 1 ? ' call' : ' calls') : '') . ')';
+                                        } else {
+                                            $period_html = '<i class="fa fa-ban"></i> date unknown';
+                                        } ?>
+                                        <div style="line-height: 22px;">
+                                        <?php
                                         if (!empty($sim_owners[$sim]) && $sim_owners[$sim]['person_id'] == $person_id) { ?>
                                             <span class="label label-success" style="<?php echo $chip_style; ?>" title="SIM of this person"><i class="fa fa-user"></i> <?php echo $sim; ?></span>
                                         <?php } elseif (!empty($sim_owners[$sim])) {
@@ -3076,8 +3096,10 @@ exit();
                                             <a href="javascript:void(0)" onclick="external_search_model('<?php echo $sim; ?>', 0); return false;"
                                                class="label" style="<?php echo $chip_style; ?> background: #999;"
                                                title="Not linked to any profile (click to check subscriber)"><i class="fa fa-question-circle"></i> <?php echo $sim; ?></a>
-                                        <?php }
-                                    } ?>
+                                        <?php } ?>
+                                            <small class="text-muted"><?php echo $period_html; ?></small>
+                                        </div>
+                                    <?php } ?>
                                 </div>
                             <?php } ?>
                         </li>

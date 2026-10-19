@@ -1538,7 +1538,11 @@ public static function get_person_for_dashboard_perofile($person_id)
         }
         return $periods;
     }
-    /* SIMs used in each IMEI (device table + person's call log), keyed by imei_number */
+    /*
+     * SIMs used in each IMEI (device table + person's call log) with usage period per SIM.
+     * Call log dates win when available, otherwise device table first_use/last_use.
+     * return array [imei_number => [phone => array('first_used', 'last_used', 'total_calls')]]
+     */
     public static function get_person_imei_sims($person_id = NULL, $imeis = array())
     {
         $person_id = (int) $person_id;
@@ -1549,16 +1553,27 @@ public static function get_person_for_dashboard_perofile($person_id)
             return array();
         }
         $imei_in = "'" . implode("','", array_unique($imeis)) . "'";
-        $sql = "SELECT d.imei_number, n.phone_number
+        // device table has some junk dates (0000-00-00, year 1377/8637), ignore those
+        $valid_first = "n.first_use BETWEEN '2000-01-01' AND NOW()";
+        $valid_last = "n.last_use BETWEEN '2000-01-01' AND NOW()";
+        $sql = "SELECT d.imei_number, n.phone_number,
+                    MIN(CASE WHEN $valid_first THEN n.first_use END) AS first_used,
+                    MAX(CASE WHEN $valid_last THEN n.last_use END) AS last_used,
+                    0 AS total_calls, 'device' AS src
                 FROM person_phone_device d
                 INNER JOIN person_device_numbers n ON n.device_id = d.id
                 WHERE d.imei_number IN ($imei_in)
-                UNION
-                SELECT imei_number, phone_number
+                GROUP BY d.imei_number, n.phone_number
+                UNION ALL
+                SELECT imei_number, phone_number,
+                    MIN(call_at) AS first_used, MAX(call_at) AS last_used,
+                    COUNT(*) AS total_calls, 'cdr' AS src
                 FROM person_call_log
-                WHERE person_id = $person_id AND imei_number IN ($imei_in)";
+                WHERE person_id = $person_id AND imei_number IN ($imei_in)
+                GROUP BY imei_number, phone_number";
         $rows = DB::query(Database::SELECT, $sql)->execute()->as_array();
-        $sims = array();
+        // [imei][phone][src] => period (several raw formats can map to one phone)
+        $periods = array();
         foreach ($rows as $row) {
             // normalise 923XXXXXXXXX / 03XXXXXXXXX to 3XXXXXXXXX
             $phone = preg_replace('/[^0-9]/', '', $row['phone_number']);
@@ -1568,11 +1583,54 @@ public static function get_person_for_dashboard_perofile($person_id)
                 $phone = substr($phone, 1);
             }
             // keep only valid mobile numbers (3XXXXXXXXX), skip short codes/landlines/garbage
-            if (preg_match('/^3[0-9]{9}$/', $phone)) {
-                $sims[trim($row['imei_number'])][$phone] = $phone;
+            if (!preg_match('/^3[0-9]{9}$/', $phone)) {
+                continue;
+            }
+            $imei = trim($row['imei_number']);
+            $src = $row['src'];
+            if (!isset($periods[$imei][$phone][$src])) {
+                $periods[$imei][$phone][$src] = array('first_used' => NULL, 'last_used' => NULL, 'total_calls' => 0);
+            }
+            $p = &$periods[$imei][$phone][$src];
+            if (!empty($row['first_used']) && (empty($p['first_used']) || $row['first_used'] < $p['first_used'])) {
+                $p['first_used'] = $row['first_used'];
+            }
+            if (!empty($row['last_used']) && (empty($p['last_used']) || $row['last_used'] > $p['last_used'])) {
+                $p['last_used'] = $row['last_used'];
+            }
+            $p['total_calls'] += (int) $row['total_calls'];
+            unset($p);
+        }
+        $sims = array();
+        foreach ($periods as $imei => $phones) {
+            foreach ($phones as $phone => $by_src) {
+                $sims[$imei][$phone] = (!empty($by_src['cdr']['first_used']) || empty($by_src['device']))
+                    ? $by_src['cdr'] : $by_src['device'];
             }
         }
         return $sims;
+    }
+    /* Human readable span between two dates: "same day", "12 days", "5 months", "2 yrs 3 months" */
+    public static function get_usage_duration_text($first = NULL, $last = NULL)
+    {
+        if (empty($first) || empty($last)) {
+            return '';
+        }
+        $diff = date_create(date('Y-m-d', strtotime($first)))->diff(date_create(date('Y-m-d', strtotime($last))));
+        if ($diff->days == 0) {
+            return 'same day';
+        }
+        if ($diff->y == 0 && $diff->m == 0) {
+            return $diff->days . ($diff->days == 1 ? ' day' : ' days');
+        }
+        $parts = array();
+        if ($diff->y > 0) {
+            $parts[] = $diff->y . ($diff->y == 1 ? ' yr' : ' yrs');
+        }
+        if ($diff->m > 0) {
+            $parts[] = $diff->m . ($diff->m == 1 ? ' month' : ' months');
+        }
+        return implode(' ', $parts);
     }
     /*
      * Owners of a list of mobile numbers (person_phone_number), one query.
