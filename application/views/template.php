@@ -78,8 +78,40 @@
             </div>  
             <!--Footer -->
                 <?php echo Helpers_Layout::get_sitefooter(); ?>
-        </div>  
-        
+        </div>
+
+        <?php
+        /* Telco outage notice: set to false once the service is restored */
+        $telco_down_notice = true;
+        if ($telco_down_notice) { ?>
+        <style>
+            /* new-style.css forces .modal to z-index 99, which puts it under the backdrop */
+            #telcoDownModal { z-index: 10050 !important; background: rgba(0, 0, 0, 0.6); }
+        </style>
+        <div class="modal fade" id="telcoDownModal" tabindex="-1" role="dialog" data-backdrop="false" data-keyboard="false">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header bg-red">
+                        <h4 class="modal-title"><i class="fa fa-exclamation-triangle"></i> Service Notice</h4>
+                    </div>
+                    <div class="modal-body" style="font-size:16px;">
+                        The Telco service is currently down, and they are not responding to any requests.
+                        Please be patient and do not initiate any new requests until further notice.
+                        We will inform you once the service is restored.
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-danger" data-dismiss="modal">OK, I understand</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script>
+            jQuery(function () {
+                jQuery('#telcoDownModal').modal('show');
+            });
+        </script>
+        <?php } ?>
+
         <!-- Pre Loader -->
         <script>
             jQuery(window).load(function () {
