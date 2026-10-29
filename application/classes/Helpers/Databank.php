@@ -21,6 +21,26 @@ defined('SYSPATH') or die('No direct script access.');
 class Helpers_Databank
 {
     /**
+     * lu_user_access_type.internal_name of the "DRAMS Databank" right
+     * (docs/sql/drams_databank.sql), granted per user in Access Control
+     * List -> Manage Rights. Looked up by name, not id, so the right's
+     * auto-increment id may differ between servers.
+     */
+    const RIGHT_INTERNAL_NAME = 'drams_databank';
+
+    /** The user holds the DRAMS Databank right (menu and page). */
+    public static function has_access($user_id)
+    {
+        $sql = "SELECT t1.permission
+                FROM user_access_matrix AS t1
+                join lu_user_access_type AS t2 on t2.id = t1.user_activity_type
+                where t1.user_id = " . (int) $user_id . " and t2.internal_name = '" . self::RIGHT_INTERNAL_NAME . "' and t1.permission = 1
+                LIMIT 1";
+        $result = DB::query(Database::SELECT, $sql)->execute()->current();
+        return !empty($result);
+    }
+
+    /**
      * Cached raw PDO handle for the DLMS SQL Server. We bypass Kohana's
      * Database_PDO driver for this one connection because the driver
      * runs `SET NAMES 'utf8'` after connect (MySQL-only syntax) which

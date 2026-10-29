@@ -2760,10 +2760,23 @@ exit();
     }
 
     /*
+     *  Access Control List (Manage Rights) is for roles with menu 33. The page
+     *  and every endpoint behind it check this, so a right cannot be listed
+     *  or granted by posting to an endpoint directly.
+     */
+
+    private function can_manage_rights() {
+        return Helpers_Utilities::chek_role_access($this->role_id, 33) == 1;
+    }
+
+    /*
      *  User Access Control List (access_control_list)
      */
 
     public function action_access_control_form() {
+        if (!$this->can_manage_rights()) {
+            $this->redirect('user/access_denied');
+        }
         try {
             $post = $this->request->post();
             $post = Helpers_Utilities::remove_injection($post);
@@ -2786,7 +2799,7 @@ exit();
 
             $permission = Helpers_Utilities::get_user_permission($login_user->id);
             $access_message = 'Access denied, Contact your technical support team';
-            if (Helpers_Utilities::chek_role_access($this->role_id, 33) == 1) {
+            if ($this->can_manage_rights()) {
                 /* Posted Data */
                 $post = $this->request->post();
                 $post = Helpers_Utilities::remove_injection($post);
@@ -2819,7 +2832,7 @@ exit();
                 "aaData" => array()
             );
 
-            if (Auth::instance()->logged_in()) {
+            if (Auth::instance()->logged_in() && $this->can_manage_rights()) {
                 $post = Session::instance()->get('access_control_list_post', array());
 
 //            if (!empty($post) && sizeof($post)>1 && !empty($_GET['iDisplayStart'])) {
@@ -2901,6 +2914,10 @@ exit();
      */
 
     public function action_acl_data() {
+        if (!$this->can_manage_rights()) {
+            $this->response->status(403);
+            return;
+        }
         try {
             $_POST = Helpers_Utilities::remove_injection($_POST);
             $data = "";
