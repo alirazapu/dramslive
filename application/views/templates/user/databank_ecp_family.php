@@ -6,6 +6,14 @@
 //   $family  — array of stdClass rows from ecp_persons sharing the
 //              seed's (code, folder, file, uc_block) tuple, EXCLUDING
 //              the seed itself. Empty array if none.
+//   $message — OPTIONAL: why the family could not be loaded (Databank
+//              API error), shown instead of "no ECP record found"
+// Rows come from the Databank API (Helpers_Databank::ecp_family), which
+// does not return the internal family-identity columns (code / file /
+// folder), so that row is only shown when they are present.
+if (!isset($message)) {
+    $message = '';
+}
 ?>
 <section class="content-header">
     <h1>
@@ -24,7 +32,12 @@
 </section>
 
 <section class="content user_activity_log">
-    <?php if (!$seed): ?>
+    <?php if ($message !== ''): ?>
+        <div class="alert alert-danger">
+            <i class="fa fa-exclamation-triangle"></i>
+            <?php echo HTML::chars($message); ?>
+        </div>
+    <?php elseif (!$seed): ?>
         <div class="alert alert-warning">
             <i class="fa fa-exclamation-triangle"></i>
             No ECP record found for that id. Go back to
@@ -84,6 +97,7 @@
                         </td>
                     </tr>
                     <?php endif; ?>
+                    <?php if (!empty($seed->code)): ?>
                     <tr>
                         <th>Family Identity</th>
                         <td colspan="3" style="font-family:monospace; font-size:12px;">
@@ -96,6 +110,7 @@
                             <?php endif; ?>
                         </td>
                     </tr>
+                    <?php endif; ?>
                 </table>
             </div>
         </div>
@@ -117,7 +132,7 @@
                     <div class="text-muted text-center" style="padding:24px;">
                         <i class="fa fa-info-circle fa-lg"></i>
                         <div style="margin-top:6px;">
-                            No other ecp_persons rows share this family identity tuple.
+                            No other ECP records share this family identity.
                         </div>
                     </div>
                 <?php else: ?>

@@ -606,15 +606,11 @@ if ($special_location_access || $special_location_report) { ?>
                     </ul>
                 </li>
             <?php } ?>
-            <?php /* DRAMS Databank menu hidden — moving to a separate
-                     portal. Underlying Controller_Databank actions and
-                     Helpers_Databank queries are untouched. To restore
-                     the menu, change `false` below back to the original
-                     role gate:
-                       (Helpers_Utilities::chek_role_array_access($role_id, array(34,35)) == 1)
-                       || $user->id == 171 || $user->id == 170
-                  */ ?>
-            <?php if (false) { ?>
+            <?php /* DRAMS Databank — searches through the Databank integration
+                     API (Controller_Databank). Same gate as
+                     Controller_Databank::_require_databank_access(). */ ?>
+            <?php if ((Helpers_Utilities::chek_role_array_access($role_id, array(34,35)) == 1)
+                      || $user->id == 171 || $user->id == 170) { ?>
                 <?php
                     $databank_active =
                         ($current_url == 'Admindatabank' && in_array($menu_name, array(
@@ -633,6 +629,10 @@ if ($special_location_access || $special_location_report) { ?>
                             'ctd_kpk_advanced',
                             'dlms_advanced',
                             'govt_employee_advanced',
+                            'vehicle_advanced',
+                            'all_sources',
+                            'advanced_search',
+                            'ecp_family',
                         )));
                 ?>
                 <li class="treeview <?php echo $databank_active ? 'active' : ''; ?>">
@@ -645,7 +645,13 @@ if ($special_location_access || $special_location_report) { ?>
                     </a>
                     <ul class="treeview-menu">
 
-                        <!-- External-DB searches (Controller_Databank) — one per external DB -->
+                        <!-- Databank API searches (Controller_Databank) -->
+                        <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'advanced_search') ? 'active' : ''; ?>">
+                            <a href="<?php echo URL::site('databank/advanced_search'); ?>"><i class="fa fa-sitemap"></i>Advanced Search</a>
+                        </li>
+                        <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'all_sources') ? 'active' : ''; ?>">
+                            <a href="<?php echo URL::site('databank/all_sources'); ?>"><i class="fa fa-search"></i>Search All Sources</a>
+                        </li>
                         <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'subscriber_advanced') ? 'active' : ''; ?>">
                             <a href="<?php echo URL::site('databank/subscriber_advanced'); ?>"><i class="fa fa-mobile"></i>Subscriber Search</a>
                         </li>
@@ -660,6 +666,9 @@ if ($special_location_access || $special_location_report) { ?>
                         </li>
                         <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'govt_employee_advanced') ? 'active' : ''; ?>">
                             <a href="<?php echo URL::site('databank/govt_employee_advanced'); ?>"><i class="fa fa-briefcase"></i>Govt Employee Search</a>
+                        </li>
+                        <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'vehicle_advanced') ? 'active' : ''; ?>">
+                            <a href="<?php echo URL::site('databank/vehicle_advanced'); ?>"><i class="fa fa-automobile"></i>Vehicle Search</a>
                         </li>
 
                         <?php /* Reports & Uploads — hidden per operator request. The

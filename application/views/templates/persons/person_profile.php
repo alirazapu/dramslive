@@ -1367,7 +1367,7 @@
                                                 ?>
                                                 <select class="form-control" id="reporttype" name="reporttype">
                                                     <option value="">Select</option>
-                                                    <?php for ($i = 2; $i <= sizeof($reportdata) + 1; $i++) { ?>
+                                                    <?php for ($i = 2; $i <= sizeof($reportdata); $i++) { ?>
                                                         <option value="<?php echo $i; ?>"><?php echo $reportdata[$i] ?></option>
                                                         <?php
                                                     }

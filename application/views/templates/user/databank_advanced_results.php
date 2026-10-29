@@ -13,6 +13,8 @@
 //                 the unified Subscriber search where one row may use
 //                 cnic and another foreign_cnic).
 //   $summary  — short text like "12 result(s)"
+//   $notes    — OPTIONAL list of plain-text notes shown under the summary
+//               (how the Databank API answered, fields it cannot give)
 //   $row_actions — OPTIONAL callable. If set, an extra "Actions" column
 //                  is appended; the callable is invoked once per row
 //                  with the row as its argument and must return the
@@ -52,6 +54,9 @@ $dbk_pick = function ($row, $primary, $fallbacks = array()) {
     <p class="text-muted" style="margin-bottom:8px;">
         <strong><?php echo HTML::chars($summary); ?></strong>
     </p>
+    <?php foreach (isset($notes) ? $notes : array() as $note): ?>
+        <p class="text-muted small" style="margin:-4px 0 8px;"><?php echo HTML::chars($note); ?></p>
+    <?php endforeach; ?>
     <div>
         <table class="table table-striped table-bordered table-condensed">
             <thead>
@@ -82,7 +87,7 @@ $dbk_pick = function ($row, $primary, $fallbacks = array()) {
                                 $src = (strpos((string) $val, 'data:image') === 0)
                                     ? $val
                                     : 'data:image/jpeg;base64,' . $val;
-                                echo '<img src="' . $src . '" alt="" '
+                                echo '<img src="' . HTML::chars($src) . '" alt="" '
                                    . 'style="max-width:240px; max-height:80px; border:1px solid #ddd;">';
                             } elseif ($formatter === 'html') {
                                 echo $val;

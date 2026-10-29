@@ -3,7 +3,11 @@
 // Variables expected (set by Controller_Databank::_form_view()):
 //   $title, $subtitle, $breadcrumb
 //   $ajax_url
-//   $fields  — array of { name, label, placeholder }
+//   $hint    — optional line under the fields (how the search works)
+//   $fields  — array of { name, label, placeholder } and optionally
+//              type (text | select | checkbox), options (select:
+//              value => label) or unsupported (shown disabled: the
+//              Databank API can neither search nor return it)
 //
 // Renders an AdminLTE-styled multi-field filter form, an empty results
 // panel below it, and inline JS that POSTs the form data as JSON to
@@ -35,19 +39,48 @@
             <form id="dbk_form" onsubmit="return dbkRunSearch();" autocomplete="off">
                 <div class="row">
                     <?php foreach ($fields as $f): ?>
+                        <?php $type = isset($f['type']) ? $f['type'] : 'text'; ?>
                         <div class="col-md-4 col-sm-6" style="margin-bottom:10px;">
-                            <label for="dbk_<?php echo HTML::chars($f['name']); ?>" class="control-label">
-                                <?php echo HTML::chars($f['label']); ?>
-                            </label>
-                            <input type="text"
-                                   id="dbk_<?php echo HTML::chars($f['name']); ?>"
-                                   name="<?php echo HTML::chars($f['name']); ?>"
-                                   class="form-control dbk-field"
-                                   placeholder="<?php echo HTML::chars(isset($f['placeholder']) ? $f['placeholder'] : ''); ?>"
-                                   data-field="<?php echo HTML::chars($f['name']); ?>">
+                            <?php if ($type === 'checkbox'): ?>
+                                <div class="checkbox" style="margin-top:28px;">
+                                    <label>
+                                        <input type="checkbox" value="1" class="dbk-field"
+                                               id="dbk_<?php echo HTML::chars($f['name']); ?>"
+                                               data-field="<?php echo HTML::chars($f['name']); ?>">
+                                        <?php echo HTML::chars($f['label']); ?>
+                                    </label>
+                                </div>
+                            <?php else: ?>
+                                <label for="dbk_<?php echo HTML::chars($f['name']); ?>" class="control-label">
+                                    <?php echo HTML::chars($f['label']); ?>
+                                </label>
+                                <?php if ($type === 'select'): ?>
+                                    <select id="dbk_<?php echo HTML::chars($f['name']); ?>"
+                                            class="form-control dbk-field"
+                                            data-field="<?php echo HTML::chars($f['name']); ?>">
+                                        <?php foreach ($f['options'] as $value => $text): ?>
+                                            <option value="<?php echo HTML::chars($value); ?>"><?php echo HTML::chars($text); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                <?php elseif (!empty($f['unsupported'])): ?>
+                                    <input type="text" class="form-control" disabled
+                                           id="dbk_<?php echo HTML::chars($f['name']); ?>"
+                                           placeholder="Not available through the Databank API">
+                                <?php else: ?>
+                                    <input type="text"
+                                           id="dbk_<?php echo HTML::chars($f['name']); ?>"
+                                           name="<?php echo HTML::chars($f['name']); ?>"
+                                           class="form-control dbk-field"
+                                           placeholder="<?php echo HTML::chars(isset($f['placeholder']) ? $f['placeholder'] : ''); ?>"
+                                           data-field="<?php echo HTML::chars($f['name']); ?>">
+                                <?php endif; ?>
+                            <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
                 </div>
+                <?php if (!empty($hint)): ?>
+                    <p class="help-block" style="margin:0;"><?php echo HTML::chars($hint); ?></p>
+                <?php endif; ?>
                 <div style="margin-top:10px;">
                     <button type="submit" class="btn btn-primary">
                         <i class="fa fa-search"></i> Search
@@ -78,10 +111,11 @@ function dbkRunSearch() {
     var any = false;
     for (var i = 0; i < inputs.length; i++) {
         var el = inputs[i];
-        var v  = (el.value || '').replace(/^\s+|\s+$/g, '');
+        var v  = el.type === 'checkbox' ? (el.checked ? '1' : '') : (el.value || '').replace(/^\s+|\s+$/g, '');
         if (v !== '') {
             data[el.dataset.field] = v;
-            any = true;
+            // A select / checkbox alone is not a search.
+            if (el.type === 'text') any = true;
         }
     }
     var box    = document.getElementById('dbk_results_box');
@@ -116,7 +150,11 @@ function dbkRunSearch() {
 
 function dbkClear() {
     var inputs = document.querySelectorAll('.dbk-field');
-    for (var i = 0; i < inputs.length; i++) inputs[i].value = '';
+    for (var i = 0; i < inputs.length; i++) {
+        if (inputs[i].type === 'checkbox') inputs[i].checked = false;
+        else if (inputs[i].tagName === 'SELECT') inputs[i].selectedIndex = 0;
+        else inputs[i].value = '';
+    }
     document.getElementById('dbk_results_box').style.display = 'none';
 }
 </script>

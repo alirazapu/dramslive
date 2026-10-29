@@ -3,25 +3,26 @@
 defined('SYSPATH') or die('No direct script access.');
 
 /**
- * Helpers_Databank — backing queries for the DRAMS Databank advanced
- * searches. One static method per external database. Each method takes
- * an associative array of field=>value filters (only non-empty filters
- * are applied, AND'd together), and returns the matching rows directly
- * from the source database. No delegation to per-person endpoints —
- * Databank is a self-contained search facility.
+ * Helpers_Databank — data source of the DRAMS Databank searches
+ * (Controller_Databank). The records come from the Databank integration
+ * API (Helpers_DatabankApi, POST integration/search); DRAMS no longer
+ * queries the external databases for these pages.
  *
- * Design rules:
- *   - Each method clamps $limit to a safe range to prevent runaway
- *     queries against the remote databases.
- *   - Text fields use LIKE %value%; identifier fields (CNIC, MSISDN,
- *     etc.) use exact match.
- *   - All values are escaped with $DB->escape() so the dynamic WHERE
- *     building stays parametric. We avoid the parameter-binding API
- *     because Kohana's prepared-query support is uneven across the
- *     PDO/MySQLi drivers used by these connections.
- *   - When a filter doesn't apply to a given table column, it is
- *     silently dropped rather than producing an error — the form lets
- *     users mix fields freely.
+ * Each search_* method takes ONE identifier (the API searches by one
+ * mobile number, CNIC, name or FIR number at a time), asks the API for
+ * its source only, and maps every returned record onto the row keys the
+ * result table (databank_advanced_results) already uses, so the table
+ * keeps its columns. A value the API does not return is left ''.
+ *
+ * refine_rows() applies the other filled-in form fields to the returned
+ * records, which keeps the form's "all filters AND together" rule.
+ *
+ * Errors are NOT swallowed: Helpers_DatabankApi_Exception reaches the
+ * controller, which shows it instead of "no matching records".
+ *
+ * dlms_pdo() is unrelated to the Databank pages: the person dashboard's
+ * DLMS panel (Helpers_Person::get_person_external_profile_driving_license)
+ * still reads the DLMS server directly through it.
  */
 class Helpers_Databank
 {
@@ -80,447 +81,362 @@ class Helpers_Databank
     }
 
     /* ------------------------------------------------------------------ */
-    /*  ECP (electoral)                                                   */
+    /*  Searches (Databank integration API)                               */
+    /*                                                                    */
+    /*  Each returns ['rows' => mapped rows, 'limit' => records asked     */
+    /*  for, 'request_id' => Databank requestId] and throws               */
+    /*  Helpers_DatabankApi_Exception on any failure.                     */
     /* ------------------------------------------------------------------ */
+
+    /** Mobile Subscription (local subscribers + foreign nationals). */
+    public static function search_subscriber_unified($type, $value)
+    {
+        return self::_search('MOBILE', $type, $value, function (array $rec, array $f) {
+            $msisdn = self::_get($f, 'Mobile number');
+            if ($msisdn === '' && isset($rec['title']) && is_string($rec['title'])
+                && preg_match('/^\+?\d[\d \-]{6,}$/', $rec['title'])) {
+                // Mobile records carry the number as their title.
+                $msisdn = $rec['title'];
+            }
+            $category = self::_get($f, 'Subscriber category');
+            if ($category === '' && isset($rec['recordType'])) {
+                $category = $rec['recordType'] === 'subscription_foreign' ? 'Foreign national' : 'Local subscriber';
+            }
+            return array(
+                'source'              => $category,
+                'msisdn'              => $msisdn,
+                'cnic'                => self::_get($f, 'CNIC'),
+                'name'                => self::_get($f, 'Name'),
+                'address'             => self::_get($f, 'Address'),
+                'master_pak_province' => self::_get($f, 'Province'),
+                'master_pak_district' => self::_get($f, 'District'),
+                'master_pak_tehsil'   => self::_get($f, 'Tehsil'),
+                'operator'            => self::_get($f, 'Mobile operator'),
+                'status'              => self::_get($f, 'Status'),
+                'bvs_status'          => self::_get($f, 'Biometric verification (BVS)'),
+            );
+        });
+    }
+
+    /** Election Commission (ECP) electoral roll. */
+    public static function search_ecp($type, $value)
+    {
+        return self::_search('ECP', $type, $value, function (array $rec, array $f) {
+            // The record reference ("Record reference 123") carries the ECP id.
+            $id = '';
+            if (isset($rec['reference']) && is_string($rec['reference'])
+                && preg_match('/(\d+)\s*$/', $rec['reference'], $m)) {
+                $id = $m[1];
+            }
+            return array(
+                'id'                   => $id,
+                'cnic'                 => self::_get($f, 'CNIC'),
+                'name_text'            => self::_get($f, 'Name'),
+                'father_text'          => self::_get($f, "Father's name"),
+                'address_text'         => self::_get($f, 'Address'),
+                'age'                  => self::_get($f, 'Age'),
+                'gender'               => self::_get($f, 'Gender'),
+                'uc_block_code'        => self::_get($f, 'Electoral block code'),
+                'linked_numbers'       => self::_get($f, 'Phone numbers'),
+                'address_image_base64' => self::_get($f, 'Address (image)'),
+            );
+        });
+    }
+
+    /** CTD KPK FIR records (person profiles). */
+    public static function search_ctd_kpk($type, $value)
+    {
+        return self::_search('FIR', $type, $value, function (array $rec, array $f) {
+            return array(
+                'CNIC'             => self::_get($f, 'CNIC'),
+                'Name'             => self::_get($f, 'Name'),
+                'FatherName'       => self::_get($f, "Father's name"),
+                'Alias'            => self::_get($f, 'Alias'),
+                'Tribe'            => self::_get($f, 'Tribe'),
+                'BirthPlace'       => self::_get($f, 'Place of birth'),
+                'LatestFirRefNo'   => self::_get($f, 'Latest FIR number'),
+                'LatestFirRefDate' => self::_get($f, 'FIR date'),
+            );
+        });
+    }
+
+    /** DLMS driving licences. */
+    public static function search_dlms($type, $value)
+    {
+        return self::_search('DRIVING_LICENCE', $type, $value, function (array $rec, array $f) {
+            return array(
+                'CNIC'       => self::_get($f, 'CNIC'),
+                'Name'       => self::_get($f, 'Name'),
+                'FatherName' => self::_get($f, "Father's name"),
+                'DOB'        => self::_get($f, 'Date of birth'),
+                'Gender'     => self::_get($f, 'Gender'),
+                'LicenseNo'  => self::_get($f, 'Licence number'),
+                'IssueDate'  => self::_get($f, 'Issued on'),
+                'ExpiryDate' => self::_get($f, 'Expires on'),
+            );
+        });
+    }
+
+    /** Government employees. */
+    public static function search_govt_emp($type, $value)
+    {
+        return self::_search('GOVT_EMPLOYEE', $type, $value, function (array $rec, array $f) {
+            return array(
+                'national_id'         => self::_get($f, 'CNIC'),
+                'name'                => self::_get($f, 'Name'),
+                'father_husband_name' => self::_get($f, "Father's name"),
+                'pers_no'             => self::_get($f, 'Personnel number'),
+                'job_title'           => self::_get($f, 'Job title'),
+                'org_unit_short_text' => self::_get($f, 'Organisation unit'),
+                'personnel_area'      => self::_get($f, 'Personnel area'),
+                'description'         => self::_get($f, 'Description'),
+            );
+        });
+    }
 
     /**
-     * Search ecp_persons by any combination of: cnic, name, father,
-     * address, phone, district (uc_block_code).
+     * Vehicle / Excise registrations — by CNIC, or by a mobile number
+     * (the Databank searches the CNIC it is registered to). Vehicle
+     * records differ in their fields, so the table columns come from
+     * the records (records_table()).
      *
-     * Phone is satisfied via a sub-query against ecp_person_numbers.
-     * All other fields query columns on ecp_persons directly.
-     *
-     * @param array $filters  associative; only non-empty values are used
-     * @param int   $limit
-     * @return array          stdClass rows
+     * @return array ['rows', 'columns', 'limit', 'request_id']
      */
-    public static function search_ecp(array $filters, $limit = 100)
+    public static function search_vehicle($type, $value)
     {
-        $limit = self::_clamp($limit, 1, 500);
-        try {
-            $DB    = Database::instance('ecp');
-            $where = array();
-
-            if (!empty($filters['cnic'])) {
-                // ECP stores CNIC as a 13-digit string (no dashes). Strip
-                // any user-supplied dashes/spaces before exact match.
-                $variants = self::_cnic_variants($filters['cnic']);
-                if (!empty($variants)) {
-                    $or = array();
-                    foreach ($variants as $v) { $or[] = 'p.cnic = ' . $DB->escape($v); }
-                    $where[] = '(' . implode(' OR ', $or) . ')';
-                }
-            }
-            if (!empty($filters['name'])) {
-                $where[] = 'p.name_text LIKE ' . $DB->escape('%' . trim($filters['name']) . '%');
-            }
-            if (!empty($filters['father'])) {
-                $where[] = 'p.father_text LIKE ' . $DB->escape('%' . trim($filters['father']) . '%');
-            }
-            if (!empty($filters['address'])) {
-                $where[] = 'p.address_text LIKE ' . $DB->escape('%' . trim($filters['address']) . '%');
-            }
-            if (!empty($filters['district'])) {
-                $where[] = 'p.uc_block_code LIKE ' . $DB->escape('%' . trim($filters['district']) . '%');
-            }
-            if (!empty($filters['phone'])) {
-                $phone = preg_replace('/\D/', '', $filters['phone']);
-                if ($phone !== '') {
-                    $where[] = 'p.id IN (SELECT n.ecp_person_id FROM ecp_person_numbers n WHERE n.number = '
-                        . $DB->escape($phone) . ')';
-                }
-            }
-            if (empty($where)) {
-                return array();
-            }
-
-            $sql = "SELECT p.id, p.cnic, p.age, p.gender,
-                        p.name_text, p.father_text, p.address_text,
-                        p.code, p.family_number, p.file_name, p.folder_name, p.uc_block_code,
-                        p.address_image_base64,
-                        (SELECT GROUP_CONCAT(n.number ORDER BY n.number SEPARATOR ', ')
-                         FROM ecp_person_numbers n
-                         WHERE n.ecp_person_id = p.id) AS linked_numbers
-                    FROM ecp_persons p
-                    WHERE " . implode(' AND ', $where) . "
-                    LIMIT {$limit}";
-            return $DB->query(Database::SELECT, $sql, TRUE)->as_array();
-        } catch (Exception $e) {
-            self::_log_failure('search_ecp', $e, $filters);
-            return array();
-        }
+        $result = Helpers_DatabankApi::search($type, $value, 'VEHICLE');
+        $table  = self::records_table($result['records']);
+        return array('rows' => $table['rows'], 'columns' => $table['columns'],
+                     'limit' => $result['limit'], 'request_id' => $result['request_id']);
     }
-
-    /* ------------------------------------------------------------------ */
-    /*  Subscriber (unified Mobile + Foreigner)                           */
-    /* ------------------------------------------------------------------ */
 
     /**
-     * Unified subscriber search across BOTH `subscribers_main` (mobile)
-     * and `afghan_accounts` (foreigner). Both tables live on the same
-     * `mobile` connection (subscriber_db). The system tries each source
-     * for fields that apply, merges the results, and tags every row
-     * with a `source` of 'mobile' or 'foreigner' so the UI can render
-     * the right columns.
+     * One identifier in every source the API user may read, one block
+     * per source.
      *
-     * Field → table mapping:
-     *
-     *   msisdn   → both    (subscribers_main.msisdn AND afghan_accounts.msisdn,
-     *                       with PK number-format variants applied)
-     *   cnic     → both    (mobile: cnic; afghan: foreign_cnic OR master_acc_number)
-     *   imsi     → mobile  only
-     *   name     → afghan  only (master_name LIKE)
-     *   father   → afghan  only (father_name LIKE)
-     *   address  → afghan  only (site_address LIKE)
-     *   district → afghan  only (master_pak_district LIKE)
-     *
-     * Mobile-side does NOT search `imei` or `subscriber_name` — those
-     * columns are not in the existing Helpers_Subscriber::search() allow-
-     * list and their presence on every shard of subscribers_main is not
-     * verified. Add them here once schema is confirmed.
-     *
-     * @return array  merged stdClass rows; each has ->source = 'mobile' | 'foreigner'
+     * @return array ['blocks' => list of [code, label, status, statusLabel,
+     *               message, rows, columns], 'linked' => list of steps
+     *               followed, 'limit' => int, 'request_id' => string]
      */
-    public static function search_subscriber_unified(array $filters, $limit = 100)
+    public static function search_all_sources($type, $value, $linked)
     {
-        $limit = self::_clamp($limit, 1, 500);
-        $rows  = array();
-
-        // --- subscribers_main (mobile) — confirmed columns from existing
-        // Model_Userrequest::subscriber_external_search_results():
-        //   msisdn, cnic, name, address, imsi, status, bvs_status.
-        // (subscribers_main has no father column — that filter is only
-        // honoured on the afghan side below.)
-        try {
-            $DB    = Database::instance('mobile');
-            $where = array();
-
-            if (!empty($filters['msisdn'])) {
-                $variants = self::_msisdn_variants($filters['msisdn']);
-                $or = array();
-                foreach ($variants as $v) {
-                    $or[] = 'msisdn = ' . $DB->escape($v);
-                }
-                $where[] = '(' . implode(' OR ', $or) . ')';
+        $json   = Helpers_DatabankApi::search_all($type, $value, $linked);
+        $text   = function ($a, $k) { return (isset($a[$k]) && is_scalar($a[$k])) ? (string) $a[$k] : ''; };
+        $blocks = array();
+        foreach ($json['sources'] as $s) {
+            if (!is_array($s)) {
+                continue;
             }
-            if (!empty($filters['cnic'])) {
-                $where[] = 'cnic = ' . $DB->escape(trim($filters['cnic']));
-            }
-            if (!empty($filters['imsi'])) {
-                $where[] = 'imsi = ' . $DB->escape(trim($filters['imsi']));
-            }
-            if (!empty($filters['name'])) {
-                $where[] = 'name LIKE ' . $DB->escape('%' . trim($filters['name']) . '%');
-            }
-            if (!empty($filters['address'])) {
-                $where[] = 'address LIKE ' . $DB->escape('%' . trim($filters['address']) . '%');
-            }
-
-            if (!empty($where)) {
-                $sql  = "SELECT *, 'mobile' AS source FROM subscribers_main
-                         WHERE " . implode(' AND ', $where) . "
-                         LIMIT {$limit}";
-                $main = $DB->query(Database::SELECT, $sql, TRUE)->as_array();
-                $rows = array_merge($rows, $main);
-            }
-        } catch (Exception $e) {
-            // Remote DB unreachable or schema mismatch — log it but
-            // don't abort; the foreigner side may still produce results.
-            self::_log_failure('search_subscriber_unified.subscribers_main', $e, $filters);
+            $records = (isset($s['records']) && is_array($s['records'])) ? array_filter($s['records'], 'is_array') : array();
+            $table   = self::records_table(array_values($records));
+            $blocks[] = array(
+                'code'        => $text($s, 'code'),
+                'label'       => $text($s, 'label'),
+                'status'      => $text($s, 'status'),
+                'statusLabel' => $text($s, 'statusLabel'),
+                'message'     => $text($s, 'message'),
+                'rows'        => $table['rows'],
+                'columns'     => $table['columns'],
+            );
         }
-
-        // --- afghan_accounts (foreigner) ---
-        try {
-            $DB    = Database::instance('mobile');  // same connection
-            $where = array();
-
-            if (!empty($filters['msisdn'])) {
-                $variants = self::_msisdn_variants($filters['msisdn']);
-                $or = array();
-                foreach ($variants as $v) {
-                    $or[] = 'msisdn = ' . $DB->escape($v);
+        $steps = array();
+        if (isset($json['linked']['steps']) && is_array($json['linked']['steps'])) {
+            foreach ($json['linked']['steps'] as $step) {
+                if (is_string($step)) {
+                    $steps[] = $step;
                 }
-                $where[] = '(' . implode(' OR ', $or) . ')';
             }
-            if (!empty($filters['cnic'])) {
-                // CNIC field on afghan_accounts is `foreign_cnic`. Try
-                // both columns so a value entered as "cnic" still hits
-                // a foreigner record looked up by master_acc_number.
-                $cnic_esc = $DB->escape(trim($filters['cnic']));
-                $where[] = "(foreign_cnic = {$cnic_esc} OR master_acc_number = {$cnic_esc})";
-            }
-            if (!empty($filters['name'])) {
-                $where[] = 'master_name LIKE ' . $DB->escape('%' . trim($filters['name']) . '%');
-            }
-            if (!empty($filters['father'])) {
-                $where[] = 'father_name LIKE ' . $DB->escape('%' . trim($filters['father']) . '%');
-            }
-            if (!empty($filters['address'])) {
-                $where[] = 'site_address LIKE ' . $DB->escape('%' . trim($filters['address']) . '%');
-            }
-            if (!empty($filters['district'])) {
-                $d = $DB->escape('%' . trim($filters['district']) . '%');
-                $where[] = "(master_pak_district LIKE {$d} OR master_pak_tehsil LIKE {$d})";
-            }
-
-            if (!empty($where)) {
-                $sql      = "SELECT *, 'foreigner' AS source FROM afghan_accounts
-                             WHERE " . implode(' AND ', $where) . "
-                             LIMIT {$limit}";
-                $foreign  = $DB->query(Database::SELECT, $sql, TRUE)->as_array();
-                $rows     = array_merge($rows, $foreign);
-            }
-        } catch (Exception $e) {
-            self::_log_failure('search_subscriber_unified.afghan_accounts', $e, $filters);
         }
-
-        return $rows;
+        return array('blocks' => $blocks, 'linked' => $steps,
+                     'limit' => max(1, min(50, (int) Kohana::$config->load('databank')->get('records_per_search', 25))),
+                     'request_id' => isset($json['requestId']) ? preg_replace('/[^A-Za-z0-9\-]/', '', (string) $json['requestId']) : '');
     }
 
-    /* ------------------------------------------------------------------ */
-    /*  CTD KPK                                                           */
-    /* ------------------------------------------------------------------ */
-
-    public static function search_ctd_kpk(array $filters, $limit = 100)
+    /**
+     * ECP household of one record (POST integration/ecp/family), mapped
+     * onto the property names databank_ecp_family already renders.
+     *
+     * @return array ['seed' => stdClass|NULL, 'family' => list of stdClass]
+     */
+    public static function ecp_family($ecp_id)
     {
-        $limit = self::_clamp($limit, 1, 500);
-        try {
-            $DB    = Database::instance('ctd_kpk');
-            $where = array();
-
-            if (!empty($filters['cnic'])) {
-                // CTD KPK stores CNICs as both bare digits and dashed
-                // (XXXXX-XXXXXXX-X). Mirror the IN(...) match used by
-                // Helpers_Person::get_person_external_profile_ctd_kpk
-                // so a user-supplied digit-only string still hits dashed
-                // rows and vice-versa.
-                $variants = self::_cnic_variants($filters['cnic']);
-                if (!empty($variants)) {
-                    $or = array();
-                    foreach ($variants as $v) { $or[] = 'p.CNIC = ' . $DB->escape($v); }
-                    $where[] = '(' . implode(' OR ', $or) . ')';
+        $json = Helpers_DatabankApi::ecp_family($ecp_id);
+        $map  = function ($rec) {
+            if (!is_array($rec)) {
+                return NULL;
+            }
+            $f  = self::_fields($rec);
+            $id = '';
+            if (isset($rec['reference']) && is_string($rec['reference']) && preg_match('/(\d+)\s*$/', $rec['reference'], $m)) {
+                $id = $m[1];
+            }
+            return (object) array(
+                'id'                   => $id,
+                'cnic'                 => self::_get($f, 'CNIC'),
+                'name_text'            => self::_get($f, 'Name'),
+                'father_text'          => self::_get($f, "Father's name"),
+                'address_text'         => self::_get($f, 'Address'),
+                'age'                  => self::_get($f, 'Age'),
+                'gender'               => self::_get($f, 'Gender'),
+                'uc_block_code'        => self::_get($f, 'Electoral block code'),
+                'linked_numbers'       => self::_get($f, 'Phone numbers'),
+                'address_image_base64' => self::_get($f, 'Address (image)'),
+            );
+        };
+        $family = array();
+        if (isset($json['members']) && is_array($json['members'])) {
+            foreach ($json['members'] as $rec) {
+                $row = $map($rec);
+                if ($row !== NULL) {
+                    $family[] = $row;
                 }
             }
-            if (!empty($filters['name'])) {
-                $where[] = 'p.Name LIKE ' . $DB->escape('%' . trim($filters['name']) . '%');
-            }
-            if (!empty($filters['father'])) {
-                $where[] = 'p.FatherName LIKE ' . $DB->escape('%' . trim($filters['father']) . '%');
-            }
-            if (!empty($filters['district'])) {
-                $d = $DB->escape('%' . trim($filters['district']) . '%');
-                $where[] = "(p.PermAdrDistrict LIKE {$d} OR p.CurrAdrDistrict LIKE {$d})";
-            }
-            if (!empty($filters['fir'])) {
-                // FIR cross-table lookup: pull PersonIDs from
-                // dct_person_profile_status_detail (Schedule IV) and
-                // dsr_terrorism_attack (Accused) that mention this FIR
-                // number, then constrain dct_person_profile to that set.
-                $fir_esc = $DB->escape(trim($filters['fir']));
-                $where[] = "p.PersonId IN (
-                    SELECT DISTINCT spd.PersonID
-                      FROM dct_person_profile_status_detail spd
-                     WHERE spd.FirRefNo = {$fir_esc}
-                    UNION
-                    SELECT DISTINCT spd2.PersonID
-                      FROM dct_person_profile_status_detail spd2
-                      JOIN dsr_terrorism_attack ta ON ta.TerrorismAttackID = spd2.ActivityID
-                     WHERE ta.FIRNumber = {$fir_esc}
-                )";
-            }
-            if (empty($where)) {
-                return array();
-            }
-
-            // Pull a few useful FIR fields from the status-detail table
-            // alongside the person profile so the result row can show
-            // an FIR badge without a second round-trip.
-            $sql = "SELECT p.*,
-                           (SELECT spd.FirRefNo FROM dct_person_profile_status_detail spd
-                              WHERE spd.PersonID = p.PersonId AND spd.FirRefNo IS NOT NULL
-                              ORDER BY spd.StatusID DESC LIMIT 1) AS LatestFirRefNo,
-                           (SELECT spd.FirRefDate FROM dct_person_profile_status_detail spd
-                              WHERE spd.PersonID = p.PersonId AND spd.FirRefDate IS NOT NULL
-                              ORDER BY spd.StatusID DESC LIMIT 1) AS LatestFirRefDate
-                    FROM dct_person_profile p
-                    WHERE " . implode(' AND ', $where) . "
-                    LIMIT {$limit}";
-            return $DB->query(Database::SELECT, $sql, TRUE)->as_array();
-        } catch (Exception $e) {
-            self::_log_failure('search_ctd_kpk', $e, $filters);
-            return array();
         }
+        return array('seed' => isset($json['record']) ? $map($json['record']) : NULL, 'family' => $family);
     }
 
-    /* ------------------------------------------------------------------ */
-    /*  DLMS (driving licence)                                            */
-    /* ------------------------------------------------------------------ */
-
-    public static function search_dlms(array $filters, $limit = 100)
+    /**
+     * Records whose fields differ as one table: a column per field label
+     * (in order of first appearance; images as image columns), then
+     * "Reference" and "Found through" when any record has them.
+     *
+     * @return array ['columns' => results-view column configs, 'rows' => rows keyed by column key]
+     */
+    public static function records_table(array $records)
     {
-        $limit = self::_clamp($limit, 1, 500);
-        $pdo   = self::dlms_pdo();
-        if ($pdo === null) {
-            // dlms_pdo() already logged the connect failure.
-            return array();
-        }
-
-        try {
-            $where = array();
-
-            if (!empty($filters['cnic'])) {
-                // Normalise on the COLUMN side, not just the literal.
-                // Empirical finding: searching by license number returns
-                // CNIC `1730113816259` (no dashes) for a row that an
-                // exact `p.CNIC = '1730113816259'` query then fails to
-                // find. Most likely the column is NCHAR(>13) so the
-                // value is space-padded, OR there's a non-printing
-                // character at start/end. REPLACE strips both spaces
-                // and dashes from the stored value before comparing,
-                // so any of these storage shapes match a digit-only
-                // user input:
-                //   '1730113816259'           bare 13 digits
-                //   '17301-1381625-9'         dashed
-                //   '1730113816259   '        padded
-                //   '17301 1381625 9'         space-separated
-                $cnic_digits = preg_replace('/\D+/', '', (string) $filters['cnic']);
-                if ($cnic_digits !== '') {
-                    $where[] = "REPLACE(REPLACE(p.CNIC, ' ', ''), '-', '') = "
-                             . $pdo->quote($cnic_digits);
+        $columns = array();
+        $rows    = array();
+        $extra   = array();
+        foreach ($records as $rec) {
+            $row = array();
+            foreach (self::_fields($rec) as $label => $value) {
+                $image = strpos($value, 'data:image/') === 0;
+                if ($value === '' || ($image && !preg_match('#^data:image/(jpeg|png|gif|webp);base64,[A-Za-z0-9+/=]+$#', $value))) {
+                    continue;
+                }
+                $key = 'f_' . md5($label);
+                if (!isset($columns[$key])) {
+                    $columns[$key] = array('key' => $key, 'label' => $label, 'formatter' => $image ? 'image_jpeg' : 'text');
+                }
+                $row[$key] = $value;
+            }
+            foreach (array('_reference' => 'reference', '_found' => 'foundThrough') as $key => $prop) {
+                if (isset($rec[$prop]) && is_string($rec[$prop]) && trim($rec[$prop]) !== '') {
+                    $row[$key]   = trim($rec[$prop]);
+                    $extra[$key] = TRUE;
                 }
             }
-            if (!empty($filters['name'])) {
-                $name_q = $pdo->quote('%' . trim($filters['name']) . '%');
-                $where[] = "(p.FirstName LIKE {$name_q} OR p.LastName LIKE {$name_q} OR p.MiddleName LIKE {$name_q})";
-            }
-            if (!empty($filters['father'])) {
-                $f = $pdo->quote('%' . trim($filters['father']) . '%');
-                $where[] = "(p.FatherFName LIKE {$f} OR p.FatherLName LIKE {$f})";
-            }
-            if (!empty($filters['license_no'])) {
-                $where[] = 'd.LicenseNo = ' . $pdo->quote(trim($filters['license_no']));
-            }
-            if (empty($where)) {
-                return array();
-            }
-
-            // SQL Server uses TOP (n) instead of LIMIT n.
-            $sql = "SELECT TOP (" . (int) $limit . ") p.PersonID, p.CNIC,
-                        p.FirstName, p.MiddleName, p.LastName,
-                        p.FatherFName, p.FatherMName, p.FatherLName,
-                        p.DOB, p.BirthPlace, p.Gender, p.Mobile,
-                        d.LicenseNo, d.EntryDate, d.ExpiryDate
-                    FROM License_Person p
-                    LEFT JOIN License_Details d ON d.PersonID = p.PersonID
-                    WHERE " . implode(' AND ', $where);
-            $stmt = $pdo->query($sql);
-            // PDO::FETCH_OBJ matches the stdClass shape Kohana's
-            // ->as_array() returned, so callers see no behavioural
-            // change downstream.
-            return $stmt->fetchAll(PDO::FETCH_OBJ);
-        } catch (Exception $e) {
-            self::_log_failure('search_dlms', $e, $filters);
-            return array();
+            $rows[] = $row;
         }
+        if (isset($extra['_reference'])) {
+            $columns['_reference'] = array('key' => '_reference', 'label' => 'Reference');
+        }
+        if (isset($extra['_found'])) {
+            $columns['_found'] = array('key' => '_found', 'label' => 'Found through');
+        }
+        return array('columns' => array_values($columns), 'rows' => $rows);
     }
 
-    /* ------------------------------------------------------------------ */
-    /*  Government employees                                              */
-    /* ------------------------------------------------------------------ */
-
-    public static function search_govt_emp(array $filters, $limit = 100)
+    /**
+     * Keep the rows matching every condition (AND). A condition is
+     *   ['field' => label for messages, 'keys' => row keys to check,
+     *    'value' => user input, 'match' => 'contains' | 'exact' | 'cnic']
+     * and a row matches it when any of its keys does.
+     *
+     * @return array ['rows' => kept rows, 'unavailable' => labels of the
+     *               conditions whose keys were empty on every row, i.e.
+     *               the API returned nothing to check them against]
+     */
+    public static function refine_rows(array $rows, array $conditions)
     {
-        $limit = self::_clamp($limit, 1, 500);
-        try {
-            $DB    = Database::instance('govt_emp_data');
-            $where = array();
-
-            if (!empty($filters['cnic'])) {
-                // employee_data stores national_id as bare 13 digits in
-                // every row we've inspected, but accept dashed input from
-                // the user too — strip non-digits via _cnic_variants[0].
-                $variants = self::_cnic_variants($filters['cnic']);
-                if (!empty($variants)) {
-                    $or = array();
-                    foreach ($variants as $v) { $or[] = 'national_id = ' . $DB->escape($v); }
-                    $where[] = '(' . implode(' OR ', $or) . ')';
+        $unavailable = array();
+        foreach ($conditions as $c) {
+            if (empty($rows)) {
+                break;
+            }
+            $kept = array();
+            $seen = FALSE;
+            foreach ($rows as $row) {
+                foreach ($c['keys'] as $k) {
+                    $v = isset($row[$k]) ? trim((string) $row[$k]) : '';
+                    if ($v === '') {
+                        continue;
+                    }
+                    $seen = TRUE;
+                    if (self::_matches($v, (string) $c['value'], isset($c['match']) ? $c['match'] : 'contains')) {
+                        $kept[] = $row;
+                        break;
+                    }
                 }
             }
-            if (!empty($filters['name'])) {
-                $name_esc = $DB->escape('%' . trim($filters['name']) . '%');
-                $where[] = "(first_name LIKE {$name_esc} OR last_name LIKE {$name_esc})";
+            if (!$seen) {
+                $unavailable[] = $c['field'];
             }
-            if (!empty($filters['father'])) {
-                $where[] = 'father_husband_name LIKE ' . $DB->escape('%' . trim($filters['father']) . '%');
-            }
-            if (!empty($filters['pers_no'])) {
-                $where[] = 'pers_no = ' . $DB->escape(trim($filters['pers_no']));
-            }
-            if (!empty($filters['org_unit'])) {
-                $o = $DB->escape('%' . trim($filters['org_unit']) . '%');
-                $where[] = "(org_unit LIKE {$o} OR org_unit_short_text LIKE {$o})";
-            }
-            if (!empty($filters['job'])) {
-                $j = $DB->escape('%' . trim($filters['job']) . '%');
-                $where[] = "(position LIKE {$j} OR job LIKE {$j} OR job_title LIKE {$j})";
-            }
-            if (empty($where)) {
-                return array();
-            }
-
-            $sql = "SELECT * FROM employee_data
-                    WHERE " . implode(' AND ', $where) . "
-                    LIMIT {$limit}";
-            return $DB->query(Database::SELECT, $sql, TRUE)->as_array();
-        } catch (Exception $e) {
-            self::_log_failure('search_govt_emp', $e, $filters);
-            return array();
+            $rows = $kept;
         }
+        return array('rows' => $rows, 'unavailable' => $unavailable);
     }
 
     /* ------------------------------------------------------------------ */
     /*  Internal helpers                                                  */
     /* ------------------------------------------------------------------ */
 
-    /** Clamp $v into [$min, $max]. */
-    private static function _clamp($v, $min, $max)
+    /** One API search in $source, every record mapped by $map(record, fields). */
+    private static function _search($source, $type, $value, $map)
     {
-        $v = (int) $v;
-        if ($v < $min) return $min;
-        if ($v > $max) return $max;
-        return $v;
+        $result = Helpers_DatabankApi::search($type, $value, $source);
+        $rows   = array();
+        foreach ($result['records'] as $rec) {
+            $rows[] = $map($rec, self::_fields($rec));
+        }
+        return array('rows' => $rows, 'limit' => $result['limit'], 'request_id' => $result['request_id']);
     }
 
     /**
-     * Normalise a CNIC into the variants the external databases store.
-     * Returns up to two strings — the bare 13-digit form and the
-     * canonical dashed form (XXXXX-XXXXXXX-X). Use both with WHERE …
-     * IN (a, b) when a database is known to store one or the other
-     * (CTD KPK and DLMS both do).
-     *
-     * Trims any non-digit characters first so callers can pass
-     * "17301-1381625-9", "17301 1381625 9", or "1730113816259" and
-     * still get the same canonical pair back.
+     * A record's fields as label => value (the first value of a label
+     * wins). An ECP image is added as "<label> (image)" when it is a
+     * plain base64 data URI — anything else is dropped, never rendered.
      */
-    private static function _cnic_variants($raw)
+    private static function _fields(array $rec)
     {
-        $digits = preg_replace('/\D+/', '', (string) $raw);
-        if ($digits === '') {
-            return array();
-        }
-        $out = array($digits);
-        if (strlen($digits) === 13) {
-            $dashed = substr($digits, 0, 5) . '-' . substr($digits, 5, 7) . '-' . substr($digits, 12, 1);
-            $out[] = $dashed;
+        $out    = array();
+        $fields = (isset($rec['fields']) && is_array($rec['fields'])) ? $rec['fields'] : array();
+        foreach ($fields as $f) {
+            if (!is_array($f) || !isset($f['label']) || !is_string($f['label']) || isset($out[$f['label']])) {
+                continue;
+            }
+            $out[$f['label']] = (isset($f['value']) && is_scalar($f['value'])) ? trim((string) $f['value']) : '';
+            if (isset($f['image']) && is_string($f['image'])
+                && preg_match('#^data:image/(jpeg|png|gif|webp);base64,[A-Za-z0-9+/=]+$#', $f['image'])) {
+                $out[$f['label'] . ' (image)'] = $f['image'];
+            }
         }
         return $out;
     }
 
+    private static function _get(array $fields, $label)
+    {
+        return isset($fields[$label]) ? $fields[$label] : '';
+    }
+
+    private static function _matches($have, $want, $match)
+    {
+        if ($match === 'cnic') {
+            return preg_replace('/\D+/', '', $have) === preg_replace('/\D+/', '', $want);
+        }
+        $have = mb_strtolower((string) preg_replace('/\s+/u', ' ', $have));
+        $want = mb_strtolower(trim((string) preg_replace('/\s+/u', ' ', $want)));
+        if ($match === 'exact') {
+            return $have === $want;
+        }
+        return $want === '' || mb_strpos($have, $want) !== FALSE;
+    }
+
     /**
-     * Centralised exception logger for the Databank search helpers.
-     * Mirrors the call style used by zong.inc / Cronjob.php / the
-     * cdr parsers — keeps every Databank failure searchable in
-     * system_error_log via the same `error_source` prefix.
+     * Centralised exception logger for dlms_pdo(). Mirrors the call
+     * style used by zong.inc / Cronjob.php / the cdr parsers — keeps
+     * every failure searchable in system_error_log via the same
+     * `error_source` prefix.
      */
     private static function _log_failure($helper, Exception $e, array $filters)
     {
@@ -543,32 +459,5 @@ class Helpers_Databank
             error_log('Helpers_Databank::' . $helper . ' failed; logger also failed: '
                 . $e->getMessage() . ' | logger: ' . $log_failed->getMessage());
         }
-    }
-
-    /**
-     * Pakistani-MSISDN variants for OR matching. Mirrors the logic in
-     * Helpers_Subscriber::search() so a number entered as 0312…, 312…,
-     * 92312…, or +92312… all match the same row.
-     *
-     * @return string[]
-     */
-    private static function _msisdn_variants($input)
-    {
-        $val = preg_replace('/[^0-9]/', '', (string) $input);
-        if ($val === '') {
-            return array();
-        }
-        if (strlen($val) === 10 && substr($val, 0, 1) === '3') {
-            return array($val, '0' . $val, '92' . $val, '+92' . $val);
-        }
-        if (strlen($val) === 11 && substr($val, 0, 1) === '0') {
-            $v = substr($val, 1);
-            return array($val, $v, '92' . $v, '+92' . $v);
-        }
-        if (substr($val, 0, 2) === '92') {
-            $v = substr($val, 2);
-            return array($val, $v, '0' . $v, '+92' . $v);
-        }
-        return array($val);
     }
 }

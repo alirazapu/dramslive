@@ -15,6 +15,14 @@ class Controller_Personprofile extends Controller_Working {
             Session::instance()->set('person_data_post', $post_data);
             $pid = (int) Helpers_Utilities::encrypted_key($_GET['id'], "decrypt");
             if ($pid != 0) {
+                /* Same gate as the person dashboard (Persons::action_dashboard)
+                 * that links here: View Person right + sensitive-person ACL. */
+                $login_user = Auth::instance()->get_user();
+                if (Helpers_Person::sensitive_person_acl($login_user->id, $pid) == FALSE
+                    || Helpers_Profile::get_user_access_permission($login_user->id, 7) != 1) {
+                    header("Location:" . URL::site('user/access_denied'));
+                    exit;
+                }
                 //$pid = Session::instance()->get('personid');
                 $data = Helpers_Person::get_person_perofile($pid);
                 include 'persons_functions/person_profile.inc';
