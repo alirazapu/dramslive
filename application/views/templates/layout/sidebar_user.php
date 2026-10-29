@@ -623,17 +623,7 @@ if ($special_location_access || $special_location_report) { ?>
                             'msisdn_breakup_report_individual',
                             'msisdn_no_request_send_reports_detail',
                         )))
-                        || ($current_url == 'Databank' && in_array($menu_name, array(
-                            'subscriber_advanced',
-                            'ecp_advanced',
-                            'ctd_kpk_advanced',
-                            'dlms_advanced',
-                            'govt_employee_advanced',
-                            'vehicle_advanced',
-                            'all_sources',
-                            'advanced_search',
-                            'ecp_family',
-                        )));
+                        || ($current_url == 'Databank' && $menu_name == 'all_sources');
                 ?>
                 <li class="treeview <?php echo $databank_active ? 'active' : ''; ?>">
                     <a href="#">
@@ -645,30 +635,9 @@ if ($special_location_access || $special_location_report) { ?>
                     </a>
                     <ul class="treeview-menu">
 
-                        <!-- Databank API searches (Controller_Databank) -->
-                        <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'advanced_search') ? 'active' : ''; ?>">
-                            <a href="<?php echo URL::site('databank/advanced_search'); ?>"><i class="fa fa-sitemap"></i>Advanced Search</a>
-                        </li>
+                        <!-- Databank API search (Controller_Databank) -->
                         <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'all_sources') ? 'active' : ''; ?>">
                             <a href="<?php echo URL::site('databank/all_sources'); ?>"><i class="fa fa-search"></i>Search All Sources</a>
-                        </li>
-                        <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'subscriber_advanced') ? 'active' : ''; ?>">
-                            <a href="<?php echo URL::site('databank/subscriber_advanced'); ?>"><i class="fa fa-mobile"></i>Subscriber Search</a>
-                        </li>
-                        <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'ecp_advanced') ? 'active' : ''; ?>">
-                            <a href="<?php echo URL::site('databank/ecp_advanced'); ?>"><i class="fa fa-flag"></i>ECP Search</a>
-                        </li>
-                        <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'ctd_kpk_advanced') ? 'active' : ''; ?>">
-                            <a href="<?php echo URL::site('databank/ctd_kpk_advanced'); ?>"><i class="fa fa-shield"></i>CTD KPK Search</a>
-                        </li>
-                        <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'dlms_advanced') ? 'active' : ''; ?>">
-                            <a href="<?php echo URL::site('databank/dlms_advanced'); ?>"><i class="fa fa-car"></i>DLMS Search</a>
-                        </li>
-                        <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'govt_employee_advanced') ? 'active' : ''; ?>">
-                            <a href="<?php echo URL::site('databank/govt_employee_advanced'); ?>"><i class="fa fa-briefcase"></i>Govt Employee Search</a>
-                        </li>
-                        <li class="<?php echo ($current_url == 'Databank' && $menu_name == 'vehicle_advanced') ? 'active' : ''; ?>">
-                            <a href="<?php echo URL::site('databank/vehicle_advanced'); ?>"><i class="fa fa-automobile"></i>Vehicle Search</a>
                         </li>
 
                         <?php /* Reports & Uploads — hidden per operator request. The

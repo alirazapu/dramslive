@@ -5,9 +5,8 @@
 //   $ajax_url
 //   $hint    — optional line under the fields (how the search works)
 //   $fields  — array of { name, label, placeholder } and optionally
-//              type (text | select | checkbox), options (select:
-//              value => label) or unsupported (shown disabled: the
-//              Databank API can neither search nor return it)
+//              type (text | select | checkbox) and options (select:
+//              value => label)
 //
 // Renders an AdminLTE-styled multi-field filter form, an empty results
 // panel below it, and inline JS that POSTs the form data as JSON to
@@ -62,10 +61,6 @@
                                             <option value="<?php echo HTML::chars($value); ?>"><?php echo HTML::chars($text); ?></option>
                                         <?php endforeach; ?>
                                     </select>
-                                <?php elseif (!empty($f['unsupported'])): ?>
-                                    <input type="text" class="form-control" disabled
-                                           id="dbk_<?php echo HTML::chars($f['name']); ?>"
-                                           placeholder="Not available through the Databank API">
                                 <?php else: ?>
                                     <input type="text"
                                            id="dbk_<?php echo HTML::chars($f['name']); ?>"

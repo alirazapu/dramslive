@@ -11,8 +11,9 @@
  *
  *   php cli\databank_api_check.php
  *
- * Exit code 0 when the API answers and the five Databank search pages'
- * sources are granted, 1 otherwise.
+ * Exit code 0 when the API answers and Normal search (the feature the
+ * "Search All Sources" page uses) is available, 1 otherwise. On a
+ * failure it prints the underlying cause (e.g. the cURL error).
  */
 if (PHP_SAPI !== 'cli') {
     http_response_code(404);
@@ -39,10 +40,19 @@ $token = (string) $cfg->get('token');
 echo 'Base URL : ', $cfg->get('base_url'), "\n";
 echo 'Token    : ', $token === '' ? 'MISSING (set DATABANK_API_TOKEN or application/config/databank.local.php)'
                                   : 'set (' . strlen($token) . ' characters, prefix ' . substr($token, 0, 4) . '…)', "\n";
+$host = (string) parse_url((string) $cfg->get('base_url'), PHP_URL_HOST);
+if ($host !== '' && !filter_var($host, FILTER_VALIDATE_IP)) {
+    $ip = gethostbyname($host);
+    echo 'Resolves : ', $ip === $host ? 'NO - this server cannot resolve ' . $host
+                                      . ' (add a hosts entry or use the IP in base_url)' : $ip, "\n";
+}
 try {
     $me = Helpers_DatabankApi::me();
 } catch (Helpers_DatabankApi_Exception $e) {
     echo 'FAILED   : ', $e->reason, ' - ', $e->getMessage(), "\n";
+    if ($e->detail !== '') {
+        echo 'Cause    : ', $e->detail, "\n";
+    }
     exit(1);
 }
 
@@ -61,15 +71,14 @@ echo 'Sources  : ', $codes(isset($me['sources']) ? $me['sources'] : array()), "\
 echo 'Withheld : ', $codes(isset($me['withheldFields']) ? $me['withheldFields'] : array()), "\n";
 echo 'Limits   : ', json_encode(isset($me['limits']) ? $me['limits'] : array()), "\n";
 
-$granted = array();
-foreach ((array) (isset($me['sources']) ? $me['sources'] : array()) as $s) {
-    if (is_array($s) && isset($s['code'])) {
-        $granted[] = $s['code'];
+$normal = FALSE;
+foreach ((array) (isset($me['features']) ? $me['features'] : array()) as $f) {
+    if (is_array($f) && isset($f['code']) && $f['code'] === 'NORMAL_SEARCH' && !empty($f['available'])) {
+        $normal = TRUE;
     }
 }
-$missing = array_diff(array('MOBILE', 'ECP', 'FIR', 'DRIVING_LICENCE', 'GOVT_EMPLOYEE'), $granted);
-if ($missing) {
-    echo 'MISSING  : sources needed by the Databank search pages: ', implode(', ', $missing), "\n";
+if (!$normal) {
+    echo "MISSING  : the NORMAL_SEARCH feature, which the Search All Sources page needs\n";
     exit(1);
 }
 echo "OK\n";

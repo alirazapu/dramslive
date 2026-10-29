@@ -10,7 +10,7 @@ defined('SYSPATH') or die('No direct script access.');
  *   GET  integration/me      the API user's features, sources, withheld
  *                            field categories and limits
  *   POST integration/search  normal search: ONE identifier (mobile, cnic,
- *                            name or fir) in the requested sources
+ *                            name or fir) in every permitted source
  *
  * Security rules:
  *   - The token only ever travels in the Authorization header. It never
@@ -46,69 +46,6 @@ class Helpers_DatabankApi
     }
 
     /**
-     * POST integration/search for one identifier in one source.
-     *
-     * @param string $type    mobile | cnic | name | fir
-     * @param string $value   user input; validated with the API's own rules first
-     * @param string $source  Databank source code (MOBILE, ECP, FIR, DRIVING_LICENCE, GOVT_EMPLOYEE)
-     * @return array  ['records' => list of record arrays, 'limit' => int, 'request_id' => string]
-     * @throws Helpers_DatabankApi_Exception
-     */
-    public static function search($type, $value, $source)
-    {
-        $endpoint = 'integration/search';
-        $value    = self::normalize_identifier($type, $value);
-        // The API clamps limit to its own cap (25 by default, 50 at most).
-        $limit    = max(1, min(50, (int) self::config()->get('records_per_search', 25)));
-
-        $json = self::request('POST', $endpoint, array(
-            'type'    => $type,
-            'value'   => $value,
-            'sources' => array($source),
-            'limit'   => $limit,
-        ));
-        $request_id = self::request_id_of($json);
-
-        $block = NULL;
-        if (isset($json['sources']) && is_array($json['sources'])) {
-            foreach ($json['sources'] as $s) {
-                if (is_array($s) && isset($s['code']) && $s['code'] === $source) {
-                    $block = $s;
-                    break;
-                }
-            }
-        }
-        if ($block === NULL) {
-            // The Databank leaves out a source its administrator switched off.
-            throw self::fail('The Databank API did not search this source (it is switched off on the Databank server).',
-                'source-missing', 200, $request_id, 'POST', $endpoint, 'source ' . $source);
-        }
-
-        $status  = isset($block['status']) ? $block['status'] : '';
-        $message = (isset($block['message']) && is_string($block['message'])) ? self::clip($block['message']) : '';
-        if ($status === 'unavailable') {
-            throw self::fail('The Databank could not reach this source: ' . ($message !== '' ? $message : 'source unavailable.'),
-                'source-unavailable', 200, $request_id, 'POST', $endpoint, 'source ' . $source . ': ' . $message);
-        }
-        if ($status === 'unsupported') {
-            throw self::fail($message !== '' ? $message : 'This source cannot be searched by this kind of value.',
-                'unsupported', 200, $request_id, 'POST', $endpoint, 'source ' . $source . ' type ' . $type);
-        }
-        if (($status !== 'ok' && $status !== 'empty') || !isset($block['records']) || !is_array($block['records'])) {
-            throw self::fail('Unexpected answer from the Databank API.',
-                'malformed-response', 200, $request_id, 'POST', $endpoint, 'source block status "' . self::clip((string) $status, 20) . '"');
-        }
-
-        $records = array();
-        foreach ($block['records'] as $r) {
-            if (is_array($r)) {
-                $records[] = $r;
-            }
-        }
-        return array('records' => $records, 'limit' => $limit, 'request_id' => $request_id);
-    }
-
-    /**
      * POST integration/search for one identifier in every source the API
      * user may read, optionally following the CNICs / numbers found
      * ("linked" — mobile and CNIC only).
@@ -121,6 +58,7 @@ class Helpers_DatabankApi
         $body = array(
             'type'  => $type,
             'value' => self::normalize_identifier($type, $value),
+            // The API clamps limit to its own cap (25 by default, 50 at most).
             'limit' => max(1, min(50, (int) self::config()->get('records_per_search', 25))),
         );
         if ($linked && ($type === 'mobile' || $type === 'cnic')) {
@@ -132,130 +70,6 @@ class Helpers_DatabankApi
                 self::request_id_of($json), 'POST', 'integration/search', 'no sources list');
         }
         return $json;
-    }
-
-    /**
-     * POST integration/ecp/family — an ECP record and its household
-     * members. Needs the Databank update that added this endpoint; an
-     * older Databank answers 404 (reason 'not-found').
-     *
-     * @return array decoded JSON ({found, record, members[], count})
-     * @throws Helpers_DatabankApi_Exception
-     */
-    public static function ecp_family($ecp_id)
-    {
-        return self::request('POST', 'integration/ecp/family', array('ecpId' => (int) $ecp_id));
-    }
-
-    /**
-     * Advanced Search calls the Databank page may make: op => endpoint and
-     * the body keys passed through (searchId is added by advanced()).
-     */
-    public static $advanced_ops = array(
-        'start'        => array('advanced/search',       array('identifiers', 'from', 'to', 'points')),
-        'run'          => array('advanced/run',          array()),
-        'summary'      => array('advanced/summary',      array()),
-        'records'      => array('advanced/records',      array()),
-        'findings'     => array('advanced/findings',     array()),
-        'expand'       => array('advanced/expand',       array('candidates')),
-        'graph'        => array('advanced/graph',        array('types', 'classes', 'from', 'to')),
-        'path'         => array('advanced/graph/path',   array('from', 'to')),
-        'relationship' => array('advanced/relationship', array('edgeId')),
-        'indicators'   => array('advanced/indicators',   array('a', 'b', 'location')),
-        'timeline'     => array('advanced/timeline',     array('from', 'to', 'types', 'entity', 'order', 'categories')),
-        'profile'      => array('advanced/profile',      array('cnic')),
-        'cdr'          => array('advanced/cdr',          array('numbers', 'from', 'to')),
-        'cdr_records'  => array('advanced/cdr/records',  array('numbers', 'from', 'to', 'direction', 'kind', 'contact',
-                                                               'perPage', 'cursor', 'minDuration', 'timeFrom', 'timeTo')),
-        'cdr_activity' => array('advanced/cdr/activity', array('numbers', 'from', 'to')),
-        'location'     => array('advanced/location',     array('numbers', 'from', 'to', 'timeFrom', 'timeTo')),
-        'geo'          => array('advanced/geo',          array('points', 'numbers', 'from', 'to', 'timeFrom', 'timeTo')),
-    );
-
-    /** Export kinds of POST integration/advanced/export. */
-    const EXPORT_KINDS = array('timeline', 'relationships', 'candidates', 'cdr', 'location');
-
-    /**
-     * One Advanced Search call. Only the keys listed for $op are sent,
-     * and only plain values (strings, numbers, booleans, lists / objects
-     * of those, nested at most 3 deep); the Databank validates the rest.
-     *
-     * @param string $op         key of self::$advanced_ops
-     * @param array  $input      request body from the page
-     * @param string $search_id  the session's searchId (ignored for 'start')
-     * @return array decoded JSON
-     * @throws Helpers_DatabankApi_Exception
-     */
-    public static function advanced($op, array $input, $search_id = '')
-    {
-        if (!isset(self::$advanced_ops[$op])) {
-            throw new Helpers_DatabankApi_Exception('Unknown Advanced Search action.', 'invalid-request');
-        }
-        list($endpoint, $keys) = self::$advanced_ops[$op];
-        $body = array();
-        foreach ($keys as $k) {
-            if (array_key_exists($k, $input) && self::plain_value($input[$k], 0)) {
-                $body[$k] = $input[$k];
-            }
-        }
-        if ($op !== 'start') {
-            $body['searchId'] = self::search_id($search_id);
-        }
-        return self::request('POST', 'integration/' . $endpoint, $body);
-    }
-
-    /**
-     * POST integration/advanced/export — a CSV of the session.
-     *
-     * @return array ['filename' => safe file name, 'body' => CSV text]
-     * @throws Helpers_DatabankApi_Exception
-     */
-    public static function export($search_id, $kind, $numbers = NULL)
-    {
-        if (!in_array($kind, self::EXPORT_KINDS, TRUE)) {
-            throw new Helpers_DatabankApi_Exception('Unknown export.', 'invalid-request');
-        }
-        $body = array('searchId' => self::search_id($search_id), 'kind' => $kind);
-        if (is_array($numbers) && $numbers && self::plain_value($numbers, 0)) {
-            $body['numbers'] = array_values($numbers);
-        }
-        $raw = self::request('POST', 'integration/advanced/export', $body, TRUE);
-
-        $name = 'databank-' . $kind . '.csv';
-        if (preg_match('/filename="?([A-Za-z0-9._\-]{1,120})"?/', $raw['disposition'], $m)) {
-            $name = $m[1];
-        }
-        return array('filename' => $name, 'body' => $raw['body']);
-    }
-
-    /** A searchId as the Databank issues it (letters, digits, dashes), else refused. */
-    public static function search_id($search_id)
-    {
-        $search_id = (string) $search_id;
-        if (!preg_match('/^[A-Za-z0-9\-]{8,64}$/', $search_id)) {
-            throw new Helpers_DatabankApi_Exception('Start a new Advanced Search first.', 'invalid-request');
-        }
-        return $search_id;
-    }
-
-    /** TRUE for a value safe to forward: scalars, and arrays of them nested at most 3 deep. */
-    protected static function plain_value($v, $depth)
-    {
-        if ($v === NULL || is_bool($v) || is_int($v) || is_float($v)) {
-            return TRUE;
-        }
-        if (is_string($v)) {
-            return strlen($v) <= 2000;
-        }
-        if (is_array($v) && $depth < 3 && count($v) <= 200) {
-            foreach ($v as $k => $x) {
-                if ((!is_int($k) && !preg_match('/^[A-Za-z_][A-Za-z0-9_]{0,40}$/', $k)) || !self::plain_value($x, $depth + 1)) {
-                    return FALSE;
-                }
-            }
-            return TRUE;
-        }
-        return FALSE;
     }
 
     /**
@@ -306,12 +120,11 @@ class Helpers_DatabankApi
 
     /**
      * One HTTP call to the API. Returns the decoded body of a 2xx
-     * {"ok": true, ...} answer — or, with $raw, ['body', 'disposition']
-     * of a 2xx non-JSON answer (CSV export); everything else throws.
+     * {"ok": true, ...} answer; everything else throws.
      *
      * @throws Helpers_DatabankApi_Exception
      */
-    protected static function request($method, $endpoint, array $body = NULL, $raw = FALSE)
+    protected static function request($method, $endpoint, array $body = NULL)
     {
         $config = self::config();
         $base   = rtrim(trim((string) $config->get('base_url')), '/');
@@ -326,25 +139,13 @@ class Helpers_DatabankApi
                                                                          : 'token contains spaces or control characters'));
         }
 
-        $buffer      = '';
-        $too_large   = FALSE;
-        $disposition = '';
-        $headers     = array('Authorization: Bearer ' . $token, 'Accept: application/json');
-        // Advanced Search calls run source searches inside the request
-        // (up to ~45 s plus the last search, per the API docs).
-        $timeout     = strpos($endpoint, 'integration/advanced/') === 0
-            ? max(1, (int) $config->get('advanced_timeout', 150))
-            : max(1, (int) $config->get('timeout', 30));
-        $options     = array(
+        $buffer    = '';
+        $too_large = FALSE;
+        $headers   = array('Authorization: Bearer ' . $token, 'Accept: application/json');
+        $options   = array(
             CURLOPT_CONNECTTIMEOUT => max(1, (int) $config->get('connect_timeout', 5)),
-            CURLOPT_TIMEOUT        => $timeout,
+            CURLOPT_TIMEOUT        => max(1, (int) $config->get('timeout', 60)),
             CURLOPT_FOLLOWLOCATION => FALSE,
-            CURLOPT_HEADERFUNCTION => function ($ch, $line) use (&$disposition) {
-                if (stripos($line, 'Content-Disposition:') === 0) {
-                    $disposition = trim(substr($line, 20));
-                }
-                return strlen($line);
-            },
             CURLOPT_WRITEFUNCTION  => function ($ch, $chunk) use (&$buffer, &$too_large, $max) {
                 if (strlen($buffer) + strlen($chunk) > $max) {
                     $too_large = TRUE;
@@ -377,15 +178,13 @@ class Helpers_DatabankApi
             $timeout = ($errno === 28); // CURLE_OPERATION_TIMEDOUT
             throw self::fail($timeout ? 'The Databank API did not answer in time. Try again in a moment.'
                                       : 'The Databank API could not be reached. Try again later.',
-                $timeout ? 'timeout' : 'connection', 0, '', $method, $endpoint, 'curl ' . $errno . ': ' . self::clip($error));
+                $timeout ? 'timeout' : 'connection', 0, '', $method, $endpoint,
+                'curl ' . $errno . ': ' . self::clip($error) . ' (base URL ' . $base . ')');
         }
 
         $json       = json_decode($buffer, TRUE);
         $request_id = self::request_id_of($json);
 
-        if ($raw && $status >= 200 && $status < 300 && !is_array($json)) {
-            return array('body' => $buffer, 'disposition' => $disposition);
-        }
         if ($status >= 200 && $status < 300) {
             if (!is_array($json) || !isset($json['ok']) || $json['ok'] !== TRUE) {
                 throw self::fail('Unexpected answer from the Databank API.',
@@ -411,8 +210,6 @@ class Helpers_DatabankApi
             $reason  = 'rate-limited';
             $message = 'The Databank API rate limit was reached. Wait a minute and search again.';
         } elseif ($status === 404) {
-            // An unknown endpoint, or an Advanced Search session that
-            // expired / belongs to another API user.
             $reason  = 'not-found';
             $message = $api_error !== '' ? 'Databank API: ' . $api_error
                                          : 'The Databank API endpoint was not found. Contact the system administrator.';
@@ -430,7 +227,11 @@ class Helpers_DatabankApi
             trim('code ' . $api_code . ($reason !== 'invalid-request' && $api_error !== '' ? ': ' . $api_error : '')));
     }
 
-    /** Log a failure (never the token or the searched value) and build its exception. */
+    /**
+     * Log a failure (never the token or the searched value) and build its
+     * exception. $detail — the underlying cause, e.g. the cURL error — is
+     * for administrators (log, cli/databank_api_check.php), not the page.
+     */
     protected static function fail($message, $reason, $status, $request_id, $method, $endpoint, $detail = '')
     {
         // A rejected search value is the user's typo, not a system fault.
@@ -455,7 +256,7 @@ class Helpers_DatabankApi
             }
         }
         $suffix = $request_id !== '' ? ' (Databank reference ' . $request_id . ')' : '';
-        return new Helpers_DatabankApi_Exception($message . $suffix, $reason, $status, $request_id);
+        return new Helpers_DatabankApi_Exception($message . $suffix, $reason, $status, $request_id, $detail);
     }
 
     /** The Databank requestId of a decoded answer, reduced to safe characters. */

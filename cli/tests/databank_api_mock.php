@@ -111,6 +111,7 @@ switch ($scenario) {
     case 'okfalse': answer(200, array('ok' => false));
     case 'slow': sleep(3); answer(200, array('ok' => true, 'requestId' => 'slow'));
     case 'big': answer(200, '{"ok":true,"pad":"' . str_repeat('x', 150000) . '"}');
+    case 'nosources': answer(200, array('ok' => true, 'requestId' => 'nosources'));
     case 'redirect':
         http_response_code(302);
         header('Location: http://127.0.0.1:' . $_SERVER['SERVER_PORT'] . '/ok/api/v1/integration/me');
@@ -140,8 +141,6 @@ if ($endpoint === 'search') {
         if (isset($body['value']) && $body['value'] === '1730199999990') { $recs = array(); $status = 'empty'; }
         $block = array('code' => $code, 'label' => $code, 'status' => $status, 'statusLabel' => $status, 'count' => count($recs), 'records' => $recs);
         if ($scenario === 'unavailable') $block = array('code' => $code, 'label' => $code, 'status' => 'unavailable', 'statusLabel' => 'Source unavailable', 'count' => 0, 'records' => array(), 'message' => 'This source took too long to answer.');
-        if ($scenario === 'unsupported') $block = array('code' => $code, 'label' => $code, 'status' => 'unsupported', 'statusLabel' => 'Not searchable', 'count' => 0, 'records' => array(), 'message' => $code . ' cannot be searched by FIR Number.');
-        if ($scenario === 'badstatus') $block['status'] = 'weird';
         $blocks[] = $block;
     }
     if ($scenario === 'missing') $blocks = array();
@@ -152,27 +151,6 @@ if ($endpoint === 'search') {
                  'sources' => $blocks, 'totals' => array('records' => 0), 'sent' => $sent, 'valueSent' => isset($body['value']) ? $body['value'] : null);
     if (!empty($body['linked'])) $out['linked'] = array('followed' => true, 'steps' => array('Searched 1 value in 6 sources.', 'Found CNIC <b>x</b>.'));
     answer(200, $out);
-}
-
-if ($endpoint === 'ecp/family') {
-    if (empty($body['ecpId'])) fail(422, 'invalid-request', 'Send {"ecpId": 123}.');
-    $member = $records['ECP'][0];
-    $member['reference'] = 'Record reference 4343';
-    answer(200, array('ok' => true, 'requestId' => $request_id, 'found' => true, 'record' => $records['ECP'][0],
-                      'members' => array($member), 'count' => 1));
-}
-
-if ($endpoint === 'advanced/export') {
-    http_response_code(200);
-    header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename="databank-timeline-INV-1.csv"');
-    echo "\xEF\xBB\xBF\"Header\"\n\"row\"\n";
-    exit;
-}
-
-if (strpos($endpoint, 'advanced/') === 0) {
-    answer(200, array('ok' => true, 'requestId' => $request_id, 'searchId' => 'abcdef0123456789abcdef0123456789',
-                      'endpoint' => $endpoint, 'sentKeys' => array_keys($body), 'sent' => $body));
 }
 
 fail(404, 'not-found', 'Unknown endpoint. See the integration API documentation.');
