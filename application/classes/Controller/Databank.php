@@ -91,9 +91,7 @@ class Controller_Databank extends Controller_Working
     /** One result table per source (databank_advanced_results), with the source's status. */
     private function _all_sources_html(array $result)
     {
-        $html  = '<p class="text-muted small" style="margin:0 0 8px;">'
-               . ($result['request_id'] !== '' ? 'Databank reference ' . HTML::chars($result['request_id']) . ' · ' : '')
-               . 'At most ' . (int) $result['limit'] . ' records per source.</p>';
+        $html = '';
         if ($result['linked']) {
             $html .= '<div class="callout callout-info" style="padding:6px 12px;"><strong>Linked identifiers followed</strong><ul style="margin:4px 0 0;">';
             foreach ($result['linked'] as $step) {
