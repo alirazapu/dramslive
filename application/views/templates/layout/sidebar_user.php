@@ -607,10 +607,10 @@ if ($special_location_access || $special_location_report) { ?>
                 </li>
             <?php } ?>
             <?php /* DRAMS Databank — searches through the Databank integration
-                     API (Controller_Databank). Same gate as
+                     API (Controller_Databank). Shown to users holding the
+                     "DRAMS Databank" right (ACL -> Manage Rights); same gate as
                      Controller_Databank::_require_databank_access(). */ ?>
-            <?php if ((Helpers_Utilities::chek_role_array_access($role_id, array(34,35)) == 1)
-                      || $user->id == 171 || $user->id == 170) { ?>
+            <?php if (Helpers_Databank::has_access($user->id)) { ?>
                 <?php
                     $databank_active =
                         ($current_url == 'Admindatabank' && in_array($menu_name, array(

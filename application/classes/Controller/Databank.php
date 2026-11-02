@@ -15,10 +15,11 @@ defined('SYSPATH') or die('No direct script access.');
  * name or FIR number, optionally following the CNICs / numbers found
  * ("linked", mobile number or CNIC only).
  *
- * Visibility: same gate as the sidebar's DRAMS Databank parent
- * treeview (role 34/35 OR user 170/171). _require_databank_access()
- * is called from every action so URLs cannot be hit directly by
- * unauthorised users.
+ * Visibility: the per-user "DRAMS Databank" right (Helpers_Databank::
+ * has_access, granted in Access Control List -> Manage Rights) — the same
+ * check as the sidebar's DRAMS Databank menu. _require_databank_access()
+ * is called from every action so URLs cannot be hit directly by users
+ * without the right.
  */
 class Controller_Databank extends Controller_Working
 {
@@ -220,18 +221,14 @@ class Controller_Databank extends Controller_Working
     }
 
     /**
-     * Same gate as the sidebar's DRAMS Databank section. Redirects to
-     * access_denied if the current user is not entitled.
+     * Same gate as the sidebar's DRAMS Databank menu: the user's "DRAMS
+     * Databank" right. Redirects to access_denied without it.
      */
     private function _require_databank_access()
     {
         try {
-            $user    = Auth::instance()->get_user();
-            $role_id = Helpers_Utilities::get_user_role_id($user->id);
-            $allowed = Helpers_Utilities::chek_role_array_access($role_id, array(34, 35)) == 1
-                       || (int) $user->id === 170
-                       || (int) $user->id === 171;
-            if (!$allowed) {
+            $user = Auth::instance()->get_user();
+            if (!Helpers_Databank::has_access($user->id)) {
                 $this->redirect('user/access_denied');
                 return;
             }

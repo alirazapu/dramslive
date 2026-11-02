@@ -56,8 +56,13 @@ one API identity on the Databank side.
 
 ## Access control
 
-Menu and every action: `manu_management` menu 34 or 35 for the user's
-role, or user 170 / 171 (`Controller_Databank::_require_databank_access()`).
+The per-user **"DRAMS Databank"** right (`lu_user_access_type.internal_name`
+= `drams_databank`, added by `docs/sql/drams_databank.sql`) shows the menu
+and opens the page (`Helpers_Databank::has_access()`, checked by the
+sidebar and by `Controller_Databank::_require_databank_access()` on every
+action). Administrators grant or remove it per user in Access Control List
+-> Manage Rights; it is not counted in a user's "Rights Level". There is no
+role or admin-only shortcut.
 
 ## Remaining direct connections
 
