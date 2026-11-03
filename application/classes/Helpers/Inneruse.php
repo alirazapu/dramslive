@@ -96,6 +96,22 @@ abstract class Helpers_Inneruse
      *
      * @return array
      */
+    /**
+     * The production sending account (DCS) stored in the DB as token ID 5.
+     * Used by get_gmail_pw() in production, and by the admin Mailbox in
+     * every environment (dev's config points at a test Gmail instead).
+     */
+    public static function get_db_send_account()
+    {
+        $send_token = Model_Inneruse::get_inner_tokens(5);
+        $send_token = str_replace("axHmBf8ri9x", "", $send_token);
+        $send_password = Helpers_Utilities::encrypted_key($send_token, "decrypt");
+        $send_user_token = Model_Inneruse::get_inner_value_2(5);
+        $send_user = Helpers_Utilities::encrypted_key($send_user_token, "decrypt");
+
+        return array('user' => (string)$send_user, 'password' => (string)$send_password);
+    }
+
     public static function get_gmail_pw()
     {
         $config = Kohana::$config->load('email');
@@ -128,15 +144,9 @@ abstract class Helpers_Inneruse
         if ( Kohana::$environment === Kohana::PRODUCTION) {
             // ── PRODUCTION / other environments: load from database ──────────────
             // Send credentials (token ID 5)
-            $send_token = Model_Inneruse::get_inner_tokens(5);
-            $send_token = str_replace("axHmBf8ri9x", "", $send_token);
-            $send_password = Helpers_Utilities::encrypted_key($send_token, "decrypt");
-            $send_user_token = Model_Inneruse::get_inner_value_2(5);
-
-            $send_user = Helpers_Utilities::encrypted_key($send_user_token, "decrypt");
-
-            $credentials['send']['user'] = (string)$send_user;
-            $credentials['send']['password'] = (string)$send_password;
+            $send = self::get_db_send_account();
+            $credentials['send']['user'] = $send['user'];
+            $credentials['send']['password'] = $send['password'];
 
             // Receive credentials (token ID 6)
             $receive_token = Model_Inneruse::get_inner_tokens(6);
