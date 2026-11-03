@@ -349,7 +349,7 @@
                     "bLengthChange": true,
                     "oLanguage": {
                         "sProcessing": "Loading...",
-                        "sSearch": "Search By User Name, Mobile #, CNIC or username:"
+                        "sSearch": "Search By Name, Username, Mobile #, CNIC, User Type or Designation:"
                     },
                     "columnDefs": [{
                             "targets": 'no-sort',

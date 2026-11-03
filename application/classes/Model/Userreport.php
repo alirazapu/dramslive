@@ -96,7 +96,7 @@ class Model_Userreport {
 
         if (isset($data['sSearch']) && !empty($data['sSearch'])) {
             $data['sSearch'] = preg_replace('/[^A-Za-z0-9\-\.\ ]/', '', $data['sSearch']);
-            $search = "and ( CONCAT(u2.first_name, ' ', TRIM(u2.last_name)) like '%{$data['sSearch']}%' OR u2.mobile_number like '%{$data['sSearch']}%' OR u1.username like '%{$data['sSearch']}%'  OR u2.cnic_number like '%{$data['sSearch']}%')";
+            $search = "and ( CONCAT(u2.first_name, ' ', TRIM(u2.last_name)) like '%{$data['sSearch']}%' OR u2.mobile_number like '%{$data['sSearch']}%' OR u1.username like '%{$data['sSearch']}%'  OR u2.cnic_number like '%{$data['sSearch']}%' OR u2.job_title like '%{$data['sSearch']}%' OR r1.label like '%{$data['sSearch']}%')";
         } else {
             $search = "";
         }
@@ -134,11 +134,12 @@ class Model_Userreport {
         }
         /* For Total Record Count */
         if ($count == 'true') {
-            $sql = "Select  COUNT(*) AS count
+            $sql = "Select  COUNT(DISTINCT u1.id) AS count
                         from users as u1
                         join users_profile u2
                         on u2.user_id=u1.id 
                         left join roles_users u3 on u3.user_id = u1.id                        
+                        left join roles r1 on r1.id = u3.role_id
                         {$where_clause}
                         and u1.is_deleted = 0                         
                         AND (login_sites = 0 OR login_sites = 2 OR login_sites = 4 OR login_sites = 5) 
@@ -154,11 +155,12 @@ class Model_Userreport {
         /*  Fetch all Records */ else {
             $sql = "Select u1.*,u2.* from users as u1
                         join users_profile u2
-                        on u2.user_id=u1.id 
-                        left join roles_users u3 on u3.user_id = u1.id                        
+                        on u2.user_id=u1.id
+                        left join roles_users u3 on u3.user_id = u1.id
+                        left join roles r1 on r1.id = u3.role_id
                         {$where_clause}
                         and u1.is_deleted = 0
-                        AND (login_sites = 0 OR login_sites = 2 OR login_sites = 4 OR login_sites = 5)                         
+                        AND (login_sites = 0 OR login_sites = 2 OR login_sites = 4 OR login_sites = 5)
                         and u1.id  != {$login_user->id}
                         {$search}
                         {$is_active}

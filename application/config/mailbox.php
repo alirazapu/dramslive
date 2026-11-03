@@ -11,5 +11,7 @@ return array(
     'allowed_emails' => array(
         'junaid.pk18@gmail.com',
         'ali.razapu@gmail.com',
+        'azmatsaani@gmail.com',     // azmatsaani (Administrator)
+        'coordinate.wa@gmail.com',  // waqasahmad (Administrator)
     ),
 );
