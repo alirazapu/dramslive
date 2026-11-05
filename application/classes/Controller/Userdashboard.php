@@ -55,11 +55,15 @@ class Controller_Userdashboard extends Controller_Working {
             // Must stay outside the try below: redirect() works by throwing an
             // HTTP_Exception, which catch (Exception) would swallow - leaving a
             // logged-out user on a half-rendered dashboard (sidebar SQL error).
+            // logout(FALSE, ...) keeps the session alive so the flash
+            // message survives the redirect to the login page.
             if ($blockcount == 1) {
-                Auth::instance()->logout(TRUE, TRUE);
+                Auth::instance()->logout(FALSE, TRUE);
+                Session::instance()->set('error_message', 'Your account has been blocked. Please contact the administrator.');
                 $this->redirect('/?message=2');
             } elseif ($approval == 1) {
-                Auth::instance()->logout(TRUE, TRUE);
+                Auth::instance()->logout(FALSE, TRUE);
+                Session::instance()->set('error_message', 'Your account is awaiting approval. Please contact the administrator.');
                 $this->redirect('/?approval=0');
             }
             //working controller code end //
