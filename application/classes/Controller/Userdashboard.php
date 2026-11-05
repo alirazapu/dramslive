@@ -51,20 +51,21 @@ class Controller_Userdashboard extends Controller_Working {
                 echo 'Error! Please contact to SES'; exit;
                 
             }
-            
-            
+
+            // Must stay outside the try below: redirect() works by throwing an
+            // HTTP_Exception, which catch (Exception) would swallow - leaving a
+            // logged-out user on a half-rendered dashboard (sidebar SQL error).
+            if ($blockcount == 1) {
+                Auth::instance()->logout(TRUE, TRUE);
+                $this->redirect('/?message=2');
+            } elseif ($approval == 1) {
+                Auth::instance()->logout(TRUE, TRUE);
+                $this->redirect('/?approval=0');
+            }
+            //working controller code end //
+
             try {
 
-        
-        if ($blockcount == 1) {
-            Auth::instance()->logout(TRUE, TRUE);
-            $this->redirect('/?message=2');
-        } elseif ($approval == 1) {
-            Auth::instance()->logout(TRUE, TRUE);
-            $this->redirect('/?approval=0');
-        }
-        //working controller code end //
-                
                 if (Helpers_Utilities::chek_role_access($this->role_id, 1) == 1) {
                     $user_obj = Auth::instance()->get_user();
                     $userid = $user_obj->id;

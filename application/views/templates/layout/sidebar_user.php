@@ -36,6 +36,8 @@ try {
         </div>     
         <!-- sidebar menu: : style can be found in sidebar.less -->
         <?php
+        $permission = 0;
+        $role_id = 0;
         try {
             $permission = Helpers_Utilities::get_user_permission($user->id);
             $role_id = Helpers_Utilities::get_user_role_id($user->id);
