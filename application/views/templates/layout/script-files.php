@@ -10,7 +10,7 @@
         URL::base() . 'dist/js/jquery.validate.js?v=20100200401',
         URL::base() . 'plugins/datepicker/bootstrap-datepicker.js?v=20100200401',
         URL::base() . 'plugins/datepicker/bootstrap-datetimepicker.js?v=20100200401',
-        URL::base() . 'dist/js/cytoscape.min.js?v=20100200401',
+        // cytoscape (309 KB) is loaded only by templates/persons/cdr_graphic.php
         URL::base() . 'dist/js/date_time.js?v=20100200401',
         //mark js files
         URL::base() . 'dist/mark/js/datatables.mark.js?v=20100200401',
@@ -22,7 +22,7 @@
 
        // URL::base() . 'dist/js/bootstrap-datetimepicker.min.js',        
        // URL::base() . 'plugins/iCheck/icheck.min.js'
-        URL::base() . 'plugins/sweetalerts/sweetalert.js',
-        URL::base() . 'plugins/sweetalerts/sweetalert.min.js',
+        // sweetalert.js (unminified copy of the same library) was loaded too; the min build alone defines swal
+        URL::base() . 'plugins/sweetalerts/sweetalert.min.js?v=20261116',
     );
 ?>

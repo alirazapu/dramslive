@@ -1,0 +1,336 @@
+/*
+ * DRAMS modern skin — header + left menu (design only).
+ * Loaded last (templates/layout/style-files.php) so it overrides AdminLTE's
+ * skin-blue for .main-header and .main-sidebar. No markup, ids, classes or
+ * scripts change: the toggle, treeview, collapsed "sidebar-mini" mode and
+ * mobile off-canvas menu all keep AdminLTE's behaviour.
+ */
+:root {
+    --dm-navy-900: #0b1626;
+    --dm-navy-800: #0f1d33;
+    --dm-navy-700: #132640;
+    --dm-navy-600: #1b3558;
+    --dm-blue: #2563eb;
+    --dm-blue-soft: rgba(37, 99, 235, .18);
+    --dm-text: #c9d4e3;
+    --dm-text-dim: #8696ad;
+    --dm-line: rgba(255, 255, 255, .07);
+    --dm-amber: #fbbf24;
+}
+
+/* ------------------------------------------------------------------ header */
+.skin-blue .main-header {
+    box-shadow: 0 1px 0 rgba(0, 0, 0, .25), 0 4px 14px rgba(11, 22, 38, .18);
+    position: relative;
+    z-index: 1030;
+}
+.skin-blue .main-header .logo,
+.skin-blue .main-header .logo:hover {
+    background: var(--dm-navy-900);
+    border-right: 1px solid var(--dm-line);
+}
+/* logo: breathing room around the DRAMS image (overrides its inline offsets) */
+.skin-blue .main-header .logo {
+    padding: 0 16px;
+}
+.skin-blue .main-header .logo .logo-mini {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    height: 50px;
+    top: 0 !important;
+    left: 0 !important;
+}
+.skin-blue .main-header .logo .logo-mini img {
+    width: auto !important;
+    height: 34px;
+    max-width: 100%;
+    object-fit: contain;
+    object-position: left center;
+}
+/* collapsed mini sidebar (50px): show the emblem, centred */
+.sidebar-mini.sidebar-collapse .main-header .logo {
+    padding: 0 8px;
+}
+.sidebar-mini.sidebar-collapse .main-header .logo .logo-mini {
+    justify-content: flex-start;
+    overflow: hidden;
+    margin: 0 !important;
+    width: 34px;
+}
+.sidebar-mini.sidebar-collapse .main-header .logo .logo-mini img {
+    max-width: none;
+}
+.skin-blue .main-header .navbar {
+    background: linear-gradient(90deg, var(--dm-navy-800) 0%, #16345e 60%, #1d4ed8 140%);
+}
+.skin-blue .main-header .navbar .logo-lg {
+    font-size: 17px !important;
+    font-weight: 500 !important;
+    letter-spacing: .02em;
+    color: #e6edf7 !important;
+    line-height: 50px;
+    white-space: nowrap;
+}
+.skin-blue .main-header .navbar .sidebar-toggle {
+    color: #dbe5f3;
+    transition: background .15s;
+}
+.skin-blue .main-header .navbar .sidebar-toggle:hover {
+    background: rgba(255, 255, 255, .08);
+    color: #fff;
+}
+.skin-blue .main-header .navbar .nav > li > a {
+    color: #e6edf7;
+    transition: background .15s;
+}
+.skin-blue .main-header .navbar .nav > li > a:hover,
+.skin-blue .main-header .navbar .nav > li > a:focus,
+.skin-blue .main-header .navbar .nav .open > a,
+.skin-blue .main-header .navbar .nav .open > a:hover,
+.skin-blue .main-header .navbar .nav .open > a:focus {
+    background: rgba(255, 255, 255, .08);
+    color: #fff;
+}
+/* notification bell badge */
+.skin-blue .main-header .navbar .notifications-menu > a > .label {
+    top: 10px;
+    right: 6px;
+    min-width: 17px;
+    padding: 2px 5px;
+    border-radius: 999px;
+    background: var(--dm-amber) !important;
+    color: #1f2a3c !important;
+    font-weight: 700;
+    box-shadow: 0 0 0 2px var(--dm-navy-800);
+}
+/* user button: initials avatar + name */
+.skin-blue .main-header .user-menu > a .name-letter {
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+    margin: -4px 8px 0 0;
+    font-size: 12px;
+    color: #fff;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, .25);
+    vertical-align: middle;
+}
+.skin-blue .main-header .user-menu > a .hidden-xs {
+    font-weight: 500;
+}
+/* user dropdown */
+.skin-blue .main-header .navbar .dropdown-menu {
+    border: 1px solid #e3e8ef;
+    border-radius: 10px;
+    box-shadow: 0 12px 32px rgba(15, 29, 51, .18);
+    overflow: hidden;
+}
+.skin-blue .main-header li.user-header {
+    background: linear-gradient(135deg, var(--dm-navy-800), #1b4d8c) !important;
+}
+.skin-blue .main-header li.user-header .user-top-pic {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: #fff;
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, .2);
+}
+.skin-blue .main-header .user-footer {
+    background: #f5f7fb;
+}
+.skin-blue .main-header .user-footer .btn-default {
+    border-radius: 7px;
+    border-color: #d5dde8;
+    background: #fff;
+    color: #1f2a3c;
+}
+.skin-blue .main-header .user-footer .btn-default:hover {
+    border-color: var(--dm-blue);
+    color: var(--dm-blue);
+}
+
+/* ------------------------------------------------------------- left menu */
+.skin-blue .wrapper,
+.skin-blue .main-sidebar,
+.skin-blue .left-side {
+    background: var(--dm-navy-800);
+}
+.skin-blue .main-sidebar {
+    box-shadow: 1px 0 0 var(--dm-line);
+}
+
+/* signed-in user */
+.skin-blue .user-panel {
+    background: none;
+    padding: 16px 14px 14px;
+    border-bottom: 1px solid var(--dm-line);
+}
+.skin-blue .user-panel > .image .name-letter {
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
+    font-size: 16px;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, .25);
+}
+.skin-blue .user-panel > .info {
+    padding: 4px 5px 5px 12px;
+    line-height: 1.3;
+}
+.skin-blue .user-panel > .info > p {
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 4px 0 2px;
+}
+.skin-blue .user-panel > .info > a {
+    color: var(--dm-text-dim);
+    font-size: 11.5px;
+}
+
+/* menu section header (holds the live date / time) */
+.skin-blue .sidebar-menu > li.header {
+    background: none;
+    color: var(--dm-text-dim) !important;
+    font-size: 11px;
+    letter-spacing: .03em;
+    padding: 12px 18px 8px;
+}
+.skin-blue .sidebar-menu > li.header #date_time,
+.skin-blue .sidebar-menu > li.header span {
+    color: var(--dm-text-dim) !important;
+    font-weight: 500 !important;
+}
+.skin-blue .sidebar-menu > li.header #date_time:before {
+    content: "\f017";               /* fa-clock-o */
+    font-family: FontAwesome;
+    margin-right: 6px;
+    opacity: .8;
+}
+
+/* top-level items */
+.skin-blue .sidebar-menu > li > a {
+    color: var(--dm-text);
+    border-left: 0;
+    font-size: 13.5px;
+    transition: background .15s, color .15s;
+}
+.skin-blue .sidebar-menu > li > a > .fa,
+.skin-blue .sidebar-menu > li > a > .glyphicon,
+.skin-blue .sidebar-menu > li > a > .ion {
+    width: 22px;
+    color: var(--dm-text-dim);
+    transition: color .15s;
+}
+.skin-blue .sidebar-menu > li:hover > a {
+    background: rgba(255, 255, 255, .05);
+    color: #fff;
+}
+.skin-blue .sidebar-menu > li:hover > a > .fa {
+    color: #fff;
+}
+.skin-blue .sidebar-menu > li.active > a {
+    background: var(--dm-blue-soft);
+    color: #fff;
+    border-left: 0;
+}
+.skin-blue .sidebar-menu > li.active > a > .fa {
+    color: #60a5fa;
+}
+.skin-blue .sidebar-menu > li > a .label,
+.skin-blue .sidebar-menu > li > a .badge {
+    border-radius: 999px;
+    padding: 3px 8px;
+}
+
+/* sub-menus */
+.skin-blue .sidebar-menu > li > .treeview-menu {
+    background: transparent;
+    margin: 0;
+    padding: 2px 0 8px;
+}
+.skin-blue .treeview-menu > li > a {
+    color: var(--dm-text-dim);
+    font-size: 13px;
+    transition: color .15s, background .15s;
+}
+.skin-blue .treeview-menu > li > a > .fa-circle-o {
+    font-size: 7px;
+    vertical-align: middle;
+    width: 14px;
+    margin-right: 4px;
+}
+.skin-blue .treeview-menu > li > a:hover {
+    color: #fff;
+}
+.skin-blue .treeview-menu > li.active > a {
+    color: #fff;
+    font-weight: 600;
+}
+.skin-blue .treeview-menu > li.active > a > .fa-circle-o:before {
+    content: "\f111";               /* filled dot for the current page */
+    color: #60a5fa;
+}
+
+/* Expanded sidebar (desktop) and the mobile off-canvas menu: rounded
+   "pill" items with breathing room. Not applied to the collapsed mini
+   sidebar, whose 50px icons and hover fly-outs need AdminLTE's geometry. */
+body:not(.sidebar-collapse) .sidebar-menu > li > a,
+.sidebar-open .sidebar-menu > li > a {
+    margin: 2px 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+}
+body:not(.sidebar-collapse) .sidebar-menu > li > a > .pull-right-container,
+.sidebar-open .sidebar-menu > li > a > .pull-right-container {
+    right: 12px;
+}
+body:not(.sidebar-collapse) .sidebar-menu > li.active > a,
+.sidebar-open .sidebar-menu > li.active > a {
+    box-shadow: inset 3px 0 0 var(--dm-blue);
+}
+body:not(.sidebar-collapse) .sidebar-menu > li > .treeview-menu,
+.sidebar-open .sidebar-menu > li > .treeview-menu {
+    margin: 2px 10px 4px 28px;
+    padding: 2px 0 6px 0;
+    border-left: 1px solid rgba(255, 255, 255, .1);
+}
+body:not(.sidebar-collapse) .treeview-menu > li > a,
+.sidebar-open .treeview-menu > li > a {
+    padding: 6px 10px 6px 14px;
+    border-radius: 6px;
+}
+body:not(.sidebar-collapse) .treeview-menu > li > a:hover,
+.sidebar-open .treeview-menu > li > a:hover {
+    background: rgba(255, 255, 255, .04);
+}
+
+/* Collapsed mini sidebar: solid fly-outs (AdminLTE makes the hovered label
+   inherit the link background, which must not be translucent). */
+.sidebar-mini.sidebar-collapse.skin-blue .sidebar-menu > li:hover > a,
+.sidebar-mini.sidebar-collapse.skin-blue .sidebar-menu > li.active > a {
+    background: var(--dm-navy-600);
+}
+.sidebar-mini.sidebar-collapse.skin-blue .sidebar-menu > li:hover > .treeview-menu {
+    background: var(--dm-navy-700);
+    border-radius: 0 0 8px 0;
+    box-shadow: 6px 8px 20px rgba(0, 0, 0, .25);
+}
+.sidebar-mini.sidebar-collapse.skin-blue .sidebar-menu > li:hover > a > span:not(.pull-right) {
+    border-radius: 0 8px 0 0;
+}
+
+/* thin, dark scrollbar for long menus */
+.skin-blue .main-sidebar ::-webkit-scrollbar { width: 6px; }
+.skin-blue .main-sidebar ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .15); border-radius: 3px; }
+
+/* the long system title crowds the bell / user menu on small screens */
+@media (max-width: 991px) {
+    .skin-blue .main-header .navbar .logo-lg { font-size: 14px !important; }
+}
+@media (max-width: 767px) {
+    .skin-blue .main-header .navbar .logo-lg { display: none !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .skin-blue .main-header *, .skin-blue .main-sidebar * { transition: none !important; }
+}

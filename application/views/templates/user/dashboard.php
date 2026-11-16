@@ -6,28 +6,28 @@
  * and open the template in the editor.
  */
 ?>
+<?php
+try {
+    $ud_user = Auth::instance()->get_user();
+    $ud_name = Helpers_Utilities::get_user_name($ud_user->id);
+} catch (Exception $ex) {
+    $ud_name = '';
+}
+?>
 <!-- Content Header (Page header) -->
-<section class="content-header col-md-12">
-    <h1 class="col-md-4">
-        <i class="fa fa-dashboard"></i>
-        Dashboard
-        <small>DRAMS</small>
-    </h1>
-    <?php
-    try {
-        $notification = Helpers_Layout::get_notification();
-        echo $notification;
-    } catch (Exception $ex) {
-        
-    }
-    ?>
-    <ol class="breadcrumb col-md-2" style="float: right;">
+<section class="content-header ud-header">
+    <div>
+        <h1><i class="fa fa-dashboard"></i> Dashboard</h1>
+        <p class="ud-greet"><?php echo $ud_name !== '' ? 'Welcome back, <b>' . HTML::chars($ud_name) . '</b> &middot; ' : ''; ?><?php echo date('l, j F Y'); ?></p>
+    </div>
+    <ol class="breadcrumb">
         <li><a href="<?php echo URL::site('Userdashboard/dashboard'); ?>"><i class="fa fa-dashboard"></i> Home</a></li>
         <li class="active">Dashboard</li>
     </ol>
 </section>
 <!-- Main content -->
-<section class="content">
+<section class="content ud">
+<?php echo View::factory('templates/user/dashboard_styles')->render(); ?>
 
     <?php
     try {
@@ -51,79 +51,50 @@
     } catch (Exception $ex) {
         
     }
+    $ud_total = isset($total) ? (int) $total : 0;
+    $ud_share = function ($n) use ($ud_total) {
+        return $ud_total > 0 ? round(((int) $n) * 100 / $ud_total, 1) : 0;
+    };
+    $ud_cards = array(
+        array('cls' => 'ud-black', 'icon' => 'fa-user-secret', 'value' => isset($black) ? $black : 0, 'label' => 'Black Persons',
+              'href' => URL::site('personsreports/person_list/?category=' . $cat_black), 'share' => TRUE),
+        array('cls' => 'ud-gray',  'icon' => 'fa-user',        'value' => isset($grey) ? $grey : 0,   'label' => 'Gray Persons',
+              'href' => URL::site('personsreports/person_list/?category=' . $cat_grey),  'share' => TRUE),
+        array('cls' => 'ud-white', 'icon' => 'fa-user', 'value' => isset($white) ? $white : 0, 'label' => 'White Persons',
+              'href' => URL::site('personsreports/person_list/?category=' . $cat_white), 'share' => TRUE),
+        array('cls' => 'ud-total', 'icon' => 'fa-users',       'value' => $ud_total,                  'label' => 'Total Persons',
+              'href' => URL::site('personsreports/person_list'), 'share' => FALSE),
+    );
     ?>
-    <!-- Small boxes (Stat box) -->    
-    <div class="row">
 <?php
 if (!empty($_GET['accessmessage'])) {
     ?>
-            <div class="alert alert-success alert-dismissible" style="height: 60px; margin-top: 40px">
+            <div class="alert alert-success alert-dismissible">
                 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
                 <h4><i class="icon fa fa-check"></i> <?php echo $_GET['accessmessage']; ?></h4>
             </div>
 <?php } ?>
-        <div class="col-lg-3 col-xs-6">
-            <!-- small box -->            
-            <div class="small-box bg-red">
-                <div class="inner">
-                    <h3><?php echo $black ?></h3>
-                    <p>Total Black Person</p>
+    <!-- Stat cards -->
+    <div class="ud-stats">
+        <?php foreach ($ud_cards as $c): ?>
+            <a class="ud-stat <?php echo $c['cls']; ?>" href="<?php echo $c['href']; ?>">
+                <div class="ud-stat-top">
+                    <span class="ud-stat-ico"><i class="fa <?php echo $c['icon']; ?>"></i></span>
+                    <span class="ud-stat-label"><?php echo $c['label']; ?></span>
                 </div>
-                <div class="icon">
-                    <i class="ion ion-person-add" style="color: gray;"></i>
-                </div>
-
-                <a href="<?php echo URL::site('personsreports/person_list/?category=' . $cat_black); ?>" class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></a>
-            </div>            
-        </div>
-        <!-- ./col -->
-        <div class="col-lg-3 col-xs-6">
-            <!-- small box -->
-            <div class="small-box bg-yellow">
-                <div class="inner">
-                    <h3><?php echo $grey ?></h3>
-                    <p>Total Gray Person</p>
-                </div>
-                <div class="icon">
-                    <i class="ion ion-person-add"></i>
-                </div>
-
-                <a href="<?php echo URL::site('personsreports/person_list/?category=' . $cat_grey); ?>" class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></a>
-            </div>
-        </div>
-        <!-- ./col -->
-        <div class="col-lg-3 col-xs-6">
-            <!-- small box -->
-            <div class="small-box bg-green" style="border: 1px #d0c8c8 solid">
-                <div class="inner">
-                    <h3><?php echo $white ?></h3>
-                    <p>Total White Person</p>
-                </div>
-                <div class="icon">
-                    <i class="ion ion-person-add"></i>
-                </div>
-
-                <a href="<?php echo URL::site('personsreports/person_list/?category=' . $cat_white); ?>" class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></a>
-            </div>
-        </div>
-        <!-- ./col -->
-        <!-- ./col -->
-        <div class="col-lg-3 col-xs-6">
-            <!-- small box -->
-            <div class="small-box bg-aqua-active">
-                <div class="inner">
-                    <h3><?php echo $total ?></h3>
-                    <p>Total Persons</p>
-                </div>
-                <div class="icon">
-                    <i class="ion ion-person-add"></i>
-                </div>
-                <a href="<?php echo URL::site('personsreports/person_list'); ?>" class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></a>
-            </div>
-        </div>
-
+                <div class="ud-stat-value"><?php echo number_format((int) $c['value']); ?></div>
+                <?php if ($c['share']): ?>
+                    <div class="ud-stat-bar"><i style="width:<?php echo $ud_share($c['value']); ?>%"></i></div>
+                    <div class="ud-stat-foot"><span><?php echo $ud_share($c['value']); ?>% of all persons</span><span>View list <i class="fa fa-arrow-right"></i></span></div>
+                <?php else: ?>
+                    <div class="ud-stat-bar ud-stat-bar-split">
+                        <i class="ud-b" style="width:<?php echo $ud_share(isset($black) ? $black : 0); ?>%"></i><i class="ud-g" style="width:<?php echo $ud_share(isset($grey) ? $grey : 0); ?>%"></i><i class="ud-w" style="width:<?php echo $ud_share(isset($white) ? $white : 0); ?>%"></i>
+                    </div>
+                    <div class="ud-stat-foot"><span>Black &middot; Gray &middot; White</span><span>View list <i class="fa fa-arrow-right"></i></span></div>
+                <?php endif; ?>
+            </a>
+        <?php endforeach; ?>
     </div>
-    <!-- /.row -->
     <?php
     try {
         if ($permission == 1 || $permission == 5 || $permission == 3 || $permission == 2) {
@@ -152,6 +123,7 @@ if (!empty($_GET['accessmessage'])) {
                     </div>
                 </div>
                 <div class="box-body">
+                    <div class="ud-legend"><span><i style="background:#1f2937"></i>Black</span><span><i style="background:#94a3b8"></i>Gray</span><span><i style="background:#dbe3ee;border:1px solid #b6c3d4"></i>White</span></div>
                     <div class="chart">
                         <canvas id="barChart" style="height:245px"></canvas>
                         <img id="nodatachart" style="display:none; width: 100%; margin: auto" class="img-responsive" src="<?php echo URL::base() . 'dist/img/noperson.png'; ?>" alt="No Data">
@@ -374,8 +346,8 @@ if (!empty($_GET['accessmessage'])) {
                             datasets: [
                                 {
                                     label: "White Persons",
-                                    fillColor: "rgba(255, 255, 255, 1)",
-                                    strokeColor: "rgba(0, 128, 0, 1)",
+                                    fillColor: "#dbe3ee",
+                                    strokeColor: "#b6c3d4",
                                     pointColor: "rgba(210, 214, 222, 1)",
                                     pointStrokeColor: "#c1c7d1",
                                     pointHighlightFill: "#fff",
@@ -385,8 +357,8 @@ if (!empty($_GET['accessmessage'])) {
                                 },
                                 {
                                     label: "Gray Persons",
-                                    fillColor: "rgba(128,128,128,1)",
-                                    strokeColor: "rgba(255,255,0,1)",
+                                    fillColor: "#94a3b8",
+                                    strokeColor: "#94a3b8",
                                     pointColor: "#3b8bba",
                                     pointStrokeColor: "rgba(128,128,128,1)",
                                     pointHighlightFill: "#dfd",
@@ -396,8 +368,8 @@ if (!empty($_GET['accessmessage'])) {
                                 },
                                 {
                                     label: "Black Persons",
-                                    fillColor: "rgba(0,0,0,0.9)",
-                                    strokeColor: "rgba(255,0,0,0.8)",
+                                    fillColor: "#1f2937",
+                                    strokeColor: "#1f2937",
                                     pointColor: "#3b8bba",
                                     pointStrokeColor: "rgba(60,141,188,1)",
                                     pointHighlightFill: "#fff",
@@ -651,7 +623,7 @@ function loadRequestTypeData() {
                         html += '<tr>';
                         html += '<td>' + serial_no + '</td>';
                         html += '<td>' + escapeHtml(row.request_type) + '</td>';
-                        html += '<td><span class="badge bg-green">' + row.total_requests + '</span></td>';
+                        html += '<td><span class="badge ud-count">' + row.total_requests + '</span></td>';
                         html += '</tr>';
                         serial_no++;
                     });

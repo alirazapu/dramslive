@@ -297,26 +297,46 @@ abstract class Helpers_Utilities {
         return $results;
     }
 
-    public static function chek_role_access($role_id, $menu_id) {
+    /**
+     * Per-request cache of manu_management: role_id => [manu_id => access_status].
+     * The sidebar alone asks ~90 menu-access questions per page; loading a
+     * role's rows once turns ~90-120 queries into one. Same answers as the
+     * old one-row-per-call queries (first row wins if a pair is duplicated).
+     */
+    private static $_role_menu_access = array();
 
-        $DB = Database::instance();
-        $sql = "SELECT access_status AS status
-                FROM  manu_management AS t1
-                WHERE t1.role_id = {$role_id} AND t1.manu_id = {$menu_id}";
-        $results = $DB->query(Database::SELECT, $sql, TRUE)->current();
-        $status = isset($results->status) && $results->status ? $results->status : 0;
-        return $status;
+    private static function _role_menu_access($role_id) {
+        $key = (string) $role_id;
+        if (!isset(self::$_role_menu_access[$key])) {
+            $map = array();
+            if (is_numeric($role_id)) {
+                $rows = Database::instance()->query(Database::SELECT,
+                    "SELECT manu_id, access_status FROM manu_management WHERE role_id = " . (int) $role_id . " ORDER BY id", TRUE);
+                foreach ($rows as $row) {
+                    if (!array_key_exists((string) $row->manu_id, $map)) {
+                        $map[(string) $row->manu_id] = $row->access_status;
+                    }
+                }
+            }
+            self::$_role_menu_access[$key] = $map;
+        }
+        return self::$_role_menu_access[$key];
+    }
+
+    /** Drop the cached rights (call after changing manu_management). */
+    public static function forget_role_menu_access() {
+        self::$_role_menu_access = array();
+    }
+
+    public static function chek_role_access($role_id, $menu_id) {
+        $map = self::_role_menu_access($role_id);
+        $status = isset($map[(string) $menu_id]) ? $map[(string) $menu_id] : NULL;
+        return $status ? $status : 0;
     }
 
     public static function chek_role_array_access($role_id, $menu_array) {
-        $DB = Database::instance();
         foreach ($menu_array as $value) {
-            $sql = "SELECT access_status AS status
-                FROM  manu_management AS t1
-                WHERE t1.role_id = {$role_id} AND t1.manu_id = {$value}";
-            $results = $DB->query(Database::SELECT, $sql, TRUE)->current();
-            $status = isset($results->status) && $results->status ? $results->status : 0;
-            if ($status == 1) {
+            if (self::chek_role_access($role_id, $value) == 1) {
                 return TRUE;
             }
         }

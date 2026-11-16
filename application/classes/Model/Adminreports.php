@@ -164,6 +164,7 @@ class Model_Adminreports {
         $login_user_id = $user_obj->id;
         $current_date = date('Y-m-d H:i:s');
         $check_menu_role = Helpers_Utilities::check_menu_ag_role($menu_id, $role_id);
+        Helpers_Utilities::forget_role_menu_access();
         //if $check_menu_role is 0 insert new record else update same record
         if ($check_menu_role == 0) {
             $query = DB::insert('manu_management', array('manu_id', 'role_id', 'access_status', 'updated_by_user_id', 'timestamp'))

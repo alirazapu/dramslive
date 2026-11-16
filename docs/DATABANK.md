@@ -27,6 +27,50 @@ connections" below).
 - Errors are shown as errors (never as "no matching records"), with the
   Databank reference to quote to the Databank administrators.
 
+## Person dashboard (`/persons/dashboard`)
+
+For users with the "DRAMS Databank" right the four direct-database panels
+(CTD KPK, ECP, DLMS, Government Employee Data) are replaced by one
+**Databank** panel. Opening it searches the person's CNIC in
+every Databank source (`databank/all_sources_results`, `view=profile`):
+a status chip per source, then a card per source with records, each record
+a fact sheet (photos left, fields as a label / value grid). "Follow linked
+CNICs / numbers" re-runs the search with `linked`; "Open full search" opens
+`/databank/all_sources` for the CNIC. Persons without a 13-digit CNIC get a
+note instead. Users without the right keep the four old panels, which still
+read the databases directly (`Controller_Persons::action_ext_db_*`),
+including the ECP family list and the CTD Schedule IV / accused tables —
+the API shows whatever fields the Databank exposes for each source.
+
+## From Search Person (`/user/search_person`)
+
+The normal person search stays on DRAMS's own tables. For users with the
+"DRAMS Databank" right the page adds two on-demand Databank lookups:
+
+- **Search in Databank** (next to Search) opens
+  `/databank/all_sources?value=…&type=mobile|cnic|name` in a new tab; the
+  page fills the form from the URL and runs the search at once. It takes the
+  mobile number (number type "Mobile"), else a Pakistani CNIC, else the
+  person name. IMSI, IMEI and foreigner CNICs are not Databank types.
+- The **Request Subscriber** popup, for a mobile number or Pakistani CNIC,
+  no longer runs the local subscriber lookup (`subscribers_main` on the
+  `mobile` connection) for these users: it shows only the request button
+  (**Request Subscriber** → `requestsub()`, or **Request CNIC SIMs** →
+  `requestcnicsims()`) and the "Other sources (DRAMS Databank)" section,
+  searched as soon as the popup opens. IMSI and foreigner searches, and
+  users without the right, keep the old popup. The Databank is called through
+  `databank/all_sources_results` with `view=simple`, so it is audited the
+  same way. The simple view lists each record as label / value pairs with a
+  **Save Subscriber** button (users with the menu-9 role right, the same
+  check as the save page). It posts to `user/upload_against_msisdn` in a new
+  tab exactly like the local subscriber result: name, CNIC and address are
+  taken from the record's fields by label, the number is the searched mobile
+  number (or the record's own mobile field; empty when unknown, so the
+  analyst types it).
+
+The result cards' styles and behaviour live in
+`templates/user/databank_assets.php`, shared by both pages.
+
 ## File map
 
 | File | Purpose |
@@ -35,7 +79,8 @@ connections" below).
 | `application/classes/Helpers/DatabankApi.php` | The HTTP client: `me()`, `search_all()`, `normalize_identifier()`. Never logs the token or searched values, never retries, never follows redirects; throws `Helpers_DatabankApi_Exception` (user-safe message, `reason`, Databank `request_id`, and an admin-only `detail` such as the cURL error). |
 | `application/classes/Helpers/Databank.php` | Turns the API answer into one table per source (`search_all_sources`, `records_table`). Also keeps `dlms_pdo()` for the person dashboard's DLMS panel. |
 | `application/classes/Controller/Databank.php` | The page and its AJAX results. |
-| `application/views/templates/user/databank_advanced_form.php` | The search form (text, select, checkbox, hint line). |
+| `application/views/templates/user/databank_advanced_form.php` | The search form (text, select, checkbox, hint line); pre-filled from `?value=&type=&linked=`. |
+| `application/views/templates/user/databank_assets.php` | Shared result-card styles, image preview and filter / collapse behaviour (Databank page and Search Person popup). |
 | `application/views/templates/user/databank_advanced_results.php` | One result table (escaped values, validated images). |
 | `cli/databank_api_check.php` | Set-up check: config, host resolution, `GET integration/me`, the underlying cause of a failure. Never prints the token. |
 | `cli/tests/databank_api_test.php` | Automated tests against a mock API (`cli/tests/databank_api_mock.php`). |

@@ -3107,13 +3107,8 @@ exit();
                         $dcount++;
                 }
                 $extra_count = $dcount - 6;
-                for ($i = 0; $i < 6 - $dcount; $i++) {
-                    ?>
-                    <li class="dashboard-sticky-danger">
-                    </li>
-                <?php }
                 ?>
-                <li class="dashboard-sticky-danger pull-right">
+                <li class="dashboard-sticky-danger pd-list-foot">
                     <?php if ($extra_count > 0) { ?>
                         <a href="javascript:void(0)" id="toggle_all_devices" title="Show/Hide all devices"
                            onclick="var box = $('#person_total_devices_details'), isOpen = box.find('.extra-device:first').is(':visible');
@@ -3170,8 +3165,8 @@ exit();
                     </li>
                 <?php } ?>
                 <?php if ((($last_five_link_with_projects->count() != 0))) { ?>
-                    <li class="dashboard-sticky-danger pull-right">
-                        <span class="text-black"> <b><?php echo 'For More Details Visit CTD Suspect Profile'; ?></b> </span>
+                    <li class="dashboard-sticky-danger pd-list-foot">
+                        <span class="text-muted"><?php echo 'For More Details Visit CTD Suspect Profile'; ?></span>
                     </li>
                 <?php } ?>
             </ul>
@@ -3278,51 +3273,17 @@ exit();
                             $simstatus = "NA";
                         }
                         ?></span>-->
-                        <li class="dashboard-sticky-green<?php echo $is_extra ? ' extra-sim' : ''; ?>"<?php echo $is_extra ? ' style="display:none;"' : ''; ?>>
-                            <div style="padding-left: 2px !important; padding-right: 2px !important; "
-                                 class="col-md-3 col-sm-12">
-                                <?php if (!empty($simuser)) { ?>
-                                    <span class="text-black"><b><?php echo $owner; ?></b><a
-                                                class="text-<?php echo $ownercolor ?>"
-                                                href="<?php echo URL::site('persons/dashboard/?id=' . Helpers_Utilities::encrypted_key($simuser, "encrypt")); ?>"
-                                                title="<?php echo $sttitle . " and status of this sim is: " . $simstatus; ?>">  <?php echo $sim; ?> </a></span>
-                                <?php } else { ?>
-                                    <span title="<?php echo $sttitle . " and status of this sim is: " . $simstatus; ?>"
-                                          class="text-black"><b><?php echo $owner; ?></b><a
-                                                class="text-<?php echo $ownercolor ?> disabled" href="#"
-                                                title="<?php echo $sttitle . " and status of this sim is: " . $simstatus; ?>">  <?php echo $sim; ?> </a></span>
-                                <?php } ?>
-                            </div>
-
-                            <div style="padding-left: 2px !important; padding-right: 2px !important;"
-                                 class="col-md-1 col-sm-6">
-                                <?php /*
-                                $data = [
-                                           'mob' => $sim,
-                                           'key_' => 'SZEhiAeCdhIJgQdcbqJc2td5tWZn4Xqu',
-
-                                ];
-
-                                $cURLConnection = curl_init('http://www.ctw.ctdpunjab.com/api/ctw_exist');
-                                curl_setopt($cURLConnection, CURLOPT_POSTFIELDS, $data);
-                                curl_setopt($cURLConnection, CURLOPT_RETURNTRANSFER, true);
-                                $apiResponse = curl_exec($cURLConnection);
-                                curl_close($cURLConnection);
-                                $jsonArrayResponse = json_decode($apiResponse);
-                                $ctw_res = $jsonArrayResponse ;
-
-                                  if(!empty($ctw_res->url)){
-                                       foreach ($ctw_res->url as $i=> $res) { ?>
-                                <a href=" <?php echo $res ?>" target=”_blank”><span
-                                            class="label label-warning">CTW</span></a>
-                                            <?php }
-                                   }else{
-                                      echo ' ';
-                                  }  */ ?>
-                            </div>
-                            <div style="padding-left: 2px !important; padding-right: 2px !important;"
-                                 class="col-md-6 col-sm-12">
-                                <span class="pull-right text-black" title="Click To Request Data From Company">
+                        <?php $sim_title = HTML::chars($sttitle . " and status of this sim is: " . $simstatus); ?>
+                        <li class="dashboard-sticky-green pd-sim-row<?php echo $is_extra ? ' extra-sim' : ''; ?>"<?php echo $is_extra ? ' style="display:none;"' : ''; ?>>
+                            <span class="pd-sim-no"><?php echo (int) $simscount; ?></span>
+                            <?php if (!empty($simuser)) { ?>
+                                <a class="pd-sim-num text-<?php echo $ownercolor ?>"
+                                   href="<?php echo URL::site('persons/dashboard/?id=' . Helpers_Utilities::encrypted_key($simuser, "encrypt")); ?>"
+                                   title="<?php echo $sim_title; ?>"><?php echo $sim; ?> <i class="fa fa-external-link"></i></a>
+                            <?php } else { ?>
+                                <span class="pd-sim-num text-<?php echo $ownercolor ?>" title="<?php echo $sim_title; ?>"><?php echo $sim; ?></span>
+                            <?php } ?>
+                            <span class="pd-sim-actions" title="Click To Request Data From Company">
                                     <?php if (!empty($sims_with_files[trim($sim)])) { ?>
                                     <a href="#" onclick="requestcdrdownload('<?php echo $sim; ?>','<?php echo $person_id; ?>'); return false;">
                                     <span class="label label-warning">Download</span>
@@ -3339,37 +3300,21 @@ exit();
                                                 class="label label-primary">Subscriber</span></a>
                                     <a href="#" onclick="requestcdr(<?php echo $sim . ',' . $person_id; ?>)"><span
                                                 class="label label-primary">CDR</span></a>
-                                    
-
-                                </span>
-       
-
-
-                            </div>
-
-                            <div style="padding-left: 2px !important; padding-right: 2px !important;"
-                                 class="pull-right col-md-2 col-sm-12">
                                 <?php
                                 $cdr_status = Helpers_Person::get_person_cdr_status($person_id, $sim);
                                 if ($cdr_status == 1) { ?>
                                     <a href="<?php echo URL::site('persons/cdr_summary/?phone_number=' . $sim . '&id=' . $_GET['id']); ?>">
-                                        <span class="label label-success">View CDR</span> </a>
+                                        <span class="label label-success">View CDR</span></a>
                                 <?php } ?>
-                            </div>
+                            </span>
                         </li>
 
                         <?php
                         $simscount++;
                 }
                 $extra_sims = $simscount - 6;
-
-                for ($i = 0; $i < 6 - $simscount; $i++) {
-                    ?>
-                    <li class="dashboard-sticky-green">
-                    </li>
-                <?php }
                 ?>
-                <li class="dashboard-sticky-green pull-right">
+                <li class="dashboard-sticky-green pd-list-foot">
                     <?php if ($extra_sims > 0) { ?>
                         <a href="javascript:void(0)" id="toggle_all_sims" title="Show/Hide all SIMs"
                            onclick="var box = $('#person_total_sims_detail'), isOpen = box.find('.extra-sim:first').is(':visible');

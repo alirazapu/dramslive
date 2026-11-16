@@ -25,7 +25,90 @@ $personage = '';
     </ol>
 </section>
 <!-- Main content -->
-<section class="content">
+<section class="content pd">
+<style>
+/* Person dashboard skin — scoped to .pd (this page only). */
+.pd{--pd-ink:#1f2a3c;--pd-muted:#6b778c;--pd-line:#e3e8ef;--pd-soft:#f5f7fb;--pd-accent:#2563eb;}
+/* profile header */
+.pd-hero{position:relative;display:grid;grid-template-columns:auto 1fr auto;gap:18px 22px;align-items:start;background:#fff;border:1px solid var(--pd-line);
+    border-radius:14px;padding:22px 22px 16px;margin-bottom:18px;box-shadow:0 1px 3px rgba(16,24,40,.06);overflow:hidden;color:var(--pd-ink);}
+.pd-hero:before{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:linear-gradient(90deg,#0f2747,#1b4d8c 50%,#2563eb);}
+.pd-avatar{position:relative;width:92px;height:92px;border-radius:50%;overflow:hidden;flex:none;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,#1b4d8c,#2563eb);color:#fff;font-size:32px;font-weight:600;letter-spacing:.02em;box-shadow:0 0 0 4px #e8efff;}
+.pd-avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.pd-name-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.pd-name-row h2{margin:0;font-size:24px;font-weight:600;line-height:1.2;}
+.pd-status{display:inline-block;padding:3px 12px;border-radius:999px;background:var(--pd-soft);border:1px solid var(--pd-line);font-size:12px;font-weight:600;color:#334155;}
+.pd-sub{margin-top:4px;font-size:13.5px;color:var(--pd-muted);}
+.pd-sub b{color:var(--pd-ink);font-weight:500;}
+.pd-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,max-content));gap:10px 34px;margin-top:14px;}
+.pd-facts .pd-wide{grid-column:1/-1;}
+.pd-facts span{display:block;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--pd-muted);}
+.pd-facts b{display:block;font-size:14px;font-weight:500;margin-top:1px;}
+.pd-facts b small{color:var(--pd-muted);font-weight:400;}
+.pd-mono{font-family:Consolas,Menlo,monospace;font-size:13.5px!important;}
+.pd-tags{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:12px;font-size:12.5px;}
+.pd-tags-label{color:var(--pd-muted);font-weight:600;margin-right:2px;}
+.pd-tags > span:not(.pd-tags-label){display:inline-block;padding:2px 10px;border-radius:999px;background:#fff7e6;border:1px solid #fde3a7;color:#92400e!important;}
+.pd-tags em{color:var(--pd-muted);}
+.pd-side{display:flex;flex-direction:column;align-items:stretch;gap:8px;min-width:170px;}
+.pd-toggle{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 12px;border:1px solid var(--pd-line);border-radius:8px;font-size:13px;font-weight:500;background:#fff;}
+.pd-toggle #sens{display:inline;}
+.pd-hero .bg-aqua{background:transparent!important;color:inherit!important;}
+.pd-toggle .fa-star{color:#f59e0b;font-size:16px;}
+.pd-toggle .fa-star-o{color:#94a3b8;font-size:16px;}
+.pd-toggle #sens a{text-decoration:underline dotted;}
+.pd-actions{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;padding-top:14px;border-top:1px solid var(--pd-line);}
+.pd-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:6px 13px;border-radius:8px;border:1px solid var(--pd-line);background:#fff;
+    color:var(--pd-ink)!important;font-size:12.5px;font-weight:500;cursor:pointer;text-decoration:none!important;transition:border-color .12s,color .12s,background .12s;}
+.pd-btn:hover,.pd-btn:focus{border-color:var(--pd-accent);color:var(--pd-accent)!important;}
+.pd-btn-primary{background:var(--pd-accent);border-color:var(--pd-accent);color:#fff!important;}
+.pd-btn-primary:hover,.pd-btn-primary:focus{background:#1d4ed8;color:#fff!important;}
+/* AdminLTE boxes as clean cards */
+.pd .box{border:1px solid var(--pd-line)!important;border-radius:12px;box-shadow:0 1px 2px rgba(16,24,40,.05);background:#fff;margin-bottom:16px;}
+.pd .box > .box-header{background:#fff!important;color:var(--pd-ink)!important;padding:11px 16px;border-radius:12px 12px 0 0;border-bottom:1px solid var(--pd-line)!important;}
+.pd .box.collapsed-box > .box-header{border-bottom:0!important;border-radius:12px;cursor:pointer;}
+.pd .box.collapsed-box > .box-header:hover{background:var(--pd-soft)!important;}
+.pd .box > .box-header .box-title{display:inline-flex;align-items:center;gap:9px;font-size:14.5px;font-weight:600;color:var(--pd-ink);}
+.pd .box > .box-header .box-title:before{content:"";width:9px;height:9px;border-radius:50%;flex:none;background:var(--pd-dot,#94a3b8);}
+.pd .box-primary{--pd-dot:#2563eb;} .pd .box-success{--pd-dot:#16a34a;} .pd .box-warning{--pd-dot:#d97706;}
+.pd .box-danger{--pd-dot:#dc2626;}  .pd .box-info{--pd-dot:#0891b2;}    .pd .box-default{--pd-dot:#94a3b8;}
+.pd .box > .box-header .btn-box-tool{color:#64748b!important;}
+.pd .box > .box-header .btn-box-tool:hover{color:var(--pd-ink)!important;}
+.pd .box > .box-header .box-tools .label{border-radius:999px;padding:3px 9px;font-weight:600;}
+.pd .box > .box-header small{color:var(--pd-muted)!important;opacity:1!important;font-weight:400;}
+.pd .box-body{border-radius:0 0 12px 12px;}
+.pd .todo-list > li{background:#fff;border-left-width:0;border-bottom:1px solid #eef2f6;border-radius:0;margin:0;}
+.pd .table > thead > tr > th{background:#f8fafc;color:#475569;font-size:12px;text-transform:uppercase;letter-spacing:.03em;border-bottom-width:1px;}
+/* SIMs / Devices / Projects lists (HTML from Persons::action_person_total_*) */
+.pd #person_total_sims_detail,.pd #person_total_devices_details,.pd #person_link_with_projects{height:auto!important;min-height:60px;}
+.pd .todo-list > li{padding:8px 14px;}
+.pd .todo-list > li .label{display:inline-block;border-radius:5px;padding:3px 8px;font-weight:600;font-size:10.5px;margin-left:0;}
+.pd .pd-sim-row{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;}
+.pd .pd-sim-no{flex:none;width:22px;height:22px;border-radius:50%;background:var(--pd-soft);border:1px solid var(--pd-line);
+    color:var(--pd-muted);font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;}
+.pd .pd-sim-num{font-family:Consolas,Menlo,monospace;font-size:14px;font-weight:600;}
+.pd .pd-sim-num .fa{font-size:10px;opacity:.6;}
+.pd .pd-sim-actions{margin-left:auto;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:4px;}
+.pd .pd-sim-actions a{text-decoration:none;}
+.pd .todo-list > li.pd-list-foot{text-align:right;border-bottom:0;font-size:12.5px;}
+@media (max-width:991px){
+  .pd-hero{grid-template-columns:auto 1fr;}
+  .pd-side{grid-column:1/-1;flex-direction:row;flex-wrap:wrap;min-width:0;}
+}
+@media (max-width:600px){
+  .pd-hero{grid-template-columns:1fr;padding:18px 16px 14px;}
+  .pd-avatar{width:72px;height:72px;font-size:26px;}
+}
+</style>
+<script>
+// Click anywhere on a panel header to open / close it (same as its +/- button,
+// so the panels' lazy-load handlers still run).
+$(document).on('click', '.pd .box > .box-header', function (e) {
+    if ($(e.target).closest('a, button, input, select, label, .box-tools').length) return;
+    $(this).find('.box-tools [data-widget="collapse"]').first().trigger('click');
+});
+</script>
     <?php
     if (isset($_GET["message"]) && $_GET["message"] == 1) {
         ?>
@@ -98,284 +181,127 @@ $personage = '';
         
     }
     ?>
-    <!-- title row -->
-    <div class="row">
-        <?php
-        try {
-            //get login user id
-            $user_obj = Auth::instance()->get_user();
-            $login_user_id = $user_obj->id;
-            $of_id=Helpers_Utilities::get_user_place_of_posting($login_user_id);
-            $flagfavourite = Helpers_Person::is_favourite_person($login_user_id, $person_id);
-        } catch (Exception $ex) {
-            
-        }
-        ?>
-        <div class="col-md-4 bg-aqua">
-            <h2 class="page-header ">
-                <i class="fa fa-globe"></i> <?php
-                try {
-                    echo Helpers_Utilities::custom_echo($first_name . " " . $middle_name . " " . $last_name, 27);
-                } catch (Exception $ex) {
-                    
-                }
-                ?>
-            </h2>
-        </div>
-        <?php
-        try {
-            $user_obj = Auth::instance()->get_user();
-            $permission = Helpers_Utilities::get_user_permission($user_obj->id);
-            if ($permission == 1 || $permission == 3 || $permission==5) {
-
-                $flagsensitive = Helpers_Person::is_sensitive_person($login_user_id, $person_id)
-                ?>
-                <div class="col-md-2 bg-aqua">
-                    <h2 class="page-header">
-                        Favourite: 
-                        <span id="favt" class="pull-right">
-                            <?php if ($flagfavourite == 'TRUE') { ?> 
-                                <a class="bg-aqua" href="javascript:ConfirmChoiceUnmark(<?php echo $person_id; ?>)"> <i class="fa fa-star"></i> </a>
-                            <?php } else { ?>
-                                <a class="bg-aqua" href="javascript:ConfirmChoice(<?php echo $person_id; ?>)"> <i class="fa fa-star-o"></i></a>
-        <?php } ?>
-                        </span>
-
-                    </h2>
-                </div> 
-                <div class="col-md-2 bg-aqua">
-                    <h2 class="page-header" title="Click to allow access to specific users">
-                        <span id="sens">
-                            <?php if ($flagsensitive == 'TRUE') { ?>                                             
-                                <a href="javascript:sensitivepersonacl(<?php echo $person_id; ?>)" class="bg-aqua"> Sensitive: </a>
-                            <?php } else { ?>
-                                Sensitive:
-        <?php } ?>
-                        </span>
-                        <span id="sensitive" class="pull-right">
-                            <?php if ($flagsensitive == 'TRUE') { ?>                                             
-                                <a class="bg-aqua" href="javascript:ConfirmUnmarkSensitive(<?php echo $person_id; ?>)"> <i class="fa fa-star"></i> </a>
-                            <?php } else { ?>
-                                <a class="bg-aqua" href="javascript:ConfirmMarkSensitive(<?php echo $person_id; ?>)"> <i class="fa fa-star-o"></i></a>
-                        </span>
-
-
-                            <?php } ?>
-                    </h2>
-
-<!--                    --><?php // if ($flagsensitive == 'TRUE'){?>
-<!--                        <span id="user" style="display: none" class="pull-right">-->
-<!---->
-<!---->
-<!---->
-<!--                                    <label for="user_name_get" class="control-label" title="Click to allow access to specific users">User's Name </label>-->
-<!--                                    <select class="form-control select2" name="user_name_get" id="user_name_get" data-placeholder="Select user from list"  style="width: 100%">-->
-<!--                                        --><?php //$user_name_list = Helpers_Utilities::get_users_list_against_posting_id($of_id);
-//                                        foreach ($user_name_list as $list) { ?>
-<!--                                            <option value="--><?php //echo $list->name ?><!--">--><?php //echo $list->name ?><!--</option>-->
-<!--                                        --><?php //} ?>
-<!---->
-<!---->
-<!--                                    </select>-->
-<!---->
-<!--                        </span>-->
-<!---->
-<!--                    --><?php //}?>
-
-                </div>
-
-
-
-            <?php   } else if ($permission == 1) {
-                $flagsensitive = Helpers_Person::is_sensitive_person($login_user_id, $person_id)
-                ?>
-                <div class="col-md-4 bg-aqua">
-                    <h2 class="page-header" title="Click to allow access to specific users">
-                        <span id="sens">
-                            <?php if ($flagsensitive == 'TRUE') { ?>                                             
-                                <a href="javascript:sensitivepersonacl(<?php echo $person_id; ?>)" class="bg-aqua"> Sensitive: </a>
-                            <?php } else { ?>
-                                Sensitive:
-        <?php } ?>                
-                        </span>
-                        <span id="sensitive" class="pull-right">
-                            <?php if ($flagsensitive == 'TRUE') { ?>                                             
-                                <a class="bg-aqua" href="javascript:ConfirmUnmarkSensitive(<?php echo $person_id; ?>)"> <i class="fa fa-star"></i> </a>
-                            <?php } else { ?>
-                                <a class="bg-aqua" href="javascript:ConfirmMarkSensitive(<?php echo $person_id; ?>)"> <i class="fa fa-star-o"></i></a>
-        <?php } ?>
-                        </span>
-
-                    </h2>
-                </div>
+    <!-- profile header (replaces the old title row + Personal Information box;
+         the #favt / #sens / #sensitive / #stcng ids are updated by the JS below) -->
     <?php
+    try {
+        $user_obj      = Auth::instance()->get_user();
+        $login_user_id = $user_obj->id;
+        $of_id         = Helpers_Utilities::get_user_place_of_posting($login_user_id);
+        $flagfavourite = Helpers_Person::is_favourite_person($login_user_id, $person_id);
+        $permission    = Helpers_Utilities::get_user_permission($user_obj->id);
+    } catch (Exception $ex) {
+        $permission = 0;
+    }
+    $pd_show_sensitive = in_array((int) $permission, array(1, 3, 5), TRUE);
+    $flagsensitive     = $pd_show_sensitive ? Helpers_Person::is_sensitive_person($login_user_id, $person_id) : 'FALSE';
 
-            }
-             else { ?>
-                <div class="col-md-4 bg-aqua">
-                    <h2 class="page-header">
-                        Favourite: 
-                        <span id="favt" class="pull-right">
-                            <?php if ($flagfavourite == 'TRUE') { ?> 
-                                <a class="bg-aqua" href="javascript:ConfirmChoiceUnmark(<?php echo $person_id; ?>)"> <i class="fa fa-star"></i> </a>
-                            <?php } else { ?>
-                                <a class="bg-aqua" href="javascript:ConfirmChoice(<?php echo $person_id; ?>)"> <i class="fa fa-star-o"></i></a>
-        <?php } ?>
-                        </span>
+    $pd_full_name = trim(preg_replace('/\s+/', ' ', $first_name . ' ' . $middle_name . ' ' . $last_name));
+    $pd_initials  = '';
+    foreach (array_slice(preg_split('/\s+/', $pd_full_name), 0, 2) as $pd_part) {
+        $pd_initials .= mb_strtoupper(mb_substr($pd_part, 0, 1));
+    }
+    $pd_photo = (!empty($profnadra->person_photo_url) && !empty($person_download_data_path))
+        ? $person_download_data_path . $profnadra->person_photo_url : '';
+    $pd_cnic_fmt = (strlen(preg_replace('/\D/', '', (string) $nic_number)) === 13)
+        ? preg_replace('/^(\d{5})(\d{7})(\d)$/', '$1-$2-$3', preg_replace('/\D/', '', $nic_number)) : trim((string) $nic_number);
 
-                    </h2>
-                </div>
-                <?php
-            }
-        } catch (Exception $ex) {
-            
-        }
-        ?>
-        <div class="col-md-4 bg-aqua">
-            <h2 class="page-header">
-                Status: 
-                <span id="stcng" class="text-bold text-bold"> <?php echo $cat_name; ?> </span>                                
-                <div class="input-group-btn pull-right" style="margin-right: 115px">
-                    <!--                    //change button-->
-                    <button type="button" onclick="changestatus()" class="btn btn-default dropdown-toggle" data-toggle="dropdown">Change Status</button>                    
-                </div> 
-            </h2>
-        </div>                                                                                                      
-    </div>
-    <!-- info row -->
-    <div class="row invoice-info">
-        <div class="col-md-6">
-            <div class="box box-danger box-solid">
-                <div class="box-header with-border">
-                    <h3 class="box-title">Personal Information </h3>
-                    <div class="box-tools pull-right">
-<!--                        <a title="Click To Tag Person In Specific Category" class="custom-cursor" onclick="tagperson(<?php /* echo $person_id; */ ?>)"> <span class="label label-success">Tag Person</span> </a>-->
-                        <button type="button" title="Show/Hide" class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-minus"></i>
-                        </button>
-                    </div>
-                    <!-- /.box-tools -->
-                </div>
-                <!-- /.box-header -->
-                <div class="box-body" style="padding: 0; height: 140px">
-                    <ul id="basicifo" class="todo-list">
-                        <li class="dashboard-sticky-red">
-                            <span class="text-black"> <b>Name: </b> <?php echo $first_name . " " . $middle_name . " " . $last_name; ?> </span>
-                        </li>
-                        <li class="dashboard-sticky-red">
-                            <span class="text-black"> <b>Father/Husband Name: </b><?php echo $father_name; ?> </span>
-                        </li>
-                        <li class='dashboard-sticky-red'>
-                            <span class="text-black">
-                                <b>CNIC: </b>  <?php echo $nic_number; ?>   , &nbsp &nbsp &nbsp 
-                                <b>DOB: </b> <?php echo $datofbirth; ?><b><?php if (!empty($datofbirth)) {  ?> , Age: </b><?php echo $personage; }?></b>
-                            </span>
-                        </li>
-						<li class='dashboard-sticky-red'>
-                            <span class="text-black"> 
-                                <b>Address:</b> <?php echo (isset($address) && !empty($address))?$address:''; ?>
-                            </span>
-                        </li>
-                        <li class='dashboard-sticky-red'>
-                            <?php
-                            // $profile = Helpers_Person::get_person_nadra_profile($person_id);
-                            if (!empty($nic_number)) {
-                                ?>
-                                <div class="">
-                                    <?php
-                                    $left = -1;
-                                    $check_old_request = Helpers_Email::check_old_familytree_request($nic_number);
-                                    $en_check_old_request = trim(Helpers_Utilities::encrypted_key($check_old_request, 'encrypt'));
-                                    ?>
-
-
-                                    <!--branchless banking request CTFU-->
-<!--                                        <a title="Click To Request Banchless Banking" href="#" onclick="requestbranchlessbanking('<?php /*echo $nic_number */ ?>', '<?php /* echo $person_id; */ ?>')"> <span class="label label-warning">Branchless Banking</span> </a>                                    -->
-                                    <!--branchless banking request CTFU-->
-                                    <?php
-                                    $nadra_status = isset($profnadra->person_nadra_status) ? $profnadra->person_nadra_status : 0;
-                                    if (FALSE) {//$nadra_status == 0) {
-                                        ?>
-                                                        <!--<a href="#" onclick="requestnadra(<?php //echo $nic_number . ',' . $person_id;     ?>)"> <span class="label label-success">Nadra Profile</span> </a>-->
-                                        <a   style="position: absolute; left: <?php echo $left+=13; ?>%;"  title="Click To Request Profile From Nadra" href='<?php echo URL::site("persons/nadra_profile?cnic=" . $nic_number . "&pid=" . $_GET['id']); ?>' onclick="requestnadra(<?php echo $nic_number . ',' . $person_id; ?>)"> <span class="label label-primary">Nadra Profile</span> </a>
-                                        <?php
-                                    }
-                                    if ($isforeigner == 1) {
-                                        $nic_number_forg = "'" . trim($nic_number) . "'";
-                                        ?>
-                                        <a style="position: absolute; left: <?php echo $left+=21; ?>%;" title="Click For Request" class="custom-cursor" onclick="requestcnicsims(<?php echo $nic_number_forg . ',' . (($person_id)); ?>)"> <span class="label label-primary">Request SIM's Against CNIC</span> </a>
-
-                                    <?php } else { ?>
-
-                                        <a style="position: absolute; left: <?php echo $left+=21; ?>%;" title="Click For Request" class="custom-cursor" onclick="external_search_model(<?php echo '0,' . (($nic_number)); ?>)"> <span class="label label-primary">Request SIM's Against CNIC</span> </a>   
-                                <?php } ?>
-                                        <?php
-                                        //$user_obj = Auth::instance()->get_user();
-                                        //$login_user_id = $user_obj->id;
-                                        //if ($login_user_id == 136 || $login_user_id == 137 || $login_user_id == 138) {
-                                        $count_old_request = Helpers_Email::check_old_travelhistory_request($nic_number); 
-                                        if ($count_old_request > 0) {
-                                            $left += 27;
-                                           /* $url = '<form id="id-aies" method="post" action="http://www.suspect.ctdpunjab.com/persons/travel_history/?id='.$_GET['id'].'" target="_blank" style="left:'. $left .'%; position: absolute;">
-                                            <input type="hidden" name="username" value="' . Auth::instance()->get_user()->username . '">
-                                            <input type="hidden" name="userid" value="' . Auth::instance()->get_user()->id . '">
-                                            <input type="hidden" name="password" value="' . Auth::instance()->get_user()->password . '">
-                                            <input type="hidden" name="personid" value="' . $_GET['id'] . '">
-                                            <input type="hidden" name="siteid" value="1">
-                                            <input type="hidden" name="smartuser" value="">
-                                            <button style="position: absolute;" class="label label-success" type="submit"><span class="label label-success"> View Travel History</span></button>
-                                            </form>';
-                                            echo $url;*/
-                                            ?>
-                                        <a style="position: absolute; left: <?php echo $left+=20; ?>%;" title="Click To Request Fresh Travel History" href="#" onclick="requesttravelhistory('<?php echo $nic_number ?>', '<?php echo $person_id; ?>')"> <span class="label label-danger">Request Fresh Travel History</span> </a>
-                                            
-                                        <?php } else { ?>
-                                            <a style="position: absolute; left: <?php echo $left+=30; ?>%;" title="Click To Request Travel History" href="#" onclick="requesttravelhistory('<?php echo $nic_number ?>', '<?php echo $person_id; ?>')"> <span class="label label-danger">Request Travel History</span> </a>
-                                        <?php } ?> 
-                                </div>
-                                <?php } ?>
-
-                        </li>
-                        <li class='dashboard-sticky-red'>
-                            <!--                          NOW this -->
-                            <?php
-                            $pid = !empty($person_id) ? Helpers_Utilities::encrypted_key($_GET['id'], 'decrypt') : 0;
-                            $tags = Helpers_Watchlist::get_person_tags_data_comma($pid);
-                            ?>
-                            <!--                            <span class="text-black"> <b>DOB: </b> <?php /* echo $datofbirth; */ ?> <b>, Age: </b><?php /* echo $personage; */ ?> </span>                            -->
-                            <span class="text-black"> <b>Tags: </b> <?php echo $tags; ?> </span>                            
-                        </li>
-                        <li class='dashboard-sticky-red'>
-                            <a href="<?php echo HTML::chars(URL::site('personprofile/person_profile/?id=' . $_GET['id'])); ?>"> <span class=""> <i class="fa fa-inbox"></i> Person Profile &nbsp</span> </a>
-                            <?php
-                           /* $url = '<form id="id-aies" method="post" action="http://www.suspect.ctdpunjab.com/" target="_blank">
-                            <input type="hidden" name="username" value="' . Auth::instance()->get_user()->username . '">
-                            <input type="hidden" name="userid" value="' . Auth::instance()->get_user()->id . '">
-                            <input type="hidden" name="password" value="' . Auth::instance()->get_user()->password . '">
-                            <input type="hidden" name="personid" value="' . $_GET['id'] . '">
-                            <input type="hidden" name="siteid" value="1">
-                            <input type="hidden" name="smartuser" value="">
-                            <button style="" class=" person-link ml-56  form-control btn btn-primary " type="submit">
-                             &nbsp<span class=""> <i class="fa fa-inbox"></i> Person Profile &nbsp </span></button>
-                            </form>';
-                            echo $url;*/
-                            ?>
-
-                            <?php
-                            $user_obj = Auth::instance()->get_user();
-                            $login_user_id = $user_obj->id;
-                            if ($login_user_id == 842 || $login_user_id == 137 || $login_user_id == 2031) {
-                                ?>
-                                <a style="margin-top: -27px;" href="<?php echo URL::site('personprofile/person_info_update/?id=' . $_GET['id']); ?>"> <span class=""> <i class="fa fa-ambulance"></i> Update Info &nbsp</span> </a>
-<?php } ?>
-                        </li>
-                    </ul>
-                    <!-- <br>-->
-                </div>                                
-                <!-- /.box-body -->                                
-            </div>
-            <!-- /.box -->
-
+    $pid  = !empty($person_id) ? Helpers_Utilities::encrypted_key($_GET['id'], 'decrypt') : 0;
+    $tags = Helpers_Watchlist::get_person_tags_data_comma($pid);
+    $tags = str_replace('</span>, ', '</span>', $tags);
+    // used by the Family Tree box further down
+    $left = -1;
+    $check_old_request = !empty($nic_number) ? Helpers_Email::check_old_familytree_request($nic_number) : '';
+    ?>
+    <div class="pd-hero">
+        <div class="pd-avatar">
+            <?php if ($pd_photo !== ''): ?>
+                <?php echo HTML::image($pd_photo, array('alt' => '', 'onerror' => "this.style.display='none'")); ?>
+                <span><?php echo HTML::chars($pd_initials !== '' ? $pd_initials : '?'); ?></span>
+            <?php else: ?>
+                <?php echo HTML::chars($pd_initials !== '' ? $pd_initials : '?'); ?>
+            <?php endif; ?>
         </div>
+
+        <div class="pd-main">
+            <div class="pd-name-row">
+                <h2><?php echo HTML::chars($pd_full_name !== '' ? $pd_full_name : 'Unknown person'); ?></h2>
+                <span class="pd-status" title="Person category">
+                    <span id="stcng"><?php echo HTML::chars($cat_name); ?></span>
+                </span>
+            </div>
+            <?php if (trim($father_name) !== ''): ?>
+                <div class="pd-sub">Father / Husband: <b><?php echo HTML::chars($father_name); ?></b></div>
+            <?php endif; ?>
+
+            <div class="pd-facts">
+                <div><span>CNIC</span><b class="pd-mono"><?php echo $pd_cnic_fmt !== '' ? HTML::chars($pd_cnic_fmt) : '&mdash;'; ?></b></div>
+                <div><span>Date of birth</span><b><?php echo !empty($datofbirth) ? HTML::chars($datofbirth) . ' <small>(' . HTML::chars($personage) . ' yrs)</small>' : '&mdash;'; ?></b></div>
+                <div class="pd-wide"><span>Address</span><b><?php echo trim($address) !== '' ? HTML::chars($address) : '&mdash;'; ?></b></div>
+            </div>
+
+            <div class="pd-tags">
+                <span class="pd-tags-label"><i class="fa fa-tags"></i> Tags</span>
+                <?php echo trim($tags) !== '' ? $tags : '<em>None</em>'; ?>
+            </div>
+        </div>
+
+        <div class="pd-side">
+            <span class="pd-toggle" title="Mark as favourite">
+                Favourite
+                <span id="favt">
+                    <?php if ($flagfavourite == 'TRUE') { ?>
+                        <a class="bg-aqua" href="javascript:ConfirmChoiceUnmark(<?php echo $person_id; ?>)"> <i class="fa fa-star"></i> </a>
+                    <?php } else { ?>
+                        <a class="bg-aqua" href="javascript:ConfirmChoice(<?php echo $person_id; ?>)"> <i class="fa fa-star-o"></i></a>
+                    <?php } ?>
+                </span>
+            </span>
+            <?php if ($pd_show_sensitive): ?>
+                <span class="pd-toggle" title="Sensitive person — click the label to allow access to specific users">
+                    <span id="sens">
+                        <?php if ($flagsensitive == 'TRUE') { ?>
+                            <a href="javascript:sensitivepersonacl(<?php echo $person_id; ?>)" class="bg-aqua"> Sensitive: </a>
+                        <?php } else { ?>
+                            Sensitive:
+                        <?php } ?>
+                    </span>
+                    <span id="sensitive">
+                        <?php if ($flagsensitive == 'TRUE') { ?>
+                            <a class="bg-aqua" href="javascript:ConfirmUnmarkSensitive(<?php echo $person_id; ?>)"> <i class="fa fa-star"></i> </a>
+                        <?php } else { ?>
+                            <a class="bg-aqua" href="javascript:ConfirmMarkSensitive(<?php echo $person_id; ?>)"> <i class="fa fa-star-o"></i></a>
+                        <?php } ?>
+                    </span>
+                </span>
+            <?php endif; ?>
+            <button type="button" onclick="changestatus()" class="pd-btn"><i class="fa fa-exchange"></i> Change Status</button>
+        </div>
+
+        <div class="pd-actions">
+            <a class="pd-btn pd-btn-primary" href="<?php echo HTML::chars(URL::site('personprofile/person_profile/?id=' . $_GET['id'])); ?>">
+                <i class="fa fa-user"></i> Person Profile</a>
+            <?php if (!empty($nic_number)): ?>
+                <?php if ($isforeigner == 1) { $nic_number_forg = "'" . trim($nic_number) . "'"; ?>
+                    <a class="pd-btn" href="#" title="Click For Request" onclick="requestcnicsims(<?php echo $nic_number_forg . ',' . (($person_id)); ?>); return false;">
+                        <i class="fa fa-mobile"></i> Request SIMs Against CNIC</a>
+                <?php } else { ?>
+                    <a class="pd-btn" href="#" title="Click For Request" onclick="external_search_model(<?php echo '0,' . (($nic_number)); ?>); return false;">
+                        <i class="fa fa-mobile"></i> Request SIMs Against CNIC</a>
+                <?php } ?>
+                <?php $count_old_request = Helpers_Email::check_old_travelhistory_request($nic_number); ?>
+                <a class="pd-btn" href="#" title="<?php echo $count_old_request > 0 ? 'Click To Request Fresh Travel History' : 'Click To Request Travel History'; ?>"
+                   onclick="requesttravelhistory('<?php echo $nic_number ?>', '<?php echo $person_id; ?>'); return false;">
+                    <i class="fa fa-plane"></i> <?php echo $count_old_request > 0 ? 'Request Fresh Travel History' : 'Request Travel History'; ?></a>
+            <?php endif; ?>
+            <?php if ($login_user_id == 842 || $login_user_id == 137 || $login_user_id == 2031) { ?>
+                <a class="pd-btn" href="<?php echo URL::site('personprofile/person_info_update/?id=' . $_GET['id']); ?>">
+                    <i class="fa fa-pencil"></i> Update Info</a>
+            <?php } ?>
+        </div>
+    </div>
+
+    <div class="row invoice-info">
         <div class="col-md-6">
             <div class="box box-success box-solid">
                 <div class="box-header with-border">
@@ -414,12 +340,11 @@ $personage = '';
             </div>            
         </div>  
 <!--        Link With Project last 5 records-->
-        <div class="col-md-6">
+        <div class="col-md-12">
             <div class="box box-warning box-solid">
                 <div class="box-header with-border">
                     <h3 title="Total Devices Used By This Person" class="box-title">Link With Projects (Last 5 Records)</h3>
                     <div class="box-tools pull-right">
-                        <span class="label label-info" id="person_device_count"></span>  
                         <button type="button" title="Show/Hide" class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-minus"></i>
                         </button>
                     </div>
@@ -432,6 +357,172 @@ $personage = '';
             </div>            
         </div>  
     </div>
+    <?php
+    // Users with the "DRAMS Databank" right get one panel that searches the
+    // person's CNIC in every Databank source through the integration API
+    // (docs/DATABANK.md). Everyone else keeps the four direct-database panels.
+    $dbk_access = FALSE;
+    try {
+        $dbk_user   = Auth::instance()->get_user();
+        $dbk_access = $dbk_user && Helpers_Databank::has_access($dbk_user->id);
+    } catch (Exception $e) {
+        $dbk_access = FALSE;
+    }
+    $dbk_cnic = preg_replace('/\D/', '', (string) $nic_number);
+    if ($dbk_access):
+        echo View::factory('templates/user/databank_assets')->render();
+    ?>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="box box-primary box-solid collapsed-box">
+                <div class="box-header with-border">
+                    <h3 class="box-title"><i class="fa fa-database"></i> Databank
+                        <small style="color:#fff; opacity:.85;">ECP · CTD KPK · DLMS · Government Employees · all Databank sources</small></h3>
+                    <div class="box-tools pull-right">
+                        <button type="button" title="Show/Hide" id="ext_db_databank" class="panelisopen btn btn-box-tool" data-widget="collapse"><i class="fa fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="box-body dbk" style="background:#f5f7fb;">
+                    <?php if (strlen($dbk_cnic) === 13): ?>
+                        <div class="dbk-prof-bar">
+                            <span class="dbk-status" id="dbk_prof_status" aria-live="polite"></span>
+                            <label style="margin:0; font-weight:500; font-size:12.5px; cursor:pointer;">
+                                <input type="checkbox" id="dbk_prof_linked" style="margin:0 4px 0 0; vertical-align:middle;">
+                                Follow linked CNICs / numbers
+                            </label>
+                            <button type="button" class="btn btn-default btn-sm" onclick="dbkProfileLoad()"><i class="fa fa-refresh"></i> Search again</button>
+                            <a class="btn btn-default btn-sm" target="_blank" rel="noopener"
+                               href="<?php echo HTML::chars(URL::site('databank/all_sources', TRUE) . '?type=cnic&value=' . $dbk_cnic); ?>">
+                                <i class="fa fa-external-link"></i> Open full search</a>
+                        </div>
+                        <div id="dbk_prof_results"></div>
+                    <?php else: ?>
+                        <div class="dbk-alert dbk-alert-info"><i class="fa fa-info-circle"></i>
+                            <div>This person has no 13-digit CNIC in DRAMS, so the Databank cannot be searched from here.
+                                Use <a href="<?php echo URL::site('databank/all_sources', TRUE); ?>" target="_blank" rel="noopener">Search All Sources</a> with a mobile number or name.</div></div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    (function () {
+        var dbkCnic   = <?php echo json_encode($dbk_cnic); ?>;
+        var dbkAjax   = <?php echo json_encode(URL::site('databank/all_sources_results', TRUE)); ?>;
+        var dbkLoaded = false;
+        var dbkXhr    = null;
+
+        window.dbkProfileLoad = function () {
+            if (dbkCnic.length !== 13) return;
+            if (dbkXhr) dbkXhr.abort();
+            dbkLoaded = true;
+            var started = new Date().getTime();
+            var skel = '';
+            for (var s = 0; s < 2; s++) {
+                skel += '<div class="dbk-skel"><i style="width:30%"></i><i style="width:85%"></i><i style="width:60%"></i></div>';
+            }
+            $("#dbk_prof_results").html(skel);
+            $("#dbk_prof_status").html('<i class="fa fa-spinner fa-spin"></i> Searching CNIC ' + dbkCnic + ' in all Databank sources…');
+            var data = {value: dbkCnic, type: 'cnic', view: 'profile'};
+            if ($("#dbk_prof_linked").is(':checked')) data.linked = '1';
+            dbkXhr = $.ajax({
+                url: dbkAjax, type: 'POST', data: data, dataType: 'html',
+                success: function (html) {
+                    $("#dbk_prof_results").html(html);
+                    $("#dbk_prof_status").text('CNIC ' + dbkCnic + ' · finished in '
+                        + ((new Date().getTime() - started) / 1000).toFixed(1) + 's');
+                },
+                error: function (xhr, status) {
+                    if (status === 'abort') return;
+                    $("#dbk_prof_results").html('<div class="dbk-alert dbk-alert-danger"><i class="fa fa-times-circle"></i>'
+                        + '<div>The Databank search failed. Please try again.</div></div>');
+                    $("#dbk_prof_status").text('Error');
+                },
+                complete: function () { dbkXhr = null; }
+            });
+        };
+
+        // First open of the panel runs the search (same lazy pattern as the other panels).
+        $(document).on('click', '#ext_db_databank', function () {
+            if (!dbkLoaded) window.dbkProfileLoad();
+        });
+        $(document).on('change', '#dbk_prof_linked', function () { window.dbkProfileLoad(); });
+    })();
+    </script>
+    <?php else: ?>
+    <!-- External Database Panels -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="box box-warning box-solid collapsed-box">
+                <div class="box-header with-border">
+                    <h3 class="box-title">FIR Management System (CTD KPK)</h3>
+                    <div class="box-tools pull-right">
+                        <button type="button" title="Show/Hide" id="ext_db_ctd_kpk" class="panelisopen btn btn-box-tool" data-widget="collapse"><i class="fa fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="box-body">
+                    <div id="person_ext_ctd_kpk">
+                        <?php echo Helpers_Layout::get_ajax_loader(); ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="box box-success box-solid collapsed-box">
+                <div class="box-header with-border">
+                    <h3 class="box-title">Election Commission (ECP)</h3>
+                    <div class="box-tools pull-right">
+                        <button type="button" title="Show/Hide" id="ext_db_ecp" class="panelisopen btn btn-box-tool" data-widget="collapse"><i class="fa fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="box-body">
+                    <div id="person_ext_ecp">
+                        <?php echo Helpers_Layout::get_ajax_loader(); ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+		</div>
+    <!-- /.External Database Panels -->
+<div class="row">
+        <div class="col-md-6">
+            <div class="box box-info box-solid collapsed-box">
+                <div class="box-header with-border">
+                    <h3 class="box-title">Driving License (DLMS)</h3>
+                    <div class="box-tools pull-right">
+                        <button type="button" title="Show/Hide" id="ext_db_dlms" class="panelisopen btn btn-box-tool" data-widget="collapse"><i class="fa fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="box-body">
+                    <div id="person_ext_dlms">
+                        <?php echo Helpers_Layout::get_ajax_loader(); ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="box box-danger box-solid collapsed-box">
+                <div class="box-header with-border">
+                    <h3 class="box-title">Government Employee Data</h3>
+                    <div class="box-tools pull-right">
+                        <button type="button" title="Show/Hide" id="ext_db_employee" class="panelisopen btn btn-box-tool" data-widget="collapse"><i class="fa fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="box-body">
+                    <div id="person_ext_employee">
+                        <?php echo Helpers_Layout::get_ajax_loader(); ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /.External Database Panels -->
+    <?php endif; ?>
     <div class="row invoice-info">
         <div class="col-md-8">
             <div class="box box-success collapsed-box">
@@ -873,77 +964,6 @@ if ($isforeigner == 1) {
     </div>
     <!-- /.row -->
 
-    <!-- External Database Panels -->
-    <div class="row">
-        <div class="col-md-6">
-            <div class="box box-warning box-solid collapsed-box">
-                <div class="box-header with-border">
-                    <h3 class="box-title">FIR Management System (CTD KPK)</h3>
-                    <div class="box-tools pull-right">
-                        <button type="button" title="Show/Hide" id="ext_db_ctd_kpk" class="panelisopen btn btn-box-tool" data-widget="collapse"><i class="fa fa-plus"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="box-body">
-                    <div id="person_ext_ctd_kpk">
-                        <?php echo Helpers_Layout::get_ajax_loader(); ?>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="box box-success box-solid collapsed-box">
-                <div class="box-header with-border">
-                    <h3 class="box-title">Election Commission (ECP)</h3>
-                    <div class="box-tools pull-right">
-                        <button type="button" title="Show/Hide" id="ext_db_ecp" class="panelisopen btn btn-box-tool" data-widget="collapse"><i class="fa fa-plus"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="box-body">
-                    <div id="person_ext_ecp">
-                        <?php echo Helpers_Layout::get_ajax_loader(); ?>
-                    </div>
-                </div>
-            </div>
-        </div>
-		</div>
-    <!-- /.External Database Panels -->
-<div class="row">
-        <div class="col-md-6">
-            <div class="box box-info box-solid collapsed-box">
-                <div class="box-header with-border">
-                    <h3 class="box-title">Driving License (DLMS)</h3>
-                    <div class="box-tools pull-right">
-                        <button type="button" title="Show/Hide" id="ext_db_dlms" class="panelisopen btn btn-box-tool" data-widget="collapse"><i class="fa fa-plus"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="box-body">
-                    <div id="person_ext_dlms">
-                        <?php echo Helpers_Layout::get_ajax_loader(); ?>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="box box-danger box-solid collapsed-box">
-                <div class="box-header with-border">
-                    <h3 class="box-title">Government Employee Data</h3>
-                    <div class="box-tools pull-right">
-                        <button type="button" title="Show/Hide" id="ext_db_employee" class="panelisopen btn btn-box-tool" data-widget="collapse"><i class="fa fa-plus"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="box-body">
-                    <div id="person_ext_employee">
-                        <?php echo Helpers_Layout::get_ajax_loader(); ?>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- /.External Database Panels -->
             <div class="row">
                     <div class="col-md-12">  
                                 <div class="box box-danger box-solid collapsed-box">

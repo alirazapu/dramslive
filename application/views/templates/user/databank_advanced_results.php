@@ -1,6 +1,6 @@
 <?php defined('SYSPATH') or die('No direct script access.'); ?>
 <?php
-// Variables expected (set by Controller_Databank::action_*_results()):
+// Variables expected (set by Controller_Databank::_all_sources_html()):
 //   $rows     — array of stdClass (or assoc array) source rows
 //   $columns  — array of column configs:
 //                 { key, label, formatter?, fallback_keys? }
@@ -9,20 +9,16 @@
 //                 - 'image_jpeg'            : render base64 string as inline <img>
 //                 - 'html'                  : render raw HTML (use with care)
 //               fallback_keys: array of alternative column names if the
-//                 primary key is missing/empty on a given row (used by
-//                 the unified Subscriber search where one row may use
-//                 cnic and another foreign_cnic).
-//   $summary  — short text like "12 result(s)"
+//                 primary key is missing/empty on a given row.
+//   $summary  — short text like "12 record(s)"
 //   $row_actions — OPTIONAL callable. If set, an extra "Actions" column
 //                  is appended; the callable is invoked once per row
 //                  with the row as its argument and must return the
-//                  HTML for that row's action cell (e.g. a "Family"
-//                  button on ECP results).
+//                  HTML for that row's action cell.
 //
-// Renders a striped + bordered table.
+// Renders a toolbar (count + quick filter) and a scrollable table with a
+// sticky header. Styles live in databank_advanced_form.php (.dbk-*).
 
-// Default row_actions to null so isset() checks below work even when
-// the action didn't pass it.
 if (!isset($row_actions)) {
     $row_actions = null;
 }
@@ -48,56 +44,64 @@ $dbk_pick = function ($row, $primary, $fallbacks = array()) {
     return '';
 };
 ?>
-<div>
-    <p class="text-muted" style="margin-bottom:8px;">
-        <strong><?php echo HTML::chars($summary); ?></strong>
-    </p>
-    <div>
-        <table class="table table-striped table-bordered table-condensed">
-            <thead>
-                <tr>
-                    <?php foreach ($columns as $col): ?>
-                        <th><?php echo HTML::chars($col['label']); ?></th>
-                    <?php endforeach; ?>
-                    <?php if ($has_row_actions): ?>
-                        <th style="width:90px;">Actions</th>
-                    <?php endif; ?>
-                </tr>
-            </thead>
-            <tbody>
-            <?php foreach ($rows as $r): ?>
-                <tr>
-                    <?php foreach ($columns as $col): ?>
+<div class="dbk-toolbar">
+    <span class="dbk-count" data-total="<?php echo HTML::chars($summary); ?>"><?php echo HTML::chars($summary); ?></span>
+    <?php if (count($rows) > 1): ?>
+        <div class="dbk-filter">
+            <i class="fa fa-filter" aria-hidden="true"></i>
+            <input type="text" class="dbk-filter-input" placeholder="Filter these records" aria-label="Filter these records">
+        </div>
+    <?php endif; ?>
+</div>
+<div class="dbk-table-wrap">
+    <table class="dbk-table">
+        <thead>
+            <tr>
+                <?php foreach ($columns as $col): ?>
+                    <th scope="col"><?php echo HTML::chars($col['label']); ?></th>
+                <?php endforeach; ?>
+                <?php if ($has_row_actions): ?>
+                    <th scope="col" style="width:90px;">Actions</th>
+                <?php endif; ?>
+            </tr>
+        </thead>
+        <tbody>
+        <?php foreach ($rows as $r): ?>
+            <tr>
+                <?php foreach ($columns as $col): ?>
+                    <?php
+                        $key       = $col['key'];
+                        $fallbacks = isset($col['fallback_keys']) ? $col['fallback_keys'] : array();
+                        $formatter = isset($col['formatter'])     ? $col['formatter']     : 'text';
+                        $val       = $dbk_pick($r, $key, $fallbacks);
+                        // Identifiers (CNIC, mobile, FIR no.) read better in a fixed-width font.
+                        $is_num    = $formatter === 'text' && is_scalar($val)
+                                     && preg_match('/^[0-9+\-\/ ]{5,}$/', (string) $val);
+                    ?>
+                    <td<?php echo $is_num ? ' class="dbk-num"' : ''; ?>>
                         <?php
-                            $key       = $col['key'];
-                            $fallbacks = isset($col['fallback_keys']) ? $col['fallback_keys'] : array();
-                            $formatter = isset($col['formatter'])     ? $col['formatter']     : 'text';
-                            $val       = $dbk_pick($r, $key, $fallbacks);
+                        if ($val === '' || $val === null) {
+                            echo '<span class="dbk-empty-cell">&mdash;</span>';
+                        } elseif ($formatter === 'image_jpeg') {
+                            $src = (strpos((string) $val, 'data:image') === 0)
+                                ? $val
+                                : 'data:image/jpeg;base64,' . $val;
+                            echo '<img src="' . HTML::chars($src) . '" alt="' . HTML::chars($col['label']) . '" '
+                               . 'class="dbk-thumb" title="Click to enlarge">';
+                        } elseif ($formatter === 'html') {
+                            echo $val;
+                        } else {
+                            echo HTML::chars((string) $val);
+                        }
                         ?>
-                        <td>
-                            <?php
-                            if ($val === '' || $val === null) {
-                                echo '<span class="text-muted">&mdash;</span>';
-                            } elseif ($formatter === 'image_jpeg') {
-                                $src = (strpos((string) $val, 'data:image') === 0)
-                                    ? $val
-                                    : 'data:image/jpeg;base64,' . $val;
-                                echo '<img src="' . HTML::chars($src) . '" alt="" '
-                                   . 'style="max-width:240px; max-height:80px; border:1px solid #ddd;">';
-                            } elseif ($formatter === 'html') {
-                                echo $val;
-                            } else {
-                                echo HTML::chars((string) $val);
-                            }
-                            ?>
-                        </td>
-                    <?php endforeach; ?>
-                    <?php if ($has_row_actions): ?>
-                        <td><?php echo call_user_func($row_actions, $r); ?></td>
-                    <?php endif; ?>
-                </tr>
-            <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
+                    </td>
+                <?php endforeach; ?>
+                <?php if ($has_row_actions): ?>
+                    <td><?php echo call_user_func($row_actions, $r); ?></td>
+                <?php endif; ?>
+            </tr>
+        <?php endforeach; ?>
+        </tbody>
+    </table>
+    <div class="dbk-nomatch">No records match the filter.</div>
 </div>

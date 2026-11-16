@@ -25,6 +25,8 @@
         //Datatable Responsive css file 
         URL::base() . 'dist/css/responsive.dataTables.min.css?v=20100200401',
         URL::base() . 'plugins/sweetalerts/sweetalert.css',
+        // modern header + left menu skin (design only) — keep last
+        URL::base() . 'dist/css/drams-modern.css?v=20261116',
     );
 ?>
  

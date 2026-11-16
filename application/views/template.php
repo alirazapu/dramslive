@@ -82,6 +82,9 @@
 
         <!-- Pre Loader -->
         <script>
+            // Hide the pre-loader as soon as the page is usable (DOM ready),
+            // instead of waiting for every image to finish (window load).
+            jQuery(function () { jQuery("#preloader").hide(); });
             jQuery(window).load(function () {
               setTimeout(function () {
                   jQuery("#preloader").hide();

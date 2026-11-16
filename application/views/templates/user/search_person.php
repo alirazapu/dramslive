@@ -4,6 +4,21 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
+
+// DRAMS Databank (integration API) lookups on this page — the "Search in
+// Databank" button and the Databank section of the Request Subscriber
+// popup — only for users with the "DRAMS Databank" right. See
+// docs/DATABANK.md.
+$dbk_access = FALSE;
+try {
+    $dbk_user   = Auth::instance()->get_user();
+    $dbk_access = $dbk_user && Helpers_Databank::has_access($dbk_user->id);
+} catch (Exception $e) {
+    $dbk_access = FALSE;
+}
+if ($dbk_access) {
+    echo View::factory('templates/user/databank_assets')->render();
+}
 ?>
 <!-- Content Header (Page header) -->
 <section class="content-header">
@@ -155,6 +170,12 @@
                             <div class="col-md-12">
                                 <div class="form-group pull-right">
                                     <button type="submit"  class="btn btn-primary">Search</button>
+                                    <?php if ($dbk_access): ?>
+                                        <button type="button" onclick="dbkOpenDatabankPage()" class="btn btn-warning"
+                                                title="Search this mobile number, CNIC or name in every Databank source (opens a new tab)">
+                                            <i class="fa fa-database"></i> Search in Databank
+                                        </button>
+                                    <?php endif; ?>
                                     <button type="button" value="Clear Search" onclick="clearSearch()" class="btn btn-danger">Clear Search</button>
                                     <input type="reset" style="display: none" value="Reset">
                                 </div>
@@ -233,10 +254,35 @@
                                     </label></div>  
                                 <hr class="style14 ">
                             </div>
-                        </div>                                                            
+                        </div>
                     </div>
                 </div>
 
+                <?php if ($dbk_access): ?>
+                <!-- other sources through the DRAMS Databank API (on demand) -->
+                <div class="dbk" id="dbk_popup_section" style="clear:both; display:none; padding-top:12px;">
+                    <div style="background:#fff; border-radius:10px; padding:14px 16px;">
+                        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                            <div class="dbk-ico" style="background:#e8efff; color:#2563eb;"><i class="fa fa-database"></i></div>
+                            <div style="flex:1; min-width:200px;">
+                                <h4 style="margin:0; font-size:15px; font-weight:600;">Other sources (DRAMS Databank)</h4>
+                                <p style="margin:2px 0 0; font-size:12px; color:#6b778c;">
+                                    Results for <strong id="dbk_popup_value"></strong> from ECP, CTD KPK, DLMS, government employees and the other Databank sources.
+                                </p>
+                            </div>
+                            <button type="button" class="btn btn-warning" id="dbk_popup_btn" onclick="dbkPopupSearch()">
+                                <i class="fa fa-search"></i> Search Databank
+                            </button>
+                            <a href="#" target="_blank" rel="noopener" id="dbk_popup_open" class="btn btn-default"
+                               title="Open the full Databank search in a new tab">
+                                <i class="fa fa-external-link"></i> Open full search
+                            </a>
+                        </div>
+                        <div id="dbk_popup_status" class="dbk-status" aria-live="polite" style="margin-top:8px;"></div>
+                        <div id="dbk_popup_results" style="margin-top:10px;"></div>
+                    </div>
+                </div>
+                <?php endif; ?>
 
             </div>
             <div class="modal-footer">
@@ -643,6 +689,12 @@
             // Do something after 1 second     
             $(".modal-backdrop.fade.in").remove();
         }, 300);
+        // Databank users: the Databank section replaces the local subscriber
+        // lookup; only the "request from company" button stays on top.
+        if (dbkEnabled && dbkCurrentSearch(false)) {
+            dbkPopupOpen();
+            return;
+        }
         var cnic=$("#cnic").val();
        var msisdn= $("#phonenumber").val();
        var imei= $("#imei").val();
@@ -658,11 +710,113 @@
         }else{
            search_local_subscriber_detail('cnic',cnic);
        }
-       }else if(imsi !=0 || imsi != ''){                 
+       }else if(imsi !=0 || imsi != ''){
         $("#external_search_key").val(imsi);
            search_local_subscriber_detail('imsi',imsi);
        }
-        
+       dbkPopupPrepare();
+    }
+
+    /* ---- DRAMS Databank (integration API) ---------------------------------
+     * Only rendered for users with the "DRAMS Databank" right. The normal
+     * search stays on DRAMS; the Databank is searched only when the user
+     * asks (button), because every DRAMS user shares one API identity and
+     * a search can take up to a minute. */
+    var dbkEnabled = <?php echo $dbk_access ? 'true' : 'false'; ?>;
+    var dbkPageUrl = <?php echo json_encode(URL::site('databank/all_sources', TRUE)); ?>;
+    var dbkAjaxUrl = <?php echo json_encode(URL::site('databank/all_sources_results', TRUE)); ?>;
+    var dbkPopup   = null;   // {type, value} the popup will search
+    var dbkXhr     = null;
+
+    function dbkTrim(v) { return (v === undefined || v === null) ? '' : String(v).replace(/^\s+|\s+$/g, ''); }
+
+    // What the search form holds, as a Databank search ({type, value}) or null.
+    // IMSI / IMEI and foreigner CNICs are not Databank search types.
+    function dbkCurrentSearch(includeName) {
+        var mobile = dbkTrim($("#phonenumber").val());
+        var cnic   = dbkTrim($("#cnic").val());
+        var name   = dbkTrim($("#personname").val());
+        if ($("#number_type").val() == '1' && mobile !== '' && mobile !== '0') return {type: 'mobile', value: mobile};
+        if (cnic !== '' && cnic !== '0' && $("#is_foreigner").val() != '1')   return {type: 'cnic', value: cnic};
+        if (includeName && name !== '')                                          return {type: 'name', value: name};
+        return null;
+    }
+
+    function dbkPageLink(s) {
+        return dbkPageUrl + '?value=' + encodeURIComponent(s.value) + '&type=' + encodeURIComponent(s.type);
+    }
+
+    // "Search in Databank" next to the main Search button: new tab, runs at once.
+    function dbkOpenDatabankPage() {
+        var s = dbkCurrentSearch(true);
+        if (!s) {
+            alert('Enter a mobile number, a Pakistani CNIC or a person name to search in the Databank.');
+            return;
+        }
+        window.open(dbkPageLink(s), '_blank', 'noopener');
+    }
+
+    // Popup for Databank users (mobile number or Pakistani CNIC): the request
+    // button on top, the Databank results (searched at once) below.
+    function dbkPopupOpen() {
+        dbkPopupPrepare();
+        var s   = dbkPopup;
+        var btn = $('<button type="button" class="btn btn-primary"></button>');
+        if (s.type === 'mobile') {
+            btn.html('<i class="fa fa-paper-plane"></i> Request Subscriber').attr('title', 'Request subscriber details from the company')
+               .on('click', function () { requestsub(); });
+        } else {
+            btn.html('<i class="fa fa-paper-plane"></i> Request CNIC SIMs').attr('title', 'Request SIMs against this CNIC from the company')
+               .on('click', function () { requestcnicsims(s.value); });
+        }
+        $("#external_search_key").val(s.value);
+        $("#external_search_results").empty().append(
+            $('<div style="padding:4px 0 12px;"></div>').append(btn)
+        );
+        dbkPopupSearch();
+    }
+
+    // Called each time the Request Subscriber popup opens.
+    function dbkPopupPrepare() {
+        if (!dbkEnabled) return;
+        if (dbkXhr) { dbkXhr.abort(); dbkXhr = null; }
+        dbkPopup = dbkCurrentSearch(false);
+        $("#dbk_popup_results").empty();
+        $("#dbk_popup_status").text('');
+        $("#dbk_popup_btn").prop('disabled', false).html('<i class="fa fa-search"></i> Search Databank');
+        if (!dbkPopup) { $("#dbk_popup_section").hide(); return; }
+        $("#dbk_popup_value").text(dbkPopup.value);
+        $("#dbk_popup_open").attr('href', dbkPageLink(dbkPopup));
+        $("#dbk_popup_section").show();
+    }
+
+    function dbkPopupSearch() {
+        if (!dbkPopup) return;
+        var started = new Date().getTime();
+        var skel = '';
+        for (var s = 0; s < 2; s++) {
+            skel += '<div class="dbk-skel"><i style="width:30%"></i><i style="width:85%"></i><i style="width:60%"></i></div>';
+        }
+        $("#dbk_popup_results").html(skel);
+        $("#dbk_popup_status").html('<i class="fa fa-spinner fa-spin"></i> Searching all Databank sources…');
+        $("#dbk_popup_btn").prop('disabled', true);
+        dbkXhr = $.ajax({
+            url: dbkAjaxUrl,
+            type: 'POST',
+            data: {value: dbkPopup.value, type: dbkPopup.type, view: 'simple'},
+            success: function (html) {
+                $("#dbk_popup_results").html(html);
+                $("#dbk_popup_status").text('Finished in ' + ((new Date().getTime() - started) / 1000).toFixed(1) + 's');
+                $("#dbk_popup_btn").html('<i class="fa fa-refresh"></i> Search again');
+            },
+            error: function (xhr, status) {
+                if (status === 'abort') return;
+                $("#dbk_popup_results").html('<div class="dbk-alert dbk-alert-danger"><i class="fa fa-times-circle"></i>'
+                    + '<div>The Databank search failed. Please try again.</div></div>');
+                $("#dbk_popup_status").text('Error');
+            },
+            complete: function () { dbkXhr = null; $("#dbk_popup_btn").prop('disabled', false); }
+        });
     }
     //function to search subscriber in local sources
     function search_local_subscriber_detail(search_type, search_value ) {

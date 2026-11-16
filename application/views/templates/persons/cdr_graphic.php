@@ -1,3 +1,4 @@
+<script src="<?php echo URL::base(); ?>dist/js/cytoscape.min.js?v=20100200401"></script>
 <?php
 /*
  * To change this license header, choose License Headers in Project Properties.
