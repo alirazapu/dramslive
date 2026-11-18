@@ -139,6 +139,13 @@ class Helpers_DatabankApi
                                                                          : 'token contains spaces or control characters'));
         }
 
+        // Private CA of the Databank's HTTPS certificate (config ca_file).
+        $ca_file = trim((string) $config->get('ca_file'));
+        if ($ca_file !== '' && !is_readable($ca_file)) {
+            throw self::fail('The Databank API is not configured on this server. Contact the system administrator.',
+                'not-configured', 0, '', $method, $endpoint, 'ca_file is set but not readable: ' . self::clip($ca_file));
+        }
+
         $buffer    = '';
         $too_large = FALSE;
         $headers   = array('Authorization: Bearer ' . $token, 'Accept: application/json');
@@ -155,6 +162,9 @@ class Helpers_DatabankApi
                 return strlen($chunk);
             },
         );
+        if ($ca_file !== '') {
+            $options[CURLOPT_CAINFO] = $ca_file;
+        }
         if ($method === 'POST') {
             $headers[] = 'Content-Type: application/json';
             $options[CURLOPT_POST]       = TRUE;

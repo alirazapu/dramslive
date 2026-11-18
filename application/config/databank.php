@@ -29,10 +29,18 @@ return array(
     // segment. Endpoints are appended to it (integration/me, ...).
     // databank.ctdkpk.gov.pk is not in public DNS: a server that cannot
     // resolve it needs a hosts entry or the IP (http://192.168.0.158/api/v1).
-    'base_url' => $secret('base_url', 'DATABANK_API_BASE_URL', 'http://databank.ctdkpk.gov.pk/api/v1'),
+    'base_url' => $secret('base_url', 'DATABANK_API_BASE_URL', 'https://databank.ctdkpk.gov.pk/api/v1'),
 
     // Integration API token (dbk_...) of the DRAMS API user.
     'token'    => $secret('token', 'DATABANK_API_TOKEN'),
+
+    // CA certificate (PEM file) used to verify the Databank's HTTPS
+    // certificate. The Databank's certificate is issued by the private
+    // "CTD KPK Internal Root CA", which PHP's default CA bundle does not
+    // contain, so a server calling https://databank.ctdkpk.gov.pk needs
+    // this set (e.g. C:\xampp\php\extras\ssl\ctd_kpk_internal_root_ca.pem).
+    // Empty = PHP's default CA bundle (curl.cainfo in php.ini).
+    'ca_file'  => $secret('ca_file', 'DATABANK_API_CA_FILE'),
 
     // cURL timeouts in seconds. The Databank caps each source's search
     // at roughly 10 seconds; a search with linked identifiers may follow

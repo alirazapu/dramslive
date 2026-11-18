@@ -13,5 +13,9 @@ return array(
     // The dbk_... token issued on the Databank "API Users" page. Left
     // empty, the Databank searches report "Databank API not configured".
     'token'    => '',
-    'base_url' => 'http://databank.ctdkpk.gov.pk/api/v1',
+    'base_url' => 'https://databank.ctdkpk.gov.pk/api/v1',
+    // PEM file of the "CTD KPK Internal Root CA" that issued the Databank's
+    // HTTPS certificate. Without it PHP fails with "curl 60: SSL
+    // certificate problem: unable to get local issuer certificate".
+    'ca_file'  => 'C:\\xampp\\php\\extras\\ssl\\ctd_kpk_internal_root_ca.pem',
 );

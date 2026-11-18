@@ -89,7 +89,7 @@ The result cards' styles and behaviour live in
 
 Set the token with `DATABANK_API_TOKEN` or in
 `application/config/databank.local.php`. The default base URL is
-`http://databank.ctdkpk.gov.pk/api/v1`; that name is **not in public
+`https://databank.ctdkpk.gov.pk/api/v1`; that name is **not in public
 DNS**, so a server that cannot resolve it needs a hosts entry
 (`192.168.0.158 databank.ctdkpk.gov.pk`) or the IP as base URL
 (`http://192.168.0.158/api/v1`). Run `php cli/databank_api_check.php`
