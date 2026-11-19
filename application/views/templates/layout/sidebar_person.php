@@ -77,7 +77,7 @@ if(!isset($_GET['id']))
                             </ul>
                         </li>
 
-                        <li class="treeview <?php echo ($menu_name == 'location_call_log' || $menu_name == 'physical_location_summary') ? 'active' : '' ; ?>">
+                        <li class="treeview <?php echo ($menu_name == 'location_call_log' || $menu_name == 'physical_location_summary' || $menu_name == 'pattern_of_life') ? 'active' : '' ; ?>">
                             <a href="#">
                                 <i class="fa fa-map text-aqua"></i>
                                 <span>Location Summary</span> 
@@ -87,7 +87,8 @@ if(!isset($_GET['id']))
                             </a>
                             <ul class="treeview-menu">
                                 <li class="treeview <?php echo ($menu_name=='physical_location_summary')?'active':''; ?>"><a href="<?php echo URL::site('persons/physical_location_summary/?id=' . $_GET['id']); ?>"><i class="fa fa-map-signs text-aqua"></i> <span>Physical Location</span></a></li>                                
-                                <li class="treeview <?php echo ($menu_name=='location_call_log')?'active':''; ?>"><a href="<?php echo URL::site('persons/location_call_log/?id=' . $_GET['id']); ?>"><i class="fa fa-map-marker text-aqua"></i> <span>Google Map Location</span></a></li>                                
+                                <li class="treeview <?php echo ($menu_name=='location_call_log')?'active':''; ?>"><a href="<?php echo URL::site('persons/location_call_log/?id=' . $_GET['id']); ?>"><i class="fa fa-map-marker text-aqua"></i> <span>Google Map Location</span></a></li>
+                                <li class="treeview <?php echo ($menu_name=='pattern_of_life')?'active':''; ?>"><a href="<?php echo URL::site('persons/pattern_of_life/?id=' . $_GET['id']); ?>"><i class="fa fa-street-view text-aqua"></i> <span>Pattern of Life</span></a></li>
                             </ul>
                         </li>
                         <li class="treeview <?php echo ($menu_name=='cell_log_summary')?'active':''; ?>">

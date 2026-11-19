@@ -55,6 +55,30 @@ try {
         <ul class="sidebar-menu">
             <li class="header"> <span id="date_time"></span></li>
 
+<?php /* "Request Viewer Only" right (docs/sql/request_viewer_only.sql, granted
+         per user in ACL -> Manage Rights): the user's whole menu is just the
+         NADRA / Family Tree / Travel History request lists - no DRAMS Plus,
+         no send forms, nothing else from the role's menu rights. */ ?>
+<?php if (Helpers_Utilities::has_user_right($user->id, 'request_viewer_only')) { ?>
+    <li class="treeview <?php echo ($current_url == 'Userrequest') ? 'active' : ''; ?>">
+        <a href="#">
+            <i class="fa  fa-files-o"></i>
+            <span>User Requests</span>
+            <span class="pull-right-container">
+                <i class="fa fa-angle-left pull-right"></i>
+            </span>
+        </a>
+        <ul class="treeview-menu">
+            <li class="<?php echo ($menu_name == 'nadra_requests') ? 'active' : ''; ?>"><a href="<?php echo URL::site('Userrequest/nadra_requests'); ?>"><i class="fa fa-circle-o"></i> NADRA Requests</a></li>
+            <li class="<?php echo ($menu_name == 'familytree_requests') ? 'active' : ''; ?>"><a href="<?php echo URL::site('Userrequest/familytree_requests'); ?>"><i class="fa fa-circle-o"></i> Family Tree Requests</a></li>
+            <li class="<?php echo ($menu_name == 'travelhistory_requests') ? 'active' : ''; ?>"><a href="<?php echo URL::site('Userrequest/travelhistory_requests'); ?>"><i class="fa fa-circle-o"></i> Travel History</a></li>
+        </ul>
+    </li>
+        </ul>
+    </section>
+</aside>
+<?php return; } ?>
+
 <?php if (Helpers_Utilities::chek_role_access($role_id, 1) == 1) { ?>
     <li class="treeview <?php echo ($menu_name == 'dashboard') ? 'active' : ''; ?>">
         <a href="<?php echo URL::site('Userdashboard/dashboard'); ?>">

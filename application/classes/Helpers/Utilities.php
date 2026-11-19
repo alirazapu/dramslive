@@ -334,6 +334,23 @@ abstract class Helpers_Utilities {
         return $status ? $status : 0;
     }
 
+    /**
+     * The user holds the per-user right (Access Control List -> Manage
+     * Rights), found by lu_user_access_type.internal_name so the right's id
+     * may differ between servers.
+     */
+    public static function has_user_right($user_id, $internal_name) {
+        $sql = "SELECT t1.permission
+                FROM user_access_matrix AS t1
+                JOIN lu_user_access_type AS t2 ON t2.id = t1.user_activity_type
+                WHERE t1.user_id = " . (int) $user_id . "
+                  AND t2.internal_name = " . Database::instance()->quote($internal_name) . "
+                  AND t1.permission = 1
+                LIMIT 1";
+        $result = DB::query(Database::SELECT, $sql)->execute()->current();
+        return !empty($result);
+    }
+
     public static function chek_role_array_access($role_id, $menu_array) {
         foreach ($menu_array as $value) {
             if (self::chek_role_access($role_id, $value) == 1) {

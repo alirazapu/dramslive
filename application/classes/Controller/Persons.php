@@ -2039,6 +2039,212 @@ exit();
         }
     }
 
+    /*
+     *  Pattern of Life (Location Summary -> Pattern of Life): places,
+     *  home / work towers, movement playback, activity grid and anomalies
+     *  from the person's call and SMS logs. Helpers_PatternOfLife.
+     */
+
+    /**
+     * Audit line in application/logs for every analysis, incident check and
+     * report: who, which person, which number and dates (and report hash).
+     * The page visit itself is also in user_activity_timeline (View Person).
+     */
+    private function _pattern_of_life_audit($what, $pid, array $details)
+    {
+        $user  = Auth::instance()->get_user();
+        $parts = array();
+        foreach ($details as $k => $v) {
+            if (is_array($v)) {
+                $v = json_encode($v);
+            }
+            $parts[] = $k . '=' . (($v === '' || $v === NULL) ? '-' : preg_replace('/[^\w\-:.,\[\]{}" ]/u', '', (string) $v));
+        }
+        Kohana::$log->add(Log::INFO, 'PatternOfLife: user :user :what person :pid :details (ip :ip)', array(
+            ':user'    => $user ? (int) $user->id : 0,
+            ':what'    => $what,
+            ':pid'     => (int) $pid,
+            ':details' => implode(' ', $parts),
+            ':ip'      => Request::$client_ip,
+        ));
+    }
+
+    /** Decrypted person id from $get['id'], or 0. */
+    private function _pattern_of_life_pid(array $get)
+    {
+        try {
+            return isset($get['id']) ? (int) Helpers_Utilities::encrypted_key($get['id'], "decrypt") : 0;
+        } catch (Exception $ex) {
+            return 0;
+        }
+    }
+
+    /** JSON: "Where was he at ...?" ?id=&phone=&at=&window=&lat=&lng= */
+    public function action_pattern_of_life_at()
+    {
+        $this->auto_render = FALSE;
+        $this->response->headers('Content-Type', 'application/json; charset=utf-8');
+        $this->response->headers('Cache-Control', 'no-store');
+        $get = Helpers_Utilities::remove_injection($_GET);
+        $pid = $this->_pattern_of_life_pid($get);
+        if ($pid <= 0 || !$this->_pattern_of_life_access($pid)) {
+            $this->response->status(403);
+            $this->response->body(json_encode(array('ok' => FALSE, 'error' => 'Access denied.')));
+            return;
+        }
+        $g = function ($k) use ($get) { return isset($get[$k]) ? $get[$k] : ''; };
+        try {
+            $phone = Helpers_PatternOfLife::validate_phone($pid, $g('phone'));
+            $q     = Helpers_PatternOfLife::resolve_at($g('at'), $g('window'), $g('lat'), $g('lng'));
+        } catch (Kohana_Exception $ex) {
+            $this->response->status(400);
+            $this->response->body(json_encode(array('ok' => FALSE, 'error' => $ex->getMessage())));
+            return;
+        }
+        try {
+            // "km from home" is added by the page, which already has home.
+            $result = Helpers_PatternOfLife::at_time($pid, $phone, $q);
+            $this->_pattern_of_life_audit('incident-check', $pid, array(
+                'phone' => $phone, 'at' => $q['at'], 'window' => $q['window'], 'site' => $q['site']));
+            $result['ok'] = TRUE;
+            $this->response->body(json_encode($result));
+        } catch (Exception $ex) {
+            Kohana::$log->add(Log::ERROR, 'pattern_of_life_at person :pid: :msg', array(':pid' => $pid, ':msg' => $ex->getMessage()));
+            $this->response->status(500);
+            $this->response->body(json_encode(array('ok' => FALSE, 'error' => 'The check could not be completed.')));
+        }
+    }
+
+    /**
+     * Printable Pattern of Life report (own page, no menus):
+     * ?id=&phone=&from=&to= [&at=&window=&lat=&lng= for the incident check]
+     */
+    public function action_pattern_of_life_report()
+    {
+        $this->auto_render = FALSE;
+        $get = Helpers_Utilities::remove_injection($_GET);
+        $pid = $this->_pattern_of_life_pid($get);
+        if ($pid <= 0 || !$this->_pattern_of_life_access($pid)) {
+            $this->redirect('user/access_denied');
+        }
+        $g = function ($k) use ($get) { return isset($get[$k]) ? $get[$k] : ''; };
+        try {
+            $f        = Helpers_PatternOfLife::resolve_filters($pid, $g('phone'), $g('from'), $g('to'));
+            $analysis = Helpers_PatternOfLife::analyse($pid, $f);
+            $at = NULL;
+            if ($g('at') !== '') {
+                $at = Helpers_PatternOfLife::at_time($pid, $f['phone'],
+                    Helpers_PatternOfLife::resolve_at($g('at'), $g('window'), $g('lat'), $g('lng')), $analysis['home']);
+            }
+            $user = Auth::instance()->get_user();
+            date_default_timezone_set('Asia/Karachi');
+            $meta = array(
+                'person_id'    => $pid,
+                'person_name'  => Helpers_Person::get_person_name($pid),
+                'person_cnic'  => (string) Helpers_Person::get_person_cnic($pid),
+                'generated_by' => Helpers_Utilities::get_user_name((int) $user->id),
+                'user_id'      => (int) $user->id,
+                'generated_at' => date('Y-m-d H:i:s'),
+            );
+            $hash = Helpers_PatternOfLife::report_hash($meta, $analysis, $at);
+            $this->_pattern_of_life_audit('report', $pid, array(
+                'phone' => $f['phone'], 'from' => $f['from'], 'to' => $f['to'],
+                'at' => $at ? $at['query']['at'] : '', 'sha256' => $hash));
+            $this->response->headers('Cache-Control', 'no-store');
+            $this->response->body(View::factory('templates/persons/pattern_of_life_report')
+                ->set('meta', $meta)->set('a', $analysis)->set('at', $at)->set('hash', $hash)->render());
+        } catch (Kohana_Exception $ex) {
+            $this->response->status(400);
+            $this->response->body('<p style="font-family:sans-serif">' . HTML::chars($ex->getMessage()) . '</p>');
+        } catch (Exception $ex) {
+            Kohana::$log->add(Log::ERROR, 'pattern_of_life_report person :pid: :msg', array(':pid' => $pid, ':msg' => $ex->getMessage()));
+            $this->response->status(500);
+            $this->response->body('<p style="font-family:sans-serif">The report could not be generated. Try a shorter date range.</p>');
+        }
+    }
+
+    /** The login user may open this person (same checks as action_dashboard). */
+    private function _pattern_of_life_access($pid)
+    {
+        $user = Auth::instance()->get_user();
+        return !empty($user)
+            && Helpers_Person::sensitive_person_acl($user->id, $pid) == TRUE
+            && Helpers_Profile::get_user_access_permission($user->id, 7) == 1;
+    }
+
+    public function action_pattern_of_life()
+    {
+        $pid = 0;
+        try {
+            $_GET = Helpers_Utilities::remove_injection($_GET);
+            $pid  = isset($_GET['id']) ? (int) Helpers_Utilities::encrypted_key($_GET['id'], "decrypt") : 0;
+        } catch (Exception $ex) {
+            $pid = 0;
+        }
+        if ($pid <= 0) {
+            $this->redirect(url::base() . 'errors?_e=wrong_parameters');
+        }
+        if (!$this->_pattern_of_life_access($pid)) {
+            $this->redirect('user/access_denied');
+        }
+        try {
+            // Audit as "View Person"; request_uri identifies this page.
+            Helpers_Profile::user_activity_log(Auth::instance()->get_user()->id, 9, NULL, NULL, $pid);
+            $this->template->content = View::factory('templates/persons/pattern_of_life')
+                ->set('person_id', $pid)
+                ->set('phone_numbers', Helpers_PatternOfLife::phone_numbers($pid))
+                ->set('data_url', URL::site('persons/pattern_of_life_data', TRUE))
+                ->set('at_url', URL::site('persons/pattern_of_life_at', TRUE))
+                ->set('report_url', URL::site('persons/pattern_of_life_report', TRUE));
+        } catch (Exception $ex) {
+            $this->template->content = View::factory('templates/user/exception_error_page')
+                ->bind('exception', $ex);
+        }
+    }
+
+    /** JSON for the Pattern of Life page: ?id=<encrypted>&phone=&from=&to= */
+    public function action_pattern_of_life_data()
+    {
+        $this->auto_render = FALSE;
+        $this->response->headers('Content-Type', 'application/json; charset=utf-8');
+        $this->response->headers('Cache-Control', 'no-store');
+        $pid = 0;
+        try {
+            $get = Helpers_Utilities::remove_injection($_GET);
+            $pid = isset($get['id']) ? (int) Helpers_Utilities::encrypted_key($get['id'], "decrypt") : 0;
+        } catch (Exception $ex) {
+            $pid = 0;
+        }
+        if ($pid <= 0 || !$this->_pattern_of_life_access($pid)) {
+            $this->response->status(403);
+            $this->response->body(json_encode(array('ok' => FALSE, 'error' => 'Access denied.')));
+            return;
+        }
+        try {
+            $filters = Helpers_PatternOfLife::resolve_filters(
+                $pid,
+                isset($get['phone']) ? $get['phone'] : '',
+                isset($get['from']) ? $get['from'] : '',
+                isset($get['to']) ? $get['to'] : ''
+            );
+        } catch (Kohana_Exception $ex) {
+            $this->response->status(400);
+            $this->response->body(json_encode(array('ok' => FALSE, 'error' => $ex->getMessage())));
+            return;
+        }
+        try {
+            $result = Helpers_PatternOfLife::analyse($pid, $filters);
+            $this->_pattern_of_life_audit('analysis', $pid, $filters);
+            $result['ok'] = TRUE;
+            $this->response->body(json_encode($result));
+        } catch (Exception $ex) {
+            Kohana::$log->add(Log::ERROR, 'pattern_of_life_data person :pid: :msg',
+                array(':pid' => $pid, ':msg' => $ex->getMessage()));
+            $this->response->status(500);
+            $this->response->body(json_encode(array('ok' => FALSE, 'error' => 'The analysis could not be completed. Try a shorter date range.')));
+        }
+    }
+
     /* Person Dashboard physical location summary */
 
     public function action_physical_location_summary()
