@@ -1374,7 +1374,7 @@ class Model_Userrequest {
 
         $where_clause = "where t1.user_request_type_id =8  ";
         //nadra verisys reponded by H.Q technical support and regional focal persons
-        if ($permission == 2 || $permission == 3 || $permission == 4) {
+        if (($permission == 2 || $permission == 3 || $permission == 4) && !Helpers_Utilities::has_user_right($login_user->id, 'request_viewer_only')) {
             $result = explode('-', $posting);
             switch ($result[0]) {
                 case 'h':
@@ -1556,7 +1556,7 @@ class Model_Userrequest {
 
         $where_clause = "where t1.user_request_type_id =10  ";
         //nadra verisys reponded by H.Q technical support and regional focal persons
-        if ($permission == 2 || $permission == 3 || $permission == 4) {
+        if (($permission == 2 || $permission == 3 || $permission == 4) && !Helpers_Utilities::has_user_right($login_user->id, 'request_viewer_only')) {
             $result = explode('-', $posting);
             switch ($result[0]) {
                 case 'h':
