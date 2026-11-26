@@ -4,6 +4,7 @@ return array(
     'trusted_hosts' => array(
         'dev.ctd.drams.com',
         'devdrams\.ctdkpk\.gov\.pk',
+        'drams\.ctdkpk\.gov\.pk',
         'localhost',
         '127.0.0.1',
     ),

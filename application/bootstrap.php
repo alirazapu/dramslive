@@ -184,6 +184,7 @@ ini_set('session.use_only_cookies', 1);    // never accept a session id from the
 // Whitelisted so a forged Host header cannot rewrite our generated URLs.
 $allowed_hosts = [
     'ctd.drams.com',
+    'drams.ctdkpk.gov.pk',
     'dev.ctd.drams.com',
     'devdrams.ctdkpk.gov.pk',
     'stage.ctd.drams.com',
