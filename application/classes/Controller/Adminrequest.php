@@ -12,10 +12,25 @@ class Controller_Adminrequest extends Controller_Working
         $this->response = $response;
     }
 
+    /* Single, Custom and Advance Custom Request are retired: their replies are
+       not parsed and Multirequest replaces them. TRUE restores their pages and
+       send actions (the menu links are in sidebar_user.php). */
+    const LEGACY_REQUESTS_ENABLED = FALSE;
+
+    private function _refuse_retired_send()
+    {
+        $this->auto_render = FALSE;
+        $this->response->status(403);
+        $this->response->body('This request form has been retired. Use Multi Number Request.');
+    }
+
     /*     * Admin Request*/
 
     public function action_admin_request_sent_form()
     {
+        if (!self::LEGACY_REQUESTS_ENABLED) {
+            $this->redirect('multirequest/index');
+        }
 
         try {
             $DB = Database::instance();
@@ -54,6 +69,10 @@ class Controller_Adminrequest extends Controller_Working
      */
     public function action_admin_advance_custom_request_form()
     {
+        if (!self::LEGACY_REQUESTS_ENABLED) {
+            $this->redirect('multirequest/index');
+        }
+
         try {
             if (Helpers_Utilities::chek_role_access($this->role_id, 34) == 1) {
                 $this->template->content = View::factory('templates/user/admin_advance_custom_request_form');
@@ -79,6 +98,10 @@ class Controller_Adminrequest extends Controller_Working
 
     public function action_admin_custom_request_form()
     {
+        if (!self::LEGACY_REQUESTS_ENABLED) {
+            $this->redirect('multirequest/index');
+        }
+
         try {
             $DB = Database::instance();
             $login_user = Auth::instance()->get_user();
@@ -2036,6 +2059,10 @@ class Controller_Adminrequest extends Controller_Working
     // admin custom email send
     public function action_admincustomsend()
     {
+        if (!self::LEGACY_REQUESTS_ENABLED) {
+            return $this->_refuse_retired_send();
+        }
+
         if (Auth::instance()->logged_in()) {
             $user_obj = Auth::instance()->get_user();
             $email_file_name = $file_name = '';
@@ -2384,6 +2411,10 @@ class Controller_Adminrequest extends Controller_Working
     // admin email send
     public function action_adminsend()
     {
+        if (!self::LEGACY_REQUESTS_ENABLED) {
+            return $this->_refuse_retired_send();
+        }
+
         if (Auth::instance()->logged_in()) {
             $user_obj = Auth::instance()->get_user();
             $file_name = '';

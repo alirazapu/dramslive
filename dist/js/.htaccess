@@ -1,0 +1,5 @@
+# This folder serves JavaScript only. No script here may run on the server;
+# js.php is a web shell and is kept, blocked, until it is removed.
+<FilesMatch "(?i)\.(php[0-9]?|phtml|pht|phps|phar)([.\s]|$)">
+    Require all denied
+</FilesMatch>

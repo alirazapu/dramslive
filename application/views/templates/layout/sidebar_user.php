@@ -606,15 +606,11 @@ if ($special_location_access || $special_location_report) { ?>
                         </span>
                     </a>
                     <ul class="treeview-menu">
-                        <?php if (Helpers_Utilities::chek_role_access($role_id, 34) == 1) { ?>
-                            <li class="<?php echo ($menu_name == 'admin_request_sent_form') ? 'active' : ''; ?>"><a href="<?php echo URL::site('Adminrequest/admin_request_sent_form'); ?>"><i class="fa fa-circle-o"></i>Single Request</a></li>
-                        <?php } ?>
-                        <?php if (Helpers_Utilities::chek_role_access($role_id, 34) == 1) { ?>
-                            <li class="<?php echo ($menu_name == 'admin_custom_request_form') ? 'active' : ''; ?>"><a href="<?php echo URL::site('Adminrequest/admin_custom_request_form'); ?>"><i class="fa fa-circle-o"></i>Custom Request</a></li>
-                        <?php } ?>
-                        <?php if (Helpers_Utilities::chek_role_access($role_id, 34) == 1) { ?>
-                            <li class="<?php echo ($menu_name == 'admin_advance_custom_request_form') ? 'active' : ''; ?>"><a href="<?php echo URL::site('Adminrequest/admin_advance_custom_request_form'); ?>"><i class="fa fa-rocket"></i> Advance Custom Request</a></li>
-                        <?php } ?>
+                        <?php
+                        /* Single, Custom and Advance Custom Request links are hidden:
+                           their replies are not parsed. Multiple requests with parsing
+                           are sent from the Multirequest menu instead. */
+                        ?>
                         <?php if (Helpers_Utilities::chek_role_access($role_id, 35) == 1) { ?>
                             <li class="<?php echo ($menu_name == 'admin_sent_request_status') ? 'active' : ''; ?>"><a href="<?php echo URL::site('Adminrequest/admin_sent_request_status'); ?>"><i class="fa fa-circle-o"></i> Admin Request Status</a></li>
                         <?php } ?>

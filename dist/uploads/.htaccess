@@ -1,0 +1,5 @@
+# Nothing under this folder may be run as a script: it receives user uploads.
+# Matches the extension anywhere in the name (x.php, x.php.jpg), any case.
+<FilesMatch "(?i)\.(php[0-9]?|phtml|pht|phps|phar|cgi|pl|py|asp|aspx|jsp|sh|shtml)([.\s]|$)">
+    Require all denied
+</FilesMatch>

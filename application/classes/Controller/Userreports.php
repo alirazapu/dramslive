@@ -2923,15 +2923,33 @@ exit();
             $data = "";
             $data .= '<input type="hidden" name="user-id" value="' . $_POST['id'] . '">';
             $rights = Helpers_Utilities::get_user_access_name();
+            /* "Request Viewer Only" LIMITS the user's menu, unlike every other
+               right here, which grants something. Listed last and marked, so
+               ticking all the privileges does not switch it on by accident. */
+            $privileges = array();
+            $restrictions = array();
+            foreach ($rights as $right) {
+                if ($right->internal_name == 'request_viewer_only') {
+                    $restrictions[] = $right;
+                } else {
+                    $privileges[] = $right;
+                }
+            }
+            $rights = array_merge($privileges, $restrictions);
             $i = 1;
             foreach ($rights as $right) {
                 $permission = Helpers_Utilities::get_user_permission($_POST['id']);
 
                 $value_status = Helpers_Utilities::get_user_activity_value($_POST['id'], $right->id);
                 // echo $value_status; exit;
-                $data .= '<tr>'
+                $data .= '<tr' . ($right->internal_name == 'request_viewer_only' ? ' style="background:#fdecea;"' : '') . '>'
                         . '<input type="hidden" name="user-acl[' . $i . ']" value="' . $right->id . '">';
-                $data .= '<td>' . $right->label . '</td>';
+                if ($right->internal_name == 'request_viewer_only') {
+                    $data .= '<td><b style="color:#c0392b;">RESTRICTION: ' . $right->label . '</b><br>'
+                            . '<small>ON = this user sees ONLY NADRA, Family Tree and Travel History requests. Keep OFF for normal users.</small></td>';
+                } else {
+                    $data .= '<td>' . $right->label . '</td>';
+                }
                 $data .= '<td>';
                 $data .= '<div class="checkbox" style="margin-top:0px;margin-bottom: 0px;">';
                 $data .= '<label>';
