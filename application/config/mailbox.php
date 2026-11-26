@@ -13,5 +13,16 @@ return array(
         'ali.razapu@gmail.com',
         'azmatsaani@gmail.com',     // azmatsaani (Administrator)
         'coordinate.wa@gmail.com',  // waqasahmad (Administrator)
+        'zahidgulcpo@gmail.com',    // zahidgul
+        'rizwanahmadkhalil77@gmail.com', // rizwandcs
+        'nadirchamkani1989@gmail.com',   // nadirdcs
+        'israrud90@gmail.com',           // israruddin
+        'nazeer0015@gmail.com',          // nazeerkhan
+    ),
+
+    // Who can see the "Sent Log" page (which user sent each email).
+    // These users must also be listed in allowed_emails above.
+    'log_viewer_emails' => array(
+        'junaid.pk18@gmail.com',    // junaidpk
     ),
 );

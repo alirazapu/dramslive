@@ -55,6 +55,30 @@ class Controller_Mailbox extends Controller_Working
         $this->template->content = $view;
     }
 
+    /** Which user sent each email. Only for config/mailbox.php log_viewer_emails. */
+    public function action_log()
+    {
+        if (!Helpers_Mailbox::can_view_log()) {
+            $this->redirect('mailbox');
+        }
+        $page = max(1, (int) Arr::get($_GET, 'page', 1));
+
+        $view = View::factory('templates/mailbox/log')
+            ->set('page', $page)
+            ->set('per_page', Helpers_Mailbox::PER_PAGE)
+            ->set('total', 0)
+            ->set('rows', array())
+            ->set('error', '');
+        try {
+            $result = Helpers_Mailbox::sent_log($page);
+            $view->set('total', $result['total'])->set('rows', $result['rows']);
+        } catch (Exception $e) {
+            $view->set('error', $e->getMessage());
+        }
+
+        $this->template->content = $view;
+    }
+
     public function action_view()
     {
         $folder = Helpers_Mailbox::folder_key(Arr::get($_GET, 'folder', 'inbox'));

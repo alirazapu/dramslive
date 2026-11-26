@@ -59,5 +59,12 @@ $unread = isset($unread) ? (int) $unread : 0;
                 </a>
             </li>
         <?php } ?>
+        <?php if (Helpers_Mailbox::can_view_log()) { ?>
+            <li>
+                <a class="<?php echo ($folder === 'log') ? 'active' : ''; ?>" href="<?php echo URL::site('mailbox/log'); ?>">
+                    <i class="fa fa-history"></i> Sent Log
+                </a>
+            </li>
+        <?php } ?>
     </ul>
 </div>

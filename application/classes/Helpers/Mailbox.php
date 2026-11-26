@@ -37,13 +37,68 @@ abstract class Helpers_Mailbox
     /** TRUE when the logged-in user's email is listed in config/mailbox.php. */
     public static function can_access()
     {
+        return self::user_is_listed('allowed_emails');
+    }
+
+    /** TRUE when the logged-in user may see who sent which email. */
+    public static function can_view_log()
+    {
+        return self::can_access() && self::user_is_listed('log_viewer_emails');
+    }
+
+    private static function user_is_listed($config_key)
+    {
         $user = Auth::instance()->get_user();
         if (!$user) {
             return FALSE;
         }
         $email = strtolower(trim((string) ORM::factory('User', $user)->email));
-        $allowed = array_map('strtolower', array_map('trim', (array) Kohana::$config->load('mailbox')->get('allowed_emails', array())));
-        return $email !== '' && in_array($email, $allowed, TRUE);
+        $listed = array_map('strtolower', array_map('trim', (array) Kohana::$config->load('mailbox')->get($config_key, array())));
+        return $email !== '' && in_array($email, $listed, TRUE);
+    }
+
+    /**
+     * Records which DRAMS user sent an email from the shared account.
+     * A logging failure must never make a delivered email look unsent.
+     */
+    private static function log_sent($to, $cc, $subject, array $attachments, $sent, $error)
+    {
+        try {
+            $user = ORM::factory('User', Auth::instance()->get_user());
+            $names = array();
+            foreach ($attachments as $file) {
+                $names[] = $file['name'];
+            }
+            DB::insert('mailbox_sent_log', array('user_id', 'username', 'to_emails', 'cc_emails', 'subject', 'attachments', 'status', 'error', 'ip_address', 'sent_at'))
+                ->values(array(
+                    (int) $user->id,
+                    (string) $user->username,
+                    (string) $to,
+                    (string) $cc,
+                    mb_substr((string) $subject, 0, 500, 'UTF-8'),
+                    implode(', ', $names),
+                    $sent ? 'sent' : 'failed',
+                    $sent ? '' : mb_substr((string) $error, 0, 500, 'UTF-8'),
+                    (string) Request::$client_ip,
+                    date('Y-m-d H:i:s'),
+                ))
+                ->execute();
+        } catch (Exception $e) {
+            Kohana::$log->add(Log::ERROR, 'Mailbox sent log failed: ' . $e->getMessage());
+        }
+    }
+
+    /** One page of the sent log, newest first. */
+    public static function sent_log($page)
+    {
+        $total = (int) DB::select(array(DB::expr('COUNT(*)'), 'total'))->from('mailbox_sent_log')->execute()->get('total');
+        $rows = DB::select()->from('mailbox_sent_log')
+            ->order_by('id', 'DESC')
+            ->limit(self::PER_PAGE)
+            ->offset((max(1, (int) $page) - 1) * self::PER_PAGE)
+            ->execute()
+            ->as_array();
+        return array('total' => $total, 'rows' => $rows);
     }
 
     public static function folder_key($key)
@@ -331,6 +386,7 @@ abstract class Helpers_Mailbox
         }
 
         $sent = $mail->Send();
+        self::log_sent($to, $cc, $subject, $attachments, $sent, $mail->ErrorInfo);
         Model_ErrorLog::log(
             'mailbox_send',
             $sent ? 'Mailbox email sent' : 'Mailbox email failed: ' . $mail->ErrorInfo,
