@@ -111,7 +111,7 @@ $env_var = getenv('KOHANA_ENV');
 if ($env_var) {
     switch (strtoupper($env_var)) {
         case 'DEVELOPMENT':
-            $base_url = $scheme . 'dev.ctd.drams.com';
+            $base_url = $scheme . 'devdrams.ctdkpk.gov.pk';
             Kohana::$environment = Kohana::DEVELOPMENT;
             break;
         case 'STAGING':
@@ -185,6 +185,7 @@ ini_set('session.use_only_cookies', 1);    // never accept a session id from the
 $allowed_hosts = [
     'ctd.drams.com',
     'dev.ctd.drams.com',
+    'devdrams.ctdkpk.gov.pk',
     'stage.ctd.drams.com',
     'test.ctd.drams.com',
 ];
