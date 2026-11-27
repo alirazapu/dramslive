@@ -46,6 +46,19 @@ abstract class Helpers_Mailbox
         return self::can_access() && self::user_is_listed('log_viewer_emails');
     }
 
+    /**
+     * TRUE when the logged-in user may see the Send Usage page (counts only):
+     * every Administrator, plus the Sent Log viewers.
+     */
+    public static function can_view_usage()
+    {
+        $user = Auth::instance()->get_user();
+        if (!$user) {
+            return FALSE;
+        }
+        return (int) Helpers_Utilities::get_user_role_id((int) $user->id) === 1 || self::can_view_log();
+    }
+
     private static function user_is_listed($config_key)
     {
         $user = Auth::instance()->get_user();
@@ -88,17 +101,57 @@ abstract class Helpers_Mailbox
         }
     }
 
-    /** One page of the sent log, newest first. */
-    public static function sent_log($page)
+    /**
+     * One page of the sent log, newest first. Filters (all optional): q, user,
+     * status, from and to (Y-m-d). A page past the end returns the last page.
+     */
+    public static function sent_log($page, array $filters = array())
     {
-        $total = (int) DB::select(array(DB::expr('COUNT(*)'), 'total'))->from('mailbox_sent_log')->execute()->get('total');
-        $rows = DB::select()->from('mailbox_sent_log')
+        $count = DB::select(array(DB::expr('COUNT(*)'), 'total'))->from('mailbox_sent_log');
+        $total = (int) self::filter_log($count, $filters)->execute()->get('total');
+        $page = min(max(1, (int) $page), max(1, (int) ceil($total / self::PER_PAGE)));
+        $rows = self::filter_log(DB::select()->from('mailbox_sent_log'), $filters)
             ->order_by('id', 'DESC')
             ->limit(self::PER_PAGE)
-            ->offset((max(1, (int) $page) - 1) * self::PER_PAGE)
+            ->offset(($page - 1) * self::PER_PAGE)
             ->execute()
             ->as_array();
-        return array('total' => $total, 'rows' => $rows);
+        return array('total' => $total, 'page' => $page, 'rows' => $rows);
+    }
+
+    /** Usernames that appear in the sent log, for the filter list. */
+    public static function sent_log_users()
+    {
+        return DB::select('username')->distinct(TRUE)->from('mailbox_sent_log')
+            ->order_by('username', 'ASC')
+            ->execute()
+            ->as_array(NULL, 'username');
+    }
+
+    private static function filter_log($query, array $filters)
+    {
+        if (!empty($filters['q'])) {
+            $like = '%' . addcslashes($filters['q'], '\\%_') . '%';
+            $query->where_open()
+                ->where('to_emails', 'LIKE', $like)
+                ->or_where('cc_emails', 'LIKE', $like)
+                ->or_where('subject', 'LIKE', $like)
+                ->or_where('attachments', 'LIKE', $like)
+                ->where_close();
+        }
+        if (!empty($filters['user'])) {
+            $query->where('username', '=', $filters['user']);
+        }
+        if (!empty($filters['status'])) {
+            $query->where('status', '=', $filters['status']);
+        }
+        if (!empty($filters['from'])) {
+            $query->where('sent_at', '>=', $filters['from'] . ' 00:00:00');
+        }
+        if (!empty($filters['to'])) {
+            $query->where('sent_at', '<=', $filters['to'] . ' 23:59:59');
+        }
+        return $query;
     }
 
     public static function folder_key($key)

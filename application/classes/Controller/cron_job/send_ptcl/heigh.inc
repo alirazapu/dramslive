@@ -11,6 +11,10 @@ try {
     $result = $sql->execute()->as_array();               
     foreach($result as $res)
     {    
+        // Gmail's rolling 24 hour limit: leave the rest queued
+        if (!Helpers_Email::within_send_limit()) {
+            break;
+        }
         try {
             $query = "SELECT sum(total)as total FROM request_send_today where request_priority = " . $res['request_priority'];
             $sql = DB::query(Database::SELECT, $query);

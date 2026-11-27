@@ -11,7 +11,11 @@ class Controller_Mailbox extends Controller_Working
     public function before()
     {
         parent::before();
-        if (!Helpers_Mailbox::can_access()) {
+        // Send Usage is also open to Administrators without Mailbox access
+        $allowed = $this->request->action() === 'usage'
+            ? Helpers_Mailbox::can_view_usage()
+            : Helpers_Mailbox::can_access();
+        if (!$allowed) {
             $this->redirect('Userdashboard/dashboard');
         }
     }
@@ -63,15 +67,49 @@ class Controller_Mailbox extends Controller_Working
         }
         $page = max(1, (int) Arr::get($_GET, 'page', 1));
 
+        $filters = array();
+        foreach (array('q', 'user', 'status', 'from', 'to') as $key) {
+            $value = Arr::get($_GET, $key, '');
+            $filters[$key] = is_string($value) ? trim($value) : '';
+        }
+        if (!in_array($filters['status'], array('sent', 'failed'))) {
+            $filters['status'] = '';
+        }
+        foreach (array('from', 'to') as $key) {
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $filters[$key])) {
+                $filters[$key] = '';
+            }
+        }
+
         $view = View::factory('templates/mailbox/log')
             ->set('page', $page)
             ->set('per_page', Helpers_Mailbox::PER_PAGE)
             ->set('total', 0)
             ->set('rows', array())
+            ->set('filters', $filters)
+            ->set('users', array())
             ->set('error', '');
         try {
-            $result = Helpers_Mailbox::sent_log($page);
-            $view->set('total', $result['total'])->set('rows', $result['rows']);
+            $result = Helpers_Mailbox::sent_log($page, $filters);
+            $view->set('total', $result['total'])
+                ->set('page', $result['page'])
+                ->set('rows', $result['rows'])
+                ->set('users', Helpers_Mailbox::sent_log_users());
+        } catch (Exception $e) {
+            $view->set('error', $e->getMessage());
+        }
+
+        $this->template->content = $view;
+    }
+
+    /** How much has been sent against Gmail's limit. Access is checked in before(). */
+    public function action_usage()
+    {
+        $view = View::factory('templates/mailbox/usage')
+            ->set('usage', NULL)
+            ->set('error', '');
+        try {
+            $view->set('usage', Helpers_Email::send_usage());
         } catch (Exception $e) {
             $view->set('error', $e->getMessage());
         }

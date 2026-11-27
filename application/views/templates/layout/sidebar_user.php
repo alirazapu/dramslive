@@ -381,6 +381,13 @@ try {
           <span>Mailbox</span>
       </a>
   </li>
+<?php } elseif (Helpers_Mailbox::can_view_usage()) { ?>
+  <li class="treeview <?php echo ($current_url == 'Mailbox') ? 'active' : ''; ?>">
+      <a href="<?php echo URL::site('mailbox/usage'); ?>">
+          <i class="fa fa-bar-chart"></i>
+          <span>Send Usage</span>
+      </a>
+  </li>
 <?php } ?>
 <?php if (Helpers_Utilities::chek_role_access($role_id, 33) == 1) { ?>
     <li class="treeview <?php echo ($menu_name == 'access_control_list') ? 'active' : ''; ?>">

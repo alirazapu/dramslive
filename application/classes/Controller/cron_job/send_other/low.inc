@@ -13,6 +13,10 @@ try {
     $result = DB::query(Database::SELECT, $query)->execute()->as_array();
     $count=0;
     foreach ($result as $res) {
+        // Gmail's rolling 24 hour limit: leave the rest queued
+        if (!Helpers_Email::within_send_limit()) {
+            break;
+        }
         if ($count > 7) {
             break;
         }

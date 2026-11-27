@@ -48,10 +48,13 @@ $unread = isset($unread) ? (int) $unread : 0;
         .mb-list .mb-date { width: 64px; }
     }
 </style>
+<?php $has_mailbox = Helpers_Mailbox::can_access(); ?>
 <div class="mb-rail">
-    <a class="mb-compose" href="<?php echo URL::site('mailbox/compose'); ?>"><i class="fa fa-pencil"></i> Compose</a>
+    <?php if ($has_mailbox) { ?>
+        <a class="mb-compose" href="<?php echo URL::site('mailbox/compose'); ?>"><i class="fa fa-pencil"></i> Compose</a>
+    <?php } ?>
     <ul class="mb-folders">
-        <?php foreach (Helpers_Mailbox::$folders as $key => $info) { ?>
+        <?php foreach ($has_mailbox ? Helpers_Mailbox::$folders : array() as $key => $info) { ?>
             <li>
                 <a class="<?php echo ($key === $folder) ? 'active' : ''; ?>" href="<?php echo URL::site('mailbox') . '?folder=' . $key; ?>">
                     <i class="fa <?php echo $info['icon']; ?>"></i> <?php echo $info['name']; ?>
@@ -63,6 +66,13 @@ $unread = isset($unread) ? (int) $unread : 0;
             <li>
                 <a class="<?php echo ($folder === 'log') ? 'active' : ''; ?>" href="<?php echo URL::site('mailbox/log'); ?>">
                     <i class="fa fa-history"></i> Sent Log
+                </a>
+            </li>
+        <?php } ?>
+        <?php if (Helpers_Mailbox::can_view_usage()) { ?>
+            <li>
+                <a class="<?php echo ($folder === 'usage') ? 'active' : ''; ?>" href="<?php echo URL::site('mailbox/usage'); ?>">
+                    <i class="fa fa-bar-chart"></i> Send Usage
                 </a>
             </li>
         <?php } ?>

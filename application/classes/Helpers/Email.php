@@ -3,6 +3,114 @@
 abstract class Helpers_Email
 {
 
+    /**
+     * Emails DRAMS has sent successfully in the last 24 hours (all senders).
+     * Uses the idx_source_type index of system_error_log.
+     */
+    public static function sent_last_24_hours()
+    {
+        return (int) DB::select(array(DB::expr('COUNT(*)'), 'total'))
+            ->from('system_error_log')
+            ->where('error_source', 'IN', array('send_email', 'mailbox_send'))
+            ->where('error_type', '=', 'smtp_send_success')
+            ->where('created_at', '>=', date('Y-m-d H:i:s', time() - 86400))
+            ->execute()
+            ->get('total');
+    }
+
+    /**
+     * Figures for the Send Usage page: the rolling 24 hour count against the
+     * limit, and sent / failed totals for each day of this week (from Monday),
+     * newest first.
+     */
+    public static function send_usage()
+    {
+        $limit = (int) Kohana::$config->load('email_limit')->get('max_per_24_hours', 1800);
+        $since = date('Y-m-d H:i:s', time() - 86400);
+        $sources = array('send_email', 'mailbox_send');
+        $sent = self::sent_last_24_hours();
+
+        $failed = DB::select(
+                array(DB::expr('COUNT(*)'), 'total'),
+                array(DB::expr("SUM(error_message LIKE '%Daily user sending limit%')"), 'limit_errors'),
+                array(DB::expr("MAX(IF(error_message LIKE '%Daily user sending limit%', created_at, NULL))"), 'last_limit_error')
+            )
+            ->from('system_error_log')
+            ->where('error_source', 'IN', $sources)
+            ->where('error_type', '=', 'smtp_send_failure')
+            ->where('created_at', '>=', $since)
+            ->execute()
+            ->current();
+
+        // At the limit, sending resumes once enough old sends are over 24 hours old
+        $resumes_at = NULL;
+        if ($limit > 0 && $sent >= $limit) {
+            $oldest_blocking = DB::select('created_at')
+                ->from('system_error_log')
+                ->where('error_source', 'IN', $sources)
+                ->where('error_type', '=', 'smtp_send_success')
+                ->where('created_at', '>=', $since)
+                ->order_by('created_at', 'ASC')
+                ->limit(1)
+                ->offset($sent - $limit)
+                ->execute()
+                ->get('created_at');
+            $resumes_at = $oldest_blocking ? strtotime($oldest_blocking) + 86400 : NULL;
+        }
+
+        // date('N') is 1 on Monday, so this counts back to Monday
+        $daily = array();
+        for ($i = 0; $i < (int) date('N'); $i++) {
+            $daily[date('Y-m-d', strtotime('-' . $i . ' days'))] = array('sent' => 0, 'failed' => 0);
+        }
+        $dates = array_keys($daily);
+        $rows = DB::select(array(DB::expr('DATE(created_at)'), 'day'), 'error_type', array(DB::expr('COUNT(*)'), 'total'))
+            ->from('system_error_log')
+            ->where('error_source', 'IN', $sources)
+            ->where('error_type', 'IN', array('smtp_send_success', 'smtp_send_failure'))
+            ->where('created_at', '>=', end($dates) . ' 00:00:00')            ->group_by(DB::expr('DATE(created_at)'), 'error_type')
+            ->execute()
+            ->as_array();
+        foreach ($rows as $row) {
+            if (isset($daily[$row['day']])) {
+                $key = $row['error_type'] === 'smtp_send_success' ? 'sent' : 'failed';
+                $daily[$row['day']][$key] = (int) $row['total'];
+            }
+        }
+
+        return array(
+            'limit'            => $limit,
+            'sent'             => $sent,
+            'failed'           => (int) $failed['total'],
+            'limit_errors'     => (int) $failed['limit_errors'],
+            'last_limit_error' => $failed['last_limit_error'],
+            'resumes_at'       => $resumes_at,
+            'daily'            => $daily,
+        );
+    }
+
+    /**
+     * FALSE once the rolling 24 hour limit in config/email_limit.php is reached.
+     * The cron senders check this before each request; a held request is left
+     * untouched, so it stays queued.
+     */
+    public static function within_send_limit()
+    {
+        try {
+            $limit = (int) Kohana::$config->load('email_limit')->get('max_per_24_hours', 1800);
+            $sent = self::sent_last_24_hours();
+        } catch (Exception $e) {
+            // A counting problem must not stop all request sending
+            error_log("[" . date('c') . "] send limit check failed: " . $e->getMessage());
+            return TRUE;
+        }
+        if ($sent < $limit) {
+            return TRUE;
+        }
+        error_log("[" . date('c') . "] send limit reached: $sent of $limit in the last 24 hours, requests held");
+        return FALSE;
+    }
+
     public static function send_email($to, $to_name, $subject, $body, $attachment = NULL, $file_attachments = NULL, $cc_email = NULL)
     {
         $mail = new PHPMailer(); // create a new object

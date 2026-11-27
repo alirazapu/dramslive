@@ -1,5 +1,11 @@
 <?php
 $total_pages = max(1, (int) ceil($total / $per_page));
+$first = $total ? (($page - 1) * $per_page) + 1 : 0;
+$last = min($total, $page * $per_page);
+$active = array_filter($filters, 'strlen');
+$page_url = function ($p) use ($active) {
+    return HTML::chars(URL::site('mailbox/log') . '?' . http_build_query($active + array('page' => $p)));
+};
 ?>
 <section class="content-header">
     <h1><i class="fa fa-history"></i> Sent Log <small>Emails sent from the Mailbox, by user</small></h1>
@@ -14,10 +20,40 @@ $total_pages = max(1, (int) ceil($total / $per_page));
         <?php echo View::factory('templates/mailbox/_nav')->set('folder', 'log'); ?>
 
         <div class="mb-main">
+            <div class="mb-toolbar">
+                <form class="form-inline" method="get" action="<?php echo URL::site('mailbox/log'); ?>">
+                    <input type="text" class="form-control input-sm" name="q" value="<?php echo HTML::chars($filters['q']); ?>" placeholder="Recipient, subject, file">
+                    <select class="form-control input-sm" name="user">
+                        <option value="">All users</option>
+                        <?php foreach ($users as $username) { ?>
+                            <option value="<?php echo HTML::chars($username); ?>"<?php echo $username === $filters['user'] ? ' selected' : ''; ?>><?php echo HTML::chars($username); ?></option>
+                        <?php } ?>
+                    </select>
+                    <select class="form-control input-sm" name="status">
+                        <option value="">Any status</option>
+                        <option value="sent"<?php echo $filters['status'] === 'sent' ? ' selected' : ''; ?>>Sent</option>
+                        <option value="failed"<?php echo $filters['status'] === 'failed' ? ' selected' : ''; ?>>Failed</option>
+                    </select>
+                    <input type="date" class="form-control input-sm" name="from" value="<?php echo $filters['from']; ?>" title="From date">
+                    <input type="date" class="form-control input-sm" name="to" value="<?php echo $filters['to']; ?>" title="To date">
+                    <button type="submit" class="btn btn-primary btn-sm"><i class="fa fa-search"></i> Search</button>
+                    <?php if ($active) { ?><a class="btn btn-link btn-sm" href="<?php echo URL::site('mailbox/log'); ?>">Clear</a><?php } ?>
+                </form>
+                <div class="mb-pager">
+                    <?php echo $total ? number_format($first) . '&ndash;' . number_format($last) . ' of ' . number_format($total) : '0 emails'; ?>
+                    <?php if ($page > 1) { ?>
+                        <a href="<?php echo $page_url($page - 1); ?>" title="Newer"><i class="fa fa-chevron-left"></i></a>
+                    <?php } else { ?><span class="mb-off"><i class="fa fa-chevron-left"></i></span><?php } ?>
+                    <?php if ($page < $total_pages) { ?>
+                        <a href="<?php echo $page_url($page + 1); ?>" title="Older"><i class="fa fa-chevron-right"></i></a>
+                    <?php } else { ?><span class="mb-off"><i class="fa fa-chevron-right"></i></span><?php } ?>
+                </div>
+            </div>
+
             <?php if (empty($rows)) { ?>
                 <div class="mb-empty">
                     <i class="fa fa-history fa-3x"></i>
-                    <p>No emails have been logged yet.</p>
+                    <p><?php echo $active ? 'No emails match these filters.' : 'No emails have been logged yet.'; ?></p>
                 </div>
             <?php } else { ?>
                 <div class="table-responsive">
@@ -51,11 +87,18 @@ $total_pages = max(1, (int) ceil($total / $per_page));
                     </table>
                 </div>
 
-                <?php if ($total_pages > 1) { ?>
+                <?php if ($total_pages > 1) {
+                    $start = max(1, $page - 4);
+                    $end = min($total_pages, $page + 4);
+                    ?>
                     <div class="mb-footer">
-                        <?php if ($page > 1) { ?><a class="btn btn-default btn-sm" href="<?php echo URL::site('mailbox/log') . '?page=' . ($page - 1); ?>">Newer</a><?php } ?>
-                        Page <?php echo $page; ?> of <?php echo $total_pages; ?>
-                        <?php if ($page < $total_pages) { ?><a class="btn btn-default btn-sm" href="<?php echo URL::site('mailbox/log') . '?page=' . ($page + 1); ?>">Older</a><?php } ?>
+                        <ul class="pagination pagination-sm">
+                            <?php if ($page > 1) { ?><li><a href="<?php echo $page_url(1); ?>">&laquo; Newest</a></li><?php } ?>
+                            <?php for ($i = $start; $i <= $end; $i++) { ?>
+                                <li class="<?php echo $i === $page ? 'active' : ''; ?>"><a href="<?php echo $page_url($i); ?>"><?php echo $i; ?></a></li>
+                            <?php } ?>
+                            <?php if ($page < $total_pages) { ?><li><a href="<?php echo $page_url($total_pages); ?>">Oldest &raquo;</a></li><?php } ?>
+                        </ul>
                     </div>
                 <?php } ?>
             <?php } ?>
